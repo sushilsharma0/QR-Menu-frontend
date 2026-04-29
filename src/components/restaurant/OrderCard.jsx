@@ -1,0 +1,41 @@
+import React from 'react'
+import { FiEye } from 'react-icons/fi'
+import Card from '../common/Card'
+import Button from '../common/Button'
+import OrderStatusBadge from './OrderStatusBadge'
+
+const OrderCard = ({ order, onView, onStatusUpdate }) => {
+  return (
+    <Card className="hover:shadow-lg transition-shadow">
+      <div className="flex justify-between items-start mb-3">
+        <div>
+          <h3 className="font-bold text-gray-900">#{order.orderNumber}</h3>
+          <p className="text-sm text-gray-500">Table: {order.table?.tableNumber}</p>
+          <p className="text-sm text-gray-500">{order.customerName}</p>
+        </div>
+        <OrderStatusBadge status={order.status} />
+      </div>
+      <div className="mb-3">
+        <p className="text-sm text-gray-600">
+          {order.items?.length} items • ${order.grandTotal}
+        </p>
+      </div>
+      <div className="flex gap-2">
+        <Button size="sm" variant="outline" onClick={() => onView(order)}>
+          <FiEye className="mr-1" /> View
+        </Button>
+        {order.status === 'pending' && (
+          <Button size="sm" onClick={() => onStatusUpdate(order, 'confirmed')}>Confirm</Button>
+        )}
+        {order.status === 'confirmed' && (
+          <Button size="sm" onClick={() => onStatusUpdate(order, 'preparing')}>Start</Button>
+        )}
+        {order.status === 'preparing' && (
+          <Button size="sm" variant="success" onClick={() => onStatusUpdate(order, 'ready')}>Ready</Button>
+        )}
+      </div>
+    </Card>
+  )
+}
+
+export default OrderCard
