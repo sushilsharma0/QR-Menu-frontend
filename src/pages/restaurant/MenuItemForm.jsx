@@ -13,6 +13,7 @@ const MenuItemForm = () => {
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState([])
   const [imagePreview, setImagePreview] = useState(null)
+  const [selectedFile, setSelectedFile] = useState(null)
   const { register, handleSubmit, setValue, formState: { errors } } = useForm()
 
   useEffect(() => {
@@ -49,43 +50,63 @@ const MenuItemForm = () => {
     }
   }
 
-const onSubmit = async (data) => {
-  try {
-    setLoading(true);
+  const onSubmit = async (data) => {
+    try {
+      setLoading(true)
 
-    const formData = new FormData();
+      const formData = new FormData()
 
-    // append normal fields
-    Object.keys(data).forEach((key) => {
-      if (key !== "image" && data[key] !== undefined) {
-        formData.append(key, data[key]);
+      // Append normal fields
+      if (data.name) formData.append('name', data.name)
+      if (data.category) formData.append('category', data.category)
+      if (data.description) formData.append('description', data.description)
+      if (data.price) formData.append('price', data.price)
+      if (data.originalPrice) formData.append('originalPrice', data.originalPrice)
+      if (data.preparationTime) formData.append('preparationTime', data.preparationTime)
+      if (data.taxRate) formData.append('taxRate', data.taxRate)
+      if (data.isVegetarian) formData.append('isVegetarian', data.isVegetarian)
+      if (data.isSpicy) formData.append('isSpicy', data.isSpicy)
+      if (data.isAvailable) formData.append('isAvailable', data.isAvailable)
+
+      // Append image file if selected
+      if (selectedFile) {
+        formData.append('image', selectedFile)
       }
-    });
 
-    // append image file (Cloudinary upload happens in backend)
-    if (data.image && data.image[0]) {
-      formData.append("image", data.image[0]);
+      console.log('Submitting with file:', selectedFile)
+
+      const url = id
+        ? `/restaurant/menu/items/${id}`
+        : `/restaurant/menu/items`
+
+      const method = id ? 'put' : 'post'
+
+      await api[method](url, formData)
+
+      toast.success(id ? 'Menu item updated' : 'Menu item created')
+
+      navigate('/restaurant/menu')
+    } catch (error) {
+      console.error('Error:', error)
+      toast.error(error.response?.data?.message || 'Operation failed')
+    } finally {
+      setLoading(false)
     }
-
-    const url = id
-      ? `/restaurant/menu/items/${id}`
-      : `/restaurant/menu/items`;
-
-    const method = id ? "put" : "post";
-
-    await api[method](url, formData);
-
-    toast.success(id ? "Menu item updated" : "Menu item created");
-
-    navigate("/restaurant/menu");
-
-  } catch (error) {
-    console.log(error);
-    toast.error(error.response?.data?.message || "Operation failed");
-  } finally {
-    setLoading(false);
   }
-};
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      console.log('File selected:', file.name, file.size)
+      setSelectedFile(file)
+      setImagePreview(URL.createObjectURL(file))
+    }
+  }
+
+  const handleRemoveImage = () => {
+    setSelectedFile(null)
+    setImagePreview(null)
+  }
 
 
 
@@ -161,20 +182,24 @@ const onSubmit = async (data) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Item Image</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files[0]
-                if (file) {
-                  setImagePreview(URL.createObjectURL(file))
-                }
-              }}
-              className="w-full"
-              {...register('image')}
-            />
-            {imagePreview && (
-              <img src={imagePreview} alt="Preview" className="mt-2 w-32 h-32 object-cover rounded-lg" />
+            {imagePreview ? (
+              <div className="relative inline-block">
+                <img src={imagePreview} alt="Preview" className="mt-2 w-32 h-32 object-cover rounded-lg" />
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 text-xs"
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="w-full"
+              />
             )}
           </div>
 

@@ -7,142 +7,143 @@ import {
   X,
   SlidersHorizontal,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import * as FramerMotion from "framer-motion";
 import Navigation from "../../../components/customer/Navigation";
 import ViewCartBtn from "../../../components/customer/ViewCartBtn";
 import FilterSidebar from "../../../components/customer/menuItem/FilterSidebar";
+import api from "../../../services/api";
 
-const foodItems = [
-  {
-    id: 1,
-    name: "Chicken Wings",
-    desc: "Crispy chicken wings tossed in spicy BBQ sauce",
-    price: 350,
-    img: "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?auto=format&fit=crop&q=80&w=300",
-    tag: "Non-Veg",
-  },
-  {
-    id: 2,
-    name: "Garlic Bread",
-    desc: "Toasted bread with garlic butter and herbs",
-    price: 250,
-    img: "https://delightfuladventures.com/wp-content/uploads/2023/09/vegan-garlic-bread-recipe.jpg",
-    tag: "Veg",
-  },
-  {
-    id: 3,
-    name: "French Fries",
-    desc: "Crispy golden fries served with ketchup",
-    price: 220,
-    img: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&q=80&w=300",
-    tag: "Veg",
-  },
-  {
-    id: 4,
-    name: "Veg Spring Rolls",
-    desc: "Crispy rolls stuffed with mixed vegetables",
-    price: 280,
-    img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-    tag: "Veg",
-  },
-  {
-    id: 5,
-    name: "Veg Spring Rolls",
-    desc: "Crispy rolls stuffed with mixed vegetables",
-    price: 280,
-    img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-    tag: "Veg",
-  },
-  {
-    id: 6,
-    name: "Veg Spring Rolls",
-    desc: "Crispy rolls stuffed with mixed vegetables",
-    price: 280,
-    img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-    tag: "Veg",
-  },
-  {
-    id: 7,
-    name: "Veg Spring Rolls",
-    desc: "Crispy rolls stuffed with mixed vegetables",
-    price: 280,
-    img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-    tag: "Veg",
-  },
-  {
-    id: 8,
-    name: "Veg Spring Rolls",
-    desc: "Crispy rolls stuffed with mixed vegetables",
-    price: 280,
-    img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-    tag: "Veg",
-  },
-  {
-    id: 9,
-    name: "Veg Spring Rolls",
-    desc: "Crispy rolls stuffed with mixed vegetables",
-    price: 280,
-    img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-    tag: "Veg",
-  },
-  {
-    id: 10,
-    name: "Veg Spring Rolls",
-    desc: "Crispy rolls stuffed with mixed vegetables",
-    price: 280,
-    img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-    tag: "Veg",
-  },
-  {
-    id: 11,
-    name: "Buff Momo",
-    desc: "Crispy rolls stuffed with mixed vegetables",
-    price: 280,
-    img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-    tag: "Non-Veg",
-  },
-  {
-    id: 12,
-    name: "Veg Spring Rolls",
-    desc: "Crispy rolls stuffed with mixed vegetables",
-    price: 280,
-    img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-    tag: "Veg",
-  },
-  {
-    id: 13,
-    name: "Chicken Spring Rolls",
-    desc: "Crispy rolls stuffed with mixed vegetables",
-    price: 280,
-    img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-    tag: "Non-Veg",
-  },
-  {
-    id: 14,
-    name: "Veg Spring Rolls",
-    desc: "Crispy rolls stuffed with mixed vegetables",
-    price: 280,
-    img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-    tag: "Veg",
-  },
-  {
-    id: 15,
-    name: "Mutton Tas",
-    desc: "Crispy rolls stuffed with mixed vegetables",
-    price: 280,
-    img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-    tag: "Non-Veg",
-  },
-];
+// const foodItems = [
+//   {
+//     id: 1,
+//     name: "Chicken Wings",
+//     desc: "Crispy chicken wings tossed in spicy BBQ sauce",
+//     price: 350,
+//     img: "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?auto=format&fit=crop&q=80&w=300",
+//     tag: "Non-Veg",
+//   },
+//   {
+//     id: 2,
+//     name: "Garlic Bread",
+//     desc: "Toasted bread with garlic butter and herbs",
+//     price: 250,
+//     img: "https://delightfuladventures.com/wp-content/uploads/2023/09/vegan-garlic-bread-recipe.jpg",
+//     tag: "Veg",
+//   },
+//   {
+//     id: 3,
+//     name: "French Fries",
+//     desc: "Crispy golden fries served with ketchup",
+//     price: 220,
+//     img: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&q=80&w=300",
+//     tag: "Veg",
+//   },
+//   {
+//     id: 4,
+//     name: "Veg Spring Rolls",
+//     desc: "Crispy rolls stuffed with mixed vegetables",
+//     price: 280,
+//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
+//     tag: "Veg",
+//   },
+//   {
+//     id: 5,
+//     name: "Veg Spring Rolls",
+//     desc: "Crispy rolls stuffed with mixed vegetables",
+//     price: 280,
+//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
+//     tag: "Veg",
+//   },
+//   {
+//     id: 6,
+//     name: "Veg Spring Rolls",
+//     desc: "Crispy rolls stuffed with mixed vegetables",
+//     price: 280,
+//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
+//     tag: "Veg",
+//   },
+//   {
+//     id: 7,
+//     name: "Veg Spring Rolls",
+//     desc: "Crispy rolls stuffed with mixed vegetables",
+//     price: 280,
+//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
+//     tag: "Veg",
+//   },
+//   {
+//     id: 8,
+//     name: "Veg Spring Rolls",
+//     desc: "Crispy rolls stuffed with mixed vegetables",
+//     price: 280,
+//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
+//     tag: "Veg",
+//   },
+//   {
+//     id: 9,
+//     name: "Veg Spring Rolls",
+//     desc: "Crispy rolls stuffed with mixed vegetables",
+//     price: 280,
+//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
+//     tag: "Veg",
+//   },
+//   {
+//     id: 10,
+//     name: "Veg Spring Rolls",
+//     desc: "Crispy rolls stuffed with mixed vegetables",
+//     price: 280,
+//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
+//     tag: "Veg",
+//   },
+//   {
+//     id: 11,
+//     name: "Buff Momo",
+//     desc: "Crispy rolls stuffed with mixed vegetables",
+//     price: 280,
+//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
+//     tag: "Non-Veg",
+//   },
+//   {
+//     id: 12,
+//     name: "Veg Spring Rolls",
+//     desc: "Crispy rolls stuffed with mixed vegetables",
+//     price: 280,
+//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
+//     tag: "Veg",
+//   },
+//   {
+//     id: 13,
+//     name: "Chicken Spring Rolls",
+//     desc: "Crispy rolls stuffed with mixed vegetables",
+//     price: 280,
+//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
+//     tag: "Non-Veg",
+//   },
+//   {
+//     id: 14,
+//     name: "Veg Spring Rolls",
+//     desc: "Crispy rolls stuffed with mixed vegetables",
+//     price: 280,
+//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
+//     tag: "Veg",
+//   },
+//   {
+//     id: 15,
+//     name: "Mutton Tas",
+//     desc: "Crispy rolls stuffed with mixed vegetables",
+//     price: 280,
+//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
+//     tag: "Non-Veg",
+//   },
+// ];
 
 const MenuItems = () => {
- 
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [foodType, setFoodType] = useState("all"); // 'all', 'veg', or 'non-veg'
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [foodItems, setFoodItems] = useState([]);
   const [activeFilters, setActiveFilters] = useState({
     sort: "popular",
     priceRange: "all",
@@ -150,6 +151,29 @@ const MenuItems = () => {
   });
   const navigate = useNavigate();
 
+  const { slug, token, category: categoryName } = useParams();
+  
+  useEffect(() => {
+    if (slug && categoryName) {
+      fetchMenuItems();
+    }
+  }, [slug, categoryName]);
+
+  const fetchMenuItems = async () => {
+    try {
+      // Call the by-category endpoint with slug as query param
+      const res = await api.get(`/restaurant/menu/items/by-category/${categoryName}?restaurantSlug=${slug}`);
+      console.log(res.data);
+
+      // Handle the response - items are in res.data.data.items
+      const data = res.data.data;
+      if (data && data.items) {
+        setFoodItems(data.items);
+      }
+    } catch (error) {
+      console.error("Error fetching menu items:", error);
+    }
+  };
 
   // Filter items by search query, food type, and price range
   const filteredItems = foodItems.filter((item) => {
@@ -212,8 +236,6 @@ const MenuItems = () => {
     setShowSearch((prev) => !prev);
     setSearchQuery("");
   };
-
- 
 
   return (
     <div className="min-h-screen bg-white pb-32">
@@ -395,11 +417,11 @@ const MenuItems = () => {
           </div>
         ) : (
           sortedItems.map((item) => (
-            <div key={item.id} className="flex gap-4 group">
+            <div key={item._id} className="flex gap-4 group bg-white rounded-2xl p-3 shadow-sm hover:shadow-md transition-shadow">
               {/* Item image with veg/non-veg indicator */}
               <Link to="/item" className="relative w-24 h-24 shrink-0">
                 <img
-                  src={item.img}
+                  src={item.image}
                   alt={item.name}
                   className="w-full h-full object-cover rounded-2xl"
                 />
@@ -424,7 +446,7 @@ const MenuItems = () => {
                     {item.name}
                   </h3>
                   <p className="text-xs text-gray-400 line-clamp-2 mt-1 leading-relaxed">
-                    {item.desc}
+                    {item.description}
                   </p>
                 </Link>
                 <div className="flex items-center justify-between mt-2">

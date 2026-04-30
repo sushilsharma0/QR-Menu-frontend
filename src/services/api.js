@@ -226,6 +226,9 @@ export const getMenuItems = (params) =>
 export const getMenuItemById = (id) => 
   api.get(`/restaurant/menu/items/${id}`)
 
+export const getMenuItemByCategoryName = (categoryName) => 
+  api.get(`/restaurant/menu/items//${categoryName}`)
+
 export const createMenuItem = (data) => 
   api.post('/restaurant/menu/items', data)
 

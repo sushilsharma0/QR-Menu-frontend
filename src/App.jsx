@@ -45,6 +45,7 @@ import OrderList from "./pages/employee/OrderList";
 // Customer Pages
 import CustomerHome from "./pages/customer/Home/Home";
 import CustomerMenu from "./pages/customer/Menu/MenuCategories";
+import CustomerMenuItem from "./pages/customer/MenuItems/MenuItems";
 
 
 // Layouts
@@ -161,6 +162,7 @@ function App() {
       {/* IMPORTANT: Add the menu route with slug and token parameters */}
       <Route path="/home/:slug/:token" element={<CustomerHome />} />
       <Route path="/menu/:slug/:token" element={<CustomerMenu />} />
+      <Route path="/item/:slug/:token/:category" element={<CustomerMenuItem />} />
       {/* <Route path="/order/track/:qrToken" element={<CustomerOrderTracking />} /> */}
       {/* <Route
         path="/order/success/:orderId"

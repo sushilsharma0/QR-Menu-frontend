@@ -12,6 +12,7 @@ const CategoryForm = () => {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [imagePreview, setImagePreview] = useState(null)
+  const [selectedFile, setSelectedFile] = useState(null)
   const { register, handleSubmit, setValue, formState: { errors } } = useForm()
 
   useEffect(() => {
@@ -38,16 +39,16 @@ const CategoryForm = () => {
       const formData = new FormData()
 
       // Append normal fields
-      Object.keys(data).forEach((key) => {
-        if (key !== 'image' && data[key] !== undefined) {
-          formData.append(key, data[key])
-        }
-      })
+      if (data.name) formData.append('name', data.name)
+      if (data.description) formData.append('description', data.description)
+      if (data.sortOrder) formData.append('sortOrder', data.sortOrder)
 
-      // Append image file
-      if (data.image && data.image[0]) {
-        formData.append('image', data.image[0])
+      // Append image file if selected
+      if (selectedFile) {
+        formData.append('image', selectedFile)
       }
+
+      console.log('Submitting with file:', selectedFile)
 
       if (id) {
         await api.put(`/restaurant/menu/categories/${id}`, formData)
@@ -58,6 +59,7 @@ const CategoryForm = () => {
       }
       navigate('/restaurant/menu')
     } catch (error) {
+      console.error('Error:', error)
       toast.error(error.response?.data?.message || 'Operation failed')
     } finally {
       setLoading(false)
@@ -67,8 +69,15 @@ const CategoryForm = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0]
     if (file) {
+      console.log('File selected:', file.name, file.size)
+      setSelectedFile(file)
       setImagePreview(URL.createObjectURL(file))
     }
+  }
+
+  const handleRemoveImage = () => {
+    setSelectedFile(null)
+    setImagePreview(null)
   }
 
   return (
@@ -115,7 +124,7 @@ const CategoryForm = () => {
                     />
                     <button
                       type="button"
-                      onClick={() => setImagePreview(null)}
+                      onClick={handleRemoveImage}
                       className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 text-xs"
                     >
                       ✕
@@ -149,7 +158,6 @@ const CategoryForm = () => {
                           type="file"
                           className="sr-only"
                           accept="image/*"
-                          {...register('image')}
                           onChange={handleImageChange}
                         />
                       </label>

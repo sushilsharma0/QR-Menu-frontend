@@ -7,7 +7,7 @@ import {
   Menu as MenuIcon,
   X,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import Navigation from "../../../components/customer/Navigation";
 import PageTransition from "../../../components/customer/PageTransition";
 import Sidebar from "../../../components/customer/homepage/SideBar";
@@ -60,6 +60,8 @@ const MenuCategories = () => {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
 
+  const {token} = useParams();
+
   useEffect(() => {
     fetchMenuData();
   }, []);
@@ -88,6 +90,8 @@ const MenuCategories = () => {
     setShowSearch((prev) => !prev);
     setSearchQuery("");
   };
+
+  
 
   return (
     <PageTransition>
@@ -200,20 +204,20 @@ const MenuCategories = () => {
           ) : (
             filteredCategories.map((cat) => (
               <Link
-                to="/menuItems"
+                to={`/item/${JSON.parse(localStorage.getItem("user")).slug}/${token}/${cat.name}`}
                 key={cat._id}
                 className="group flex items-center p-3 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-all cursor-pointer hover:border-orange-200"
               >
                 <div className="w-14 h-14 rounded-xl overflow-hidden mr-3 shrink-0">
                   <img
-                    src={cat.imageUrl || "https://via.placeholder.com/150?text=No+Image"}
+                    src={cat.image}
                     alt={cat.name}
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-gray-800">{cat.name}</h3>
-                  <p className="text-xs text-gray-400">{cat.count} Items</p>
+                  <p className="text-xs text-gray-400">{cat.description}</p>
                 </div>
                 <div className="p-2 bg-gray-50 rounded-full group-hover:bg-orange-50 group-hover:text-orange-500 transition-colors">
                   <ChevronRight size={18} />
