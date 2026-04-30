@@ -65,7 +65,7 @@ const Tables = () => {
     }
     
     const baseUrl = window.location.origin
-    return `${baseUrl}/menu/${restaurantSlug}/${table.qrToken}`
+    return `${baseUrl}/home/${restaurantSlug}/${table.qrToken}`
   }
 
   if (loading) {
@@ -186,7 +186,7 @@ const Tables = () => {
               <div className="bg-gray-100 p-3 rounded-lg mb-4">
                 <p className="text-xs text-gray-600 break-all">{getQRUrl(qrModal.table)}</p>
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-3 justify-around">
                 <Button
                   onClick={() => {
                     navigator.clipboard.writeText(getQRUrl(qrModal.table))
@@ -197,6 +197,14 @@ const Tables = () => {
                 >
                   Copy URL
                 </Button>
+                <a
+                  href={getQRUrl(qrModal.table)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                >
+                  Open in New Tab
+                </a>
                 <Button
                   onClick={() => {
                     const printWindow = window.open('', '_blank')

@@ -1,93 +1,169 @@
-import React from 'react'
-import { useNavigate } from 'react-router-dom'
-import { FiTrash2, FiPlus, FiMinus } from 'react-icons/fi'
-import { useCart } from '../../hooks/useCart'
-import Button from '../../components/common/Button'
+import React, { useState } from "react";
+import {
+  ArrowLeft,
+  Trash2,
+  Plus,
+  Minus,
+  CreditCard,
+  Landmark,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Cart = () => {
-  const navigate = useNavigate()
-  const { cart, updateQuantity, removeFromCart, clearCart } = useCart()
+  const navigate = useNavigate();
 
-  if (!cart.items.length) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">🛒</div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Your cart is empty</h2>
-          <p className="text-gray-500 mb-4">Add items from the menu to get started</p>
-          <Button onClick={() => navigate(-1)}>Browse Menu</Button>
-        </div>
-      </div>
-    )
-  }
+  const [cartItems, setCartItems] = useState([
+    {
+      id: 1,
+      name: "Creamy Alfredo Pasta",
+      price: 450,
+      qty: 1,
+      img: "https://images.unsplash.com/photo-1645112481355-03657396655c?auto=format&fit=crop&q=80&w=200",
+    },
+    {
+      id: 2,
+      name: "Chicken Wings",
+      price: 350,
+      qty: 1,
+      img: "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?auto=format&fit=crop&q=80&w=200",
+    },
+    {
+      id: 3,
+      name: "French Fries",
+      price: 220,
+      qty: 1,
+      img: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&q=80&w=200",
+    },
+  ]);
+
+  const updateQty = (id, delta) => {
+    setCartItems((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, qty: Math.max(1, item.qty + delta) } : item,
+      ),
+    );
+  };
+
+  const subtotal = cartItems.reduce(
+    (acc, item) => acc + item.price * item.qty,
+    0,
+  );
+  const serviceCharge = Math.round(subtotal * 0.05);
+  const total = subtotal + serviceCharge;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-3xl mx-auto px-4">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Your Cart</h1>
+    <div className="min-h-screen bg-white pb-40">
+      {/* Header */}
+      <header className="px-6 pt-12 pb-6 flex items-center justify-between sticky top-0 bg-white z-10 border-b border-gray-50">
+        <button
+          className="p-2 bg-gray-50 rounded-xl hover:bg-red-300 transition-colors"
+          onClick={() => navigate(-1) || navigate("/")}
+        >
+          <ArrowLeft size={20} className="text-gray-700" />
+        </button>
+        <h1 className="text-lg font-bold text-gray-800">Your Cart</h1>
+        <button className="p-2 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors">
+          <Trash2 size={20} />
+        </button>
+      </header>
 
-        <div className="bg-white rounded-xl shadow-sm mb-6">
-          {cart.items.map((item) => (
-            <div key={item._id} className="flex items-center justify-between p-4 border-b last:border-0">
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-900">{item.name}</h3>
-                <p className="text-sm text-gray-500">${item.price}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 bg-gray-100 rounded-lg">
-                  <button
-                    onClick={() => updateQuantity(item._id, item.quantity - 1)}
-                    className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                  >
-                    <FiMinus className="h-4 w-4" />
-                  </button>
-                  <span className="w-8 text-center">{item.quantity}</span>
-                  <button
-                    onClick={() => updateQuantity(item._id, item.quantity + 1)}
-                    className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                  >
-                    <FiPlus className="h-4 w-4" />
-                  </button>
-                </div>
-                <button
-                  onClick={() => removeFromCart(item._id)}
-                  className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                >
-                  <FiTrash2 className="h-5 w-5" />
-                </button>
-              </div>
+      {/* Cart Items */}
+      <div className="px-6 py-4 space-y-6">
+        {cartItems.map((item) => (
+          <div key={item.id} className="flex items-center gap-4">
+            <img
+              src={item.img}
+              alt={item.name}
+              className="w-20 h-20 object-cover rounded-2xl"
+            />
+
+            <div className="flex-1">
+              <h3 className="font-bold text-gray-800 text-sm">{item.name}</h3>
+              <p className="text-orange-500 font-bold text-sm mt-1">
+                Rs. {item.price}
+              </p>
             </div>
-          ))}
-        </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex justify-between mb-4">
-            <span className="text-gray-600">Subtotal</span>
-            <span className="font-medium">${cart.total.toFixed(2)}</span>
+            <div className="flex items-center gap-3 bg-gray-50 p-1 rounded-xl border border-gray-100">
+              <button
+                onClick={() => updateQty(item.id, -1)}
+                className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-gray-400 active:scale-90"
+              >
+                <Minus size={14} />
+              </button>
+              <span className="text-sm font-bold w-4 text-center">
+                {item.qty}
+              </span>
+              <button
+                onClick={() => updateQty(item.id, 1)}
+                className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-gray-700 active:scale-90"
+              >
+                <Plus size={14} />
+              </button>
+            </div>
           </div>
-          <div className="flex justify-between mb-4">
-            <span className="text-gray-600">Tax (13%)</span>
-            <span className="font-medium">${(cart.total * 0.13).toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between border-t pt-4 mb-6">
-            <span className="text-lg font-bold">Total</span>
-            <span className="text-xl font-bold text-primary-600">${(cart.total * 1.13).toFixed(2)}</span>
-          </div>
-          <div className="flex gap-3">
-            <Button variant="secondary" onClick={() => navigate(-1)} className="flex-1">
-              Continue Shopping
-            </Button>
-            <Button onClick={() => navigate('/checkout')} className="flex-1">
-              Proceed to Checkout
-            </Button>
-          </div>
-          <button onClick={clearCart} className="text-sm text-red-500 mt-4 w-full text-center">
-            Clear Cart
-          </button>
+        ))}
+      </div>
+
+      {/* Bill Details */}
+      <div className="px-6 mt-8 space-y-3">
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-400">Subtotal</span>
+          <span className="text-gray-800 font-medium">Rs. {subtotal}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-400">Service Charge (5%)</span>
+          <span className="text-gray-800 font-medium">Rs. {serviceCharge}</span>
+        </div>
+        <div className="h-px bg-dashed border-t border-dashed border-gray-200 my-2"></div>
+        <div className="flex justify-between items-center">
+          <span className="font-bold text-gray-800">Total</span>
+          <span className="text-xl font-black text-orange-500">
+            Rs. {total}
+          </span>
         </div>
       </div>
-    </div>
-  )
-}
 
-export default Cart
+      {/* Payment Selection */}
+      <div className="px-6 mt-8">
+        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
+          Select Payment
+        </h3>
+        <div className="grid grid-cols-2 gap-4">
+          <label className="relative border-2 border-orange-500 bg-orange-50 rounded-2xl p-4 flex flex-col items-center cursor-pointer transition-all">
+            <Landmark size={24} className="text-orange-500 mb-2" />
+            <span className="text-xs font-bold text-orange-600">
+              Pay at Counter
+            </span>
+            <input
+              type="radio"
+              name="payment"
+              className="hidden"
+              defaultChecked
+            />
+            <div className="absolute top-2 right-2 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
+              <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+            </div>
+          </label>
+
+          <label className="relative border-2 border-gray-100 rounded-2xl p-4 flex flex-col items-center cursor-pointer hover:border-gray-200 transition-all">
+            <CreditCard size={24} className="text-gray-400 mb-2" />
+            <span className="text-xs font-bold text-gray-500">
+              Digital Payment
+            </span>
+            <input type="radio" name="payment" className="hidden" />
+          </label>
+        </div>
+      </div>
+
+      {/* Checkout Button */}
+      <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-50 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
+        <button className="w-full bg-orange-500 hover:bg-orange-600 py-4 rounded-2xl text-white font-bold text-lg shadow-xl shadow-orange-200 transition-all active:scale-[0.98]">
+          Proceed to Checkout
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default Cart;

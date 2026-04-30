@@ -28,6 +28,8 @@ const Menu = () => {
       ])
       setCategories(categoriesRes.data.data)
       setItems(itemsRes.data.data)
+      console.log(itemsRes.data.data);
+      
     } catch (error) {
       toast.error('Failed to fetch menu data')
     } finally {

@@ -1,149 +1,142 @@
-import React, { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
-import { FiCheck, FiClock, FiCoffee, FiSmile } from 'react-icons/fi'
-import api from '../../services/api'
-import { useSocket } from '../../hooks/useSocket'
+import React from "react";
+import {
+  ArrowLeft,
+  Check,
+  Clock,
+  ChefHat,
+  Bell,
+  PackageCheck,
+  Utensils,
+} from "lucide-react";
 
 const OrderTracking = () => {
-  const { qrToken } = useParams()
-  const { socket } = useSocket()
-  const [order, setOrder] = useState(null)
-  const [loading, setLoading] = useState(true)
+  // In a real MERN app, 'status' would come from your MongoDB via Socket.io
+  const orderStatus = "Preparing";
 
-  useEffect(() => {
-    fetchOrder()
-  }, [qrToken])
-
-  useEffect(() => {
-    if (socket && qrToken) {
-      socket.emit('join:order', qrToken)
-      socket.on('order_status', handleStatusUpdate)
-      return () => {
-        socket.off('order_status')
-      }
-    }
-  }, [socket, qrToken])
-
-  const fetchOrder = async () => {
-    try {
-      const res = await api.get(`/customer/order/${qrToken}`)
-      setOrder(res.data.data)
-    } catch (error) {
-      console.error('Failed to fetch order')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleStatusUpdate = (data) => {
-    setOrder(prev => ({ ...prev, ...data }))
-  }
-
-  const getStatusStep = () => {
-    const steps = [
-      { key: 'pending', label: 'Order Received', icon: FiClock, time: order?.createdAt },
-      { key: 'confirmed', label: 'Order Confirmed', icon: FiCheck, time: order?.statusHistory?.find(h => h.status === 'confirmed')?.timestamp },
-      { key: 'preparing', label: 'Preparing', icon: FiCoffee, time: order?.statusHistory?.find(h => h.status === 'preparing')?.timestamp },
-      { key: 'ready', label: 'Ready for Pickup', icon: FiSmile, time: order?.statusHistory?.find(h => h.status === 'ready')?.timestamp },
-    ]
-    const currentIndex = steps.findIndex(s => s.key === order?.status)
-    return steps.map((step, idx) => ({
-      ...step,
-      completed: idx <= currentIndex,
-      active: idx === currentIndex
-    }))
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex justify-center items-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    )
-  }
-
-  if (!order) {
-    return (
-      <div className="min-h-screen flex justify-center items-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900">Order not found</h2>
-          <p className="text-gray-500">Please check your QR code</p>
-        </div>
-      </div>
-    )
-  }
-
-  const steps = getStatusStep()
+  const steps = [
+    {
+      id: 1,
+      label: "Order Placed",
+      time: "Today, 1:20 PM",
+      icon: <Clock size={16} />,
+      completed: true,
+    },
+    {
+      id: 2,
+      label: "Confirmed",
+      time: "Today, 1:21 PM",
+      icon: <Check size={16} />,
+      completed: true,
+    },
+    {
+      id: 3,
+      label: "Preparing",
+      time: "Your food is being prepared",
+      icon: <ChefHat size={16} />,
+      completed: false,
+      active: true,
+    },
+    {
+      id: 4,
+      label: "Ready",
+      time: "Waiting to be served",
+      icon: <Utensils size={16} />,
+      completed: false,
+    },
+    {
+      id: 5,
+      label: "Completed",
+      time: "Enjoy your meal!",
+      icon: <PackageCheck size={16} />,
+      completed: false,
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-2xl mx-auto px-4">
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Order Status</h1>
-            <p className="text-gray-500">Order #{order.orderNumber}</p>
-          </div>
+    <div className="min-h-screen bg-white pb-10">
+      {/* Header */}
+      <header className="px-6 pt-12 pb-6 flex items-center justify-between border-b border-gray-50 sticky top-0 bg-white z-10">
+        <button className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+          <ArrowLeft size={20} className="text-gray-700" />
+        </button>
+        <h1 className="text-lg font-bold text-gray-800 tracking-tight">
+          Order Tracking
+        </h1>
+        <div className="w-10"></div> {/* Placeholder to center the title */}
+      </header>
 
-          {/* Timeline */}
-          <div className="relative">
-            {steps.map((step, idx) => (
-              <div key={step.key} className="flex items-start mb-8 last:mb-0">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 z-10 ${
-                  step.completed ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
-                }`}>
-                  <step.icon className="h-5 w-5" />
-                </div>
-                <div className="ml-4 flex-1">
-                  <div className="flex justify-between items-center">
-                    <h3 className={`font-medium ${step.completed ? 'text-gray-900' : 'text-gray-500'}`}>
-                      {step.label}
-                    </h3>
-                    {step.time && (
-                      <span className="text-sm text-gray-400">
-                        {new Date(step.time).toLocaleTimeString()}
-                      </span>
-                    )}
-                  </div>
-                  {step.active && order.estimatedWaitTime && (
-                    <p className="text-sm text-blue-600 mt-1">
-                      Estimated wait: {order.estimatedWaitTime} minutes
-                    </p>
+      <div className="p-8 flex flex-col items-center">
+        {/* Order Info Card */}
+        <div className="text-center mb-10">
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+            Order #1024
+          </p>
+          <h2 className="text-xl font-bold text-gray-800">Table 05</h2>
+
+          <div className="mt-4 inline-flex items-center gap-2 bg-orange-50 text-orange-600 px-5 py-2 rounded-full text-xs font-bold border border-orange-100 animate-pulse">
+            <ChefHat size={14} /> Preparing
+          </div>
+        </div>
+
+        {/* Timeline Container */}
+        <div className="w-full max-w-xs relative ml-4">
+          {/* Main Vertical Track */}
+          <div className="absolute left-4.75 top-2 bottom-2 w-0.5 bg-gray-100"></div>
+
+          <div className="space-y-12">
+            {steps.map((step) => (
+              <div key={step.id} className="relative flex items-start gap-6">
+                {/* Step Circle */}
+                <div
+                  className={`z-10 w-10 h-10 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-all duration-500
+                  ${
+                    step.completed
+                      ? "bg-green-500 text-white"
+                      : step.active
+                        ? "bg-orange-500 text-white scale-110 ring-4 ring-orange-100"
+                        : "bg-gray-100 text-gray-400"
+                  }`}
+                >
+                  {step.completed ? (
+                    <Check size={18} strokeWidth={3} />
+                  ) : (
+                    step.icon
                   )}
                 </div>
+
+                {/* Step Text Content */}
+                <div className="flex-1 pt-1">
+                  <h4
+                    className={`text-sm font-bold transition-colors ${step.active ? "text-gray-900" : step.completed ? "text-gray-800" : "text-gray-400"}`}
+                  >
+                    {step.label}
+                  </h4>
+                  <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">
+                    {step.time}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Order Details */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
-          <div className="space-y-3 mb-4">
-            {order.items?.map((item, idx) => (
-              <div key={idx} className="flex justify-between">
-                <span>{item.quantity}x {item.name}</span>
-                <span>${(item.price * item.quantity).toFixed(2)}</span>
-              </div>
-            ))}
+        {/* Notification Alert Box */}
+        <div className="mt-16 w-full max-w-sm bg-orange-50 p-6 rounded-4xl flex items-center gap-5 border border-orange-100 shadow-sm shadow-orange-50">
+          <div className="p-4 bg-white rounded-2xl shadow-sm text-orange-500">
+            <Bell size={24} className="animate-bounce" />
           </div>
-          <div className="border-t pt-4">
-            <div className="flex justify-between font-bold">
-              <span>Total</span>
-              <span className="text-primary-600">${order.totalAmount}</span>
-            </div>
+          <div>
+            <p className="text-sm font-bold text-gray-800">
+              We will notify you
+            </p>
+            <p className="text-[11px] text-gray-500 leading-normal">
+              Your order is being handled with care and will be ready shortly.
+            </p>
           </div>
-        </div>
-
-        {/* Customer Info */}
-        <div className="mt-6 bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold mb-2">Customer Information</h2>
-          <p className="text-gray-600">Name: {order.customerName}</p>
-          {order.customerPhone && <p className="text-gray-600">Phone: {order.customerPhone}</p>}
-          {order.tableNumber && <p className="text-gray-600">Table: {order.tableNumber}</p>}
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default OrderTracking
+export default OrderTracking;

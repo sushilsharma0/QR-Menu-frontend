@@ -4,9 +4,6 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 const api = axios.create({
   baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
   timeout: 30000,
 })
 
@@ -16,6 +13,10 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+    }
+    // Don't set Content-Type for FormData - let browser set it with boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type']
     }
     return config
   },
@@ -241,8 +242,9 @@ export const getPublicMenu = (restaurantSlug) =>
   api.get(`/restaurant/menu/public/${restaurantSlug}`)
 
 // Table Management
-export const getTables = () => 
+export const getTables = () => {
   api.get('/restaurant/tables')
+}
 
 export const getTableById = (id) => 
   api.get(`/restaurant/tables/${id}`)

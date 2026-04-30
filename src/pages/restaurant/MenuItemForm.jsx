@@ -49,33 +49,45 @@ const MenuItemForm = () => {
     }
   }
 
-  const onSubmit = async (data) => {
-    try {
-      setLoading(true)
-      const formData = new FormData()
-      Object.keys(data).forEach(key => {
-        if (data[key] !== undefined && key !== 'image') {
-          formData.append(key, data[key])
-        }
-      })
-      if (data.image && data.image[0]) {
-        formData.append('image', data.image[0])
-      }
+const onSubmit = async (data) => {
+  try {
+    setLoading(true);
 
-      if (id) {
-        await api.put(`/restaurant/menu/items/${id}`, data)
-        toast.success('Menu item updated')
-      } else {
-        await api.post('/restaurant/menu/items', data)
-        toast.success('Menu item created')
+    const formData = new FormData();
+
+    // append normal fields
+    Object.keys(data).forEach((key) => {
+      if (key !== "image" && data[key] !== undefined) {
+        formData.append(key, data[key]);
       }
-      navigate('/restaurant/menu')
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Operation failed')
-    } finally {
-      setLoading(false)
+    });
+
+    // append image file (Cloudinary upload happens in backend)
+    if (data.image && data.image[0]) {
+      formData.append("image", data.image[0]);
     }
+
+    const url = id
+      ? `/restaurant/menu/items/${id}`
+      : `/restaurant/menu/items`;
+
+    const method = id ? "put" : "post";
+
+    await api[method](url, formData);
+
+    toast.success(id ? "Menu item updated" : "Menu item created");
+
+    navigate("/restaurant/menu");
+
+  } catch (error) {
+    console.log(error);
+    toast.error(error.response?.data?.message || "Operation failed");
+  } finally {
+    setLoading(false);
   }
+};
+
+
 
   return (
     <div className="max-w-2xl mx-auto">
