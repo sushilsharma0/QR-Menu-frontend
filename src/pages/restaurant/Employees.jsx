@@ -5,11 +5,15 @@ import toast from 'react-hot-toast'
 import api from '../../services/api'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
+import { useAuth } from '../../hooks/useAuth'
 
 const Employees = () => {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true)
+  const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
+  const restaurantId = user?.id || user?._id || storedUser?.id || storedUser?._id || 'N/A'
 
   useEffect(() => {
     fetchEmployees()
@@ -77,6 +81,9 @@ const Employees = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Employees</h1>
           <p className="text-gray-500 mt-1">Manage your restaurant staff</p>
+          <p className="text-sm text-blue-700 mt-2">
+            Restaurant ID: <span className="font-mono font-semibold">{restaurantId}</span>
+          </p>
         </div>
         <Button onClick={() => navigate('/restaurant/employees/new')}>
           <FiPlus className="mr-2" /> Add Employee
@@ -89,6 +96,7 @@ const Employees = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Restaurant ID</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
@@ -104,6 +112,9 @@ const Employees = () => {
                       <p className="font-medium text-gray-900">{emp.name}</p>
                       <p className="text-sm text-gray-500">{emp.email}</p>
                     </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600 font-mono">
+                    {emp.restaurant || restaurantId}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">{emp.username}</td>
                   <td className="px-6 py-4">{getRoleBadge(emp.role)}</td>
@@ -144,7 +155,7 @@ const Employees = () => {
               ))}
               {employees.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                     No employees found
                   </td>
                 </tr>

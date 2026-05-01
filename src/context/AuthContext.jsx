@@ -46,31 +46,38 @@ export const AuthProvider = ({ children }) => {
       
       console.log('📥 Login response:', response.data)
       
-      const { token: newToken, user: userData } = response.data.data
+      const { token: newToken, user: userData, employee: employeeData } = response.data.data
+      const rawUser = userData || employeeData
+      const authUser = {
+        ...rawUser,
+        scope: role === 'employee' ? 'employee' : role
+      }
       
-      if (!newToken || !userData) {
+      if (!newToken || !rawUser) {
         throw new Error('Invalid response structure from server')
       }
       
       // Store in localStorage
       localStorage.setItem('token', newToken)
-      localStorage.setItem('user', JSON.stringify(userData))
+      localStorage.setItem('user', JSON.stringify(authUser))
       
       // Update state
       setToken(newToken)
-      setUser(userData)
+      setUser(authUser)
       
-      toast.success(`Welcome ${userData.name || email}!`)
+      toast.success(`Welcome ${authUser.name || email}!`)
       
       // Redirect based on role
-      if (userData.role === 'super_admin' || userData.role === 'admin') {
-        navigate('/platform/dashboard')
-      } else if (userData.role === 'restaurant') {
-        navigate('/restaurant/dashboard')
-      } else if (userData.role === 'kitchen') {
+      if (authUser.scope === 'employee' && authUser.role === 'kitchen') {
         navigate('/kitchen/dashboard')
-      } else if (userData.role === 'cashier') {
+      } else if (authUser.scope === 'employee' && authUser.role === 'cashier') {
         navigate('/cashier/dashboard')
+      } else if (authUser.scope === 'employee') {
+        navigate('/employee/orders')
+      } else if (authUser.role === 'super_admin' || authUser.role === 'admin') {
+        navigate('/platform/dashboard')
+      } else if (authUser.role === 'restaurant') {
+        navigate('/restaurant/dashboard')
       } else {
         navigate('/')
       }

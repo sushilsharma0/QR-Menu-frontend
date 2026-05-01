@@ -6,14 +6,20 @@ import api from '../../services/api'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import { useSocket } from '../../hooks/useSocket'
+import { useAuth } from '../../hooks/useAuth'
 
 const OrderDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { socket } = useSocket()
+  const { user } = useAuth()
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
+  const backPath =
+    user?.scope === 'employee' || ['kitchen', 'cashier', 'manager', 'waiter'].includes(user?.role)
+      ? '/employee/orders'
+      : '/restaurant/orders'
 
   useEffect(() => {
     fetchOrder()
@@ -36,7 +42,7 @@ const OrderDetail = () => {
       setOrder(res.data.data)
     } catch (error) {
       toast.error('Failed to fetch order details')
-      navigate('/restaurant/orders')
+      navigate(backPath)
     } finally {
       setLoading(false)
     }
@@ -182,7 +188,7 @@ const OrderDetail = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <button onClick={() => navigate('/restaurant/orders')} className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+        <button onClick={() => navigate(backPath)} className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
           <FiArrowLeft /> Back to Orders
         </button>
         <Button variant="secondary" onClick={printReceipt}>

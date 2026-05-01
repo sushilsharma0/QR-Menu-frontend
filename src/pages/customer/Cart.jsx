@@ -7,11 +7,15 @@ import {
   CreditCard,
   Landmark,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import api from "../../services/api";
 
 const Cart = () => {
   const navigate = useNavigate();
+  const { slug, token } = useParams();
   const [cartItems, setCartItems] = useState([]);
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
   useEffect(() => {
     const item = localStorage.getItem("cart");
@@ -86,6 +90,55 @@ const Cart = () => {
   );
   const serviceCharge = Math.round(subtotal * 0.05);
   const total = subtotal + serviceCharge;
+
+  const handleProceedToCheckout = async () => {
+    if (cartItems.length === 0) {
+      window.alert("Your cart is empty.");
+      return;
+    }
+
+    try {
+      setIsPlacingOrder(true);
+
+      const user = JSON.parse(localStorage.getItem("user")) || {};
+      const payload = {
+        qrToken: token,
+        paymentMethod,
+        customerName: user.name || "Guest",
+        customerPhone: user.phone || "",
+        customerEmail: user.email || "",
+        items: cartItems.map((item) => ({
+          menuItemId: item._id,
+          quantity: item.quantity,
+          note: item.note || "",
+        })),
+      };
+
+      const res = await api.post("/customer/checkout", payload);
+      const order = res?.data?.data;
+
+      localStorage.removeItem("cart");
+      setCartItems([]);
+
+      if (paymentMethod === "cash") {
+        window.alert(
+          `Order ${order?.orderNumber || ""} placed. Please pay at counter.`,
+        );
+      } else {
+        window.alert(
+          `Payment successful. Order ${order?.orderNumber || ""} confirmed.`,
+        );
+      }
+
+      navigate(`/menu/${slug}/${token}`);
+    } catch (err) {
+      const message =
+        err?.response?.data?.message || "Failed to place order. Try again.";
+      window.alert(message);
+    } finally {
+      setIsPlacingOrder(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white pb-40">
@@ -176,36 +229,71 @@ const Cart = () => {
           Select Payment
         </h3>
         <div className="grid grid-cols-2 gap-4">
-          <label className="relative border-2 border-orange-500 bg-orange-50 rounded-2xl p-4 flex flex-col items-center cursor-pointer transition-all">
-            <Landmark size={24} className="text-orange-500 mb-2" />
-            <span className="text-xs font-bold text-orange-600">
+          <label
+            className={`relative border-2 rounded-2xl p-4 flex flex-col items-center cursor-pointer transition-all ${
+              paymentMethod === "cash"
+                ? "border-orange-500 bg-orange-50"
+                : "border-gray-100 hover:border-gray-200"
+            }`}
+          >
+            <Landmark
+              size={24}
+              className={`${paymentMethod === "cash" ? "text-orange-500" : "text-gray-400"} mb-2`}
+            />
+            <span
+              className={`text-xs font-bold ${paymentMethod === "cash" ? "text-orange-600" : "text-gray-500"}`}
+            >
               Pay at Counter
             </span>
             <input
               type="radio"
               name="payment"
               className="hidden"
-              defaultChecked
+              checked={paymentMethod === "cash"}
+              onChange={() => setPaymentMethod("cash")}
             />
-            <div className="absolute top-2 right-2 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
-              <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-            </div>
+            {paymentMethod === "cash" && (
+              <div className="absolute top-2 right-2 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
+                <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+              </div>
+            )}
           </label>
 
-          <label className="relative border-2 border-gray-100 rounded-2xl p-4 flex flex-col items-center cursor-pointer hover:border-gray-200 transition-all">
+          <label
+            className={`relative border-2 rounded-2xl p-4 flex flex-col items-center cursor-pointer transition-all ${
+              paymentMethod === "upi"
+                ? "border-orange-500 bg-orange-50"
+                : "border-gray-100 hover:border-gray-200"
+            }`}
+          >
             <CreditCard size={24} className="text-gray-400 mb-2" />
             <span className="text-xs font-bold text-gray-500">
               Digital Payment
             </span>
-            <input type="radio" name="payment" className="hidden" />
+            <input
+              type="radio"
+              name="payment"
+              className="hidden"
+              checked={paymentMethod === "upi"}
+              onChange={() => setPaymentMethod("upi")}
+            />
+            {paymentMethod === "upi" && (
+              <div className="absolute top-2 right-2 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
+                <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+              </div>
+            )}
           </label>
         </div>
       </div>
 
       {/* Checkout Button */}
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-50 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
-        <button className="w-full bg-orange-500 hover:bg-orange-600 py-4 rounded-2xl text-white font-bold text-lg shadow-xl shadow-orange-200 transition-all active:scale-[0.98]">
-          Proceed to Checkout
+        <button
+          onClick={handleProceedToCheckout}
+          disabled={isPlacingOrder || cartItems.length === 0}
+          className="w-full bg-orange-500 hover:bg-orange-600 py-4 rounded-2xl text-white font-bold text-lg shadow-xl shadow-orange-200 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {isPlacingOrder ? "Processing..." : "Proceed to Checkout"}
         </button>
       </div>
     </div>

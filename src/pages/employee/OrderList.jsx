@@ -36,7 +36,7 @@ const OrderList = () => {
       setLoading(true)
       const params = {}
       if (filter !== 'all') params.status = filter
-      const res = await api.get('/restaurant/orders', { params })
+      const res = await api.get('/restaurant/customer-orders', { params })
       setOrders(res.data.data.orders)
     } catch (error) {
       toast.error('Failed to fetch orders')
@@ -57,7 +57,7 @@ const OrderList = () => {
 
   const updateOrderStatus = async (orderId, status) => {
     try {
-      await api.patch(`/restaurant/orders/${orderId}/status`, { status })
+      await api.patch(`/restaurant/customer-orders/${orderId}/status`, { status })
       toast.success(`Order status updated to ${status}`)
       fetchOrders()
     } catch (error) {
@@ -231,7 +231,7 @@ const OrderList = () => {
               {/* Total Amount */}
               <div className="border-t pt-3 flex justify-between items-center">
                 <span className="text-gray-600">Total Amount</span>
-                <span className="text-xl font-bold text-primary-600">${order.totalAmount}</span>
+                <span className="text-xl font-bold text-primary-600">${order.grandTotal ?? order.totalAmount}</span>
               </div>
 
               {/* Actions */}
@@ -240,7 +240,7 @@ const OrderList = () => {
                   size="sm"
                   variant="outline"
                   className="flex-1"
-                  onClick={() => navigate(`/restaurant/orders/${order._id}`)}
+                  onClick={() => navigate(`/employee/orders/${order._id}`)}
                 >
                   <FiEye className="mr-1" /> View Details
                 </Button>

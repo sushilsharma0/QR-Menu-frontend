@@ -23,7 +23,7 @@ const CashierDashboard = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true)
-      const res = await api.get('/restaurant/orders', { params: { status: 'ready,served' } })
+      const res = await api.get('/restaurant/customer-orders', { params: { status: 'ready,served' } })
       setOrders(res.data.data.orders)
     } catch (error) {
       toast.error('Failed to fetch orders')
@@ -32,9 +32,9 @@ const CashierDashboard = () => {
     }
   }
 
-  const processPayment = async (orderId, paymentMethod) => {
+  const processPayment = async (customerOrderId, paymentMethod, amount) => {
     try {
-      await api.post('/restaurant/cashier/pay', { orderId, paymentMethod })
+      await api.post('/restaurant/cashier/pay', { customerOrderId, paymentMethod, amount })
       toast.success('Payment processed successfully')
       setPaymentModal(false)
       setSelectedOrder(null)
@@ -87,7 +87,7 @@ const CashierDashboard = () => {
                     <h3 className="font-bold text-gray-900">#{order.orderNumber}</h3>
                     <p className="text-sm text-gray-500">Table: {order.table?.tableNumber}</p>
                   </div>
-                  <span className="text-lg font-bold text-green-600">${order.totalAmount}</span>
+                  <span className="text-lg font-bold text-green-600">${order.grandTotal ?? order.totalAmount}</span>
                 </div>
                 <div className="flex gap-2 mt-3">
                   <Button
@@ -100,7 +100,7 @@ const CashierDashboard = () => {
                   >
                     <FiDollarSign className="mr-1" /> Process Payment
                   </Button>
-                  <Button size="sm" variant="secondary" onClick={() => navigate(`/restaurant/orders/${order._id}`)}>
+                  <Button size="sm" variant="secondary" onClick={() => navigate(`/employee/orders/${order._id}`)}>
                     View Details
                   </Button>
                 </div>
@@ -126,7 +126,7 @@ const CashierDashboard = () => {
                     {new Date(order.updatedAt).toLocaleTimeString()}
                   </span>
                 </div>
-                <Button size="sm" variant="ghost" className="mt-2" onClick={() => navigate(`/restaurant/orders/${order._id}`)}>
+                <Button size="sm" variant="ghost" className="mt-2" onClick={() => navigate(`/employee/orders/${order._id}`)}>
                   View Receipt
                 </Button>
               </div>
@@ -145,13 +145,13 @@ const CashierDashboard = () => {
             <>
               <div className="mb-4">
                 <p className="text-gray-600">Order #{selectedOrder.orderNumber}</p>
-                <p className="text-2xl font-bold text-primary-600">${selectedOrder.totalAmount}</p>
+                <p className="text-2xl font-bold text-primary-600">${selectedOrder.grandTotal ?? selectedOrder.totalAmount}</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Button onClick={() => processPayment(selectedOrder._id, 'cash')}>Cash</Button>
-                <Button onClick={() => processPayment(selectedOrder._id, 'card')}>Card</Button>
-                <Button onClick={() => processPayment(selectedOrder._id, 'online')}>Online</Button>
-                <Button onClick={() => processPayment(selectedOrder._id, 'upi')}>UPI</Button>
+                <Button onClick={() => processPayment(selectedOrder._id, 'cash', selectedOrder.grandTotal ?? selectedOrder.totalAmount)}>Cash</Button>
+                <Button onClick={() => processPayment(selectedOrder._id, 'card', selectedOrder.grandTotal ?? selectedOrder.totalAmount)}>Card</Button>
+                <Button onClick={() => processPayment(selectedOrder._id, 'online', selectedOrder.grandTotal ?? selectedOrder.totalAmount)}>Online</Button>
+                <Button onClick={() => processPayment(selectedOrder._id, 'upi', selectedOrder.grandTotal ?? selectedOrder.totalAmount)}>UPI</Button>
               </div>
             </>
           )}

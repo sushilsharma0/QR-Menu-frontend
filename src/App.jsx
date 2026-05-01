@@ -57,6 +57,9 @@ import EmployeeLayout from "./components/employee/EmployeeLayout";
 
 function App() {
   const { user, isLoading } = useAuth();
+  const isEmployeeUser =
+    user?.scope === "employee" ||
+    ["kitchen", "cashier", "manager", "waiter"].includes(user?.role);
 
   if (isLoading) {
     return (
@@ -158,6 +161,7 @@ function App() {
         <Route path="/kitchen/dashboard" element={<KitchenDashboard />} />
         <Route path="/cashier/dashboard" element={<CashierDashboard />} />
         <Route path="/employee/orders" element={<OrderList />} />
+        <Route path="/employee/orders/:id" element={<RestaurantOrderDetail />} />
       </Route>
 
       {/* Customer Routes - Public */}
@@ -179,14 +183,16 @@ function App() {
         element={
           !user ? (
             <Navigate to="/login" />
+          ) : isEmployeeUser && user.role === "kitchen" ? (
+            <Navigate to="/kitchen/dashboard" />
+          ) : isEmployeeUser && user.role === "cashier" ? (
+            <Navigate to="/cashier/dashboard" />
+          ) : isEmployeeUser ? (
+            <Navigate to="/employee/orders" />
           ) : user.role === "super_admin" || user.role === "admin" ? (
             <Navigate to="/platform/dashboard" />
           ) : user.role === "restaurant" ? (
             <Navigate to="/restaurant/dashboard" />
-          ) : user.role === "kitchen" ? (
-            <Navigate to="/kitchen/dashboard" />
-          ) : user.role === "cashier" ? (
-            <Navigate to="/cashier/dashboard" />
           ) : (
             <Navigate to="/login" />
           )

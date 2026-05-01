@@ -38,7 +38,10 @@ const Login = () => {
           data.restaurantId,
         );
       }
-    } finally {
+    }catch(error) {
+console.log(error);
+
+    }finally {
       setLoading(false);
     }
   };

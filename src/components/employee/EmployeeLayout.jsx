@@ -1,7 +1,7 @@
 import React from 'react'
 import { Outlet, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import { FiLogOut, FiUser, FiBell, FiHome, FiShoppingCart, FiDollarSign } from 'react-icons/fi'
+import { FiLogOut, FiUser, FiBell, FiHome, FiShoppingCart, FiClock, FiDollarSign } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 
 const EmployeeLayout = () => {
@@ -27,7 +27,7 @@ const EmployeeLayout = () => {
   }
 
   const navItems = [
-    { path: '/kitchen/dashboard', label: 'Orders', icon: FiShoppingCart, role: 'kitchen' },
+    { path: '/employee/orders', label: 'Order History', icon: FiClock, role: 'kitchen' },
     { path: '/cashier/dashboard', label: 'Orders', icon: FiDollarSign, role: 'cashier' },
   ]
 
@@ -84,7 +84,7 @@ const EmployeeLayout = () => {
       {/* Navigation Tabs */}
       {currentNavItems.length > 0 && (
         <div className="bg-white border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto px-4  sm:px-6 lg:px-8">
             <nav className="flex gap-8">
               {currentNavItems.map((item) => (
                 <Link
@@ -113,7 +113,7 @@ const EmployeeLayout = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t mt-12">
+      <footer className="bg-white sticky bottom-0 w-full border-t mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <p className="text-center text-sm text-gray-500">
             &copy; {new Date().getFullYear()} QR Menu SaaS. All rights reserved.
