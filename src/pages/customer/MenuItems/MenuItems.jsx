@@ -15,128 +15,7 @@ import ViewCartBtn from "../../../components/customer/ViewCartBtn";
 import FilterSidebar from "../../../components/customer/menuItem/FilterSidebar";
 import api from "../../../services/api";
 
-// const foodItems = [
-//   {
-//     id: 1,
-//     name: "Chicken Wings",
-//     desc: "Crispy chicken wings tossed in spicy BBQ sauce",
-//     price: 350,
-//     img: "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?auto=format&fit=crop&q=80&w=300",
-//     tag: "Non-Veg",
-//   },
-//   {
-//     id: 2,
-//     name: "Garlic Bread",
-//     desc: "Toasted bread with garlic butter and herbs",
-//     price: 250,
-//     img: "https://delightfuladventures.com/wp-content/uploads/2023/09/vegan-garlic-bread-recipe.jpg",
-//     tag: "Veg",
-//   },
-//   {
-//     id: 3,
-//     name: "French Fries",
-//     desc: "Crispy golden fries served with ketchup",
-//     price: 220,
-//     img: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&q=80&w=300",
-//     tag: "Veg",
-//   },
-//   {
-//     id: 4,
-//     name: "Veg Spring Rolls",
-//     desc: "Crispy rolls stuffed with mixed vegetables",
-//     price: 280,
-//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-//     tag: "Veg",
-//   },
-//   {
-//     id: 5,
-//     name: "Veg Spring Rolls",
-//     desc: "Crispy rolls stuffed with mixed vegetables",
-//     price: 280,
-//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-//     tag: "Veg",
-//   },
-//   {
-//     id: 6,
-//     name: "Veg Spring Rolls",
-//     desc: "Crispy rolls stuffed with mixed vegetables",
-//     price: 280,
-//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-//     tag: "Veg",
-//   },
-//   {
-//     id: 7,
-//     name: "Veg Spring Rolls",
-//     desc: "Crispy rolls stuffed with mixed vegetables",
-//     price: 280,
-//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-//     tag: "Veg",
-//   },
-//   {
-//     id: 8,
-//     name: "Veg Spring Rolls",
-//     desc: "Crispy rolls stuffed with mixed vegetables",
-//     price: 280,
-//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-//     tag: "Veg",
-//   },
-//   {
-//     id: 9,
-//     name: "Veg Spring Rolls",
-//     desc: "Crispy rolls stuffed with mixed vegetables",
-//     price: 280,
-//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-//     tag: "Veg",
-//   },
-//   {
-//     id: 10,
-//     name: "Veg Spring Rolls",
-//     desc: "Crispy rolls stuffed with mixed vegetables",
-//     price: 280,
-//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-//     tag: "Veg",
-//   },
-//   {
-//     id: 11,
-//     name: "Buff Momo",
-//     desc: "Crispy rolls stuffed with mixed vegetables",
-//     price: 280,
-//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-//     tag: "Non-Veg",
-//   },
-//   {
-//     id: 12,
-//     name: "Veg Spring Rolls",
-//     desc: "Crispy rolls stuffed with mixed vegetables",
-//     price: 280,
-//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-//     tag: "Veg",
-//   },
-//   {
-//     id: 13,
-//     name: "Chicken Spring Rolls",
-//     desc: "Crispy rolls stuffed with mixed vegetables",
-//     price: 280,
-//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-//     tag: "Non-Veg",
-//   },
-//   {
-//     id: 14,
-//     name: "Veg Spring Rolls",
-//     desc: "Crispy rolls stuffed with mixed vegetables",
-//     price: 280,
-//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-//     tag: "Veg",
-//   },
-//   {
-//     id: 15,
-//     name: "Mutton Tas",
-//     desc: "Crispy rolls stuffed with mixed vegetables",
-//     price: 280,
-//     img: "https://spicecravings.com/wp-content/uploads/2020/12/Paneer-kathi-Roll-Featured-1-500x375.jpg",
-//     tag: "Non-Veg",
-//   },
-// ];
+
 
 const MenuItems = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -144,6 +23,8 @@ const MenuItems = () => {
   const [foodType, setFoodType] = useState("all"); // 'all', 'veg', or 'non-veg'
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [foodItems, setFoodItems] = useState([]);
+  const [showAddedToast, setShowAddedToast] = useState(false);
+  const [addedItemName, setAddedItemName] = useState("");
   const [activeFilters, setActiveFilters] = useState({
     sort: "popular",
     priceRange: "all",
@@ -163,7 +44,7 @@ const MenuItems = () => {
     try {
       // Call the by-category endpoint with slug as query param
       const res = await api.get(`/restaurant/menu/items/by-category/${categoryName}?restaurantSlug=${slug}`);
-      console.log(res.data);
+    
 
       // Handle the response - items are in res.data.data.items
       const data = res.data.data;
@@ -235,6 +116,59 @@ const MenuItems = () => {
   const handleSearchToggle = () => {
     setShowSearch((prev) => !prev);
     setSearchQuery("");
+  };
+
+  const handleAddToCart = async (item) => {
+    try {
+      const restaurantRes = await api.get(`/restaurant/menu/public/${slug}`);
+      const restaurant = restaurantRes.data.data;
+
+      const cartItem = {
+        _id: item._id,
+        name: item.name,
+        price: item.price,
+        image: item.image,
+        quantity: 1,
+        restaurantId: restaurant._id,
+        addons: [],
+      };
+
+      let cart = JSON.parse(localStorage.getItem("cart")) || {
+        items: [],
+        total: 0,
+        restaurantId: null,
+      };
+
+      if (cart.restaurantId && cart.restaurantId !== restaurant._id) {
+        if (
+          !window.confirm(
+            "Adding items from a different restaurant will clear your current cart. Continue?",
+          )
+        ) {
+          return;
+        }
+        cart = { items: [], total: 0, restaurantId: null };
+      }
+
+      const existingItemIndex = cart.items.findIndex((i) => i._id === item._id);
+
+      if (existingItemIndex > -1) {
+        cart.items[existingItemIndex].quantity += 1;
+      } else {
+        cart.items.push(cartItem);
+      }
+
+      cart.total = cart.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+      cart.restaurantId = restaurant._id;
+
+      localStorage.setItem("cart", JSON.stringify(cart));
+
+      setAddedItemName(item.name);
+      setShowAddedToast(true);
+      setTimeout(() => setShowAddedToast(false), 2000);
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+    }
   };
 
   return (
@@ -419,7 +353,7 @@ const MenuItems = () => {
           sortedItems.map((item) => (
             <div key={item._id} className="flex gap-4 group bg-white rounded-2xl p-3 shadow-sm hover:shadow-md transition-shadow">
               {/* Item image with veg/non-veg indicator */}
-              <Link to="/item" className="relative w-24 h-24 shrink-0">
+              <Link to={`/item-detail/${JSON.parse(localStorage.getItem("user")).slug}/${token}/${item._id}`} className="relative w-24 h-24 shrink-0">
                 <img
                   src={item.image}
                   alt={item.name}
@@ -441,7 +375,7 @@ const MenuItems = () => {
 
               {/* Item details */}
               <div className="flex-1 flex flex-col justify-between py-1">
-                <Link to="/item">
+                <Link to={`/item-detail/${JSON.parse(localStorage.getItem("user")).slug}/${token}/${item._id}`}>
                   <h3 className="font-bold text-gray-800 text-base">
                     {item.name}
                   </h3>
@@ -453,7 +387,10 @@ const MenuItems = () => {
                   <span className="font-bold text-gray-900">
                     Rs. {item.price}
                   </span>
-                  <button className="bg-green-500 hover:bg-green-600 text-white p-1.5 rounded-lg shadow-md transition-transform active:scale-90">
+                  <button
+                    onClick={() => handleAddToCart(item)}
+                    className="bg-green-500 hover:bg-green-600 text-white p-1.5 rounded-lg shadow-md transition-transform active:scale-90"
+                  >
                     <Plus size={18} strokeWidth={3} />
                   </button>
                 </div>
@@ -475,6 +412,22 @@ const MenuItems = () => {
         onApply={(filters) => setActiveFilters(filters)}
         currentFilters={activeFilters}
       />
+
+      <FramerMotion.AnimatePresence>
+        {showAddedToast && (
+          <FramerMotion.motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 50, scale: 0.9 }}
+            className="fixed bottom-36 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 z-50"
+          >
+            <ShoppingBag size={16} />
+            <span className="font-semibold text-sm">
+              {addedItemName || "Item"} added to cart
+            </span>
+          </FramerMotion.motion.div>
+        )}
+      </FramerMotion.AnimatePresence>
     </div>
   );
 };

@@ -67,16 +67,13 @@ export default function Home() {
       }
     }
 
-  // if (isLoading) {
-  //   return <Loader />;
-  // }
 
-// let userId = localStorage.getItem("guest_id");
+let userId = localStorage.getItem("customer_guest_id");
 
-// if (!userId) {
-//   userId = "guest_" + Date.now() + Math.random().toString(36).substr(2, 9);
-//   localStorage.setItem("guest_id", userId);
-// }
+if (!userId) {
+  userId = "guest_" + Date.now() + Math.random().toString(36).substr(2, 9);
+  localStorage.setItem("customer_guest_id", userId);
+}
 
 
 

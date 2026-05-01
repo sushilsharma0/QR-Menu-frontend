@@ -12,33 +12,50 @@ import {
   ShoppingCart,
   Check,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-
+import { useNavigate, useParams } from "react-router-dom";
+import api from "../../../services/api";
 
 const ItemDetails = () => {
   const navigate = useNavigate();
-
+  const { slug, token, id } = useParams();
   const [quantity, setQuantity] = useState(1);
   const [selectedAddons, setSelectedAddons] = useState([]);
 
-  
   const [isFavorite, setIsFavorite] = useState(false);
   const [showAddedToast, setShowAddedToast] = useState(false);
 
-  const item = {
-    name: "Creamy Alfredo Pasta",
-    price: 450,
-    originalPrice: 499,
-    desc: "Classic pasta in white cream sauce with parmesan cheese and herbs. Made with fresh ingredients and authentic Italian recipe passed down through generations.",
-    tag: "Veg",
-    img: "https://images.immediate.co.uk/production/volatile/sites/30/2022/08/Alfredo-dc662e3.jpg",
-    rating: 4.5,
-    reviews: 128,
-    prepTime: "20-25 min",
-    calories: 420,
-    isBestseller: true,
-  };
+  // const item = {
+  //   name: "Creamy Alfredo Pasta",
+  //   price: 450,
+  //   originalPrice: 499,
+  //   desc: "Classic pasta in white cream sauce with parmesan cheese and herbs. Made with fresh ingredients and authentic Italian recipe passed down through generations.",
+  //   tag: "Veg",
+  //   img: "https://images.immediate.co.uk/production/volatile/sites/30/2022/08/Alfredo-dc662e3.jpg",
+  //   rating: 4.5,
+  //   reviews: 128,
+  //   prepTime: "20-25 min",
+  //   calories: 420,
+  //   isBestseller: true,
+  // };
 
+  const [item, setItem] = useState({});
+
+  useEffect(() => {
+    fetchItemDetails();
+  }, [id]);
+
+  const fetchItemDetails = async () => {
+    try {
+      // Pass slug as query param for public access
+      const res = await api.get(
+        `/restaurant/menu/items/${id}?restaurantSlug=${slug}`,
+      );
+      setItem(res.data.data);
+      console.log(res.data.data);
+    } catch (error) {
+      console.error("Error fetching item details:", error);
+    }
+  };
   const addons = [
     {
       id: "a1",
@@ -81,11 +98,71 @@ const ItemDetails = () => {
     return (item.price + addonsTotal) * quantity;
   };
 
-  const handleAddToCart = () => {
-    setShowAddedToast(true);
-    setTimeout(() => setShowAddedToast(false), 2000);
-  };
+  // const handleAddToCart = () => {
+  //   setShowAddedToast(true);
+  //   setTimeout(() => setShowAddedToast(false), 2000);
+  // };
 
+
+  const handleAddToCart = async () => {
+    try {
+      // Get restaurant by slug to get the restaurant ID
+      const restaurantRes = await api.get(`/restaurant/menu/public/${slug}`);
+      const restaurant = restaurantRes.data.data;
+      
+      // Prepare the cart item with all necessary details
+      const cartItem = {
+        _id: item._id,
+        name: item.name,
+        price: item.price,
+        image: item.image,
+        quantity: quantity,
+        restaurantId: restaurant._id,
+        addons: addons.filter(a => selectedAddons.includes(a.id)).map(addon => ({
+          name: addon.name,
+          price: addon.price
+        })),
+        totalPrice: calculateTotal()
+      };
+
+      // Get existing cart from localStorage
+      let cart = JSON.parse(localStorage.getItem('cart')) || { items: [], total: 0, restaurantId: null };
+
+      // Check if adding from a different restaurant
+      if (cart.restaurantId && cart.restaurantId !== restaurant._id) {
+        if (!window.confirm('Adding items from a different restaurant will clear your current cart. Continue?')) {
+          return;
+        }
+        cart = { items: [], total: 0, restaurantId: null };
+      }
+
+      // Check if item already exists in cart
+      const existingItemIndex = cart.items.findIndex(i => i._id === item._id);
+      
+      if (existingItemIndex > -1) {
+        // Update quantity of existing item
+        cart.items[existingItemIndex].quantity += quantity;
+      } else {
+        // Add new item to cart
+        cart.items.push(cartItem);
+      }
+
+      // Recalculate total
+      cart.total = cart.items.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+      cart.restaurantId = restaurant._id;
+
+      // Save to localStorage
+      localStorage.setItem('cart', JSON.stringify(cart));
+
+      // Show success toast
+      setShowAddedToast(true);
+      setTimeout(() => setShowAddedToast(false), 2000);
+      
+      console.log('Added to cart:', cartItem);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+    }
+  };
 
 
   return (
@@ -93,7 +170,7 @@ const ItemDetails = () => {
       {/* Hero Header with Gradient Overlay */}
       <div className="relative h-[45vh] w-full">
         <img
-          src={item.img}
+          src={item.image}
           alt={item.name}
           className="w-full h-full object-cover"
         />
@@ -161,7 +238,9 @@ const ItemDetails = () => {
             </div>
           </div>
           <div className="text-right">
-            <p className="text-3xl font-bold text-orange-600">Rs. {item.price}</p>
+            <p className="text-3xl font-bold text-orange-600">
+              Rs. {item.price}
+            </p>
             {item.originalPrice && (
               <p className="text-sm text-gray-400 line-through">
                 Rs. {item.originalPrice}
@@ -190,7 +269,7 @@ const ItemDetails = () => {
         <div className="mt-6">
           <h3 className="font-bold text-gray-800">About this item</h3>
           <p className="text-gray-500 text-sm mt-2 leading-relaxed">
-            {item.desc}
+            {item.description}
           </p>
         </div>
 
@@ -351,15 +430,14 @@ const ItemDetails = () => {
 
       {/* Sticky Bottom Action */}
       <FramerMotion.motion.div
-        className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100"
-        initial={{ y: 100 }}
+        className="fixed bottom-0 left-0 right-0 p-4 pb-6 bg-white border-t border-gray-100 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
+        initial={{ y: 0 }}
         animate={{ y: 0 }}
-        transition={{ delay: 0.2 }}
       >
         <FramerMotion.motion.button
           whileTap={{ scale: 0.98 }}
           onClick={handleAddToCart}
-          className="w-full bg-linear-to-r from-orange-500 to-orange-600 py-4 rounded-2xl flex items-center justify-between px-6 shadow-lg shadow-orange-200"
+          className="w-full bg-gradient-to-r from-orange-500 to-orange-600 py-4 rounded-2xl flex items-center justify-between px-6 shadow-lg shadow-orange-200"
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">

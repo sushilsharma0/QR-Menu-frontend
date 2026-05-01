@@ -23,7 +23,7 @@ const Tables = () => {
     try {
       setLoading(true)
       const res = await api.get('/restaurant/tables')
-      console.log('Tables response:', res.data)
+      // console.log('Tables response:', res.data)
       setTables(res.data.data || [])
     } catch (error) {
       console.error('Failed to fetch tables:', error)

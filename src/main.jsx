@@ -19,7 +19,7 @@ const queryClient = new QueryClient({
 })
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+  
     <BrowserRouter
       future={{
         v7_startTransition: true,
@@ -37,5 +37,5 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         </AuthProvider>
       </QueryClientProvider>
     </BrowserRouter>
-  </React.StrictMode>,
+  
 )

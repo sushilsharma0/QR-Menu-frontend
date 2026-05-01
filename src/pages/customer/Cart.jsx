@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Trash2,
@@ -11,41 +11,77 @@ import { useNavigate } from "react-router-dom";
 
 const Cart = () => {
   const navigate = useNavigate();
+  const [cartItems, setCartItems] = useState([]);
 
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      name: "Creamy Alfredo Pasta",
-      price: 450,
-      qty: 1,
-      img: "https://images.unsplash.com/photo-1645112481355-03657396655c?auto=format&fit=crop&q=80&w=200",
-    },
-    {
-      id: 2,
-      name: "Chicken Wings",
-      price: 350,
-      qty: 1,
-      img: "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?auto=format&fit=crop&q=80&w=200",
-    },
-    {
-      id: 3,
-      name: "French Fries",
-      price: 220,
-      qty: 1,
-      img: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&q=80&w=200",
-    },
-  ]);
+  useEffect(() => {
+    const item = localStorage.getItem("cart");
+    console.log("Cart item from localStorage:", item);
+    if (item) {
+      try {
+        const parsedItems = JSON.parse(item);
+        setCartItems(parsedItems.items || []);
+      } catch (error) {
+        console.error("Error parsing cart items from localStorage:", error);
+      }
+    }
+  }, []);
 
-  const updateQty = (id, delta) => {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, qty: Math.max(1, item.qty + delta) } : item,
+  useEffect(() => {
+    const existing = JSON.parse(localStorage.getItem("cart")) || {};
+
+    const updatedCart = {
+      ...existing,
+      items: cartItems,
+      total: cartItems.reduce(
+        (acc, item) => acc + item.price * item.quantity,
+        0,
       ),
+    };
+
+    localStorage.setItem("cart", JSON.stringify(updatedCart));
+  }, [cartItems]);
+
+  // Increase quantity
+  const increaseQty = (id) => {
+    setCartItems(prevItems =>
+      prevItems.map(item =>
+        item._id === id
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      )
     );
   };
 
+  // Decrease quantity
+  const decreaseQty = (id) => {
+    setCartItems(prevItems =>
+      prevItems.map(item => {
+        if (item._id === id) {
+          if (item.quantity > 1) {
+            return { ...item, quantity: item.quantity - 1 };
+          }
+          return null;
+        }
+        return item;
+      }).filter(item => item !== null)
+    );
+  };
+
+  // Remove item from cart
+  const removeItem = (id) => {
+    setCartItems(prevItems => prevItems.filter(item => item._id !== id));
+  };
+
+  // Clear entire cart
+  const clearCart = () => {
+    if (window.confirm("Are you sure you want to clear your cart?")) {
+      setCartItems([]);
+      localStorage.removeItem("cart");
+    }
+  };
+
   const subtotal = cartItems.reduce(
-    (acc, item) => acc + item.price * item.qty,
+    (acc, item) => acc + item.price * item.quantity,
     0,
   );
   const serviceCharge = Math.round(subtotal * 0.05);
@@ -62,7 +98,10 @@ const Cart = () => {
           <ArrowLeft size={20} className="text-gray-700" />
         </button>
         <h1 className="text-lg font-bold text-gray-800">Your Cart</h1>
-        <button className="p-2 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors">
+        <button 
+          className="p-2 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors"
+          onClick={clearCart}
+        >
           <Trash2 size={20} />
         </button>
       </header>
@@ -70,9 +109,9 @@ const Cart = () => {
       {/* Cart Items */}
       <div className="px-6 py-4 space-y-6">
         {cartItems.map((item) => (
-          <div key={item.id} className="flex items-center gap-4">
+          <div key={item._id} className="flex items-center gap-4">
             <img
-              src={item.img}
+              src={item.image}
               alt={item.name}
               className="w-20 h-20 object-cover rounded-2xl"
             />
@@ -86,21 +125,28 @@ const Cart = () => {
 
             <div className="flex items-center gap-3 bg-gray-50 p-1 rounded-xl border border-gray-100">
               <button
-                onClick={() => updateQty(item.id, -1)}
+                onClick={() => decreaseQty(item._id)}
                 className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-gray-400 active:scale-90"
               >
                 <Minus size={14} />
               </button>
               <span className="text-sm font-bold w-4 text-center">
-                {item.qty}
+                {item.quantity}
               </span>
               <button
-                onClick={() => updateQty(item.id, 1)}
+                onClick={() => increaseQty(item._id)}
                 className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-gray-700 active:scale-90"
               >
                 <Plus size={14} />
               </button>
             </div>
+            
+            <button
+              onClick={() => removeItem(item._id)}
+              className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              <Trash2 size={18} />
+            </button>
           </div>
         ))}
       </div>
