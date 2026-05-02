@@ -10,6 +10,7 @@ import {
   FiCreditCard,
   FiSettings,
   FiUser,
+  FiTag,
 } from 'react-icons/fi'
 
 const menuItems = [
@@ -21,6 +22,7 @@ const menuItems = [
   { path: '/restaurant/kyc', icon: FiFileText, label: 'KYC' },
   { path: '/restaurant/subscription', icon: FiCreditCard, label: 'Subscription' },
   { path: '/restaurant/transactions', icon: FiCreditCard, label: 'Transactions' },
+  { path: '/restaurant/promotions', icon: FiTag, label: 'Promotions' },
   { path: '/restaurant/profile', icon: FiUser, label: 'Profile' },
   { path: '/restaurant/settings', icon: FiSettings, label: 'Settings' },
 ]

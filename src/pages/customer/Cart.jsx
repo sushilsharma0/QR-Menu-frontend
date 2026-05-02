@@ -18,6 +18,10 @@ const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [appliedPromo, setAppliedPromo] = useState(null);
+  const [applyingPromo, setApplyingPromo] = useState(false);
   const { toasts, removeToast, success, error, warning } = useToast();
 
   useEffect(() => {
@@ -92,7 +96,40 @@ const Cart = () => {
     0,
   );
   const serviceCharge = Math.round(subtotal * 0.05);
-  const total = subtotal + serviceCharge;
+  const total = Math.max(0, subtotal + serviceCharge - promoDiscount);
+
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) {
+      warning("Please enter a promo code.");
+      return;
+    }
+    if (cartItems.length === 0) {
+      warning("Your cart is empty.");
+      return;
+    }
+
+    try {
+      setApplyingPromo(true);
+      const res = await api.post("/customer/promo/validate", {
+        qrToken: token,
+        code: promoCode.trim(),
+        items: cartItems.map((item) => ({
+          menuItemId: item._id,
+          quantity: item.quantity,
+        })),
+      });
+      const promo = res?.data?.data;
+      setAppliedPromo(promo);
+      setPromoDiscount(Number(promo?.discountAmount || 0));
+      success(`Promo applied: ${promo?.code}`);
+    } catch (err) {
+      setAppliedPromo(null);
+      setPromoDiscount(0);
+      error(err?.response?.data?.message || "Invalid promo code");
+    } finally {
+      setApplyingPromo(false);
+    }
+  };
 
   const handleProceedToCheckout = async () => {
     if (cartItems.length === 0) {
@@ -110,6 +147,7 @@ const Cart = () => {
         customerName: user.name || "Guest",
         customerPhone: user.phone || "",
         customerEmail: user.email || "",
+        promoCode: appliedPromo?.code || "",
         items: cartItems.map((item) => ({
           menuItemId: item._id,
           quantity: item.quantity,
@@ -122,6 +160,9 @@ const Cart = () => {
 
       localStorage.removeItem("cart");
       setCartItems([]);
+      setAppliedPromo(null);
+      setPromoDiscount(0);
+      setPromoCode("");
 
       if (paymentMethod === "cash") {
         success(
@@ -211,6 +252,27 @@ const Cart = () => {
 
       {/* Bill Details */}
       <div className="px-6 mt-8 space-y-3">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={promoCode}
+            onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+            placeholder="Enter promo code"
+            className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm"
+          />
+          <button
+            onClick={handleApplyPromo}
+            disabled={applyingPromo}
+            className="px-4 py-2 bg-gray-900 text-white rounded-xl text-sm disabled:opacity-60"
+          >
+            {applyingPromo ? "Applying..." : "Apply"}
+          </button>
+        </div>
+        {appliedPromo && (
+          <div className="text-xs text-green-600 font-medium">
+            Applied {appliedPromo.code}: -Rs. {promoDiscount}
+          </div>
+        )}
         <div className="flex justify-between text-sm">
           <span className="text-gray-400">Subtotal</span>
           <span className="text-gray-800 font-medium">Rs. {subtotal}</span>
@@ -218,6 +280,10 @@ const Cart = () => {
         <div className="flex justify-between text-sm">
           <span className="text-gray-400">Service Charge (5%)</span>
           <span className="text-gray-800 font-medium">Rs. {serviceCharge}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-400">Promo Discount</span>
+          <span className="text-green-600 font-medium">- Rs. {promoDiscount}</span>
         </div>
         <div className="h-px bg-dashed border-t border-dashed border-gray-200 my-2"></div>
         <div className="flex justify-between items-center">

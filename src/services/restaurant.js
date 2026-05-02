@@ -294,6 +294,27 @@ export const deleteInventoryItem = async (id) => {
   return response.data
 }
 
+// Promotions
+export const getPromotions = async () => {
+  const response = await api.get('/restaurant/promotions')
+  return response.data
+}
+
+export const createPromotion = async (data) => {
+  const response = await api.post('/restaurant/promotions', data)
+  return response.data
+}
+
+export const updatePromotion = async (id, data) => {
+  const response = await api.put(`/restaurant/promotions/${id}`, data)
+  return response.data
+}
+
+export const deletePromotion = async (id) => {
+  const response = await api.delete(`/restaurant/promotions/${id}`)
+  return response.data
+}
+
 export default {
   getCategories,
   createCategory,
@@ -351,4 +372,8 @@ export default {
   addInventoryItem,
   updateInventoryItem,
   deleteInventoryItem,
+  getPromotions,
+  createPromotion,
+  updatePromotion,
+  deletePromotion,
 }

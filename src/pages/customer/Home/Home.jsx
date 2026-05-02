@@ -29,11 +29,12 @@ export default function Home() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showWaiters, setShowWaiters] = useState(false);
   const [showOffers, setShowOffers] = useState(false);
+  const [promoBanners, setPromoBanners] = useState([]);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [tableNumber, setTableNumber] = useState("");
   const { token } = useParams();
-  const {restaurantSlug} = useParams();
+  const { slug: restaurantSlug } = useParams();
   
   
 
@@ -49,6 +50,7 @@ export default function Home() {
 
   useEffect(()=>{
     fetchTables();
+    fetchPromoBanners();
   },[])
 
     const fetchTables = async () => {
@@ -66,6 +68,15 @@ export default function Home() {
         setLoading(false)
       }
     }
+
+  const fetchPromoBanners = async () => {
+    try {
+      const res = await api.get(`/customer/promotions/${restaurantSlug}/banners`);
+      setPromoBanners(res?.data?.data || []);
+    } catch (err) {
+      setPromoBanners([]);
+    }
+  };
 
 
 let userId = localStorage.getItem("customer_guest_id");
@@ -172,6 +183,23 @@ if (!userId) {
       </div>
 
       {/* Branding Footer */}
+      {promoBanners.length > 0 && (
+        <div className="w-[90%] max-w-md mt-8 space-y-3">
+          {promoBanners.map((promo) => (
+            <div
+              key={promo._id}
+              className="rounded-2xl p-4 text-white shadow"
+              style={{ backgroundColor: promo.bannerColor || "#f97316" }}
+            >
+              <p className="font-bold text-sm">{promo.bannerText || promo.name}</p>
+              <p className="text-xs opacity-90 mt-1">
+                Code: {promo.code} | {promo.discountType === "percent" ? `${promo.discountValue}% OFF` : `Rs. ${promo.discountValue} OFF`}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
       <p className="mt-12 text-gray-400 text-xs">
         Powered by{" "}
         <span className="font-bold text-gray-600 uppercase tracking-widest text-[10px]">

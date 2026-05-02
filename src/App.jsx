@@ -36,6 +36,7 @@ import RestaurantSubscription from "./pages/restaurant/Subscription";
 import RestaurantTransactions from "./pages/restaurant/Transactions";
 import RestaurantSettings from "./pages/restaurant/Settings";
 import RestaurantProfile from "./pages/restaurant/Profile";
+import RestaurantPromotions from "./pages/restaurant/Promotions";
 
 // Employee Pages
 import KitchenDashboard from "./pages/employee/KitchenDashboard";
@@ -156,6 +157,7 @@ function App() {
           path="/restaurant/transactions"
           element={<RestaurantTransactions />}
         />
+        <Route path="/restaurant/promotions" element={<RestaurantPromotions />} />
         <Route path="/restaurant/settings" element={<RestaurantSettings />} />
         <Route path="/restaurant/profile" element={<RestaurantProfile />} />
       </Route>
