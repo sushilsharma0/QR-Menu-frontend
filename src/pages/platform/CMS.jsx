@@ -55,7 +55,6 @@ const CMS = () => {
   }
 
   const handleDelete = async (key) => {
-    if (!window.confirm('Are you sure?')) return
     try {
       await api.delete(`/platform/cms/${key}`)
       toast.success('Content deleted')

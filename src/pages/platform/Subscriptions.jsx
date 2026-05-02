@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FiPlus } from 'react-icons/fi'
+import { FiPlus, FiExternalLink } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
 import Card from '../../components/common/Card'
@@ -11,11 +11,14 @@ import Modal from '../../components/common/Modal'
 const Subscriptions = () => {
   const navigate = useNavigate()
   const [plans, setPlans] = useState([])
+  const [pendingRequests, setPendingRequests] = useState([])
   const [loading, setLoading] = useState(true)
+  const [pendingLoading, setPendingLoading] = useState(true)
   const [deleteModal, setDeleteModal] = useState({ open: false, plan: null })
 
   useEffect(() => {
     fetchPlans()
+    fetchPendingRequests()
   }, [])
 
   const fetchPlans = async () => {
@@ -26,6 +29,40 @@ const Subscriptions = () => {
       toast.error('Failed to fetch plans')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchPendingRequests = async () => {
+    try {
+      setPendingLoading(true)
+      const res = await api.get('/platform/subscriptions/requests/pending')
+      setPendingRequests(res.data.data || [])
+    } catch (error) {
+      toast.error('Failed to fetch plan requests')
+    } finally {
+      setPendingLoading(false)
+    }
+  }
+
+  const approveRequest = async (restaurantId) => {
+    try {
+      await api.post(`/platform/subscriptions/requests/${restaurantId}/approve`, { notes: '' })
+      toast.success('Plan approved and activated')
+      fetchPendingRequests()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Approve failed')
+    }
+  }
+
+  const rejectRequest = async (restaurantId) => {
+    const reason = window.prompt('Rejection reason for the restaurant:')
+    if (reason === null) return
+    try {
+      await api.post(`/platform/subscriptions/requests/${restaurantId}/reject`, { reason: reason || 'Rejected' })
+      toast.success('Request rejected')
+      fetchPendingRequests()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Reject failed')
     }
   }
 
@@ -59,6 +96,66 @@ const Subscriptions = () => {
           <FiPlus className="mr-2" /> Create Plan
         </Button>
       </div>
+
+      <Card title="Pending plan requests (payment verified queue)">
+        {pendingLoading ? (
+          <p className="text-gray-500 text-sm">Loading…</p>
+        ) : pendingRequests.length === 0 ? (
+          <p className="text-gray-500 text-sm">No requests awaiting approval.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 text-sm">
+              <thead>
+                <tr className="text-left text-gray-500">
+                  <th className="py-2 pr-4">Restaurant</th>
+                  <th className="py-2 pr-4">Requested plan</th>
+                  <th className="py-2 pr-4">Proof</th>
+                  <th className="py-2 pr-4">Submitted</th>
+                  <th className="py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {pendingRequests.map((row) => (
+                  <tr key={row._id}>
+                    <td className="py-3 pr-4">
+                      <div className="font-medium text-gray-900">{row.name}</div>
+                      <div className="text-gray-500">{row.email}</div>
+                    </td>
+                    <td className="py-3 pr-4">{row.requestedPlan?.name || '—'}</td>
+                    <td className="py-3 pr-4">
+                      {row.planPaymentProofPath ? (
+                        <a
+                          href={row.planPaymentProofPath}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary-600 inline-flex items-center gap-1 hover:underline"
+                        >
+                          View <FiExternalLink className="h-3 w-3" />
+                        </a>
+                      ) : (
+                        <span className="text-gray-400">Legacy / no file</span>
+                      )}
+                    </td>
+                    <td className="py-3 pr-4 text-gray-600">
+                      {row.planRequestDate ? new Date(row.planRequestDate).toLocaleString() : '—'}
+                    </td>
+                    <td className="py-3">
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" onClick={() => approveRequest(row._id)}>
+                          Approve
+                        </Button>
+                        <Button size="sm" variant="secondary" onClick={() => rejectRequest(row._id)}>
+                          Reject
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {plans.map((plan) => (

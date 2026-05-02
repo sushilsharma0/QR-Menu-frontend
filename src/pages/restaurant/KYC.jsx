@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
+import { useAuth } from '../../hooks/useAuth'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import Card from '../../components/common/Card'
 
 const KYC = () => {
   const navigate = useNavigate()
+  const { mergeUser } = useAuth()
   const [loading, setLoading] = useState(false)
   const [kycStatus, setKycStatus] = useState(null)
   const [files, setFiles] = useState({
@@ -26,6 +28,9 @@ const KYC = () => {
     try {
       const res = await api.get('/restaurant/kyc/status')
       setKycStatus(res.data.data)
+      mergeUser({
+        isKYCVerified: res.data.data.status === 'approved',
+      })
       if (res.data.data.status !== 'not_submitted') {
         setValue('ownerName', res.data.data.ownerName)
         setValue('ownerEmail', res.data.data.ownerEmail)

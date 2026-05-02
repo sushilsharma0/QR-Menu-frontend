@@ -15,9 +15,6 @@ export const CartProvider = ({ children }) => {
   const addToCart = (item) => {
     setCart(prev => {
       if (prev.restaurantId && prev.restaurantId !== item.restaurantId) {
-        if (!window.confirm('Adding items from a different restaurant will clear your current cart. Continue?')) {
-          return prev
-        }
         return {
           items: [{ ...item, quantity: item.quantity }],
           total: item.price * item.quantity,

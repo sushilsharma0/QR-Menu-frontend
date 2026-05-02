@@ -41,6 +41,7 @@ import RestaurantProfile from "./pages/restaurant/Profile";
 import KitchenDashboard from "./pages/employee/KitchenDashboard";
 import CashierDashboard from "./pages/employee/CashierDashboard";
 import OrderList from "./pages/employee/OrderList";
+import EmployeeChangePassword from "./pages/employee/EmployeeChangePassword";
 
 // Customer Pages
 import CustomerHome from "./pages/customer/Home/Home";
@@ -159,6 +160,9 @@ function App() {
         <Route path="/restaurant/profile" element={<RestaurantProfile />} />
       </Route>
 
+      {/* Employee: forced password change (no sidebar) */}
+      <Route path="/employee/change-password" element={<EmployeeChangePassword />} />
+
       {/* Employee Routes */}
       <Route element={<EmployeeLayout />}>
         <Route path="/kitchen/dashboard" element={<KitchenDashboard />} />
@@ -188,6 +192,8 @@ function App() {
         element={
           !user ? (
             <Navigate to="/login" />
+          ) : isEmployeeUser && user.mustChangePassword ? (
+            <Navigate to="/employee/change-password" />
           ) : isEmployeeUser && user.role === "kitchen" ? (
             <Navigate to="/kitchen/dashboard" />
           ) : isEmployeeUser && user.role === "cashier" ? (

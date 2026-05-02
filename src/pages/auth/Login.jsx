@@ -38,10 +38,10 @@ const Login = () => {
           data.restaurantId,
         );
       }
-    }catch(error) {
-console.log(error);
-
-    }finally {
+    } catch (error) {
+      // Error is already handled by AuthContext with toast
+      console.log("Login error:", error);
+    } finally {
       setLoading(false);
     }
   };

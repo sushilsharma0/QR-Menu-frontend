@@ -1,6 +1,7 @@
 import axios from 'axios'
+import toast from 'react-hot-toast'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 
 const api = axios.create({
   baseURL: API_URL,
@@ -27,11 +28,71 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const status = error.response?.status
+    const message = error.response?.data?.message || error.message || 'Request failed'
+    const errorCode = error.response?.data?.errors?.code
+    const requestUrl = error.config?.url || ''
+    const isLoginRequest =
+      requestUrl.includes('/platform/auth/login') ||
+      requestUrl.includes('/restaurant/auth/login') ||
+      requestUrl.includes('/restaurant/employees/login')
+    const shouldSkipToast = Boolean(error.config?.skipErrorToast)
+
+    if (status === 401 && !isLoginRequest) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
-      window.location.href = '/login'
+
+      if (!shouldSkipToast) {
+        toast.error('Session expired. Please login again.')
+        error.__toastShown = true
+      }
+
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
+      return Promise.reject(error)
     }
+
+    if (
+      status === 403 &&
+      errorCode === 'MUST_CHANGE_PASSWORD' &&
+      !window.location.pathname.startsWith('/employee/change-password')
+    ) {
+      window.location.href = '/employee/change-password'
+      return Promise.reject(error)
+    }
+    if (
+      status === 403 &&
+      errorCode === 'TRIAL_OR_PLAN_EXPIRED'
+    ) {
+      const path = window.location.pathname || ''
+      if (!shouldSkipToast) {
+        toast.error(message || 'Trial ended or plan inactive.')
+        error.__toastShown = true
+      }
+      if (
+        path.startsWith('/restaurant') &&
+        !path.startsWith('/restaurant/subscription') &&
+        !path.startsWith('/restaurant/kyc') &&
+        !path.startsWith('/restaurant/profile')
+      ) {
+        window.location.href = '/restaurant/subscription'
+      }
+      return Promise.reject(error)
+    }
+    if (status === 403 && errorCode === 'KYC_REQUIRED') {
+      if (!shouldSkipToast) {
+        toast.error(message || 'Complete KYC verification to use this action.')
+        error.__toastShown = true
+      }
+      return Promise.reject(error)
+    }
+
+    if (!shouldSkipToast && message) {
+      toast.error(message)
+      error.__toastShown = true
+    }
+
     return Promise.reject(error)
   }
 )

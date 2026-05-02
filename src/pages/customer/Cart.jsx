@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../services/api";
+import { useToast } from "../../hooks/useToast";
+import { ToastContainer } from "../../components/common/ToastContainer";
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -16,6 +18,7 @@ const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const { toasts, removeToast, success, error, warning } = useToast();
 
   useEffect(() => {
     const item = localStorage.getItem("cart");
@@ -74,14 +77,14 @@ const Cart = () => {
   // Remove item from cart
   const removeItem = (id) => {
     setCartItems(prevItems => prevItems.filter(item => item._id !== id));
+    success('Item removed from cart');
   };
 
   // Clear entire cart
   const clearCart = () => {
-    if (window.confirm("Are you sure you want to clear your cart?")) {
-      setCartItems([]);
-      localStorage.removeItem("cart");
-    }
+    setCartItems([]);
+    localStorage.removeItem("cart");
+    success('Cart cleared successfully');
   };
 
   const subtotal = cartItems.reduce(
@@ -93,7 +96,7 @@ const Cart = () => {
 
   const handleProceedToCheckout = async () => {
     if (cartItems.length === 0) {
-      window.alert("Your cart is empty.");
+      warning("Your cart is empty.");
       return;
     }
 
@@ -121,20 +124,22 @@ const Cart = () => {
       setCartItems([]);
 
       if (paymentMethod === "cash") {
-        window.alert(
+        success(
           `Order ${order?.orderNumber || ""} placed. Please pay at counter.`,
         );
       } else {
-        window.alert(
+        success(
           `Payment successful. Order ${order?.orderNumber || ""} confirmed.`,
         );
       }
 
-      navigate(`/orders/${slug}/${token}`);
+      setTimeout(() => {
+        navigate(`/orders/${slug}/${token}`);
+      }, 2000);
     } catch (err) {
       const message =
         err?.response?.data?.message || "Failed to place order. Try again.";
-      window.alert(message);
+      error(message);
     } finally {
       setIsPlacingOrder(false);
     }
@@ -296,6 +301,8 @@ const Cart = () => {
           {isPlacingOrder ? "Processing..." : "Proceed to Checkout"}
         </button>
       </div>
+
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );
 };

@@ -32,7 +32,6 @@ const Employees = () => {
   }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this employee?')) return
     try {
       await api.delete(`/restaurant/employees/${id}`)
       toast.success('Employee deleted')
@@ -43,10 +42,16 @@ const Employees = () => {
   }
 
   const handleResetPassword = async (id, username) => {
-    if (!window.confirm(`Reset password for ${username}? Default password will be ${username}@123`)) return
     try {
       const res = await api.patch(`/restaurant/employees/${id}/reset-password`)
-      toast.success(`Password reset to: ${res.data.data.defaultPassword}`)
+      const { credentialsEmailSent, defaultPassword } = res.data.data || {}
+      if (credentialsEmailSent) {
+        toast.success('Password reset. New credentials were emailed to the employee.')
+      } else if (defaultPassword) {
+        toast.success(`Password reset. Share temporary password: ${defaultPassword}`)
+      } else {
+        toast.success('Password reset.')
+      }
     } catch (error) {
       toast.error('Failed to reset password')
     }

@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../../services/api";
+import { useToast } from "../../../hooks/useToast";
+import { ToastContainer } from "../../../components/common/ToastContainer";
 
 const ItemDetails = () => {
   const navigate = useNavigate();
@@ -23,6 +25,9 @@ const ItemDetails = () => {
 
   const [isFavorite, setIsFavorite] = useState(false);
   const [showAddedToast, setShowAddedToast] = useState(false);
+  const { toasts, removeToast, success, error, warning, info } = useToast();
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingCartItem, setPendingCartItem] = useState(null);
 
   // const item = {
   //   name: "Creamy Alfredo Pasta",
@@ -130,9 +135,7 @@ const ItemDetails = () => {
 
       // Check if adding from a different restaurant
       if (cart.restaurantId && cart.restaurantId !== restaurant._id) {
-        if (!window.confirm('Adding items from a different restaurant will clear your current cart. Continue?')) {
-          return;
-        }
+        warning('Adding items from a different restaurant will clear your current cart');
         cart = { items: [], total: 0, restaurantId: null };
       }
 
@@ -142,9 +145,11 @@ const ItemDetails = () => {
       if (existingItemIndex > -1) {
         // Update quantity of existing item
         cart.items[existingItemIndex].quantity += quantity;
+        success(`${item.name} quantity updated!`);
       } else {
         // Add new item to cart
         cart.items.push(cartItem);
+        success(`${item.name} added to cart!`);
       }
 
       // Recalculate total
@@ -153,14 +158,11 @@ const ItemDetails = () => {
 
       // Save to localStorage
       localStorage.setItem('cart', JSON.stringify(cart));
-
-      // Show success toast
-      setShowAddedToast(true);
-      setTimeout(() => setShowAddedToast(false), 2000);
       
       console.log('Added to cart:', cartItem);
-    } catch (error) {
-      console.error('Error adding to cart:', error);
+    } catch (err) {
+      console.error('Error adding to cart:', err);
+      error('Failed to add item to cart. Please try again.');
     }
   };
 
@@ -472,6 +474,8 @@ const ItemDetails = () => {
           </FramerMotion.motion.div>
         )}
       </FramerMotion.AnimatePresence>
+
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );
 };

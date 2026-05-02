@@ -14,6 +14,8 @@ import Navigation from "../../../components/customer/Navigation";
 import ViewCartBtn from "../../../components/customer/ViewCartBtn";
 import FilterSidebar from "../../../components/customer/menuItem/FilterSidebar";
 import api from "../../../services/api";
+import { useToast } from "../../../hooks/useToast";
+import { ToastContainer } from "../../../components/common/ToastContainer";
 
 
 
@@ -31,6 +33,7 @@ const MenuItems = () => {
     dietary: "",
   });
   const navigate = useNavigate();
+  const { toasts, removeToast, success, error, warning } = useToast();
 
   const { slug, token, category: categoryName } = useParams();
   
@@ -140,13 +143,7 @@ const MenuItems = () => {
       };
 
       if (cart.restaurantId && cart.restaurantId !== restaurant._id) {
-        if (
-          !window.confirm(
-            "Adding items from a different restaurant will clear your current cart. Continue?",
-          )
-        ) {
-          return;
-        }
+        warning("Added items from a different restaurant will clear your cart");
         cart = { items: [], total: 0, restaurantId: null };
       }
 
@@ -154,20 +151,19 @@ const MenuItems = () => {
 
       if (existingItemIndex > -1) {
         cart.items[existingItemIndex].quantity += 1;
+        success(`${item.name} quantity updated!`);
       } else {
         cart.items.push(cartItem);
+        success(`${item.name} added to cart!`);
       }
 
       cart.total = cart.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
       cart.restaurantId = restaurant._id;
 
       localStorage.setItem("cart", JSON.stringify(cart));
-
-      setAddedItemName(item.name);
-      setShowAddedToast(true);
-      setTimeout(() => setShowAddedToast(false), 2000);
-    } catch (error) {
-      console.error("Error adding to cart:", error);
+    } catch (err) {
+      console.error("Error adding to cart:", err);
+      error("Failed to add item. Please try again.");
     }
   };
 
@@ -428,6 +424,8 @@ const MenuItems = () => {
           </FramerMotion.motion.div>
         )}
       </FramerMotion.AnimatePresence>
+
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );
 };

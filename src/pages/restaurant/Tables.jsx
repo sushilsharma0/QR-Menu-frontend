@@ -35,7 +35,6 @@ const Tables = () => {
   }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this table?')) return
     try {
       await api.delete(`/restaurant/tables/${id}`)
       toast.success('Table deleted')

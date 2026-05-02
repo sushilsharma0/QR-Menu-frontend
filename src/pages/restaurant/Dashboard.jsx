@@ -5,6 +5,7 @@ import {
   FiUsers,
   FiGrid,
   FiTrendingUp,
+  FiTrendingDown,
   FiClock,
   FiCheckCircle,
   FiAlertCircle,
@@ -30,6 +31,22 @@ import Button from "../../components/common/Button";
 import { useSocket } from "../../hooks/useSocket";
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
+
+const fmtRs = (v) =>
+  `Rs. ${Number(v || 0).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+
+const formatPctTrend = (pct) => {
+  if (pct === null || pct === undefined) return { text: "New", up: true };
+  const n = Number(pct);
+  const rounded = Math.round(n * 10) / 10;
+  return {
+    text: `${rounded >= 0 ? "+" : ""}${rounded}%`,
+    up: rounded >= 0,
+  };
+};
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
@@ -111,34 +128,41 @@ const Dashboard = () => {
     );
   }
 
+  const todayTrend = formatPctTrend(stats?.overview?.todayVsYesterdayPercent);
+  const weekTrend = formatPctTrend(stats?.overview?.weekVsPrevWeekPercent);
+
   const statsCards = [
     {
       title: "Today's Orders",
       value: stats?.overview?.todayOrders || 0,
       icon: FiShoppingBag,
       color: "bg-blue-500",
-      change: "+12%",
+      trend: null,
+      trendLabel: null,
     },
     {
       title: "Today's Revenue",
-      value: `$${(stats?.overview?.todayRevenue || 0).toLocaleString()}`,
+      value: fmtRs(stats?.overview?.todayRevenue),
       icon: FiDollarSign,
       color: "bg-green-500",
-      change: "+8%",
+      trend: todayTrend,
+      trendLabel: "vs yesterday (paid)",
     },
     {
-      title: "Total Orders",
-      value: stats?.overview?.totalOrders || 0,
+      title: "This Week's Revenue",
+      value: fmtRs(stats?.overview?.weekRevenue),
       icon: FiTrendingUp,
       color: "bg-purple-500",
-      change: "+23%",
+      trend: weekTrend,
+      trendLabel: "vs last week (paid)",
     },
     {
       title: "Total Revenue",
-      value: `$${(stats?.overview?.totalRevenue || 0).toLocaleString()}`,
+      value: fmtRs(stats?.overview?.totalRevenue),
       icon: FiDollarSign,
       color: "bg-yellow-500",
-      change: "+15%",
+      trend: null,
+      trendLabel: null,
     },
   ];
 
@@ -185,11 +209,19 @@ const Dashboard = () => {
                 <stat.icon className="h-6 w-6" />
               </div>
             </div>
-            {stat.change && (
+            {stat.trend && stat.trendLabel && (
               <div className="flex items-center gap-1 mt-4">
-                <FiTrendingUp className="h-4 w-4 text-green-500" />
-                <span className="text-sm text-green-600">{stat.change}</span>
-                <span className="text-sm text-gray-500">vs last week</span>
+                {stat.trend.up ? (
+                  <FiTrendingUp className="h-4 w-4 text-green-500" />
+                ) : (
+                  <FiTrendingDown className="h-4 w-4 text-red-500" />
+                )}
+                <span
+                  className={`text-sm font-medium ${stat.trend.up ? "text-green-600" : "text-red-600"}`}
+                >
+                  {stat.trend.text}
+                </span>
+                <span className="text-sm text-gray-500">{stat.trendLabel}</span>
               </div>
             )}
           </div>
@@ -247,6 +279,12 @@ const Dashboard = () => {
         <Card title="Quick Stats" icon={FiUsers}>
           <div className="space-y-4">
             <div className="flex justify-between items-center">
+              <span className="text-gray-600">Total Orders</span>
+              <span className="font-bold text-lg">
+                {stats?.overview?.totalOrders || 0}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
               <span className="text-gray-600">Total Tables</span>
               <span className="font-bold text-lg">
                 {stats?.resources?.totalTables || 0}
@@ -289,7 +327,7 @@ const Dashboard = () => {
                 type="monotone"
                 dataKey="revenue"
                 stroke="#3b82f6"
-                name="Revenue ($)"
+                name="Revenue (Rs.)"
                 strokeWidth={2}
               />
               <Line

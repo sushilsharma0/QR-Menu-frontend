@@ -17,7 +17,11 @@ const Register = () => {
     try {
       setLoading(true)
       await api.post('/restaurant/auth/register', data)
-      toast.success('Registration successful! Please login.')
+      toast.success('Registration successful! Please log in.')
+      toast(
+        'Kindly verify your KYC after login to unlock all features. Your 14-day free trial starts now.',
+        { duration: 7500 }
+      )
       navigate('/login')
     } catch (error) {
       toast.error(error.response?.data?.message || 'Registration failed')
