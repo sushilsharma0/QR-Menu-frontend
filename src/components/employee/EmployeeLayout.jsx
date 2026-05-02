@@ -1,8 +1,9 @@
 import React from 'react'
 import { Outlet, Link, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import { FiLogOut, FiUser, FiBell, FiHome, FiShoppingCart, FiClock, FiDollarSign } from 'react-icons/fi'
+import { FiLogOut, FiUser, FiClock, FiDollarSign } from 'react-icons/fi'
 import toast from 'react-hot-toast'
+import NotificationMenu from '../common/NotificationMenu'
 
 const EmployeeLayout = () => {
   const { user, logout } = useAuth()
@@ -56,11 +57,7 @@ const EmployeeLayout = () => {
 
             {/* Right section */}
             <div className="flex items-center gap-4">
-              {/* Notification Bell */}
-              <button className="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                <FiBell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
+              <NotificationMenu />
 
               {/* User Info */}
               <div className="flex items-center gap-3">
