@@ -130,7 +130,7 @@ const Cart = () => {
         );
       }
 
-      navigate(`/menu/${slug}/${token}`);
+      navigate(`/orders/${slug}/${token}`);
     } catch (err) {
       const message =
         err?.response?.data?.message || "Failed to place order. Try again.";

@@ -45,10 +45,12 @@ const Dashboard = () => {
     if (socket) {
       socket.on("new_order", handleNewOrder);
       socket.on("order_updated", handleOrderUpdate);
+      socket.on("payment_updated", handlePaymentUpdate);
 
       return () => {
-        socket.off("new_order");
-        socket.off("order_updated");
+        socket.off("new_order", handleNewOrder);
+        socket.off("order_updated", handleOrderUpdate);
+        socket.off("payment_updated", handlePaymentUpdate);
       };
     }
   }, [socket]);
@@ -93,6 +95,11 @@ const Dashboard = () => {
 
   const handleOrderUpdate = (order) => {
     toast.info(`Order #${order.orderNumber} status updated to ${order.status}`);
+    fetchDashboardData();
+  };
+
+  const handlePaymentUpdate = (payment) => {
+    toast.success(`Payment updated for order #${payment.orderNumber}`);
     fetchDashboardData();
   };
 

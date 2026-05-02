@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Check,
@@ -8,55 +8,128 @@ import {
   PackageCheck,
   Utensils,
 } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import api from "../../services/api";
 
 const OrderTracking = () => {
-  // In a real MERN app, 'status' would come from your MongoDB via Socket.io
-  const orderStatus = "Preparing";
+  const { qrToken } = useParams();
+  const navigate = useNavigate();
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const steps = [
-    {
-      id: 1,
-      label: "Order Placed",
-      time: "Today, 1:20 PM",
-      icon: <Clock size={16} />,
-      completed: true,
-    },
-    {
-      id: 2,
-      label: "Confirmed",
-      time: "Today, 1:21 PM",
-      icon: <Check size={16} />,
-      completed: true,
-    },
-    {
-      id: 3,
-      label: "Preparing",
-      time: "Your food is being prepared",
-      icon: <ChefHat size={16} />,
-      completed: false,
-      active: true,
-    },
-    {
-      id: 4,
-      label: "Ready",
-      time: "Waiting to be served",
-      icon: <Utensils size={16} />,
-      completed: false,
-    },
-    {
-      id: 5,
-      label: "Completed",
-      time: "Enjoy your meal!",
-      icon: <PackageCheck size={16} />,
-      completed: false,
-    },
-  ];
+  useEffect(() => {
+    const fetchOrder = async () => {
+      if (!qrToken) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const res = await api.get(`/customer/order/${qrToken}`);
+        setOrder(res?.data?.data || null);
+      } catch (err) {
+        console.error("Failed to fetch order tracking", err);
+        setOrder(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrder();
+    const intervalId = setInterval(fetchOrder, 10000);
+    return () => clearInterval(intervalId);
+  }, [qrToken]);
+
+  const statusOrder = ["pending", "confirmed", "preparing", "ready", "served"];
+  const currentStatusIndex = statusOrder.indexOf(order?.status || "pending");
+
+  const steps = useMemo(
+    () => [
+      {
+        id: 1,
+        status: "pending",
+        label: "Order Placed",
+        icon: <Clock size={16} />,
+      },
+      {
+        id: 2,
+        status: "confirmed",
+        label: "Confirmed",
+        icon: <Check size={16} />,
+      },
+      {
+        id: 3,
+        status: "preparing",
+        label: "Preparing",
+        icon: <ChefHat size={16} />,
+      },
+      {
+        id: 4,
+        status: "ready",
+        label: "Ready",
+        icon: <Utensils size={16} />,
+      },
+      {
+        id: 5,
+        status: "served",
+        label: "Completed",
+        icon: <PackageCheck size={16} />,
+      },
+    ].map((step, idx) => {
+      const historyEntry = (order?.statusHistory || []).find(
+        (entry) => entry.status === step.status
+      );
+      const isCompleted = idx <= currentStatusIndex;
+      const isActive = idx === currentStatusIndex && order?.status !== "served";
+      return {
+        ...step,
+        completed: isCompleted,
+        active: isActive,
+        time: historyEntry?.timestamp
+          ? new Date(historyEntry.timestamp).toLocaleString()
+          : isCompleted
+            ? "Completed"
+            : "Waiting...",
+      };
+    }),
+    [currentStatusIndex, order]
+  );
+
+  const statusLabel = order?.status
+    ? order.status.charAt(0).toUpperCase() + order.status.slice(1)
+    : "Pending";
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-500">
+        Loading tracking...
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
+        <p className="text-gray-700 font-semibold">Order not found.</p>
+        <button
+          onClick={() => navigate(-1)}
+          className="mt-4 px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-semibold"
+        >
+          Go Back
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white pb-10">
       {/* Header */}
       <header className="px-6 pt-12 pb-6 flex items-center justify-between border-b border-gray-50 sticky top-0 bg-white z-10">
-        <button className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+        <button
+          className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+          onClick={() => navigate(-1)}
+        >
           <ArrowLeft size={20} className="text-gray-700" />
         </button>
         <h1 className="text-lg font-bold text-gray-800 tracking-tight">
@@ -69,12 +142,12 @@ const OrderTracking = () => {
         {/* Order Info Card */}
         <div className="text-center mb-10">
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
-            Order #1024
+            Order #{order.orderNumber}
           </p>
-          <h2 className="text-xl font-bold text-gray-800">Table 05</h2>
+          <h2 className="text-xl font-bold text-gray-800">Table {order.tableNumber}</h2>
 
           <div className="mt-4 inline-flex items-center gap-2 bg-orange-50 text-orange-600 px-5 py-2 rounded-full text-xs font-bold border border-orange-100 animate-pulse">
-            <ChefHat size={14} /> Preparing
+            <ChefHat size={14} /> {statusLabel}
           </div>
         </div>
 

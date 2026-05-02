@@ -5,16 +5,27 @@ import { useAuth } from '../hooks/useAuth'
 export const SocketContext = createContext()
 
 export const SocketProvider = ({ children }) => {
-  const { user, isAuthenticated } = useAuth()
+  const { user, token, isAuthenticated } = useAuth()
   const [socket, setSocket] = useState(null)
   const [isConnected, setIsConnected] = useState(false)
   const [connectionError, setConnectionError] = useState(null)
 
   const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000'
+  const parseJwtPayload = (jwtToken) => {
+    try {
+      const payload = jwtToken?.split('.')?.[1]
+      if (!payload) return null
+      return JSON.parse(atob(payload))
+    } catch (err) {
+      return null
+    }
+  }
+  const resolvedRestaurantId = user?.restaurantId || parseJwtPayload(token)?.restaurantId
 
   // Initialize socket connection
   useEffect(() => {
-    if (!isAuthenticated || !user) {
+    const canConnect = isAuthenticated || Boolean(token && user)
+    if (!canConnect || !user) {
       // Disconnect if no user
       if (socket) {
         socket.disconnect()
@@ -49,6 +60,12 @@ export const SocketProvider = ({ children }) => {
           newSocket.emit('join:restaurant', user.id)
           console.log('Joined restaurant room:', user.id)
         } else if (user.role === 'kitchen' || user.role === 'cashier') {
+          // Employees should also join restaurant room to receive
+          // order/payment broadcasts emitted at restaurant level.
+          if (resolvedRestaurantId) {
+            newSocket.emit('join:restaurant', resolvedRestaurantId)
+            console.log('Joined restaurant room:', resolvedRestaurantId)
+          }
           newSocket.emit('join:employee', user.id)
           console.log('Joined employee room:', user.id)
         } else if (user.role === 'super_admin' || user.role === 'admin') {
@@ -84,6 +101,9 @@ export const SocketProvider = ({ children }) => {
         if (user.role === 'restaurant') {
           newSocket.emit('join:restaurant', user.id)
         } else if (user.role === 'kitchen' || user.role === 'cashier') {
+          if (resolvedRestaurantId) {
+            newSocket.emit('join:restaurant', resolvedRestaurantId)
+          }
           newSocket.emit('join:employee', user.id)
         } else if (user.role === 'super_admin' || user.role === 'admin') {
           newSocket.emit('join:platform', user.id)
@@ -112,6 +132,9 @@ export const SocketProvider = ({ children }) => {
           if (user.role === 'restaurant') {
             newSocket.emit('leave:restaurant', user.id)
           } else if (user.role === 'kitchen' || user.role === 'cashier') {
+            if (resolvedRestaurantId) {
+              newSocket.emit('leave:restaurant', resolvedRestaurantId)
+            }
             newSocket.emit('leave:employee', user.id)
           } else if (user.role === 'super_admin' || user.role === 'admin') {
             newSocket.emit('leave:platform', user.id)
@@ -120,7 +143,7 @@ export const SocketProvider = ({ children }) => {
         newSocket.disconnect()
       }
     }
-  }, [user, isAuthenticated, SOCKET_URL])
+  }, [user, token, isAuthenticated, SOCKET_URL, resolvedRestaurantId])
 
   // Join a specific room
   const joinRoom = useCallback((roomName, roomId) => {
@@ -196,6 +219,7 @@ export const SocketProvider = ({ children }) => {
     onNewOrder: (callback) => on('new_order', callback),
     onOrderUpdated: (callback) => on('order_updated', callback),
     onOrderStatus: (callback) => on('order_status', callback),
+    onPaymentUpdated: (callback) => on('payment_updated', callback),
     onKYCUpdate: (callback) => on('kyc_update', callback),
     onNotification: (callback) => on('notification', callback),
     emitNewOrder: (data) => emit('new_order', data),

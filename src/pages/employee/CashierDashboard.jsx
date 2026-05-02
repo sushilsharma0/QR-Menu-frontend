@@ -7,6 +7,7 @@ import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import Modal from '../../components/common/Modal'
+import { useSocket } from '../../hooks/useSocket'
 
 const CashierDashboard = () => {
   const navigate = useNavigate()
@@ -15,15 +16,34 @@ const CashierDashboard = () => {
   const [paymentModal, setPaymentModal] = useState(false)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const { socket } = useSocket()
 
   useEffect(() => {
     fetchOrders()
   }, [])
 
+  useEffect(() => {
+    if (!socket) return undefined
+
+    const handleRealtimeUpdate = () => {
+      fetchOrders()
+    }
+
+    socket.on('new_order', handleRealtimeUpdate)
+    socket.on('order_updated', handleRealtimeUpdate)
+    socket.on('payment_updated', handleRealtimeUpdate)
+
+    return () => {
+      socket.off('new_order', handleRealtimeUpdate)
+      socket.off('order_updated', handleRealtimeUpdate)
+      socket.off('payment_updated', handleRealtimeUpdate)
+    }
+  }, [socket])
+
   const fetchOrders = async () => {
     try {
       setLoading(true)
-      const res = await api.get('/restaurant/customer-orders', { params: { status: 'ready,served' } })
+      const res = await api.get('/restaurant/customer-orders', { params: { status: 'served' } })
       setOrders(res.data.data.orders)
     } catch (error) {
       toast.error('Failed to fetch orders')
@@ -49,8 +69,12 @@ const CashierDashboard = () => {
     order.table?.tableNumber?.toLowerCase().includes(search.toLowerCase())
   )
 
-  const readyOrders = filteredOrders.filter(o => o.status === 'ready')
-  const servedOrders = filteredOrders.filter(o => o.status === 'served')
+  const readyOrders = filteredOrders.filter(
+    (o) => o.status === 'served' && o.paymentStatus !== 'paid',
+  )
+  const servedOrders = filteredOrders.filter(
+    (o) => o.paymentStatus === 'paid',
+  )
 
   if (loading) {
     return (
@@ -77,8 +101,8 @@ const CashierDashboard = () => {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Ready for Payment */}
-        <Card title="Ready for Payment">
+        {/* Ready to Payment */}
+        <Card title="Ready to Payment">
           <div className="space-y-4">
             {readyOrders.map((order) => (
               <div key={order._id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
@@ -107,13 +131,13 @@ const CashierDashboard = () => {
               </div>
             ))}
             {readyOrders.length === 0 && (
-              <p className="text-center text-gray-500 py-8">No orders ready for payment</p>
+              <p className="text-center text-gray-500 py-8">No served orders waiting for payment</p>
             )}
           </div>
         </Card>
 
-        {/* Completed Orders */}
-        <Card title="Completed Orders">
+        {/* Completed Payment */}
+        <Card title="Completed Payment">
           <div className="space-y-4">
             {servedOrders.map((order) => (
               <div key={order._id} className="border rounded-lg p-4 opacity-75">

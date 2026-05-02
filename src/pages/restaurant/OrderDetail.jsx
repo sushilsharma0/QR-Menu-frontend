@@ -16,8 +16,12 @@ const OrderDetail = () => {
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
+  const isCashierView = user?.scope === 'employee' && user?.role === 'cashier'
+  const formatNpr = (value) => `Rs. ${Number(value || 0).toFixed(2)}`
   const backPath =
-    user?.scope === 'employee' || ['kitchen', 'cashier', 'manager', 'waiter'].includes(user?.role)
+    isCashierView
+      ? '/cashier/dashboard'
+      : user?.scope === 'employee' || ['kitchen', 'cashier', 'manager', 'waiter'].includes(user?.role)
       ? '/employee/orders'
       : '/restaurant/orders'
 
@@ -68,38 +72,57 @@ const OrderDetail = () => {
   }
 
   const printReceipt = () => {
+    const subtotal = Number(order?.totalAmount || 0)
+    const vat = Number(order?.taxAmount || 0)
+    const grandTotal = Number(order?.grandTotal || subtotal + vat)
+    const paymentMethod = (order?.paymentMethod || 'cash').toUpperCase()
+    const billDate = new Date(order?.createdAt).toLocaleString()
+
     const printWindow = window.open('', '_blank')
     printWindow.document.write(`
       <html>
         <head>
-          <title>Order Receipt</title>
+          <title>Tax Invoice Receipt</title>
           <style>
-            body { font-family: monospace; padding: 20px; max-width: 300px; margin: 0 auto; }
-            h1 { text-align: center; color: #2563eb; }
-            .divider { border-top: 1px dashed #ccc; margin: 10px 0; }
-            .total { font-size: 18px; font-weight: bold; text-align: right; }
-            .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
+            body { font-family: 'Courier New', monospace; padding: 12px; max-width: 320px; margin: 0 auto; color: #111; }
+            .center { text-align: center; }
+            .title { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+            .subtitle { font-size: 12px; margin: 2px 0; }
+            .divider { border-top: 1px dashed #777; margin: 8px 0; }
+            .row { display: flex; justify-content: space-between; font-size: 12px; margin: 2px 0; }
+            .head { font-weight: 700; }
+            .item { font-size: 12px; margin: 5px 0; }
+            .total { font-weight: 700; font-size: 13px; }
+            .footer { text-align: center; margin-top: 14px; font-size: 11px; }
           </style>
         </head>
         <body>
-          <h1>QR Menu SaaS</h1>
-          <p style="text-align:center">${order?.restaurant?.name || 'Restaurant'}</p>
+          <div class="center">
+            <div class="title">${order?.restaurant?.name || 'Restaurant'}</div>
+            <div class="subtitle">Kathmandu, Nepal</div>
+            <div class="subtitle">PAN: 123456789</div>
+            <div class="subtitle">TAX INVOICE</div>
+          </div>
           <div class="divider"></div>
-          <p><strong>Order #:</strong> ${order?.orderNumber}</p>
-          <p><strong>Customer:</strong> ${order?.customerName}</p>
-          <p><strong>Table:</strong> ${order?.table?.tableNumber || 'N/A'}</p>
-          <p><strong>Date:</strong> ${new Date(order?.createdAt).toLocaleString()}</p>
+          <div class="row"><span>Bill No:</span><span>${order?.orderNumber}</span></div>
+          <div class="row"><span>Date:</span><span>${billDate}</span></div>
+          <div class="row"><span>Table:</span><span>${order?.table?.tableNumber || 'N/A'}</span></div>
+          <div class="row"><span>Customer:</span><span>${order?.customerName || 'Guest'}</span></div>
+          <div class="row"><span>Payment:</span><span>${paymentMethod}</span></div>
           <div class="divider"></div>
-          <h3>Items:</h3>
+          <div class="row head"><span>Particular</span><span>Amt</span></div>
           ${order?.items?.map(item => `
-            <p>${item.quantity}x ${item.name} - $${(item.price * item.quantity).toFixed(2)}</p>
+            <div class="item">
+              <div>${item.name}</div>
+              <div class="row"><span>${item.quantity} x ${Number(item.price || 0).toFixed(2)}</span><span>${Number(item.price * item.quantity).toFixed(2)}</span></div>
+            </div>
           `).join('')}
           <div class="divider"></div>
-          <p><strong>Subtotal:</strong> $${order?.totalAmount}</p>
-          <p><strong>Tax:</strong> $${order?.taxAmount}</p>
-          <p class="total"><strong>Total:</strong> $${order?.grandTotal}</p>
+          <div class="row"><span>Sub Total</span><span>${subtotal.toFixed(2)}</span></div>
+          <div class="row"><span>VAT</span><span>${vat.toFixed(2)}</span></div>
+          <div class="row total"><span>Grand Total</span><span>${grandTotal.toFixed(2)}</span></div>
           <div class="divider"></div>
-          <p class="footer">Thank you for your order!</p>
+          <p class="footer">Thank you. Visit Again!</p>
         </body>
       </html>
     `)
@@ -184,6 +207,71 @@ const OrderDetail = () => {
   }
 
   if (!order) return null
+
+  if (isCashierView) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <button onClick={() => navigate(backPath)} className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+            <FiArrowLeft /> Back to Cashier
+          </button>
+          <Button onClick={printReceipt}>
+            <FiPrinter className="mr-2" /> Print Bill
+          </Button>
+        </div>
+
+        <div className="max-w-xl mx-auto">
+          <Card>
+            <div className="text-center border-b border-dashed pb-4">
+              <h2 className="text-2xl font-bold text-gray-900">{order?.restaurant?.name || 'Restaurant'}</h2>
+              <p className="text-sm text-gray-500">Kathmandu, Nepal</p>
+              <p className="text-sm text-gray-500">PAN: 123456789</p>
+              <p className="text-xs font-semibold mt-1 text-gray-700">TAX INVOICE / BILL RECEIPT</p>
+            </div>
+
+            <div className="py-4 space-y-2 border-b border-dashed text-sm">
+              <div className="flex justify-between"><span className="text-gray-500">Bill No</span><span className="font-semibold">{order.orderNumber}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Date</span><span>{new Date(order.createdAt).toLocaleString()}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Table</span><span>{order.table?.tableNumber || 'N/A'}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Customer</span><span>{order.customerName || 'Guest'}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Payment</span><span className="uppercase">{order.paymentMethod || 'cash'}</span></div>
+            </div>
+
+            <div className="py-4 border-b border-dashed">
+              <div className="flex justify-between text-xs uppercase tracking-wide text-gray-500 mb-2">
+                <span>Particular</span>
+                <span>Amount</span>
+              </div>
+              <div className="space-y-2">
+                {order.items?.map((item, idx) => (
+                  <div key={idx} className="text-sm">
+                    <p className="font-medium text-gray-900">{item.name}</p>
+                    <div className="flex justify-between text-gray-600">
+                      <span>{item.quantity} x {formatNpr(item.price).replace('Rs. ', '')}</span>
+                      <span>{formatNpr(item.price * item.quantity)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="py-4 space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-gray-500">Sub Total</span><span>{formatNpr(order.totalAmount)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">VAT</span><span>{formatNpr(order.taxAmount)}</span></div>
+              <div className="flex justify-between text-base font-bold border-t pt-2">
+                <span>Grand Total</span>
+                <span className="text-primary-600">{formatNpr(order.grandTotal)}</span>
+              </div>
+            </div>
+
+            <div className="text-center text-xs text-gray-500 border-t border-dashed pt-4">
+              <p>Thank you! Visit Again.</p>
+            </div>
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

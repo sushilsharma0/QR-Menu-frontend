@@ -1,5 +1,5 @@
 import React from 'react'
-import { Outlet, Link, useNavigate } from 'react-router-dom'
+import { Outlet, Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { FiLogOut, FiUser, FiBell, FiHome, FiShoppingCart, FiClock, FiDollarSign } from 'react-icons/fi'
 import toast from 'react-hot-toast'
@@ -87,7 +87,7 @@ const EmployeeLayout = () => {
           <div className="max-w-7xl mx-auto px-4  sm:px-6 lg:px-8">
             <nav className="flex gap-8">
               {currentNavItems.map((item) => (
-                <Link
+                <NavLink
                   key={item.path}
                   to={item.path}
                   className={({ isActive }) =>
@@ -100,7 +100,7 @@ const EmployeeLayout = () => {
                 >
                   <item.icon className="h-4 w-4" />
                   {item.label}
-                </Link>
+                </NavLink>
               ))}
             </nav>
           </div>

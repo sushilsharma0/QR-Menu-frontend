@@ -10,16 +10,17 @@ import { motion } from "framer-motion";
 
 export default function Navigation() {
   const location = useLocation();
-  const { token } = useParams();
-
-  const user = JSON.parse(localStorage.getItem("user"));
+  const { slug, token } = useParams();
+  const user = JSON.parse(localStorage.getItem("user")) || {};
+  const activeSlug = slug || user.slug || "";
+  const activeToken = token || "";
 
   
   const tabs = [
-    { path: `/home/${user.slug}/${token}`, icon: Home, label: "Home" },
-    { path: `/menu/${token}`, icon: MenuIcon, label: "Menu" },
-    { path: "/myOrders", icon: ShoppingBag, label: "Orders" },
-    { path: "/accountPage", icon: User, label: "More" },
+    { path: `/home/${activeSlug}/${activeToken}`, icon: Home, label: "Home" },
+    { path: `/menu/${activeSlug}/${activeToken}`, icon: MenuIcon, label: "Menu" },
+    { path: `/orders/${activeSlug}/${activeToken}`, icon: ShoppingBag, label: "Orders" },
+    { path: `/account/${activeSlug}/${activeToken}`, icon: User, label: "More" },
   ];
 
   return (
@@ -85,7 +86,7 @@ export default function Navigation() {
               </motion.span>
 
               {/* Orders Dot */}
-              {tab.path === "/myOrders" && (
+              {tab.label === "Orders" && (
                 <span className="absolute top-1 right-6 w-2 h-2 bg-orange-500 rounded-full border-2 border-white"></span>
               )}
             </NavLink>

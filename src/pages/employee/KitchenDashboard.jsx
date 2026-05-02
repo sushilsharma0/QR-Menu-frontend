@@ -53,11 +53,13 @@ const KitchenDashboard = () => {
 
   const updateStatus = async (orderId, status) => {
     try {
-      await api.patch(`/restaurant/customer-orders/${orderId}/status`, { status })
-      toast.success(`Order #${orderId} updated to ${status}`)
+      const res = await api.patch(`/restaurant/customer-orders/${orderId}/status`, { status })
+      const orderNumber = res?.data?.data?.orderNumber
+      toast.success(`Order #${orderNumber || orderId} updated to ${status}`)
       fetchOrders()
     } catch (error) {
-      toast.error('Failed to update status')
+      const message = error?.response?.data?.message || 'Failed to update status'
+      toast.error(message)
     }
   }
 

@@ -48,6 +48,9 @@ import CustomerMenu from "./pages/customer/Menu/MenuCategories";
 import CustomerMenuItem from "./pages/customer/MenuItems/MenuItems";
 import CustomerMenuItemDetail from "./pages/customer/ItemDetails/ItemDetails";
 import CustomerCart from "./pages/customer/Cart";
+import CustomerMyOrders from "./pages/customer/MyOrders";
+import CustomerOrderTracking from "./pages/customer/OrderTracking";
+import CustomerAccountPage from "./pages/customer/AccountPage";
 
 
 // Layouts
@@ -171,7 +174,9 @@ function App() {
       <Route path="/item/:slug/:token/:category" element={<CustomerMenuItem />} />
       <Route path="/item-detail/:slug/:token/:id" element={<CustomerMenuItemDetail />} />
       <Route path="/cart/:slug/:token" element={<CustomerCart />} />
-      {/* <Route path="/order/track/:qrToken" element={<CustomerOrderTracking />} /> */}
+      <Route path="/orders/:slug/:token" element={<CustomerMyOrders />} />
+      <Route path="/order/track/:qrToken" element={<CustomerOrderTracking />} />
+      <Route path="/account/:slug/:token" element={<CustomerAccountPage />} />
       {/* <Route
         path="/order/success/:orderId"
         element={<CustomerOrderSuccess />}
