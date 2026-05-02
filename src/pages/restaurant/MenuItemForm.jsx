@@ -35,7 +35,11 @@ const MenuItemForm = () => {
       const res = await api.get(`/restaurant/menu/items/${id}`)
       const item = res.data.data
       setValue('name', item.name)
-      setValue('category', item.category)
+      const categoryId =
+        item.category && typeof item.category === 'object'
+          ? item.category._id
+          : item.category
+      setValue('category', categoryId != null ? String(categoryId) : '')
       setValue('description', item.description)
       setValue('price', item.price)
       setValue('originalPrice', item.originalPrice)
