@@ -13,6 +13,7 @@ import {
 } from 'react-icons/fi'
 import api from '../../services/api'
 import { useSocket } from '../../hooks/useSocket'
+import { useAuth } from '../../hooks/useAuth'
 
 const menuItems = [
   { path: '/restaurant/dashboard', icon: FiHome, label: 'Dashboard' },
@@ -30,6 +31,9 @@ const menuItems = [
 const RestaurantSidebar = () => {
   const [pendingCount, setPendingCount] = useState(0)
   const { socket } = useSocket()
+  const { user } = useAuth()
+  const slug = user?.slug || user?.id
+  const restaurantId = user?.id
 
   const fetchPendingCount = async () => {
     try {
@@ -73,7 +77,11 @@ const RestaurantSidebar = () => {
         {menuItems.map((item) => (
           <NavLink
             key={item.path}
-            to={item.path}
+            to={
+              item.path === '/restaurant/dashboard' && slug && restaurantId
+                ? `/restaurant/dashboard/${slug}/${restaurantId}`
+                : item.path
+            }
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 text-gray-600 rounded-lg transition-all duration-200 ${
                 isActive

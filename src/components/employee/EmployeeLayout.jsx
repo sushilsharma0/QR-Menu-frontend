@@ -36,9 +36,14 @@ const EmployeeLayout = () => {
     return 'Employee Dashboard'
   }
 
+  const slug = user?.restaurantSlug || user?.restaurantId || user?.id
+  const restaurantId = user?.restaurantId || user?.id
+  const kitchenDashboardPath = slug && restaurantId ? `/kitchen/dashboard/${slug}/${restaurantId}` : '/kitchen/dashboard'
+  const cashierDashboardPath = slug && restaurantId ? `/cashier/dashboard/${slug}/${restaurantId}` : '/cashier/dashboard'
+
   const navItems = [
     { path: '/employee/orders', label: 'Order History', icon: FiClock, role: 'kitchen' },
-    { path: '/cashier/dashboard', label: 'Orders', icon: FiDollarSign, role: 'cashier' },
+    { path: cashierDashboardPath, label: 'Orders', icon: FiDollarSign, role: 'cashier' },
   ]
 
   const currentNavItems = navItems.filter(item => item.role === user?.role)
@@ -84,7 +89,10 @@ const EmployeeLayout = () => {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <Link to="/" className="flex items-center gap-2">
+              <Link
+                to={user?.role === 'kitchen' ? kitchenDashboardPath : user?.role === 'cashier' ? cashierDashboardPath : '/'}
+                className="flex items-center gap-2"
+              >
                 <span className="text-2xl">{getRoleIcon()}</span>
                 <span className="text-xl font-bold text-primary-600">QR Menu SaaS</span>
               </Link>
