@@ -67,9 +67,31 @@ export const AuthProvider = ({ children }) => {
       setUser(authUser)
       
       toast.success(`Welcome ${authUser.name || email}!`)
+
+      if (authUser.role === 'restaurant') {
+        if (!authUser.isKYCVerified) {
+          toast('Kindly verify your KYC to unlock menu, tables, staff and order actions.', {
+            duration: 6500,
+          })
+        }
+        if (authUser.trialEndsAt && !authUser.hasPaidPlanActive) {
+          const days = Math.ceil(
+            (new Date(authUser.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+          )
+          if (days > 0) {
+            toast(`Your ${days}-day${days === 1 ? '' : 's'} free trial is active. Subscribe before it ends to keep access.`, {
+              duration: 5500,
+            })
+          } else if (authUser.needsPlanUpgrade) {
+            toast.error('Your trial has ended. Upgrade your plan from Subscription to continue.')
+          }
+        }
+      }
       
       // Redirect based on role
-      if (authUser.scope === 'employee' && authUser.role === 'kitchen') {
+      if (authUser.scope === 'employee' && authUser.mustChangePassword) {
+        navigate('/employee/change-password')
+      } else if (authUser.scope === 'employee' && authUser.role === 'kitchen') {
         navigate('/kitchen/dashboard')
       } else if (authUser.scope === 'employee' && authUser.role === 'cashier') {
         navigate('/cashier/dashboard')
@@ -102,8 +124,17 @@ export const AuthProvider = ({ children }) => {
     navigate('/login')
   }
 
+  const mergeUser = (updates) => {
+    setUser((prev) => {
+      if (!prev) return prev
+      const next = { ...prev, ...updates }
+      localStorage.setItem('user', JSON.stringify(next))
+      return next
+    })
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, mergeUser }}>
       {children}
     </AuthContext.Provider>
   )

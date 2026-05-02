@@ -46,7 +46,14 @@ const Employees = () => {
     if (!window.confirm(`Reset password for ${username}? Default password will be ${username}@123`)) return
     try {
       const res = await api.patch(`/restaurant/employees/${id}/reset-password`)
-      toast.success(`Password reset to: ${res.data.data.defaultPassword}`)
+      const { credentialsEmailSent, defaultPassword } = res.data.data || {}
+      if (credentialsEmailSent) {
+        toast.success('Password reset. New credentials were emailed to the employee.')
+      } else if (defaultPassword) {
+        toast.success(`Password reset. Share temporary password: ${defaultPassword}`)
+      } else {
+        toast.success('Password reset.')
+      }
     } catch (error) {
       toast.error('Failed to reset password')
     }

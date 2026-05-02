@@ -1,12 +1,21 @@
-import React, { forwardRef } from 'react'
+import React, { forwardRef, useState } from 'react'
+import { FiEye, FiEyeOff } from 'react-icons/fi'
 
 const Input = forwardRef(({ 
   label, 
   error, 
   icon: Icon,
   className = '',
+  type = 'text',
+  passwordToggle = true,
   ...props 
 }, ref) => {
+  const [showPassword, setShowPassword] = useState(false)
+  const isPassword = type === 'password'
+  const inputType = isPassword && passwordToggle
+    ? (showPassword ? 'text' : 'password')
+    : type
+
   return (
     <div className="w-full">
       {label && (
@@ -22,16 +31,33 @@ const Input = forwardRef(({
         )}
         <input
           ref={ref}
+          type={inputType}
           className={`
             w-full px-4 py-2 border border-gray-300 rounded-lg 
             focus:ring-2 focus:ring-primary-500 focus:border-primary-500 
             outline-none transition-all
             ${Icon ? 'pl-10' : ''}
+            ${isPassword && passwordToggle ? 'pr-10' : ''}
             ${error ? 'border-red-500 focus:ring-red-500' : ''}
             ${className}
           `}
           {...props}
         />
+        {isPassword && passwordToggle && (
+          <button
+            type="button"
+            className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none focus-visible:text-primary-600"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            tabIndex={-1}
+          >
+            {showPassword ? (
+              <FiEyeOff className="h-5 w-5" aria-hidden />
+            ) : (
+              <FiEye className="h-5 w-5" aria-hidden />
+            )}
+          </button>
+        )}
       </div>
       {error && (
         <p className="mt-1 text-sm text-red-600">{error}</p>

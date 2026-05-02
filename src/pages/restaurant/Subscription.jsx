@@ -1,29 +1,41 @@
 import React, { useState, useEffect } from 'react'
-import { FiCheck, FiClock, FiCalendar } from 'react-icons/fi'
+import { FiCheck, FiClock, FiCalendar, FiUpload, FiAlertTriangle } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
+import { useAuth } from '../../hooks/useAuth'
 
 const Subscription = () => {
+  const { mergeUser, user: authUser } = useAuth()
   const [plans, setPlans] = useState([])
   const [currentPlan, setCurrentPlan] = useState(null)
   const [loading, setLoading] = useState(true)
   const [requesting, setRequesting] = useState(false)
+  const [proofFile, setProofFile] = useState(null)
+  const [uploadingProof, setUploadingProof] = useState(false)
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [authUser?.id])
 
   const fetchData = async () => {
     try {
       setLoading(true)
       const [plansRes, statusRes] = await Promise.all([
         api.get('/platform/subscriptions/plans'),
-        api.get('/restaurant/package/status')
+        api.get('/restaurant/package/status'),
       ])
       setPlans(plansRes.data.data)
-      setCurrentPlan(statusRes.data.data)
+      const status = statusRes.data.data
+      setCurrentPlan(status)
+      if (authUser?.role === 'restaurant') {
+        mergeUser({
+          trialEndsAt: status.trialEndsAt,
+          hasPaidPlanActive: status.hasPaidPlanActive,
+          needsPlanUpgrade: !status.canUseFeatures,
+        })
+      }
     } catch (error) {
       toast.error('Failed to fetch subscription data')
     } finally {
@@ -35,12 +47,32 @@ const Subscription = () => {
     try {
       setRequesting(true)
       await api.post('/restaurant/package/request', { packageId: planId })
-      toast.success('Plan request submitted for approval')
+      toast.success('Plan selected. Upload your payment proof below for platform verification.')
       fetchData()
     } catch (error) {
       toast.error(error.response?.data?.message || 'Request failed')
     } finally {
       setRequesting(false)
+    }
+  }
+
+  const submitPaymentProof = async () => {
+    if (!proofFile) {
+      toast.error('Choose a file (image or PDF)')
+      return
+    }
+    try {
+      setUploadingProof(true)
+      const fd = new FormData()
+      fd.append('paymentProof', proofFile)
+      await api.post('/restaurant/package/payment-proof', fd)
+      toast.success('Payment proof submitted. Your request is pending platform approval.')
+      setProofFile(null)
+      fetchData()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Upload failed')
+    } finally {
+      setUploadingProof(false)
     }
   }
 
@@ -58,12 +90,88 @@ const Subscription = () => {
     )
   }
 
+  const awaitingProof = currentPlan?.planRequestStatus === 'awaiting_proof'
+  const pendingReview = currentPlan?.planRequestStatus === 'pending_review'
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Subscription Plans</h1>
-        <p className="text-gray-500 mt-1">Choose the best plan for your restaurant</p>
+        <p className="text-gray-500 mt-1">Choose a plan, pay offline as instructed, then upload proof for verification.</p>
       </div>
+
+      {currentPlan?.planRequestRejectionReason && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 flex gap-2 items-start">
+          <FiAlertTriangle className="h-5 w-5 flex-shrink-0" />
+          <div>
+            <p className="font-medium">Previous request was rejected</p>
+            <p className="mt-1">{currentPlan.planRequestRejectionReason}</p>
+            <p className="mt-2 text-red-800">You can select a plan again and submit new payment proof.</p>
+          </div>
+        </div>
+      )}
+
+      {currentPlan?.isTrialActive && !currentPlan?.hasPaidPlanActive && (
+        <Card title="Free trial">
+          <p className="text-gray-700">
+            <strong>{currentPlan.trialDaysLeft}</strong> day(s) remaining on your trial. After it ends, choose a paid plan
+            and submit payment proof — platform approval is required to restore full access.
+          </p>
+        </Card>
+      )}
+
+      {!currentPlan?.canUseFeatures && (
+        <Card title="Access paused">
+          <p className="text-gray-700">
+            Your trial has ended or your subscription is inactive. Select a plan below, upload payment proof, and wait for
+            the platform team to approve your subscription.
+          </p>
+        </Card>
+      )}
+
+      {(awaitingProof || pendingReview) && currentPlan?.requestedPlan && (
+        <Card title={awaitingProof ? 'Upload payment proof' : 'Request status'}>
+          {pendingReview ? (
+            <p className="text-amber-800 text-sm flex items-center gap-2">
+              <FiClock />
+              <span>
+                Pending platform verification for <strong>{currentPlan.requestedPlan.name}</strong>. You’ll get full access
+                once approved.
+              </span>
+            </p>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-gray-700">
+                You chose <strong>{currentPlan.requestedPlan.name}</strong>. Upload a screenshot or PDF of your payment /
+                bank transfer statement so we can verify and activate your plan.
+              </p>
+              <div className="flex flex-wrap items-end gap-3">
+                <label className="block">
+                  <span className="text-sm text-gray-600 block mb-1">Payment statement</span>
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="text-sm"
+                    onChange={(e) => setProofFile(e.target.files?.[0] || null)}
+                  />
+                </label>
+                <Button onClick={submitPaymentProof} loading={uploadingProof} disabled={!proofFile}>
+                  <FiUpload className="inline mr-2" />
+                  Submit for verification
+                </Button>
+              </div>
+            </div>
+          )}
+          {currentPlan?.planPaymentProofUrl && (
+            <p className="mt-3 text-xs text-gray-500">
+              Proof on file:{' '}
+              <a href={currentPlan.planPaymentProofUrl} target="_blank" rel="noopener noreferrer" className="text-primary-600 underline">
+                View uploaded file
+              </a>
+            </p>
+          )}
+        </Card>
+      )}
 
       {/* Current Plan Status */}
       {currentPlan?.currentPlan && (
@@ -88,13 +196,6 @@ const Subscription = () => {
             </div>
           </div>
 
-          {currentPlan.requestedPlan && (
-            <div className="mt-4 p-3 bg-yellow-50 rounded-lg">
-              <p className="text-sm text-yellow-800">
-                Request pending: <strong>{currentPlan.requestedPlan.name}</strong> - Awaiting platform approval
-              </p>
-            </div>
-          )}
         </Card>
       )}
 
@@ -123,11 +224,18 @@ const Subscription = () => {
             <Button
               className="w-full"
               variant={currentPlan?.currentPlan?._id === plan._id ? 'secondary' : 'primary'}
-              disabled={currentPlan?.currentPlan?._id === plan._id || currentPlan?.requestedPlan?._id === plan._id || requesting}
+              disabled={
+                currentPlan?.currentPlan?._id === plan._id ||
+                (currentPlan?.requestedPlan?._id === plan._id && (awaitingProof || pendingReview)) ||
+                requesting
+              }
               onClick={() => requestPlan(plan._id)}
             >
-              {currentPlan?.currentPlan?._id === plan._id ? 'Current Plan' :
-               currentPlan?.requestedPlan?._id === plan._id ? 'Request Pending' : 'Select Plan'}
+              {currentPlan?.currentPlan?._id === plan._id
+                ? 'Current Plan'
+                : currentPlan?.requestedPlan?._id === plan._id && (awaitingProof || pendingReview)
+                  ? 'Already requested'
+                  : 'Select plan'}
             </Button>
           </Card>
         ))}

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Outlet, Link, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, Link, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { FiLogOut, FiUser, FiBell, FiHome, FiShoppingCart, FiClock, FiDollarSign } from 'react-icons/fi'
 import toast from 'react-hot-toast'
@@ -7,6 +7,11 @@ import toast from 'react-hot-toast'
 const EmployeeLayout = () => {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  if (user?.scope === 'employee' && user?.mustChangePassword) {
+    return <Navigate to="/employee/change-password" replace state={{ from: location }} />
+  }
 
   const handleLogout = () => {
     logout()

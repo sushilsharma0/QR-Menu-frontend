@@ -43,7 +43,10 @@ export const restaurantLogin = async (email, password) => {
   const response = await api.post('/restaurant/auth/login', { email, password })
   if (response.data.data.token) {
     localStorage.setItem('token', response.data.data.token)
-    localStorage.setItem('user', JSON.stringify(response.data.data.restaurant))
+    const payload = response.data.data.user || response.data.data.restaurant
+    if (payload) {
+      localStorage.setItem('user', JSON.stringify({ ...payload, scope: 'restaurant' }))
+    }
   }
   return response.data
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   FiRefreshCw, FiDownload, FiTrendingUp, FiTrendingDown,
   FiDollarSign, FiCreditCard, FiActivity, FiCalendar
@@ -16,6 +16,22 @@ const isToday = (dateStr) => new Date(dateStr).toDateString() === new Date().toD
 
 // ── Recalculate summary state after a new payment event
 // Called both from direct API response and socket events
+const normalizeSocketTx = (payload) => {
+  if (!payload) return null
+  const id = payload._id || payload.transactionId
+  if (!id || payload.amount == null) return null
+  return {
+    _id: id,
+    receiptNo: payload.receiptNo || '',
+    amount: Number(payload.amount),
+    paymentMethod: payload.paymentMethod || 'cash',
+    status: payload.status || 'success',
+    createdAt: payload.createdAt || new Date().toISOString(),
+    customerOrder: payload.customerOrder,
+    order: payload.order,
+  }
+}
+
 const buildUpdatedSummary = (prev, tx) => {
   if (!prev) return prev
   const amount = Number(tx.amount || 0)
@@ -194,33 +210,7 @@ const Transactions = () => {
   const PER_PAGE                        = 10
   const { socket }                      = useSocket()
 
-  useEffect(() => { fetchTransactions() }, [filters])
-
-  // ── Real-time socket updates
-  useEffect(() => {
-    if (!socket) return
-
-    const handlePaymentUpdated = (newTx) => {
-      // Prepend to transaction list — avoid duplicates
-      setTransactions(prev => {
-        const exists = prev.some(tx => tx._id === newTx._id)
-        return exists ? prev : [newTx, ...prev]
-      })
-
-      // Update summary totals immediately without refetch
-      setSummary(prev => buildUpdatedSummary(prev, newTx))
-    }
-
-    socket.on('payment_updated', handlePaymentUpdated)
-    socket.on('order_updated',   handlePaymentUpdated)
-
-    return () => {
-      socket.off('payment_updated', handlePaymentUpdated)
-      socket.off('order_updated',   handlePaymentUpdated)
-    }
-  }, [socket])
-
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     try {
       setLoading(true)
       const params = {}
@@ -237,7 +227,40 @@ const Transactions = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filters])
+
+  useEffect(() => {
+    fetchTransactions()
+  }, [fetchTransactions])
+
+  // ── Real-time socket updates
+  useEffect(() => {
+    if (!socket) return
+
+    const handlePaymentUpdated = (payload) => {
+      const newTx = normalizeSocketTx(payload)
+      if (!newTx) return
+
+      setTransactions((prev) => {
+        const exists = prev.some((tx) => String(tx._id) === String(newTx._id))
+        return exists ? prev : [newTx, ...prev]
+      })
+
+      setSummary((prev) => buildUpdatedSummary(prev, newTx))
+    }
+
+    const handleOrderUpdated = () => {
+      fetchTransactions()
+    }
+
+    socket.on('payment_updated', handlePaymentUpdated)
+    socket.on('order_updated', handleOrderUpdated)
+
+    return () => {
+      socket.off('payment_updated', handlePaymentUpdated)
+      socket.off('order_updated', handleOrderUpdated)
+    }
+  }, [socket, fetchTransactions])
 
   // ── Called from payment form after successful POST
   const handlePaymentSuccess = (newTx) => {

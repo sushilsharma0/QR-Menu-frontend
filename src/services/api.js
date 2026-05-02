@@ -1,4 +1,5 @@
 import axios from 'axios'
+import toast from 'react-hot-toast'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
@@ -31,6 +32,31 @@ api.interceptors.response.use(
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       window.location.href = '/login'
+    }
+    if (
+      error.response?.status === 403 &&
+      error.response?.data?.errors?.code === 'MUST_CHANGE_PASSWORD' &&
+      !window.location.pathname.startsWith('/employee/change-password')
+    ) {
+      window.location.href = '/employee/change-password'
+    }
+    if (
+      error.response?.status === 403 &&
+      error.response?.data?.errors?.code === 'TRIAL_OR_PLAN_EXPIRED'
+    ) {
+      const path = window.location.pathname || ''
+      toast.error(error.response?.data?.message || 'Trial ended or plan inactive.')
+      if (
+        path.startsWith('/restaurant') &&
+        !path.startsWith('/restaurant/subscription') &&
+        !path.startsWith('/restaurant/kyc') &&
+        !path.startsWith('/restaurant/profile')
+      ) {
+        window.location.href = '/restaurant/subscription'
+      }
+    }
+    if (error.response?.status === 403 && error.response?.data?.errors?.code === 'KYC_REQUIRED') {
+      toast.error(error.response?.data?.message || 'Complete KYC verification to use this action.')
     }
     return Promise.reject(error)
   }

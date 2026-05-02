@@ -2,6 +2,7 @@ import React from 'react'
 import { Outlet } from 'react-router-dom'
 import RestaurantSidebar from './RestaurantSidebar'
 import Header from '../common/Header'
+import RestaurantTrialKycBanner from './RestaurantTrialKycBanner'
 
 const RestaurantLayout = () => {
   return (
@@ -10,6 +11,7 @@ const RestaurantLayout = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto p-6">
+          <RestaurantTrialKycBanner />
           <Outlet />
         </main>
       </div>

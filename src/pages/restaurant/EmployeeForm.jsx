@@ -40,7 +40,14 @@ const EmployeeForm = () => {
         toast.success('Employee updated')
       } else {
         const res = await api.post('/restaurant/employees', data)
-        toast.success(`Employee created. Default password: ${res.data.data.defaultPassword}`)
+        const { credentialsEmailSent, defaultPassword } = res.data.data || {}
+        if (credentialsEmailSent) {
+          toast.success('Employee created. Login details were sent by email.')
+        } else if (defaultPassword) {
+          toast.success(`Employee created. Email not sent — share default password: ${defaultPassword}`)
+        } else {
+          toast.success('Employee created.')
+        }
       }
       navigate('/restaurant/employees')
     } catch (error) {
@@ -70,7 +77,7 @@ const EmployeeForm = () => {
             label="Email"
             type="email"
             placeholder="Enter email"
-            {...register('email')}
+            {...register('email', { required: 'Email is required for login credentials' })}
             error={errors.email?.message}
           />
 
