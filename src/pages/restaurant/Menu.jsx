@@ -7,6 +7,29 @@ import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import Modal from "../../components/common/Modal";
 
+/** API populates `category` as { _id, name }; normalize to id string for comparisons */
+const getItemCategoryId = (item) => {
+  if (!item?.category) return "";
+  if (typeof item.category === "object" && item.category._id != null) {
+    return String(item.category._id);
+  }
+  return String(item.category);
+};
+
+const getItemCategoryDisplayName = (item, categoriesList) => {
+  if (
+    item?.category &&
+    typeof item.category === "object" &&
+    item.category.name
+  ) {
+    return item.category.name;
+  }
+  const id = getItemCategoryId(item);
+  return (
+    categoriesList.find((c) => String(c._id) === id)?.name || "Uncategorized"
+  );
+};
+
 const Menu = () => {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
@@ -76,12 +99,12 @@ const Menu = () => {
     }
   };
 
-  // ✅ Fix 1 — stringify both sides so ObjectId vs string never mismatches
   const filteredItems =
-    selectedCategory === "all"
+    String(selectedCategory) === "all"
       ? items
       : items.filter(
-          (item) => String(item.category) === String(selectedCategory),
+          (item) =>
+            getItemCategoryId(item) === String(selectedCategory),
         );
 
   if (loading) {
@@ -119,7 +142,7 @@ const Menu = () => {
           <div
             onClick={() => setSelectedCategory("all")}
             className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
-              selectedCategory === "all"
+              String(selectedCategory) === "all"
                 ? "border-primary-500 bg-primary-50"
                 : "border-gray-200 hover:border-gray-300"
             }`}
@@ -132,9 +155,11 @@ const Menu = () => {
           {categories.map((category) => (
             <div
               key={category._id}
-              onClick={() => setSelectedCategory(category._id)}
+              onClick={() =>
+                setSelectedCategory(String(category._id))
+              }
               className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
-                selectedCategory === category._id
+                String(selectedCategory) === String(category._id)
                   ? "border-primary-500 bg-primary-50"
                   : "border-gray-200 hover:border-gray-300"
               }`}
@@ -153,7 +178,7 @@ const Menu = () => {
                   <p className="text-xs text-gray-400 mt-2">
                     {
                       items.filter(
-                        (i) => String(i.category) === String(category._id),
+                        (i) => getItemCategoryId(i) === String(category._id),
                       ).length
                     }{" "}
                     items
@@ -223,9 +248,9 @@ const Menu = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredItems.map((item) => {
-                // ✅ Fix 3 — stringify for category name lookup too
-                const category = categories.find(
-                  (c) => String(c._id) === String(item.category),
+                const categoryLabel = getItemCategoryDisplayName(
+                  item,
+                  categories,
                 );
                 return (
                   <tr key={item._id} className="hover:bg-gray-50">
@@ -257,7 +282,7 @@ const Menu = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
-                      {category?.name || "Uncategorized"}
+                      {categoryLabel}
                     </td>
                     <td className="px-6 py-4">
                       <div>

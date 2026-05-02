@@ -21,7 +21,7 @@ import Feedback from "../../../components/customer/homepage/Feedback";
 import PageTransition from '../../../components/customer/PageTransition';
 import api from "../../../services/api";
 import toast from "react-hot-toast";
-
+import CryptoJS from "crypto-js";
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -71,7 +71,7 @@ export default function Home() {
 let userId = localStorage.getItem("customer_guest_id");
 
 if (!userId) {
-  userId = "guest_" + Date.now() + Math.random().toString(36).substr(2, 9);
+  userId = "guest_" +restaurantSlug + "_" + CryptoJS.lib.WordArray.random(16).toString();
   localStorage.setItem("customer_guest_id", userId);
 }
 
