@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   FiRefreshCw, FiDownload, FiTrendingUp, FiTrendingDown,
-  FiDollarSign, FiCreditCard, FiActivity, FiCalendar
+  FiDollarSign, FiCreditCard, FiActivity, FiCalendar, FiX, FiClock, FiInfo
 } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
@@ -197,7 +197,219 @@ function exportCSV(transactions) {
   toast.success('CSV exported!')
 }
 
-// ─────────────────────────────────────────────
+// ── Transaction Detail Modal
+function TransactionDetail({ transaction, onClose }) {
+  if (!transaction) return null
+  
+  const [refundReason, setRefundReason] = useState('')
+  const [refunding, setRefunding] = useState(false)
+
+  const handleRefund = async () => {
+    if (!refundReason.trim()) {
+      toast.error('Please enter a refund reason')
+      return
+    }
+    
+    try {
+      setRefunding(true)
+      await api.post(`/restaurant/cashier/transactions/${transaction._id}/refund`, {
+        reason: refundReason
+      })
+      toast.success('Transaction refunded successfully')
+      onClose()
+      // Trigger a refresh of transactions
+      window.location.reload()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to refund transaction')
+    } finally {
+      setRefunding(false)
+    }
+  }
+
+  const order = transaction.customerOrder || transaction.order
+  const processedByName = transaction.processedBy?.name || 'System'
+  const refundedByName = transaction.refundedBy?.name || 'N/A'
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 flex items-center justify-between p-6 border-b border-gray-200 bg-gray-50">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Transaction Details</h2>
+            <p className="text-sm text-gray-500 mt-1">{transaction.receiptNo}</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-lg transition">
+            <FiX size={20} />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* Transaction Info */}
+          <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-gray-500 uppercase">Receipt Number</p>
+                <p className="text-sm font-semibold text-gray-900">{transaction.receiptNo}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 uppercase">Amount</p>
+                <p className="text-sm font-semibold text-gray-900">{fmt(transaction.amount)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 uppercase">Payment Method</p>
+                <p className="text-sm font-semibold text-gray-900 capitalize">{transaction.paymentMethod}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 uppercase">Status</p>
+                <StatusBadge status={transaction.status} />
+              </div>
+            </div>
+          </div>
+
+          {/* Order Information */}
+          {order && (
+            <div className="bg-green-50 rounded-xl p-4 border border-green-100">
+              <p className="text-xs text-gray-500 uppercase mb-3 flex items-center gap-2">
+                <FiInfo size={14} /> Order Information
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500">Order Number</p>
+                  <p className="text-sm font-semibold text-gray-900">{order.orderNumber}</p>
+                </div>
+                {transaction.customerOrder && (
+                  <>
+                    <div>
+                      <p className="text-xs text-gray-500">Customer Name</p>
+                      <p className="text-sm font-semibold text-gray-900">{transaction.customerOrder.customerName || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Order Status</p>
+                      <p className="text-sm font-semibold text-gray-900 capitalize">{transaction.customerOrder.status || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Payment Status</p>
+                      <p className="text-sm font-semibold text-gray-900 capitalize">{transaction.customerOrder.paymentStatus || 'N/A'}</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Refund Information */}
+          {transaction.refunded && (
+            <div className="bg-red-50 rounded-xl p-4 border border-red-100">
+              <p className="text-xs text-gray-500 uppercase mb-3 flex items-center gap-2">
+                <FiX size={14} /> Refund Information
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500">Refund Amount</p>
+                  <p className="text-sm font-semibold text-gray-900">{fmt(transaction.refundAmount || transaction.amount)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Refund Date</p>
+                  <p className="text-sm font-semibold text-gray-900">{fmtDate(transaction.refundedAt)}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-xs text-gray-500">Refund Reason</p>
+                  <p className="text-sm font-semibold text-gray-900">{transaction.refundReason || 'No reason provided'}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-xs text-gray-500">Refunded By</p>
+                  <p className="text-sm font-semibold text-gray-900">{refundedByName}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Status History */}
+          {transaction.statusHistory && transaction.statusHistory.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-xs text-gray-500 uppercase flex items-center gap-2">
+                <FiClock size={14} /> Transaction History
+              </p>
+              <div className="relative">
+                {transaction.statusHistory.map((history, idx) => (
+                  <div key={idx} className="flex gap-4">
+                    {/* Timeline dot and line */}
+                    <div className="flex flex-col items-center">
+                      <div className={`w-3 h-3 rounded-full ${
+                        history.status === 'success' ? 'bg-green-500' :
+                        history.status === 'refunded' ? 'bg-red-500' :
+                        history.status === 'pending' ? 'bg-yellow-500' :
+                        'bg-gray-400'
+                      }`} />
+                      {idx < transaction.statusHistory.length - 1 && (
+                        <div className="w-0.5 h-12 bg-gray-200" />
+                      )}
+                    </div>
+                    {/* Content */}
+                    <div className="pb-6">
+                      <div className="flex items-baseline gap-2">
+                        <p className="text-sm font-semibold text-gray-900 capitalize">{history.status}</p>
+                        <p className="text-xs text-gray-500">{fmtDate(history.timestamp)}</p>
+                      </div>
+                      {history.note && (
+                        <p className="text-sm text-gray-600 mt-1">{history.note}</p>
+                      )}
+                      {history.updatedBy && (
+                        <p className="text-xs text-gray-500 mt-1">By: {history.updatedBy.name || 'System'}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Processing Info */}
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 text-xs text-gray-600 space-y-2">
+            <div className="flex justify-between">
+              <span>Processed By:</span>
+              <span className="font-semibold">{processedByName}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Created At:</span>
+              <span className="font-semibold">{fmtDate(transaction.createdAt)}</span>
+            </div>
+            {transaction.notes && (
+              <div className="flex justify-between">
+                <span>Notes:</span>
+                <span className="font-semibold">{transaction.notes}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Refund Form */}
+          {transaction.status === 'success' && !transaction.refunded && (
+            <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-100 space-y-3">
+              <p className="text-xs text-gray-500 uppercase font-semibold">Refund This Transaction</p>
+              <textarea
+                placeholder="Enter refund reason (required)..."
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                rows={3}
+              />
+              <Button 
+                onClick={handleRefund} 
+                variant="danger"
+                disabled={refunding || !refundReason.trim()}
+                className="w-full"
+              >
+                {refunding ? 'Processing...' : 'Process Refund'}
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}// ─────────────────────────────────────────────
 // Main Transactions page
 // ─────────────────────────────────────────────
 const Transactions = () => {
@@ -207,6 +419,7 @@ const Transactions = () => {
   const [filters, setFilters]           = useState({ method: '', status: '', startDate: '', endDate: '' })
   const [search, setSearch]             = useState('')
   const [page, setPage]                 = useState(1)
+  const [selectedTransaction, setSelectedTransaction] = useState(null)
   const PER_PAGE                        = 10
   const { socket }                      = useSocket()
 
@@ -462,7 +675,7 @@ const Transactions = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {paginated.map((tx) => (
-                <tr key={tx._id} className="hover:bg-gray-50 transition-colors">
+                <tr key={tx._id} onClick={() => setSelectedTransaction(tx)} className="hover:bg-blue-50 transition-colors cursor-pointer">
                   <td className="px-6 py-4 text-sm font-semibold text-gray-900">
                     {tx.receiptNo}
                   </td>
@@ -556,6 +769,14 @@ const Transactions = () => {
           </div>
         )}
       </Card>
+
+      {/* Transaction Detail Modal */}
+      {selectedTransaction && (
+        <TransactionDetail 
+          transaction={selectedTransaction} 
+          onClose={() => setSelectedTransaction(null)} 
+        />
+      )}
     </div>
   )
 }
