@@ -111,7 +111,7 @@ const Dashboard = () => {
   };
 
   const handleOrderUpdate = (order) => {
-    toast.info(`Order #${order.orderNumber} status updated to ${order.status}`);
+    toast(`Order #${order.orderNumber} status updated to ${order.status}`);
     fetchDashboardData();
   };
 
