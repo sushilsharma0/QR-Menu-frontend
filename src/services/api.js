@@ -88,11 +88,6 @@ api.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    if (!shouldSkipToast && message) {
-      toast.error(message)
-      error.__toastShown = true
-    }
-
     return Promise.reject(error)
   }
 )

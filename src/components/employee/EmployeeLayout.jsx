@@ -1,14 +1,18 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Outlet, Link, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { FiLogOut, FiUser, FiClock, FiDollarSign } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import NotificationMenu from '../common/NotificationMenu'
+import api from '../../services/api'
+import { useSocket } from '../../hooks/useSocket'
 
 const EmployeeLayout = () => {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const { socket } = useSocket()
+  const [pendingCount, setPendingCount] = useState(0)
 
   if (user?.scope === 'employee' && user?.mustChangePassword) {
     return <Navigate to="/employee/change-password" replace state={{ from: location }} />
@@ -38,6 +42,39 @@ const EmployeeLayout = () => {
   ]
 
   const currentNavItems = navItems.filter(item => item.role === user?.role)
+
+  const fetchPendingCount = async () => {
+    if (user?.role !== 'kitchen') return
+
+    try {
+      const res = await api.get('/restaurant/customer-orders', {
+        params: { status: 'pending', page: 1, limit: 1 },
+      })
+      setPendingCount(res?.data?.data?.pagination?.total || 0)
+    } catch (err) {
+      setPendingCount(0)
+    }
+  }
+
+  useEffect(() => {
+    fetchPendingCount()
+  }, [user?.role])
+
+  useEffect(() => {
+    if (!socket || user?.role !== 'kitchen') return undefined
+
+    const refreshPendingCount = () => {
+      fetchPendingCount()
+    }
+
+    socket.on('new_order', refreshPendingCount)
+    socket.on('order_updated', refreshPendingCount)
+
+    return () => {
+      socket.off('new_order', refreshPendingCount)
+      socket.off('order_updated', refreshPendingCount)
+    }
+  }, [socket, user?.role])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -102,6 +139,11 @@ const EmployeeLayout = () => {
                 >
                   <item.icon className="h-4 w-4" />
                   {item.label}
+                  {item.path === '/employee/orders' && pendingCount > 0 && (
+                    <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-semibold flex items-center justify-center">
+                      {pendingCount > 99 ? '99+' : pendingCount}
+                    </span>
+                  )}
                 </NavLink>
               ))}
             </nav>

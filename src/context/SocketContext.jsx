@@ -59,7 +59,7 @@ export const SocketProvider = ({ children }) => {
         if (user.role === 'restaurant') {
           newSocket.emit('join:restaurant', user.id)
           console.log('Joined restaurant room:', user.id)
-        } else if (user.role === 'kitchen' || user.role === 'cashier') {
+        } else if (user.scope === 'employee') {
           // Employees should also join restaurant room to receive
           // order/payment broadcasts emitted at restaurant level.
           if (resolvedRestaurantId) {
@@ -100,7 +100,7 @@ export const SocketProvider = ({ children }) => {
       if (user.id) {
         if (user.role === 'restaurant') {
           newSocket.emit('join:restaurant', user.id)
-        } else if (user.role === 'kitchen' || user.role === 'cashier') {
+        } else if (user.scope === 'employee') {
           if (resolvedRestaurantId) {
             newSocket.emit('join:restaurant', resolvedRestaurantId)
           }
@@ -131,7 +131,7 @@ export const SocketProvider = ({ children }) => {
         if (user?.id) {
           if (user.role === 'restaurant') {
             newSocket.emit('leave:restaurant', user.id)
-          } else if (user.role === 'kitchen' || user.role === 'cashier') {
+          } else if (user.scope === 'employee') {
             if (resolvedRestaurantId) {
               newSocket.emit('leave:restaurant', resolvedRestaurantId)
             }

@@ -59,6 +59,40 @@ const useNotification = () => {
       })
     }
 
+    const handleOrderUpdateNotification = (data) => {
+      setNotifications(prev => [{
+        id: Date.now(),
+        type: 'order',
+        title: 'Order Updated',
+        message: `Order #${data.orderNumber} is now ${data.status}`,
+        data: data,
+        timestamp: new Date(),
+      }, ...prev])
+      setUnreadCount(prev => prev + 1)
+
+      toast(`Order #${data.orderNumber} is now ${data.status}`, {
+        duration: 5000,
+        icon: '🔄',
+      })
+    }
+
+    const handlePaymentUpdateNotification = (data) => {
+      setNotifications(prev => [{
+        id: Date.now(),
+        type: 'subscription',
+        title: 'Payment Updated',
+        message: data?.message || `Payment updated for order #${data.orderNumber}`,
+        data: data,
+        timestamp: new Date(),
+      }, ...prev])
+      setUnreadCount(prev => prev + 1)
+
+      toast.success(data?.message || `Payment updated for order #${data.orderNumber}`, {
+        duration: 5000,
+        icon: '💳',
+      })
+    }
+
     const handleKYCNotification = (data) => {
       setNotifications(prev => [{
         id: Date.now(),
@@ -127,6 +161,8 @@ const useNotification = () => {
     socket.on('new_notification', handleNewNotification)
     socket.on('order_notification', handleOrderNotification)
     socket.on('new_order', handleOrderNotification)
+    socket.on('order_updated', handleOrderUpdateNotification)
+    socket.on('payment_updated', handlePaymentUpdateNotification)
     socket.on('kyc_notification', handleKYCNotification)
     socket.on('subscription_notification', handleSubscriptionNotification)
     socket.on('low_stock_alert', handleLowStockNotification)
@@ -135,6 +171,8 @@ const useNotification = () => {
       socket.off('new_notification', handleNewNotification)
       socket.off('order_notification', handleOrderNotification)
       socket.off('new_order', handleOrderNotification)
+      socket.off('order_updated', handleOrderUpdateNotification)
+      socket.off('payment_updated', handlePaymentUpdateNotification)
       socket.off('kyc_notification', handleKYCNotification)
       socket.off('subscription_notification', handleSubscriptionNotification)
       socket.off('low_stock_alert', handleLowStockNotification)

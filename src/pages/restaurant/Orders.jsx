@@ -13,10 +13,11 @@ const Orders = () => {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
+  const [paymentFilter, setPaymentFilter] = useState('all')
 
   useEffect(() => {
     fetchOrders()
-  }, [filter])
+  }, [filter, paymentFilter])
 
   useEffect(() => {
     if (socket) {
@@ -32,7 +33,12 @@ const Orders = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true)
-      const res = await api.get('/restaurant/customer-orders', { params: { status: filter !== 'all' ? filter : undefined } })
+      const res = await api.get('/restaurant/customer-orders', {
+        params: {
+          status: filter !== 'all' ? filter : undefined,
+          paymentStatus: paymentFilter !== 'all' ? paymentFilter : undefined,
+        },
+      })
       setOrders(res.data.data.orders)
     } catch (error) {
       toast.error('Failed to fetch orders')
@@ -115,6 +121,42 @@ const Orders = () => {
         ))}
       </div>
 
+      <div className="bg-white rounded-xl border border-gray-200 p-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-medium text-gray-600 mr-2">Payment:</span>
+          <button
+            onClick={() => setPaymentFilter('all')}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+              paymentFilter === 'all'
+                ? 'bg-primary-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setPaymentFilter('paid')}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+              paymentFilter === 'paid'
+                ? 'bg-green-600 text-white'
+                : 'bg-green-50 text-green-700 hover:bg-green-100'
+            }`}
+          >
+            Paid
+          </button>
+          <button
+            onClick={() => setPaymentFilter('pending')}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+              paymentFilter === 'pending'
+                ? 'bg-amber-500 text-white'
+                : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+            }`}
+          >
+            Unpaid
+          </button>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {orders.map((order) => (
           <Card key={order._id} className="hover:shadow-lg transition-shadow">
@@ -138,6 +180,18 @@ const Orders = () => {
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Total:</span>
                 <span className="font-bold text-primary-600">${order.grandTotal}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Payment:</span>
+                <span
+                  className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                    order.paymentStatus === 'paid'
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-amber-100 text-amber-700'
+                  }`}
+                >
+                  {(order.paymentStatus || 'pending').toUpperCase()}
+                </span>
               </div>
               {order.estimatedWaitTime && (
                 <div className="flex justify-between text-sm">
