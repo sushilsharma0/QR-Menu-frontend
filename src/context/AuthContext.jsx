@@ -36,12 +36,24 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(false)
   }, [token])
 
-  const logout = useCallback((options = {}) => {
+  const logout = useCallback(async (options = {}) => {
     let loginRole = options.loginRole
     if (loginRole === undefined && options.idleTimeout && user) {
       if (user.role === 'super_admin' || user.role === 'admin') loginRole = 'platform'
       else if (user.scope === 'employee') loginRole = 'employee'
       else if (user.role === 'restaurant') loginRole = 'restaurant'
+    }
+
+    try {
+      if (user?.scope === 'employee') {
+        await api.post('/restaurant/employees/logout', {}, { skipErrorToast: true })
+      } else if (user?.role === 'restaurant') {
+        await api.post('/restaurant/auth/logout', {}, { skipErrorToast: true })
+      } else if (user?.role === 'super_admin' || user?.role === 'admin') {
+        await api.post('/platform/auth/logout', {}, { skipErrorToast: true })
+      }
+    } catch (e) {
+      // best-effort server logout logging; local logout still proceeds
     }
 
     clearAuthSession()

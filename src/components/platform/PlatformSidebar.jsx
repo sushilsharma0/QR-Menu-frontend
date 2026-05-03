@@ -8,6 +8,7 @@ import {
   FiLayout,
   FiSettings,
   FiShield,
+  FiActivity,
 } from 'react-icons/fi'
 import { useAuth } from '../../hooks/useAuth'
 
@@ -18,6 +19,7 @@ const menuItems = [
   { path: '/platform/subscriptions', icon: FiCreditCard, label: 'Subscriptions' },
   { path: '/platform/cms', icon: FiLayout, label: 'CMS' },
   { path: '/platform/admins', icon: FiShield, label: 'Admins' },
+  { path: '/platform/logs', icon: FiActivity, label: 'System Logs' },
   { path: '/platform/settings', icon: FiSettings, label: 'Settings' },
 ]
 

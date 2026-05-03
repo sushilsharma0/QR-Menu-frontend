@@ -19,6 +19,7 @@ import PlatformCreatePlan from "./pages/platform/CreatePlan";
 import PlatformCMS from "./pages/platform/CMS";
 import PlatformAdmins from "./pages/platform/Admins";
 import PlatformSettings from "./pages/platform/Settings";
+import PlatformSystemLogs from "./pages/platform/SystemLogs";
 
 // Restaurant Pages
 import RestaurantDashboard from "./pages/restaurant/Dashboard";
@@ -37,6 +38,7 @@ import RestaurantTransactions from "./pages/restaurant/Transactions";
 import RestaurantSettings from "./pages/restaurant/Settings";
 import RestaurantProfile from "./pages/restaurant/Profile";
 import RestaurantPromotions from "./pages/restaurant/Promotions";
+import RestaurantSystemLogs from "./pages/restaurant/SystemLogs";
 
 // Employee Pages
 import KitchenDashboard from "./pages/employee/KitchenDashboard";
@@ -104,6 +106,7 @@ function App() {
         />
         <Route path="/platform/cms" element={<PlatformCMS />} />
         <Route path="/platform/admins" element={<PlatformAdmins />} />
+        <Route path="/platform/logs" element={<PlatformSystemLogs />} />
         <Route path="/platform/settings" element={<PlatformSettings />} />
       </Route>
 
@@ -128,6 +131,7 @@ function App() {
         <Route path="subscription" element={<RestaurantSubscription />} />
         <Route path="transactions" element={<RestaurantTransactions />} />
         <Route path="promotions" element={<RestaurantPromotions />} />
+        <Route path="logs" element={<RestaurantSystemLogs />} />
         <Route path="settings" element={<RestaurantSettings />} />
         <Route path="profile" element={<RestaurantProfile />} />
       </Route>
