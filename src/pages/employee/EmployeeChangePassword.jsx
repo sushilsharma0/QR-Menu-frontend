@@ -7,12 +7,7 @@ import { useAuth } from '../../hooks/useAuth'
 import api from '../../services/api'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
-
-const employeeDashboardPath = (role) => {
-  if (role === 'kitchen') return '/kitchen/dashboard'
-  if (role === 'cashier') return '/cashier/dashboard'
-  return '/employee/orders'
-}
+import { defaultPortalPathForUser } from '../../utils/tenantPaths'
 
 const EmployeeChangePassword = () => {
   const { user, token, mergeUser } = useAuth()
@@ -41,7 +36,7 @@ const EmployeeChangePassword = () => {
       })
       mergeUser({ mustChangePassword: false })
       toast.success('Password updated')
-      navigate(employeeDashboardPath(user.role), { replace: true })
+      navigate(defaultPortalPathForUser(user), { replace: true })
     } catch (err) {
       toast.error(err.response?.data?.message || 'Could not update password')
     } finally {

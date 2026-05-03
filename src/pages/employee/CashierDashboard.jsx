@@ -8,9 +8,11 @@ import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import Modal from '../../components/common/Modal'
 import { useSocket } from '../../hooks/useSocket'
+import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 
 const CashierDashboard = () => {
   const navigate = useNavigate()
+  const { cashierBase } = useTenantRoutes()
   const [orders, setOrders] = useState([])
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [paymentModal, setPaymentModal] = useState(false)
@@ -124,7 +126,7 @@ const CashierDashboard = () => {
                   >
                     <FiDollarSign className="mr-1" /> Process Payment
                   </Button>
-                  <Button size="sm" variant="secondary" onClick={() => navigate(`/employee/orders/${order._id}`)}>
+                  <Button size="sm" variant="secondary" onClick={() => navigate(`${cashierBase}/orders/${order._id}`)}>
                     View Details
                   </Button>
                 </div>
@@ -150,7 +152,7 @@ const CashierDashboard = () => {
                     {new Date(order.updatedAt).toLocaleTimeString()}
                   </span>
                 </div>
-                <Button size="sm" variant="ghost" className="mt-2" onClick={() => navigate(`/employee/orders/${order._id}`)}>
+                <Button size="sm" variant="ghost" className="mt-2" onClick={() => navigate(`${cashierBase}/orders/${order._id}`)}>
                   View Receipt
                 </Button>
               </div>

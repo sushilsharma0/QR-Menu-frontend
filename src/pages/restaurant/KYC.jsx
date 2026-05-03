@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
@@ -10,6 +11,7 @@ import Card from '../../components/common/Card'
 
 const KYC = () => {
   const navigate = useNavigate()
+  const { restaurantBase } = useTenantRoutes()
   const { mergeUser } = useAuth()
   const [loading, setLoading] = useState(false)
   const [kycStatus, setKycStatus] = useState(null)
@@ -99,7 +101,7 @@ const KYC = () => {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">KYC Verified!</h2>
           <p className="text-gray-600 mb-6">Your KYC has been approved. You can now access all features.</p>
-          <Button onClick={() => navigate('/restaurant/dashboard')}>Go to Dashboard</Button>
+          <Button onClick={() => navigate(`${restaurantBase}/dashboard`)}>Go to Dashboard</Button>
         </div>
       </div>
     )

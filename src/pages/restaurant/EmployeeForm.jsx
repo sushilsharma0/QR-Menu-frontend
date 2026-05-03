@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
@@ -10,6 +11,7 @@ import Card from '../../components/common/Card'
 const EmployeeForm = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { restaurantBase } = useTenantRoutes()
   const [loading, setLoading] = useState(false)
   const { register, handleSubmit, setValue, formState: { errors } } = useForm()
 
@@ -49,7 +51,7 @@ const EmployeeForm = () => {
           toast.success('Employee created.')
         }
       }
-      navigate('/restaurant/employees')
+      navigate(`${restaurantBase}/employees`)
     } catch (error) {
       toast.error(error.response?.data?.message || 'Operation failed')
     } finally {
@@ -129,7 +131,7 @@ const EmployeeForm = () => {
             <Button type="submit" loading={loading}>
               {id ? 'Update' : 'Create'} Employee
             </Button>
-            <Button type="button" variant="secondary" onClick={() => navigate('/restaurant/employees')}>
+            <Button type="button" variant="secondary" onClick={() => navigate(`${restaurantBase}/employees`)}>
               Cancel
             </Button>
           </div>

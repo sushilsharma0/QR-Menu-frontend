@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import NotificationMenu from '../common/NotificationMenu'
 import api from '../../services/api'
 import { useSocket } from '../../hooks/useSocket'
+import { cashierPortalBase, kitchenPortalBase } from '../../utils/tenantPaths'
 
 const EmployeeLayout = () => {
   const { user, logout } = useAuth()
@@ -36,17 +37,23 @@ const EmployeeLayout = () => {
     return 'Employee Dashboard'
   }
 
-  const slug = user?.restaurantSlug || user?.restaurantId || user?.id
-  const restaurantId = user?.restaurantId || user?.id
-  const kitchenDashboardPath = slug && restaurantId ? `/kitchen/dashboard/${slug}/${restaurantId}` : '/kitchen/dashboard'
-  const cashierDashboardPath = slug && restaurantId ? `/cashier/dashboard/${slug}/${restaurantId}` : '/cashier/dashboard'
+  const slug = user?.slug ?? user?.restaurantSlug ?? user?.restaurantId ?? user?.id
+  const restaurantId = user?.restaurantId ?? user?.id
+  const hasTenant = slug != null && restaurantId != null
+  const kb = hasTenant ? kitchenPortalBase(slug, restaurantId) : ''
+  const cb = hasTenant ? cashierPortalBase(slug, restaurantId) : ''
+  const kitchenDashboardPath = kb ? `${kb}/dashboard` : ''
+  const kitchenOrdersPath = kb ? `${kb}/orders` : ''
+  const cashierDashboardPath = cb ? `${cb}/dashboard` : ''
 
   const navItems = [
-    { path: '/employee/orders', label: 'Order History', icon: FiClock, role: 'kitchen' },
+    { path: kitchenOrdersPath, label: 'Order History', icon: FiClock, role: 'kitchen', showPending: true },
     { path: cashierDashboardPath, label: 'Orders', icon: FiDollarSign, role: 'cashier' },
   ]
 
-  const currentNavItems = navItems.filter(item => item.role === user?.role)
+  const currentNavItems = navItems.filter(
+    (item) => item.role === user?.role && item.path,
+  )
 
   const fetchPendingCount = async () => {
     if (user?.role !== 'kitchen') return
@@ -90,7 +97,13 @@ const EmployeeLayout = () => {
             {/* Logo */}
             <div className="flex items-center gap-3">
               <Link
-                to={user?.role === 'kitchen' ? kitchenDashboardPath : user?.role === 'cashier' ? cashierDashboardPath : '/'}
+                to={
+                  user?.role === 'kitchen'
+                    ? kitchenDashboardPath || '/login'
+                    : user?.role === 'cashier'
+                      ? cashierDashboardPath || '/login'
+                      : '/'
+                }
                 className="flex items-center gap-2"
               >
                 <span className="text-2xl">{getRoleIcon()}</span>
@@ -147,7 +160,7 @@ const EmployeeLayout = () => {
                 >
                   <item.icon className="h-4 w-4" />
                   {item.label}
-                  {item.path === '/employee/orders' && pendingCount > 0 && (
+                  {item.showPending && pendingCount > 0 && (
                     <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-semibold flex items-center justify-center">
                       {pendingCount > 99 ? '99+' : pendingCount}
                     </span>

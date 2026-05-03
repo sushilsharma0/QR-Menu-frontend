@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
+import { getTenantSegments, restaurantPortalBase } from '../../utils/tenantPaths'
 import {
   FiHome,
   FiUsers,
@@ -18,6 +19,11 @@ import {
 const Sidebar = () => {
   const { user } = useAuth()
 
+  const restaurantBase = useMemo(() => {
+    const { slug, restaurantId } = getTenantSegments(user)
+    return slug != null && restaurantId != null ? restaurantPortalBase(slug, restaurantId) : ''
+  }, [user])
+
   const platformMenus = [
     { path: '/platform/dashboard', icon: FiHome, label: 'Dashboard' },
     { path: '/platform/restaurants', icon: FiUsers, label: 'Restaurants' },
@@ -28,24 +34,28 @@ const Sidebar = () => {
     { path: '/platform/settings', icon: FiSettings, label: 'Settings' },
   ]
 
-  const restaurantMenus = [
-    { path: '/restaurant/dashboard', icon: FiHome, label: 'Dashboard' },
-    { path: '/restaurant/menu', icon: FiMenu, label: 'Menu' },
-    { path: '/restaurant/orders', icon: FiShoppingCart, label: 'Orders' },
-    { path: '/restaurant/tables', icon: FiGrid, label: 'Tables' },
-    { path: '/restaurant/employees', icon: FiUsers, label: 'Employees' },
-    { path: '/restaurant/kyc', icon: FiFileText, label: 'KYC' },
-    { path: '/restaurant/subscription', icon: FiCreditCard, label: 'Subscription' },
-    { path: '/restaurant/transactions', icon: FiCreditCard, label: 'Transactions' },
-    { path: '/restaurant/profile', icon: FiUser, label: 'Profile' },
-    { path: '/restaurant/settings', icon: FiSettings, label: 'Settings' },
-  ]
+  const restaurantMenus = useMemo(() => {
+    if (!restaurantBase) return []
+    return [
+      { path: `${restaurantBase}/dashboard`, icon: FiHome, label: 'Dashboard' },
+      { path: `${restaurantBase}/menu`, icon: FiMenu, label: 'Menu' },
+      { path: `${restaurantBase}/orders`, icon: FiShoppingCart, label: 'Orders' },
+      { path: `${restaurantBase}/tables`, icon: FiGrid, label: 'Tables' },
+      { path: `${restaurantBase}/employees`, icon: FiUsers, label: 'Employees' },
+      { path: `${restaurantBase}/kyc`, icon: FiFileText, label: 'KYC' },
+      { path: `${restaurantBase}/subscription`, icon: FiCreditCard, label: 'Subscription' },
+      { path: `${restaurantBase}/transactions`, icon: FiCreditCard, label: 'Transactions' },
+      { path: `${restaurantBase}/profile`, icon: FiUser, label: 'Profile' },
+      { path: `${restaurantBase}/settings`, icon: FiSettings, label: 'Settings' },
+    ]
+  }, [restaurantBase])
 
-  const menus = user?.role === 'super_admin' || user?.role === 'admin' 
-    ? platformMenus 
-    : user?.role === 'restaurant' 
-      ? restaurantMenus 
-      : []
+  const menus =
+    user?.role === 'super_admin' || user?.role === 'admin'
+      ? platformMenus
+      : user?.role === 'restaurant'
+        ? restaurantMenus
+        : []
 
   if (!user || user.role === 'kitchen' || user.role === 'cashier') return null
 

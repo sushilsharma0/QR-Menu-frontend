@@ -15,8 +15,10 @@ import {
 import api from '../../services/api'
 import { useSocket } from '../../hooks/useSocket'
 import { useAuth } from '../../hooks/useAuth'
+import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 
 const menuItems = [
+<<<<<<< HEAD
   { path: '/restaurant/dashboard', icon: FiHome, label: 'Dashboard' },
   { path: '/restaurant/menu', icon: FiMenu, label: 'Menu' },
   { path: '/restaurant/orders', icon: FiShoppingCart, label: 'Orders' },
@@ -28,14 +30,25 @@ const menuItems = [
   { path: '/restaurant/promotions', icon: FiTag, label: 'Promotions' },
   { path: '/restaurant/profile', icon: FiUser, label: 'Profile' },
   { path: '/restaurant/settings', icon: FiSettings, label: 'Settings' },
+=======
+  { segment: 'dashboard', icon: FiHome, label: 'Dashboard' },
+  { segment: 'menu', icon: FiMenu, label: 'Menu' },
+  { segment: 'orders', icon: FiShoppingCart, label: 'Orders' },
+  { segment: 'tables', icon: FiGrid, label: 'Tables' },
+  { segment: 'employees', icon: FiUsers, label: 'Employees' },
+  { segment: 'kyc', icon: FiFileText, label: 'KYC' },
+  { segment: 'subscription', icon: FiCreditCard, label: 'Subscription' },
+  { segment: 'transactions', icon: FiCreditCard, label: 'Transactions' },
+  { segment: 'profile', icon: FiUser, label: 'Profile' },
+  { segment: 'settings', icon: FiSettings, label: 'Settings' },
+>>>>>>> c853aeaec5f8f7aab1834fb5cf91b97674bb8c18
 ]
 
 const RestaurantSidebar = () => {
   const [pendingCount, setPendingCount] = useState(0)
   const { socket } = useSocket()
   const { user } = useAuth()
-  const slug = user?.slug || user?.id
-  const restaurantId = user?.id
+  const { restaurantBase } = useTenantRoutes()
 
   const fetchPendingCount = async () => {
     try {
@@ -78,12 +91,8 @@ const RestaurantSidebar = () => {
       <nav className="flex-1 px-4 py-6 space-y-1">
         {menuItems.map((item) => (
           <NavLink
-            key={item.path}
-            to={
-              item.path === '/restaurant/dashboard' && slug && restaurantId
-                ? `/restaurant/dashboard/${slug}/${restaurantId}`
-                : item.path
-            }
+            key={item.segment}
+            to={`${restaurantBase}/${item.segment}`}
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 text-gray-600 rounded-lg transition-all duration-200 ${
                 isActive
@@ -94,7 +103,7 @@ const RestaurantSidebar = () => {
           >
             <item.icon className="h-5 w-5" />
             <span>{item.label}</span>
-            {item.path === '/restaurant/orders' && pendingCount > 0 && (
+            {item.segment === 'orders' && pendingCount > 0 && (
               <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-semibold flex items-center justify-center">
                 {pendingCount > 99 ? '99+' : pendingCount}
               </span>
