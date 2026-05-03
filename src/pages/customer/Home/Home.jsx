@@ -18,6 +18,7 @@ import Waiters from "../../../components/customer/homepage/Waiters";
 import QRScannerModal from "../../../components/customer/homepage/QRScannerModal";
 import Offers from "../../../components/customer/homepage/Offers";
 import Feedback from "../../../components/customer/homepage/Feedback";
+import PromoCodeModal from "../../../components/customer/homepage/PromoCodeModal";
 import PageTransition from '../../../components/customer/PageTransition';
 import api from "../../../services/api";
 import { getRestaurantInfo } from "../../../services/customer";
@@ -31,6 +32,8 @@ export default function Home() {
   const [showWaiters, setShowWaiters] = useState(false);
   const [showOffers, setShowOffers] = useState(false);
   const [promoBanners, setPromoBanners] = useState([]);
+  const [showPromoModal, setShowPromoModal] = useState(false);
+  const [promoModalShown, setPromoModalShown] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [tableNumber, setTableNumber] = useState("");
@@ -42,9 +45,6 @@ export default function Home() {
     : "Restaurant";
   
   
-
-
- 
 
   const handleScanSuccess = (data) => {
     console.log("QR Data Scanned:", data);
@@ -90,8 +90,16 @@ export default function Home() {
     try {
       if (!slug) return
       const res = await api.get(`/customer/promotions/${slug}/banners`);
-      setPromoBanners(res?.data?.data || []);
+      const promos = res?.data?.data || [];
+      setPromoBanners(promos);
+      
+      // Show promo modal automatically if not shown before and there are promos
+      if (!promoModalShown && promos.length > 0) {
+        setShowPromoModal(true);
+        setPromoModalShown(true);
+      }
     } catch (err) {
+      console.error('Failed to fetch promotions:', err);
       setPromoBanners([]);
     }
   };
@@ -184,8 +192,13 @@ if (!userId) {
 
         <button 
           onClick={() => setShowOffers(true)}
-          className="flex flex-col items-center justify-center bg-white p-4 rounded-2xl shadow-sm border border-gray-50 active:bg-gray-100"
+          className="relative flex flex-col items-center justify-center bg-white p-4 rounded-2xl shadow-sm border border-gray-50 active:bg-gray-100"
         >
+          {promoBanners.length > 0 && (
+            <div className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white">
+              {promoBanners.length}
+            </div>
+          )}
           <div className="bg-orange-50 p-3 rounded-full text-orange-500 mb-2">
             <Tag size={20} />
           </div>
@@ -204,7 +217,7 @@ if (!userId) {
       </div>
 
       {/* Branding Footer */}
-      {promoBanners.length > 0 && (
+      {/* {promoBanners.length > 0 && (
         <div className="w-[90%] max-w-md mt-8 space-y-3">
           {promoBanners.map((promo) => (
             <div
@@ -219,7 +232,7 @@ if (!userId) {
             </div>
           ))}
         </div>
-      )}
+      )} */}
 
       <p className="mt-12 text-gray-400 text-xs">
         Powered by{" "}
@@ -236,12 +249,21 @@ if (!userId) {
         onClose={() => setIsProfileOpen(false)}
       />
       <Waiters isOpen={showWaiters} onClose={() => setShowWaiters(false)} />
-      <Offers isOpen={showOffers} onClose={() => setShowOffers(false)} />
+      <Offers 
+        isOpen={showOffers} 
+        onClose={() => setShowOffers(false)}
+        slug={slug}
+      />
       <Feedback isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
       <QRScannerModal
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
         onScanSuccess={handleScanSuccess}
+      />
+      <PromoCodeModal
+        isOpen={showPromoModal}
+        onClose={() => setShowPromoModal(false)}
+        promos={promoBanners}
       />
       {/* Nav */}
 

@@ -1,155 +1,105 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  X,
-  Tag,
-  Clock,
-  DollarSign,
-  Copy,
-  Check,
-  AlertCircle,
-} from "lucide-react";
+import { X, Tag, Clock, DollarSign, Copy, Check, AlertCircle } from "lucide-react";
+import api from "../../../services/api";
 
-// ── Offer data
-// Added two new fields per offer:
-//   minOrder  — minimum cart total required (null = no minimum)
-//   validUntil — ISO date string for accurate countdown calculation
-const offersData = [
-  {
-    id: 1,
-    title: "50% OFF",
-    description: "On all biryanis",
-    code: "BIRYANI50",
-    validUntil: "2026-12-31",
-    color: "bg-red-500",
-    minOrder: null,
-  },
-  {
-    id: 2,
-    title: "Buy 1 Get 1",
-    description: "Free pizza on weekends",
-    code: "PIZZA1FREE",
-    validUntil: "2024-11-30",
-    color: "bg-green-500",
-    minOrder: 299,
-  },
-  {
-    id: 3,
-    title: "20% OFF",
-    description: "On all drinks & beverages",
-    code: "DRINK20",
-    validUntil: "2026-05-03",
-    color: "bg-blue-500",
-    minOrder: 199,
-  },
-  {
-    id: 4,
-    title: "Free Dessert",
-    description: "On orders above ₹500",
-    code: "DESSERTFREE",
-    validUntil: "2026-12-31",
-    color: "bg-purple-500",
-    minOrder: 500,
-  },
-  {
-    id: 5,
-    title: "15% OFF",
-    description: "On combo meals",
-    code: "COMBO15",
-    validUntil: "2026-04-30",
-    color: "bg-orange-500",
-    minOrder: 349,
-  },
-];
-
-// ── Returns days remaining as an integer (negative = already expired)
+// ── Helpers
 function getDaysLeft(validUntil) {
   const diff = new Date(validUntil) - new Date();
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
-// ── Expiry countdown badge
-// Colour-coded: green (safe) → amber (≤7 days) → red (≤3 days) → grey (expired)
 function ExpiryBadge({ validUntil }) {
   const days = getDaysLeft(validUntil);
 
-  if (days <= 0) {
+  if (days <= 0)
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-gray-100 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full">
+      <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full">
         Expired
       </span>
     );
-  }
-
-  if (days <= 3) {
+  if (days <= 3)
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 rounded-full">
-        <AlertCircle size={9} />
-        Expires in {days}d
+      <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-red-50 text-red-500 px-2 py-0.5 rounded-full">
+        <AlertCircle size={9} /> Expires in {days}d
       </span>
     );
-  }
-
-  if (days <= 7) {
+  if (days <= 7)
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-orange-50 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full">
-        <Clock size={9} />
-        {days} days left
+      <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-orange-50 text-orange-500 px-2 py-0.5 rounded-full">
+        <Clock size={9} /> {days} days left
       </span>
     );
-  }
-
   return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full">
-      <Clock size={9} />
-      Valid {days} days
+    <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-green-50 text-green-600 px-2 py-0.5 rounded-full">
+      <Clock size={9} /> Valid {days} days
     </span>
   );
 }
 
-// ── Minimum order badge — only renders if minOrder is set
-function MinOrderBadge({ minOrder }) {
-  if (!minOrder) return null;
-
+function MinOrderBadge({ minOrderAmount }) {
+  if (!minOrderAmount) return null;
   return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full">
-      <DollarSign size={9} />
-      Min. ₹{minOrder}
+    <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-blue-50 text-blue-500 px-2 py-0.5 rounded-full">
+      <DollarSign size={9} /> Min. ₹{minOrderAmount}
     </span>
   );
 }
 
-// ── Single offer card
-function OfferCard({ offer }) {
+// ── Skeleton
+function SkeletonCard() {
+  return (
+    <div className="flex gap-3 p-3 bg-white rounded-2xl animate-pulse">
+      <div className="w-16 h-16 rounded-xl bg-gray-100 flex-shrink-0" />
+      <div className="flex-1 space-y-2 py-1">
+        <div className="h-3.5 bg-gray-100 rounded-full w-2/3" />
+        <div className="h-3 bg-gray-100 rounded-full w-1/3" />
+        <div className="flex gap-1.5 mt-1">
+          <div className="h-4 w-16 bg-gray-100 rounded-full" />
+          <div className="h-4 w-20 bg-gray-100 rounded-full" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Offer card
+function OfferCard({ offer, index }) {
   const [copied, setCopied] = useState(false);
-  const isExpired = getDaysLeft(offer.validUntil) <= 0;
+  const isExpired = getDaysLeft(offer.endAt) <= 0;
+
+  // Soft background colors cycling through offers
+  const softColors = [
+    { bg: "bg-orange-500", light: "bg-orange-50" },
+    { bg: "bg-violet-500", light: "bg-violet-50" },
+    { bg: "bg-cyan-500",   light: "bg-cyan-50"   },
+    { bg: "bg-rose-500",   light: "bg-rose-50"   },
+    { bg: "bg-emerald-500",light: "bg-emerald-50" },
+  ];
+  const color = softColors[index % softColors.length];
 
   const handleCopy = async () => {
     try {
-      // Try clipboard API first (works on HTTPS)
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(offer.code);
       } else {
-        // Fallback for mobile/HTTP: create temporary textarea
-        const textArea = document.createElement("textarea");
-        textArea.value = offer.code;
-        textArea.style.position = "fixed";
-        textArea.style.left = "-9999px";
-        textArea.style.top = "-9999px";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
+        const el = document.createElement("textarea");
+        el.value = offer.code;
+        el.style.position = "fixed";
+        el.style.left = "-9999px";
+        document.body.appendChild(el);
+        el.focus();
+        el.select();
         document.execCommand("copy");
-        document.body.removeChild(textArea);
+        document.body.removeChild(el);
       }
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      // Fallback: select the code text for manual copy
-      const codeElement = document.getElementById(`code-${offer.id}`);
-      if (codeElement) {
+    } catch {
+      const codeEl = document.getElementById(`code-${offer._id}`);
+      if (codeEl) {
         const range = document.createRange();
-        range.selectNode(codeElement);
+        range.selectNode(codeEl);
         window.getSelection().removeAllRanges();
         window.getSelection().addRange(range);
       }
@@ -157,77 +107,108 @@ function OfferCard({ offer }) {
   };
 
   return (
-    <div
-      className={`bg-white rounded-2xl p-4 flex items-start gap-3 border border-gray-100 ${isExpired ? "opacity-50 pointer-events-none" : ""}`}
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05 }}
+      className={`flex gap-3 items-center p-3 bg-white rounded-2xl border border-gray-100 ${
+        isExpired ? "opacity-50 pointer-events-none" : ""
+      }`}
     >
-      {/* Colour badge */}
+      {/* Left — discount badge */}
       <div
-        className={`${offer.color} min-w-12 sm:min-w-14 md:min-w-16 aspect-square rounded-xl sm:rounded-2xl flex items-center justify-center text-white flex-0 p-1.5`}
+        className={`${color.bg} w-16 h-16 rounded-xl flex-shrink-0 flex flex-col items-center justify-center text-white`}
       >
-        <span
-          className="text-[9px] sm:text-[11px] md:text-xs font-black text-center leading-tight wrap-break-words w-full overflow-hidden line-clamp-3"
-          title={offer.title} // full title on hover as fallback
-        >
-          {offer.title}
+        <span className="text-lg font-black leading-none">
+          {offer.discountType === "percent"
+            ? `${offer.discountValue}%`
+            : `₹${offer.discountValue}`}
+        </span>
+        <span className="text-[9px] font-semibold tracking-wider opacity-90">
+          OFF
         </span>
       </div>
 
-      {/* Info */}
+      {/* Centre — info */}
       <div className="flex-1 min-w-0">
-        <h3 className="text-sm font-semibold text-gray-800">
-          {offer.description}
-        </h3>
+        <h3 className="text-sm font-bold text-gray-800 truncate">{offer.name}</h3>
 
-        {/* Code + badges row */}
-        <div className="flex flex-wrap items-center gap-1.5 mt-2">
-          {/* Promo code pill */}
+        {/* Dashed code box */}
+        <div className={`inline-flex items-center mt-1.5 px-2 py-0.5 rounded-lg border border-dashed border-gray-300 ${color.light}`}>
           <span
-            id={`code-${offer.id}`}
-            className="text-xs font-mono bg-gray-100 text-gray-600 px-2 py-0.5 rounded border border-gray-200"
+            id={`code-${offer._id}`}
+            className="text-xs font-mono font-bold text-gray-600 tracking-wider"
           >
             {offer.code}
           </span>
-
-          {/* Min order badge */}
-          <MinOrderBadge minOrder={offer.minOrder} />
-
-          {/* Expiry countdown */}
-          <ExpiryBadge validUntil={offer.validUntil} />
         </div>
 
-        {/* Expired label */}
-        {isExpired && (
-          <p className="text-[10px] text-gray-400 font-medium mt-1.5 uppercase tracking-wide">
-            This offer has expired
-          </p>
-        )}
+        {/* Badges */}
+        <div className="flex flex-wrap gap-1.5 mt-1.5">
+          <MinOrderBadge minOrderAmount={offer.minOrderAmount} />
+          <ExpiryBadge validUntil={offer.endAt} />
+        </div>
       </div>
 
-      {/* Copy button with feedback */}
+      {/* Right — copy button */}
       <button
         onClick={handleCopy}
-        className={`p-2 rounded-xl transition-colors flex-0 ${
+        className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
           copied
             ? "bg-green-100 text-green-600"
-            : "bg-orange-100 text-orange-500 hover:bg-orange-200"
+            : `${color.light} text-gray-600 hover:opacity-80`
         }`}
-        title="Copy code"
       >
         {copied ? <Check size={15} /> : <Copy size={15} />}
       </button>
+    </motion.div>
+  );
+}
+
+// ── Empty state
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-14">
+      <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center mb-3">
+        <Tag size={26} className="text-orange-300" />
+      </div>
+      <p className="text-sm font-semibold text-gray-600">No offers available</p>
+      <p className="text-xs text-gray-400 mt-1">Check back soon for deals!</p>
     </div>
   );
 }
 
-// ── Main Offers bottom sheet
-export default function Offers({ isOpen, onClose }) {
-  // Lock body scroll when sheet is open
+// ── Main bottom sheet
+export default function Offers({ isOpen, onClose, slug }) {
+  const [offersData, setOffersData] = useState([]);
+  const [loading, setLoading]       = useState(false);
+
+  useEffect(() => {
+    if (isOpen && slug) fetchOffers();
+  }, [isOpen, slug]);
+
+  const fetchOffers = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get(`/customer/promotions/${slug}/banners`);
+      setOffersData(res?.data?.data || []);
+    } catch {
+      setOffersData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "unset";
-    return () => {
-      document.body.style.overflow = "unset";
-    };
+    return () => { document.body.style.overflow = "unset"; };
   }, [isOpen]);
+
+  const sorted = [...offersData].sort(
+    (a, b) => getDaysLeft(b.endAt) - getDaysLeft(a.endAt)
+  );
+
+  const activeCount = offersData.filter(o => getDaysLeft(o.endAt) > 0).length;
 
   return (
     <AnimatePresence>
@@ -242,50 +223,56 @@ export default function Offers({ isOpen, onClose }) {
             className="fixed inset-0 bg-black/50 z-40"
           />
 
-          {/* Bottom sheet */}
+          {/* Sheet */}
           <motion.div
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[80vh] overflow-hidden z-50 shadow-2xl"
+            transition={{ type: "spring", damping: 25, stiffness: 220 }}
+            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[85vh] overflow-hidden z-50 shadow-2xl"
           >
             {/* Drag handle */}
             <div className="flex justify-center pt-3">
-              <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+              <div className="w-10 h-1 bg-gray-200 rounded-full" />
             </div>
 
             {/* Header */}
-            <div className="bg-linear-to-r from-orange-500 to-red-500 mx-4 mt-4 rounded-2xl p-4 text-white">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="bg-white/20 p-2 rounded-lg">
-                    <Tag size={22} />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold">Special Offers</h2>
-                    <p className="text-sm opacity-90">Grab the best deals!</p>
-                  </div>
+            <div className="flex items-center justify-between px-5 pt-4 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 bg-orange-100 rounded-xl flex items-center justify-center">
+                  <Tag size={18} className="text-orange-500" />
                 </div>
-                <button
-                  onClick={onClose}
-                  className="bg-white/20 p-2 rounded-lg hover:bg-white/30 transition-colors"
-                >
-                  <X size={20} />
-                </button>
+                <div>
+                  <h2 className="text-base font-bold text-gray-800 leading-none">
+                    Special Offers
+                  </h2>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    {activeCount} deal{activeCount !== 1 ? "s" : ""} available
+                  </p>
+                </div>
               </div>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center transition-colors"
+              >
+                <X size={16} className="text-gray-500" />
+              </button>
             </div>
 
-            {/* Offer list — expired cards sink to the bottom */}
-            <div className="p-4 space-y-3 overflow-y-auto max-h-[60vh]">
-              {[...offersData]
-                .sort(
-                  (a, b) =>
-                    getDaysLeft(b.validUntil) - getDaysLeft(a.validUntil),
-                )
-                .map((offer) => (
-                  <OfferCard key={offer.id} offer={offer} />
-                ))}
+            {/* Thin divider */}
+            <div className="mx-5 h-px bg-gray-100" />
+
+            {/* List */}
+            <div className="px-4 pt-3 pb-6 space-y-2.5 overflow-y-auto max-h-[68vh]">
+              {loading ? (
+                Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)
+              ) : sorted.length === 0 ? (
+                <EmptyState />
+              ) : (
+                sorted.map((offer, i) => (
+                  <OfferCard key={offer._id} offer={offer} index={i} />
+                ))
+              )}
             </div>
           </motion.div>
         </>
