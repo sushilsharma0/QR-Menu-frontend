@@ -65,6 +65,8 @@ function App() {
   const isEmployeeUser =
     user?.scope === "employee" ||
     ["kitchen", "cashier", "manager", "waiter"].includes(user?.role);
+  const userSlug = user?.slug || user?.restaurantSlug || user?.restaurantId || user?.id;
+  const userRestaurantId = user?.restaurantId || user?.id;
 
   if (isLoading) {
     return (
@@ -107,6 +109,7 @@ function App() {
 
       {/* Restaurant Routes */}
       <Route element={<RestaurantLayout />}>
+        <Route path="/restaurant/dashboard/:slug/:restaurantId" element={<RestaurantDashboard />} />
         <Route path="/restaurant/dashboard" element={<RestaurantDashboard />} />
         <Route path="/restaurant/menu" element={<RestaurantMenu />} />
         <Route
@@ -167,7 +170,9 @@ function App() {
 
       {/* Employee Routes */}
       <Route element={<EmployeeLayout />}>
+        <Route path="/kitchen/dashboard/:slug/:restaurantId" element={<KitchenDashboard />} />
         <Route path="/kitchen/dashboard" element={<KitchenDashboard />} />
+        <Route path="/cashier/dashboard/:slug/:restaurantId" element={<CashierDashboard />} />
         <Route path="/cashier/dashboard" element={<CashierDashboard />} />
         <Route path="/employee/orders" element={<OrderList />} />
         <Route path="/employee/orders/:id" element={<RestaurantOrderDetail />} />
@@ -197,15 +202,15 @@ function App() {
           ) : isEmployeeUser && user.mustChangePassword ? (
             <Navigate to="/employee/change-password" />
           ) : isEmployeeUser && user.role === "kitchen" ? (
-            <Navigate to="/kitchen/dashboard" />
+            <Navigate to={`/kitchen/dashboard/${userSlug}/${userRestaurantId}`} />
           ) : isEmployeeUser && user.role === "cashier" ? (
-            <Navigate to="/cashier/dashboard" />
+            <Navigate to={`/cashier/dashboard/${userSlug}/${userRestaurantId}`} />
           ) : isEmployeeUser ? (
             <Navigate to="/employee/orders" />
           ) : user.role === "super_admin" || user.role === "admin" ? (
             <Navigate to="/platform/dashboard" />
           ) : user.role === "restaurant" ? (
-            <Navigate to="/restaurant/dashboard" />
+            <Navigate to={`/restaurant/dashboard/${userSlug}/${userRestaurantId}`} />
           ) : (
             <Navigate to="/login" />
           )

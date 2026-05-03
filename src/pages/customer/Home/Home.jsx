@@ -20,6 +20,7 @@ import Offers from "../../../components/customer/homepage/Offers";
 import Feedback from "../../../components/customer/homepage/Feedback";
 import PageTransition from '../../../components/customer/PageTransition';
 import api from "../../../services/api";
+import { getRestaurantInfo } from "../../../services/customer";
 import toast from "react-hot-toast";
 import CryptoJS from "crypto-js";
 
@@ -33,6 +34,7 @@ export default function Home() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [tableNumber, setTableNumber] = useState("");
+  const [restaurantInfo, setRestaurantInfo] = useState(null);
   const { token } = useParams();
   const { slug: restaurantSlug } = useParams();
   
@@ -51,7 +53,17 @@ export default function Home() {
   useEffect(()=>{
     fetchTables();
     fetchPromoBanners();
+    fetchRestaurantInfo();
   },[])
+
+  const fetchRestaurantInfo = async () => {
+    try {
+      const info = await getRestaurantInfo(restaurantSlug)
+      setRestaurantInfo(info)
+    } catch (error) {
+      console.error('Failed to fetch restaurant info:', error)
+    }
+  }
 
     const fetchTables = async () => {
       try {
@@ -95,7 +107,9 @@ if (!userId) {
       <div
         className="relative w-full h-[45vh] bg-cover bg-center flex flex-col items-center justify-center text-white p-6"
         style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80')`,
+          backgroundImage: restaurantInfo?.backgroundPhoto
+            ? `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('${restaurantInfo.backgroundPhoto}')`
+            : `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80')`,
         }}
       >
         <div className="absolute top-6 left-0 right-0 px-6 flex justify-between z-20">
@@ -120,8 +134,15 @@ if (!userId) {
           <div className="bg-white/20 backdrop-blur-md inline-block p-3 rounded-full mb-4">
             <span className="text-2xl">🍽️</span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">{JSON.parse(localStorage.getItem("user")).name}</h1>
-          {/* <h1 className="text-3xl font-bold tracking-tight">Foodies Cafe 🌿</h1> */}
+          <h1 className="text-3xl font-bold tracking-tight">
+            {restaurantInfo?.name || (() => {
+              try {
+                return JSON.parse(localStorage.getItem("user"))?.name || 'Welcome'
+              } catch {
+                return 'Welcome'
+              }
+            })()}
+          </h1>
           <p className="text-sm opacity-90 mt-2 italic">
             Delicious food, served with love
           </p>

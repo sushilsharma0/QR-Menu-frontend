@@ -1,6 +1,7 @@
 import React from 'react'
 import { useAuth } from '../../hooks/useAuth'
-import { FiLogOut, FiUser, FiBell } from 'react-icons/fi'
+import { FiLogOut, FiUser } from 'react-icons/fi'
+import NotificationMenu from './NotificationMenu'
 
 const Header = () => {
   const { user, logout } = useAuth()
@@ -16,10 +17,7 @@ const Header = () => {
         </div>
         
         <div className="flex items-center gap-4">
-          <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors relative">
-            <FiBell className="h-5 w-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
+          <NotificationMenu />
           
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">

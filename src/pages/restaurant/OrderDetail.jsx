@@ -14,6 +14,7 @@ const OrderDetail = () => {
   const { socket } = useSocket()
   const { user } = useAuth()
   const [order, setOrder] = useState(null)
+  const [restaurant, setRestaurant] = useState(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const isCashierView = user?.scope === 'employee' && user?.role === 'cashier'
@@ -27,7 +28,17 @@ const OrderDetail = () => {
 
   useEffect(() => {
     fetchOrder()
+    fetchRestaurantProfile()
   }, [id])
+
+  const fetchRestaurantProfile = async () => {
+    try {
+      const res = await api.get('/restaurant/auth/profile')
+      setRestaurant(res.data.data)
+    } catch (error) {
+      console.error('Failed to fetch restaurant profile', error)
+    }
+  }
 
   useEffect(() => {
     if (socket && id) {
@@ -78,6 +89,9 @@ const OrderDetail = () => {
     const paymentMethod = (order?.paymentMethod || 'cash').toUpperCase()
     const billDate = new Date(order?.createdAt).toLocaleString()
 
+    const restaurantName = order?.restaurant?.name || restaurant?.name || 'Restaurant'
+    const restaurantLogo = order?.restaurant?.logo || restaurant?.logo
+    const restaurantAddress = restaurant?.address || 'Kathmandu, Nepal'
     const printWindow = window.open('', '_blank')
     printWindow.document.write(`
       <html>
@@ -94,12 +108,14 @@ const OrderDetail = () => {
             .item { font-size: 12px; margin: 5px 0; }
             .total { font-weight: 700; font-size: 13px; }
             .footer { text-align: center; margin-top: 14px; font-size: 11px; }
+            .logo { max-width: 120px; max-height: 120px; margin-bottom: 12px; }
           </style>
         </head>
         <body>
           <div class="center">
-            <div class="title">${order?.restaurant?.name || 'Restaurant'}</div>
-            <div class="subtitle">Kathmandu, Nepal</div>
+            ${restaurantLogo ? `<img class="logo" src="${restaurantLogo}" alt="Logo" />` : ''}
+            <div class="title">${restaurantName}</div>
+            <div class="subtitle">${restaurantAddress}</div>
             <div class="subtitle">PAN: 123456789</div>
             <div class="subtitle">TAX INVOICE</div>
           </div>

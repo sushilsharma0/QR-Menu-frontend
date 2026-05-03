@@ -35,6 +35,7 @@ export const getRestaurantInfo = async (restaurantSlug) => {
     id: menu.data.restaurant?.id,
     name: menu.data.restaurant?.name,
     logo: menu.data.restaurant?.logo,
+    backgroundPhoto: menu.data.restaurant?.backgroundPhoto,
     description: menu.data.restaurant?.description,
     openingTime: menu.data.restaurant?.openingTime,
     closingTime: menu.data.restaurant?.closingTime,
