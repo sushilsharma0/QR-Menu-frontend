@@ -44,6 +44,11 @@ const Subscription = () => {
   }
 
   const requestPlan = async (planId) => {
+    if (!authUser?.isKYCVerified) {
+      toast.error('You must complete KYC verification before selecting a subscription plan.')
+      return
+    }
+
     try {
       setRequesting(true)
       await api.post('/restaurant/package/request', { packageId: planId })
@@ -92,6 +97,7 @@ const Subscription = () => {
 
   const awaitingProof = currentPlan?.planRequestStatus === 'awaiting_proof'
   const pendingReview = currentPlan?.planRequestStatus === 'pending_review'
+  const isKYCVerified = authUser?.isKYCVerified === true
 
   return (
     <div className="space-y-6">
@@ -99,6 +105,13 @@ const Subscription = () => {
         <h1 className="text-2xl font-bold text-gray-900">Subscription Plans</h1>
         <p className="text-gray-500 mt-1">Choose a plan, pay offline as instructed, then upload proof for verification.</p>
       </div>
+      {!isKYCVerified && (
+        <Card title="KYC verification required" className='bg-green-200'>
+          <p className="text-gray-700">
+            Subscription plan selection is locked until your KYC is approved by the platform. Complete KYC verification first, then you can choose a plan.
+          </p>
+        </Card>
+      )}
 
       {currentPlan?.planRequestRejectionReason && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 flex gap-2 items-start">
@@ -225,6 +238,7 @@ const Subscription = () => {
               className="w-full"
               variant={currentPlan?.currentPlan?._id === plan._id ? 'secondary' : 'primary'}
               disabled={
+                !isKYCVerified ||
                 currentPlan?.currentPlan?._id === plan._id ||
                 (currentPlan?.requestedPlan?._id === plan._id && (awaitingProof || pendingReview)) ||
                 requesting

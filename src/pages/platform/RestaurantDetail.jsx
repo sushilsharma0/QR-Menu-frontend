@@ -159,19 +159,19 @@ const RestaurantDetail = () => {
         <div className="grid grid-cols-2 gap-6">
           <div>
             <p className="text-sm text-gray-500">Max Tables</p>
-            <p className="font-medium">{restaurant?.planLimits?.maxTables || 0}</p>
+            <p className="font-medium">{restaurant?.planLimits?.maxTables || 'Trial Plan'}</p>
           </div>
           <div>
             <p className="text-sm text-gray-500">Max Employees</p>
-            <p className="font-medium">{restaurant?.planLimits?.maxEmployees || 0}</p>
+            <p className="font-medium">{restaurant?.planLimits?.maxEmployees || 'Trial Plan'}</p>
           </div>
           <div>
             <p className="text-sm text-gray-500">Max Categories</p>
-            <p className="font-medium">{restaurant?.planLimits?.maxCategories || 0}</p>
+            <p className="font-medium">{restaurant?.planLimits?.maxCategories || 'Trial Plan'}</p>
           </div>
           <div>
             <p className="text-sm text-gray-500">Max Menu Items</p>
-            <p className="font-medium">{restaurant?.planLimits?.maxMenuItems || 0}</p>
+            <p className="font-medium">{restaurant?.planLimits?.maxMenuItems || 'Trial Plan'}</p>
           </div>
         </div>
       )
