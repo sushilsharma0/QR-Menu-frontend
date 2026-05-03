@@ -60,7 +60,7 @@ const MenuCategories = () => {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
 
-  const {token} = useParams();
+  const { slug, token } = useParams();
 
   useEffect(() => {
     fetchMenuData();
@@ -204,7 +204,7 @@ const MenuCategories = () => {
           ) : (
             filteredCategories.map((cat) => (
               <Link
-                to={`/item/${JSON.parse(localStorage.getItem("user")).slug}/${token}/${cat.name}`}
+                to={`/item/${slug}/${token}/${cat.name}`}
                 key={cat._id}
                 className="group flex items-center p-3 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-all cursor-pointer hover:border-orange-200"
               >

@@ -11,8 +11,7 @@ import { motion } from "framer-motion";
 export default function Navigation() {
   const location = useLocation();
   const { slug, token } = useParams();
-  const user = JSON.parse(localStorage.getItem("user")) || {};
-  const activeSlug = slug || user.slug || "";
+  const activeSlug = slug || "";
   const activeToken = token || "";
 
   

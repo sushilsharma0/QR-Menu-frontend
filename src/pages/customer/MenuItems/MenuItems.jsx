@@ -349,7 +349,7 @@ const MenuItems = () => {
           sortedItems.map((item) => (
             <div key={item._id} className="flex gap-4 group bg-white rounded-2xl p-3 shadow-sm hover:shadow-md transition-shadow">
               {/* Item image with veg/non-veg indicator */}
-              <Link to={`/item-detail/${JSON.parse(localStorage.getItem("user")).slug}/${token}/${item._id}`} className="relative w-24 h-24 shrink-0">
+              <Link to={`/item-detail/${slug}/${token}/${item._id}`} className="relative w-24 h-24 shrink-0">
                 <img
                   src={item.image}
                   alt={item.name}
@@ -371,7 +371,7 @@ const MenuItems = () => {
 
               {/* Item details */}
               <div className="flex-1 flex flex-col justify-between py-1">
-                <Link to={`/item-detail/${JSON.parse(localStorage.getItem("user")).slug}/${token}/${item._id}`}>
+                <Link to={`/item-detail/${slug}/${token}/${item._id}`}>
                   <h3 className="font-bold text-gray-800 text-base">
                     {item.name}
                   </h3>

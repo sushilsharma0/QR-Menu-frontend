@@ -1,5 +1,6 @@
 import axios from 'axios'
 import toast from 'react-hot-toast'
+import { getAuthToken, clearAuthSession } from '../utils/authStorage'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 
@@ -11,7 +12,7 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token')
+    const token = getAuthToken()
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -39,8 +40,7 @@ api.interceptors.response.use(
     const shouldSkipToast = Boolean(error.config?.skipErrorToast)
 
     if (status === 401 && !isLoginRequest) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
+      clearAuthSession()
 
       if (!shouldSkipToast) {
         toast.error('Session expired. Please login again.')
@@ -48,7 +48,20 @@ api.interceptors.response.use(
       }
 
       if (window.location.pathname !== '/login') {
-        window.location.href = '/login'
+        const path = window.location.pathname || ''
+        let qs = ''
+        if (
+          path.startsWith('/kitchen') ||
+          path.startsWith('/cashier') ||
+          path.startsWith('/employee')
+        ) {
+          qs = '?role=employee'
+        } else if (path.startsWith('/restaurant')) {
+          qs = '?role=restaurant'
+        } else if (path.startsWith('/platform')) {
+          qs = '?role=platform'
+        }
+        window.location.href = `/login${qs}`
       }
       return Promise.reject(error)
     }

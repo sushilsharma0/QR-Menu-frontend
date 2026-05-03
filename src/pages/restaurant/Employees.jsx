@@ -14,8 +14,7 @@ const Employees = () => {
   const { user } = useAuth()
   const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true)
-  const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
-  const restaurantId = user?.id || user?._id || storedUser?.id || storedUser?._id || 'N/A'
+  const restaurantId = user?.id || user?._id || 'N/A'
 
   useEffect(() => {
     fetchEmployees()

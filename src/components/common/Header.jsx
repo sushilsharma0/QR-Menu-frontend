@@ -6,6 +6,13 @@ import NotificationMenu from './NotificationMenu'
 const Header = () => {
   const { user, logout } = useAuth()
 
+  const loginRoleAfterLogout = () => {
+    if (user?.role === 'super_admin' || user?.role === 'admin') return 'platform'
+    if (user?.scope === 'employee') return 'employee'
+    if (user?.role === 'restaurant') return 'restaurant'
+    return undefined
+  }
+
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
@@ -30,7 +37,7 @@ const Header = () => {
           </div>
           
           <button
-            onClick={logout}
+            onClick={() => logout({ loginRole: loginRoleAfterLogout() })}
             className="p-2 text-gray-400 hover:text-red-600 transition-colors"
             title="Logout"
           >

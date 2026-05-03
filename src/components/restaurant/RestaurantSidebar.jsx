@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, Link } from 'react-router-dom'
 import {
   FiHome,
   FiMenu,
@@ -15,6 +15,15 @@ import api from '../../services/api'
 import { useSocket } from '../../hooks/useSocket'
 import { useAuth } from '../../hooks/useAuth'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
+
+function staffLoginHref(restaurantId, staff) {
+  const q = new URLSearchParams({
+    role: 'employee',
+    staff,
+    restaurantId: String(restaurantId),
+  })
+  return `/login?${q.toString()}`
+}
 
 const menuItems = [
   { segment: 'dashboard', icon: FiHome, label: 'Dashboard' },
@@ -33,7 +42,7 @@ const RestaurantSidebar = () => {
   const [pendingCount, setPendingCount] = useState(0)
   const { socket } = useSocket()
   const { user } = useAuth()
-  const { restaurantBase } = useTenantRoutes()
+  const { restaurantBase, hasTenant, restaurantId } = useTenantRoutes()
 
   const fetchPendingCount = async () => {
     try {
@@ -95,6 +104,30 @@ const RestaurantSidebar = () => {
             )}
           </NavLink>
         ))}
+
+        {hasTenant && restaurantId != null && (
+          <div className="mt-8 pt-6 border-t border-gray-200 space-y-1">
+            <p className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              Staff login pages
+            </p>
+            <Link
+              to={staffLoginHref(restaurantId, 'kitchen')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-4 py-3 text-gray-600 rounded-lg hover:bg-gray-100 hover:text-gray-900 text-sm"
+            >
+              Open kitchen staff login
+            </Link>
+            <Link
+              to={staffLoginHref(restaurantId, 'cashier')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-4 py-3 text-gray-600 rounded-lg hover:bg-gray-100 hover:text-gray-900 text-sm"
+            >
+              Open cashier staff login
+            </Link>
+          </div>
+        )}
       </nav>
     </aside>
   )

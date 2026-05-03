@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import {
   FiMail,
@@ -13,15 +13,38 @@ import { useAuth } from "../../hooks/useAuth";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 
+const VALID_ROLES = ["platform", "restaurant", "employee"];
+
 const Login = () => {
   const { login } = useAuth();
-  const [role, setRole] = useState("restaurant");
+  const [searchParams] = useSearchParams();
+  const roleQuery = searchParams.get("role");
+
+  const [role, setRole] = useState(() =>
+    VALID_ROLES.includes(roleQuery) ? roleQuery : "restaurant",
+  );
   const [loading, setLoading] = useState(false);
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm();
+
+  useEffect(() => {
+    if (VALID_ROLES.includes(roleQuery)) {
+      setRole(roleQuery);
+    }
+  }, [roleQuery]);
+
+  const staffPortal = searchParams.get("staff");
+  const restaurantIdFromUrl = searchParams.get("restaurantId")?.trim() || "";
+
+  useEffect(() => {
+    if (role === "employee" && restaurantIdFromUrl) {
+      setValue("restaurantId", restaurantIdFromUrl);
+    }
+  }, [role, restaurantIdFromUrl, setValue]);
 
   const onSubmit = async (data) => {
     setLoading(true);
@@ -59,6 +82,14 @@ const Login = () => {
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
+          {role === "employee" &&
+            (staffPortal === "kitchen" || staffPortal === "cashier") && (
+              <p className="mb-4 text-sm text-gray-600 rounded-lg bg-amber-50 border border-amber-100 px-3 py-2">
+                {staffPortal === "kitchen"
+                  ? "Kitchen staff: sign in with your username, restaurant ID, and password."
+                  : "Cashier: sign in with your username, restaurant ID, and password."}
+              </p>
+            )}
           {/* Role Selection Tabs */}
           <div className="flex gap-2 mb-6 bg-gray-100 rounded-lg p-1">
             <button

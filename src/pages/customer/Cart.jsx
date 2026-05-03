@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../services/api";
+import { getParsedAuthUser } from "../../utils/authStorage";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../../components/common/ToastContainer";
 
@@ -103,13 +104,13 @@ const Cart = () => {
     try {
       setIsPlacingOrder(true);
 
-      const user = JSON.parse(localStorage.getItem("user")) || {};
+      const dashUser = getParsedAuthUser();
       const payload = {
         qrToken: token,
         paymentMethod,
-        customerName: user.name || "Guest",
-        customerPhone: user.phone || "",
-        customerEmail: user.email || "",
+        customerName: dashUser?.name || "Guest",
+        customerPhone: dashUser?.phone || "",
+        customerEmail: dashUser?.email || "",
         items: cartItems.map((item) => ({
           menuItemId: item._id,
           quantity: item.quantity,

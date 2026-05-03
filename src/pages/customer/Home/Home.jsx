@@ -32,8 +32,11 @@ export default function Home() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [tableNumber, setTableNumber] = useState("");
-  const { token } = useParams();
-  const {restaurantSlug} = useParams();
+  const { slug, token } = useParams();
+
+  const restaurantDisplayName = slug
+    ? decodeURIComponent(slug).replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+    : "Restaurant";
   
   
 
@@ -71,7 +74,7 @@ export default function Home() {
 let userId = localStorage.getItem("customer_guest_id");
 
 if (!userId) {
-  userId = "guest_" +restaurantSlug + "_" + CryptoJS.lib.WordArray.random(16).toString();
+  userId = "guest_" + (slug || "unknown") + "_" + CryptoJS.lib.WordArray.random(16).toString();
   localStorage.setItem("customer_guest_id", userId);
 }
 
@@ -109,7 +112,7 @@ if (!userId) {
           <div className="bg-white/20 backdrop-blur-md inline-block p-3 rounded-full mb-4">
             <span className="text-2xl">🍽️</span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">{JSON.parse(localStorage.getItem("user")).name}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{restaurantDisplayName}</h1>
           {/* <h1 className="text-3xl font-bold tracking-tight">Foodies Cafe 🌿</h1> */}
           <p className="text-sm opacity-90 mt-2 italic">
             Delicious food, served with love
@@ -129,7 +132,7 @@ if (!userId) {
           <span className="rotate-180">🔄</span> Scan another QR code
         </button>
         <Link
-          to={`/menu/${JSON.parse(localStorage.getItem("user")).slug}/${token}`}
+          to={`/menu/${slug}/${token}`}
           className="w-48 bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-2xl mt-8 shadow-lg shadow-orange-200 transition-all active:scale-95"
         >
           View Menu
