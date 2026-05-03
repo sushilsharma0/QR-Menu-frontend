@@ -7,10 +7,33 @@ import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 
+const LIMIT_OPTIONS = [
+  { value: '0', label: 'Unlimited' },
+  { value: '5', label: '5' },
+  { value: '10', label: '10' },
+  { value: '25', label: '25' },
+  { value: '50', label: '50' },
+  { value: '100', label: '100' },
+]
+const CUSTOM_LIMIT_VALUE = '__custom__'
+const LIMIT_KEYS = ['maxTables', 'maxEmployees', 'maxCategories', 'maxMenuItems']
+const LIMIT_LABELS = {
+  maxTables: 'Max Tables',
+  maxEmployees: 'Max Employees',
+  maxCategories: 'Max Categories',
+  maxMenuItems: 'Max Menu Items',
+}
+
 const CreatePlan = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
+  const [limitState, setLimitState] = useState({
+    maxTables: { selectValue: '0', customValue: '' },
+    maxEmployees: { selectValue: '0', customValue: '' },
+    maxCategories: { selectValue: '0', customValue: '' },
+    maxMenuItems: { selectValue: '0', customValue: '' },
+  })
   const { register, handleSubmit, setValue, control, formState: { errors } } = useForm()
   const { fields, append, remove } = useFieldArray({ control, name: 'features' })
 
@@ -30,10 +53,15 @@ const CreatePlan = () => {
       setValue('duration', plan.duration)
       setValue('durationLabel', plan.durationLabel)
       setValue('price', plan.price)
-      setValue('limits.maxTables', plan.limits?.maxTables)
-      setValue('limits.maxEmployees', plan.limits?.maxEmployees)
-      setValue('limits.maxCategories', plan.limits?.maxCategories)
-      setValue('limits.maxMenuItems', plan.limits?.maxMenuItems)
+      const nextLimitState = {}
+      LIMIT_KEYS.forEach((key) => {
+        const rawValue = Number(plan.limits?.[key] ?? 0)
+        const hasPreset = LIMIT_OPTIONS.some((opt) => Number(opt.value) === rawValue)
+        nextLimitState[key] = hasPreset
+          ? { selectValue: String(rawValue), customValue: '' }
+          : { selectValue: CUSTOM_LIMIT_VALUE, customValue: String(rawValue) }
+      })
+      setLimitState(nextLimitState)
       setValue('isPopular', plan.isPopular)
       plan.features?.forEach(f => append({ feature: f }))
     } catch (error) {
@@ -44,8 +72,25 @@ const CreatePlan = () => {
   const onSubmit = async (data) => {
     try {
       setLoading(true)
+      const limits = {}
+      for (const key of LIMIT_KEYS) {
+        const state = limitState[key]
+        if (state.selectValue === CUSTOM_LIMIT_VALUE) {
+          const parsed = Number(state.customValue)
+          if (Number.isNaN(parsed) || parsed < 0) {
+            toast.error(`${LIMIT_LABELS[key]} custom value must be a valid non-negative number`)
+            setLoading(false)
+            return
+          }
+          limits[key] = parsed
+        } else {
+          limits[key] = Number(state.selectValue || 0)
+        }
+      }
+
       const payload = {
         ...data,
+        limits,
         features: data.features?.map(f => f.feature).filter(Boolean) || [],
       }
       if (id) {
@@ -113,11 +158,46 @@ const CreatePlan = () => {
           <div className="border-t pt-4">
             <h3 className="font-semibold mb-3">Plan Limits</h3>
             <div className="grid grid-cols-2 gap-4">
-              <Input label="Max Tables" type="number" {...register('limits.maxTables')} />
-              <Input label="Max Employees" type="number" {...register('limits.maxEmployees')} />
-              <Input label="Max Categories" type="number" {...register('limits.maxCategories')} />
-              <Input label="Max Menu Items" type="number" {...register('limits.maxMenuItems')} />
+              {LIMIT_KEYS.map((key) => (
+                <div key={key}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{LIMIT_LABELS[key]}</label>
+                  <select
+                    value={limitState[key].selectValue}
+                    onChange={(e) => setLimitState((prev) => ({
+                      ...prev,
+                      [key]: {
+                        ...prev[key],
+                        selectValue: e.target.value,
+                      },
+                    }))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  >
+                    {LIMIT_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                    <option value={CUSTOM_LIMIT_VALUE}>Custom</option>
+                  </select>
+                  {limitState[key].selectValue === CUSTOM_LIMIT_VALUE && (
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={limitState[key].customValue}
+                      onChange={(e) => setLimitState((prev) => ({
+                        ...prev,
+                        [key]: {
+                          ...prev[key],
+                          customValue: e.target.value,
+                        },
+                      }))}
+                      placeholder="Enter custom limit"
+                      className="mt-2 w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    />
+                  )}
+                </div>
+              ))}
             </div>
+            <p className="text-xs text-gray-500 mt-2">Set to Unlimited when you do not want to restrict that resource.</p>
           </div>
 
           <div className="border-t pt-4">

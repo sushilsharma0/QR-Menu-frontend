@@ -4,6 +4,13 @@ import Card from '../common/Card'
 import Button from '../common/Button'
 
 const PlanCard = ({ plan, onEdit, onDelete }) => {
+  const limitRows = [
+    { key: 'Tables', value: plan?.limits?.maxTables },
+    { key: 'Employees', value: plan?.limits?.maxEmployees },
+    { key: 'Categories', value: plan?.limits?.maxCategories },
+    { key: 'Menu Items', value: plan?.limits?.maxMenuItems },
+  ]
+
   return (
     <Card className={`${plan.isPopular ? 'border-2 border-primary-500 relative' : ''}`}>
       {plan.isPopular && (
@@ -24,6 +31,22 @@ const PlanCard = ({ plan, onEdit, onDelete }) => {
           </div>
         ))}
       </div>
+
+      <div className="mb-6 border rounded-lg p-3 bg-gray-50">
+        <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">Limits</p>
+        <div className="space-y-1.5">
+          {limitRows.map((row) => {
+            const value = Number(row.value ?? 0)
+            return (
+              <div key={row.key} className="flex justify-between text-sm">
+                <span className="text-gray-600">{row.key}</span>
+                <span className="font-medium text-gray-900">{value <= 0 ? 'Unlimited' : value}</span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
       <div className="flex gap-2">
         <Button size="sm" variant="outline" className="flex-1" onClick={() => onEdit(plan)}>Edit</Button>
         <Button size="sm" variant="danger" className="flex-1" onClick={() => onDelete(plan)}>Delete</Button>
