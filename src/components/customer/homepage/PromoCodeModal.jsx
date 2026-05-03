@@ -141,7 +141,7 @@ export default function PromoCodeModal({ isOpen, onClose, promos = [] }) {
               className="
                 fixed z-50 bg-white shadow-2xl overflow-hidden
                 bottom-0 left-0 right-0 rounded-t-3xl
-                sm:top-1/2 sm:left-1/2 sm:bottom-auto sm:right-auto
+                sm:top-1/2 sm:left-auto sm:bottom-auto sm:right-auto
                 sm:-translate-x-1/2 sm:-translate-y-1/2
                 sm:rounded-3xl sm:w-[90%] sm:max-w-lg
                 lg:max-w-2xl

@@ -96,8 +96,7 @@ const Cart = () => {
     (acc, item) => acc + item.price * item.quantity,
     0,
   );
-  const serviceCharge = Math.round(subtotal * 0.05);
-  const total = Math.max(0, subtotal + serviceCharge - promoDiscount);
+  const total = Math.max(0, subtotal - promoDiscount);
 
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) {
@@ -277,10 +276,6 @@ const Cart = () => {
         <div className="flex justify-between text-sm">
           <span className="text-gray-400">Subtotal</span>
           <span className="text-gray-800 font-medium">Rs. {subtotal}</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-400">Service Charge (5%)</span>
-          <span className="text-gray-800 font-medium">Rs. {serviceCharge}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-gray-400">Promo Discount</span>
