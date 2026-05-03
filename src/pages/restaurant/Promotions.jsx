@@ -129,106 +129,316 @@ const Promotions = () => {
   if (loading) return <div className="text-center py-10">Loading promotions...</div>
 
   return (
-    <div className="space-y-6">
-      <Card title="Create Promotion">
-        <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-4 p-4">
-          <input className="border rounded p-2" placeholder="Promo name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
-          <input className="border rounded p-2" placeholder="Promo code" value={form.code} onChange={(e) => setForm((p) => ({ ...p, code: e.target.value }))} />
-          <select className="border rounded p-2" value={form.discountType} onChange={(e) => setForm((p) => ({ ...p, discountType: e.target.value }))}>
-            <option value="percent">Percent</option>
-            <option value="flat">Flat</option>
-          </select>
-          <input className="border rounded p-2" type="number" min="1" placeholder="Discount value" value={form.discountValue} onChange={(e) => setForm((p) => ({ ...p, discountValue: e.target.value }))} />
-          <select className="border rounded p-2" value={form.scope} onChange={(e) => setForm((p) => ({ ...p, scope: e.target.value, targetMenuItems: [] }))}>
-            <option value="order">Order level</option>
-            <option value="item">Specific menu items</option>
-          </select>
-          <input className="border rounded p-2" type="number" min="0" placeholder="Minimum order amount" value={form.minOrderAmount} onChange={(e) => setForm((p) => ({ ...p, minOrderAmount: e.target.value }))} />
-          <input className="border rounded p-2" type="number" min="0" placeholder="Max discount amount (optional)" value={form.maxDiscountAmount} onChange={(e) => setForm((p) => ({ ...p, maxDiscountAmount: e.target.value }))} />
-          <input className="border rounded p-2" type="number" min="1" placeholder="Usage limit (optional)" value={form.usageLimit} onChange={(e) => setForm((p) => ({ ...p, usageLimit: e.target.value }))} />
-          <input className="border rounded p-2" type="datetime-local" value={form.startAt} onChange={(e) => setForm((p) => ({ ...p, startAt: e.target.value }))} />
-          <input className="border rounded p-2" type="datetime-local" value={form.endAt} onChange={(e) => setForm((p) => ({ ...p, endAt: e.target.value }))} />
-          <input className="border rounded p-2 md:col-span-2" placeholder="Banner text for customer panel" value={form.bannerText} onChange={(e) => setForm((p) => ({ ...p, bannerText: e.target.value }))} />
-          <div className="flex items-center gap-3">
-            <label className="text-sm text-gray-600">Banner color</label>
-            <input type="color" value={form.bannerColor} onChange={(e) => setForm((p) => ({ ...p, bannerColor: e.target.value }))} />
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={form.isActive} onChange={(e) => setForm((p) => ({ ...p, isActive: e.target.checked }))} />
-              Active
-            </label>
-          </div>
-          {form.scope === 'item' && (
-            <select
-              multiple
-              className="border rounded p-2 md:col-span-2 min-h-32"
-              value={form.targetMenuItems}
-              onChange={(e) =>
-                setForm((p) => ({
-                  ...p,
-                  targetMenuItems: Array.from(e.target.selectedOptions).map((o) => o.value),
-                }))
-              }
-            >
-              {menuItems.map((item) => (
-                <option key={item._id} value={item._id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          )}
-          <div className="md:col-span-2 flex gap-2">
-            <Button type="submit">{editingId ? 'Update Promo' : 'Create Promo'}</Button>
-            {editingId && (
-              <Button variant="ghost" type="button" onClick={resetForm}>
-                Cancel edit
-              </Button>
-            )}
-          </div>
-        </form>
-      </Card>
+  <div className="space-y-8">
+    {/* ================= CREATE PROMO ================= */}
+    <Card title="🎯 Create Promotion">
+      <form onSubmit={handleSubmit} className="p-6 space-y-8">
 
-      <Card title="Existing Promotions">
-        <div className="overflow-x-auto p-4">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="text-left border-b">
-                <th className="py-2">Name</th>
-                <th>Code</th>
-                <th>Type</th>
-                <th>Value</th>
-                <th>Scope</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {promotions.map((promo) => (
-                <tr key={promo._id} className="border-b">
-                  <td className="py-2">{promo.name}</td>
-                  <td>{promo.code}</td>
-                  <td>{promo.discountType}</td>
-                  <td>{promo.discountValue}</td>
-                  <td>{promo.scope}</td>
-                  <td>{promo.isActive ? 'Active' : 'Inactive'}</td>
-                  <td className="space-x-2">
-                    <button className="text-blue-600" onClick={() => handleEdit(promo)}>Edit</button>
-                    <button className="text-red-600" onClick={() => handleDelete(promo._id)}>Delete</button>
-                  </td>
-                </tr>
-              ))}
-              {promotions.length === 0 && (
-                <tr>
-                  <td className="py-4 text-gray-500" colSpan={7}>
-                    No promotions yet
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+  {/* ===== BASIC INFO ===== */}
+  <div>
+    <h3 className="text-sm font-semibold text-gray-600 mb-4">
+      Basic Information
+    </h3>
+
+    <div className="grid md:grid-cols-2 gap-5">
+      <div>
+        <label className="label">Promotion Name</label>
+        <input
+          type="text"
+          className="input"
+          value={form.name}
+          onChange={(e) =>
+            setForm((p) => ({ ...p, name: e.target.value }))
+          }
+        />
+      </div>
+
+      <div>
+        <label className="label">Promo Code</label>
+        <input
+          type="text"
+          className="input uppercase"
+          value={form.code}
+          onChange={(e) =>
+            setForm((p) => ({ ...p, code: e.target.value }))
+          }
+        />
+      </div>
     </div>
-  )
+  </div>
+
+  {/* ===== DISCOUNT ===== */}
+  <div>
+    <h3 className="text-sm font-semibold text-gray-600 mb-4">
+      Discount Details
+    </h3>
+
+    <div className="grid md:grid-cols-3 gap-5">
+      <div>
+        <label className="label">Discount Type</label>
+        <select
+          className="input"
+          value={form.discountType}
+          onChange={(e) =>
+            setForm((p) => ({ ...p, discountType: e.target.value }))
+          }
+        >
+          <option value="percent">Percentage (%)</option>
+          <option value="flat">Flat Amount (Rs)</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="label">Discount Value</label>
+        <input
+          type="number"
+          className="input"
+          value={form.discountValue}
+          onChange={(e) =>
+            setForm((p) => ({ ...p, discountValue: e.target.value }))
+          }
+        />
+      </div>
+
+      <div>
+        <label className="label">Apply To</label>
+        <select
+          className="input"
+          value={form.scope}
+          onChange={(e) =>
+            setForm((p) => ({
+              ...p,
+              scope: e.target.value,
+              targetMenuItems: [],
+            }))
+          }
+        >
+          <option value="order">Entire Order</option>
+          <option value="item">Specific Items</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  {/* ===== CONDITIONS ===== */}
+  <div>
+    <h3 className="text-sm font-semibold text-gray-600 mb-4">
+      Conditions
+    </h3>
+
+    <div className="grid md:grid-cols-3 gap-5">
+      <div>
+        <label className="label">Minimum Order (Rs)</label>
+        <input
+          type="number"
+          className="input"
+          value={form.minOrderAmount}
+          onChange={(e) =>
+            setForm((p) => ({ ...p, minOrderAmount: e.target.value }))
+          }
+        />
+      </div>
+
+      <div>
+        <label className="label">Max Discount (Optional)</label>
+        <input
+          type="number"
+          className="input"
+          value={form.maxDiscountAmount}
+          onChange={(e) =>
+            setForm((p) => ({ ...p, maxDiscountAmount: e.target.value }))
+          }
+        />
+      </div>
+
+      <div>
+        <label className="label">Usage Limit</label>
+        <input
+          type="number"
+          className="input"
+          value={form.usageLimit}
+          onChange={(e) =>
+            setForm((p) => ({ ...p, usageLimit: e.target.value }))
+          }
+        />
+      </div>
+    </div>
+  </div>
+
+  {/* ===== DATE ===== */}
+  <div>
+    <h3 className="text-sm font-semibold text-gray-600 mb-4">
+      Validity
+    </h3>
+
+    <div className="grid md:grid-cols-2 gap-5">
+      <div>
+        <label className="label">Start Date</label>
+        <input
+          type="datetime-local"
+          className="input"
+          value={form.startAt}
+          onChange={(e) =>
+            setForm((p) => ({ ...p, startAt: e.target.value }))
+          }
+        />
+      </div>
+
+      <div>
+        <label className="label">End Date</label>
+        <input
+          type="datetime-local"
+          className="input"
+          value={form.endAt}
+          onChange={(e) =>
+            setForm((p) => ({ ...p, endAt: e.target.value }))
+          }
+        />
+      </div>
+    </div>
+  </div>
+
+  {/* ===== BANNER ===== */}
+  <div>
+    <h3 className="text-sm font-semibold text-gray-600 mb-4">
+      Banner Settings
+    </h3>
+
+    <div className="flex gap-4 items-end">
+      <div className="flex-1">
+        <label className="label">Banner Text</label>
+        <input
+          className="input"
+          value={form.bannerText}
+          onChange={(e) =>
+            setForm((p) => ({ ...p, bannerText: e.target.value }))
+          }
+        />
+      </div>
+
+      <div>
+        <label className="label">Color</label>
+        <input
+          type="color"
+          value={form.bannerColor}
+          onChange={(e) =>
+            setForm((p) => ({ ...p, bannerColor: e.target.value }))
+          }
+          className="h-12 w-16 rounded-lg border"
+        />
+      </div>
+    </div>
+  </div>
+
+  {/* ===== ACTIVE ===== */}
+  <div className="flex items-center gap-3">
+    <input
+      type="checkbox"
+      checked={form.isActive}
+      onChange={(e) =>
+        setForm((p) => ({ ...p, isActive: e.target.checked }))
+      }
+    />
+    <span className="text-sm text-gray-700">Active Promotion</span>
+  </div>
+
+  {/* ===== BUTTONS ===== */}
+  <div className="flex gap-3 pt-4 border-t">
+    <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-semibold transition">
+      {editingId ? "Update Promotion" : "Create Promotion"}
+    </button>
+
+    {editingId && (
+      <button
+        type="button"
+        onClick={resetForm}
+        className="px-6 py-3 rounded-xl bg-gray-100 hover:bg-gray-200"
+      >
+        Cancel
+      </button>
+    )}
+  </div>
+</form>
+    </Card>
+
+    {/* ================= TABLE ================= */}
+    <Card title="📊 Promotions">
+      <div className="overflow-x-auto p-4">
+        <table className="min-w-full text-sm">
+          <thead>
+            <tr className="text-left text-gray-500 border-b">
+              <th>Name</th>
+              <th>Code</th>
+              <th>Discount</th>
+              <th>Scope</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {promotions.map((promo) => (
+              <tr
+                key={promo._id}
+                className="border-b hover:bg-gray-50 transition"
+              >
+                <td className="py-3 font-medium">{promo.name}</td>
+
+                <td className="font-mono text-orange-500">
+                  {promo.code}
+                </td>
+
+                <td>
+                  {promo.discountType === "percent"
+                    ? `${promo.discountValue}%`
+                    : `Rs ${promo.discountValue}`}
+                </td>
+
+                <td>{promo.scope}</td>
+
+                {/* STATUS BADGE */}
+                <td>
+                  <span
+                    className={`px-2 py-1 text-xs rounded-full ${
+                      promo.isActive
+                        ? "bg-green-100 text-green-600"
+                        : "bg-gray-200 text-gray-500"
+                    }`}
+                  >
+                    {promo.isActive ? "Active" : "Inactive"}
+                  </span>
+                </td>
+
+                <td className="space-x-3">
+                  <button
+                    onClick={() => handleEdit(promo)}
+                    className="text-blue-500 hover:underline"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(promo._id)}
+                    className="text-red-500 hover:underline"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+
+            {promotions.length === 0 && (
+              <tr>
+                <td colSpan={6} className="text-center py-6 text-gray-400">
+                  No promotions created yet 🚀
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </Card>
+  </div>
+);
 }
 
 export default Promotions
