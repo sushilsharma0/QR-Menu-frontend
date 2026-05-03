@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { FiPlus, FiEdit2, FiTrash2, FiRefreshCw, FiCode, FiImage, FiPrinter } from 'react-icons/fi'
 import QRCode from 'react-qr-code'
 import toast from 'react-hot-toast'
@@ -11,6 +12,7 @@ import Loader from '../../components/common/Loader'
 
 const Tables = () => {
   const navigate = useNavigate()
+  const { restaurantBase } = useTenantRoutes()
   const [tables, setTables] = useState([])
   const [loading, setLoading] = useState(true)
   const [qrModal, setQrModal] = useState({ open: false, table: null })
@@ -83,7 +85,7 @@ const Tables = () => {
           <h1 className="text-2xl font-bold text-gray-900">Tables</h1>
           <p className="text-gray-500 mt-1">Manage restaurant tables and QR codes</p>
         </div>
-        <Button onClick={() => navigate('/restaurant/tables/new')}>
+        <Button onClick={() => navigate(`${restaurantBase}/tables/new`)}>
           <FiPlus className="mr-2" /> Add Table
         </Button>
       </div>
@@ -95,7 +97,7 @@ const Tables = () => {
             <div className="text-6xl mb-4">🍽️</div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Tables Yet</h3>
             <p className="text-gray-500 mb-4">Create your first table to start accepting orders</p>
-            <Button onClick={() => navigate('/restaurant/tables/new')}>
+            <Button onClick={() => navigate(`${restaurantBase}/tables/new`)}>
               <FiPlus className="mr-2" /> Add Your First Table
             </Button>
           </div>
@@ -143,7 +145,7 @@ const Tables = () => {
                   <FiRefreshCw className="h-4 w-4" />
                 </button>
                 <button
-                  onClick={() => navigate(`/restaurant/tables/${table._id}/edit`)}
+                  onClick={() => navigate(`${restaurantBase}/tables/${table._id}/edit`)}
                   className="p-2 text-gray-500 hover:text-green-600 transition-colors"
                   title="Edit Table"
                 >

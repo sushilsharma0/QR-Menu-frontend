@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
@@ -10,6 +11,7 @@ import Card from '../../components/common/Card'
 const TableForm = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { restaurantBase } = useTenantRoutes()
   const [loading, setLoading] = useState(false)
   const { register, handleSubmit, setValue, formState: { errors } } = useForm()
 
@@ -39,7 +41,7 @@ const TableForm = () => {
         await api.post('/restaurant/tables', data)
         toast.success('Table created with QR code')
       }
-      navigate('/restaurant/tables')
+      navigate(`${restaurantBase}/tables`)
     } catch (error) {
       toast.error(error.response?.data?.message || 'Operation failed')
     } finally {
@@ -80,7 +82,7 @@ const TableForm = () => {
             <Button type="submit" loading={loading}>
               {id ? 'Update' : 'Create'} Table
             </Button>
-            <Button type="button" variant="secondary" onClick={() => navigate('/restaurant/tables')}>
+            <Button type="button" variant="secondary" onClick={() => navigate(`${restaurantBase}/tables`)}>
               Cancel
             </Button>
           </div>

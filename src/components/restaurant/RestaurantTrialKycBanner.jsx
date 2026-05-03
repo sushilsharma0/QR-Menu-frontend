@@ -2,9 +2,11 @@ import React, { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { FiAlertCircle, FiShield } from 'react-icons/fi'
 import { useAuth } from '../../hooks/useAuth'
+import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 
 const RestaurantTrialKycBanner = () => {
   const { user } = useAuth()
+  const { restaurantBase } = useTenantRoutes()
 
   const trialDaysLeft = useMemo(() => {
     if (!user?.trialEndsAt || user?.scope !== 'restaurant') return null
@@ -32,7 +34,7 @@ const RestaurantTrialKycBanner = () => {
             <p className="mt-1 text-amber-800">
               Menu edits, tables, staff, and order actions stay locked until platform approves your KYC.
             </p>
-            <Link to="/restaurant/kyc" className="mt-2 inline-block font-medium text-amber-950 underline">
+            <Link to={`${restaurantBase}/kyc`} className="mt-2 inline-block font-medium text-amber-950 underline">
               Go to KYC
             </Link>
           </div>
@@ -68,7 +70,7 @@ const RestaurantTrialKycBanner = () => {
               </>
             )}
             <Link
-              to="/restaurant/subscription"
+              to={`${restaurantBase}/subscription`}
               className="mt-2 inline-block font-medium underline text-current"
             >
               Subscription & plans

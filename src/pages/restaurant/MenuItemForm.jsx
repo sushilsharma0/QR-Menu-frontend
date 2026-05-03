@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
@@ -10,6 +11,7 @@ import Card from '../../components/common/Card'
 const MenuItemForm = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { restaurantBase } = useTenantRoutes()
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState([])
   const [imagePreview, setImagePreview] = useState(null)
@@ -89,7 +91,7 @@ const MenuItemForm = () => {
 
       toast.success(id ? 'Menu item updated' : 'Menu item created')
 
-      navigate('/restaurant/menu')
+      navigate(`${restaurantBase}/menu`)
     } catch (error) {
       console.error('Error:', error)
       toast.error(error.response?.data?.message || 'Operation failed')
@@ -226,7 +228,7 @@ const MenuItemForm = () => {
             <Button type="submit" loading={loading}>
               {id ? 'Update' : 'Create'} Item
             </Button>
-            <Button type="button" variant="secondary" onClick={() => navigate('/restaurant/menu')}>
+            <Button type="button" variant="secondary" onClick={() => navigate(`${restaurantBase}/menu`)}>
               Cancel
             </Button>
           </div>

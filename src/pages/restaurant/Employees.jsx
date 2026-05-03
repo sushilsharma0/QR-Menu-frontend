@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { FiPlus, FiEdit2, FiTrash2, FiRefreshCw, FiKey } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
@@ -9,6 +10,7 @@ import { useAuth } from '../../hooks/useAuth'
 
 const Employees = () => {
   const navigate = useNavigate()
+  const { restaurantBase } = useTenantRoutes()
   const { user } = useAuth()
   const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true)
@@ -90,7 +92,7 @@ const Employees = () => {
             Restaurant ID: <span className="font-mono font-semibold">{restaurantId}</span>
           </p>
         </div>
-        <Button onClick={() => navigate('/restaurant/employees/new')}>
+        <Button onClick={() => navigate(`${restaurantBase}/employees/new`)}>
           <FiPlus className="mr-2" /> Add Employee
         </Button>
       </div>
@@ -141,7 +143,7 @@ const Employees = () => {
                         <FiKey className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => navigate(`/restaurant/employees/${emp._id}/edit`)}
+                        onClick={() => navigate(`${restaurantBase}/employees/${emp._id}/edit`)}
                         className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
                         title="Edit"
                       >

@@ -7,23 +7,26 @@ import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import { useSocket } from '../../hooks/useSocket'
 import { useAuth } from '../../hooks/useAuth'
+import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 
 const OrderDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { socket } = useSocket()
   const { user } = useAuth()
+  const { restaurantBase, kitchenBase, cashierBase, employeeBase } = useTenantRoutes()
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const isCashierView = user?.scope === 'employee' && user?.role === 'cashier'
   const formatNpr = (value) => `Rs. ${Number(value || 0).toFixed(2)}`
-  const backPath =
-    isCashierView
-      ? '/cashier/dashboard'
+  const backPath = isCashierView
+    ? `${cashierBase}/dashboard`
+    : user?.role === 'kitchen'
+      ? `${kitchenBase}/orders`
       : user?.scope === 'employee' || ['kitchen', 'cashier', 'manager', 'waiter'].includes(user?.role)
-      ? '/employee/orders'
-      : '/restaurant/orders'
+        ? `${employeeBase}/orders`
+        : `${restaurantBase}/orders`
 
   useEffect(() => {
     fetchOrder()

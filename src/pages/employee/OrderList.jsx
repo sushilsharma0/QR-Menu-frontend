@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { FiEye, FiClock, FiCheck, FiX, FiRefreshCw, FiSearch } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
@@ -7,9 +7,13 @@ import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import { useSocket } from '../../hooks/useSocket'
+import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 
 const OrderList = () => {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { kitchenBase, employeeBase } = useTenantRoutes()
+  const ordersBase = location.pathname.startsWith('/kitchen/') ? kitchenBase : employeeBase
   const { socket } = useSocket()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
@@ -240,7 +244,7 @@ const OrderList = () => {
                   size="sm"
                   variant="outline"
                   className="flex-1"
-                  onClick={() => navigate(`/employee/orders/${order._id}`)}
+                  onClick={() => navigate(`${ordersBase}/orders/${order._id}`)}
                 >
                   <FiEye className="mr-1" /> View Details
                 </Button>

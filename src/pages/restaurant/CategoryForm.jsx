@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
@@ -10,6 +11,7 @@ import Card from '../../components/common/Card'
 const CategoryForm = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { restaurantBase } = useTenantRoutes()
   const [loading, setLoading] = useState(false)
   const [imagePreview, setImagePreview] = useState(null)
   const [selectedFile, setSelectedFile] = useState(null)
@@ -57,7 +59,7 @@ const CategoryForm = () => {
         await api.post('/restaurant/menu/categories', formData)
         toast.success('Category created')
       }
-      navigate('/restaurant/menu')
+      navigate(`${restaurantBase}/menu`)
     } catch (error) {
       console.error('Error:', error)
       toast.error(error.response?.data?.message || 'Operation failed')
@@ -174,7 +176,7 @@ const CategoryForm = () => {
             <Button type="submit" loading={loading}>
               {id ? 'Update' : 'Create'} Category
             </Button>
-            <Button type="button" variant="secondary" onClick={() => navigate('/restaurant/menu')}>
+            <Button type="button" variant="secondary" onClick={() => navigate(`${restaurantBase}/menu`)}>
               Cancel
             </Button>
           </div>

@@ -6,9 +6,11 @@ import api from '../../services/api'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import { useSocket } from '../../hooks/useSocket'
+import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 
 const KitchenDashboard = () => {
   const navigate = useNavigate()
+  const { kitchenBase } = useTenantRoutes()
   const { socket } = useSocket()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
@@ -267,7 +269,7 @@ const KitchenDashboard = () => {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => navigate(`/employee/orders/${order._id}`)}
+                      onClick={() => navigate(`${kitchenBase}/orders/${order._id}`)}
                       title="Open full order details"
                     >
                       View Details

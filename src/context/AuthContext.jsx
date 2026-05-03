@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import api from '../services/api'
+import { defaultPortalPathForUser } from '../utils/tenantPaths'
 
 export const AuthContext = createContext()
 
@@ -88,22 +89,15 @@ export const AuthProvider = ({ children }) => {
         }
       }
       
-      const restaurantSlug = authUser.slug || authUser.restaurantSlug || authUser.restaurantId || authUser.id
-      const restaurantIdentifier = authUser.restaurantId || authUser.id
-
       // Redirect based on role
       if (authUser.scope === 'employee' && authUser.mustChangePassword) {
         navigate('/employee/change-password')
-      } else if (authUser.scope === 'employee' && authUser.role === 'kitchen') {
-        navigate(`/kitchen/dashboard/${restaurantSlug}/${restaurantIdentifier}`)
-      } else if (authUser.scope === 'employee' && authUser.role === 'cashier') {
-        navigate(`/cashier/dashboard/${restaurantSlug}/${restaurantIdentifier}`)
       } else if (authUser.scope === 'employee') {
-        navigate('/employee/orders')
+        navigate(defaultPortalPathForUser(authUser))
       } else if (authUser.role === 'super_admin' || authUser.role === 'admin') {
         navigate('/platform/dashboard')
       } else if (authUser.role === 'restaurant') {
-        navigate(`/restaurant/dashboard/${restaurantSlug}/${restaurantIdentifier}`)
+        navigate(defaultPortalPathForUser(authUser))
       } else {
         navigate('/')
       }

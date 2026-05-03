@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTenantRoutes } from "../../hooks/useTenantRoutes";
 import { FiPlus, FiEdit2, FiTrash2, FiEye, FiEyeOff } from "react-icons/fi";
 import toast from "react-hot-toast";
 import api from "../../services/api";
@@ -32,6 +33,7 @@ const getItemCategoryDisplayName = (item, categoriesList) => {
 
 const Menu = () => {
   const navigate = useNavigate();
+  const { restaurantBase } = useTenantRoutes();
   const [categories, setCategories] = useState([]);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -126,10 +128,10 @@ const Menu = () => {
           </p>
         </div>
         <div className="flex gap-3">
-          <Button onClick={() => navigate("/restaurant/menu/category/new")}>
+          <Button onClick={() => navigate(`${restaurantBase}/menu/category/new`)}>
             <FiPlus className="mr-2" /> Add Category
           </Button>
-          <Button onClick={() => navigate("/restaurant/menu/item/new")}>
+          <Button onClick={() => navigate(`${restaurantBase}/menu/item/new`)}>
             <FiPlus className="mr-2" /> Add Menu Item
           </Button>
         </div>
@@ -189,7 +191,7 @@ const Menu = () => {
                     onClick={(e) => {
                       e.stopPropagation();
                       navigate(
-                        `/restaurant/menu/category/${category._id}/edit`,
+                        `${restaurantBase}/menu/category/${category._id}/edit`,
                       );
                     }}
                     className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
@@ -328,7 +330,7 @@ const Menu = () => {
                         </button>
                         <button
                           onClick={() =>
-                            navigate(`/restaurant/menu/item/${item._id}/edit`)
+                            navigate(`${restaurantBase}/menu/item/${item._id}/edit`)
                           }
                           className="text-gray-400 hover:text-blue-600 transition-colors"
                           title="Edit"

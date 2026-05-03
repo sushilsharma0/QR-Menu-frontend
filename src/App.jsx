@@ -58,14 +58,14 @@ import CustomerAccountPage from "./pages/customer/AccountPage";
 import PlatformLayout from "./components/platform/PlatformLayout";
 import RestaurantLayout from "./components/restaurant/RestaurantLayout";
 import EmployeeLayout from "./components/employee/EmployeeLayout";
+import { defaultPortalPathForUser, getTenantSegments } from "./utils/tenantPaths";
 
 function App() {
   const { user, isLoading } = useAuth();
   const isEmployeeUser =
     user?.scope === "employee" ||
     ["kitchen", "cashier", "manager", "waiter"].includes(user?.role);
-  const userSlug = user?.slug || user?.restaurantSlug || user?.restaurantId || user?.id;
-  const userRestaurantId = user?.restaurantId || user?.id;
+  const { slug: userSlug, restaurantId: userRestaurantId } = getTenantSegments(user);
 
   if (isLoading) {
     return (
@@ -106,74 +106,42 @@ function App() {
         <Route path="/platform/settings" element={<PlatformSettings />} />
       </Route>
 
-      {/* Restaurant Routes */}
-      <Route element={<RestaurantLayout />}>
-        <Route path="/restaurant/dashboard/:slug/:restaurantId" element={<RestaurantDashboard />} />
-        <Route path="/restaurant/dashboard" element={<RestaurantDashboard />} />
-        <Route path="/restaurant/menu" element={<RestaurantMenu />} />
-        <Route
-          path="/restaurant/menu/category/new"
-          element={<RestaurantCategoryForm />}
-        />
-        <Route
-          path="/restaurant/menu/category/:id/edit"
-          element={<RestaurantCategoryForm />}
-        />
-        <Route
-          path="/restaurant/menu/item/new"
-          element={<RestaurantMenuItemForm />}
-        />
-        <Route
-          path="/restaurant/menu/item/:id/edit"
-          element={<RestaurantMenuItemForm />}
-        />
-        <Route path="/restaurant/orders" element={<RestaurantOrders />} />
-        <Route
-          path="/restaurant/orders/:id"
-          element={<RestaurantOrderDetail />}
-        />
-        <Route path="/restaurant/tables" element={<RestaurantTables />} />
-        <Route
-          path="/restaurant/tables/new"
-          element={<RestaurantTableForm />}
-        />
-        <Route
-          path="/restaurant/tables/:id/edit"
-          element={<RestaurantTableForm />}
-        />
-        <Route path="/restaurant/employees" element={<RestaurantEmployees />} />
-        <Route
-          path="/restaurant/employees/new"
-          element={<RestaurantEmployeeForm />}
-        />
-        <Route
-          path="/restaurant/employees/:id/edit"
-          element={<RestaurantEmployeeForm />}
-        />
-        <Route path="/restaurant/kyc" element={<RestaurantKYC />} />
-        <Route
-          path="/restaurant/subscription"
-          element={<RestaurantSubscription />}
-        />
-        <Route
-          path="/restaurant/transactions"
-          element={<RestaurantTransactions />}
-        />
-        <Route path="/restaurant/settings" element={<RestaurantSettings />} />
-        <Route path="/restaurant/profile" element={<RestaurantProfile />} />
+      {/* Restaurant Routes: /restaurant/:slug/:restaurantId/... */}
+      <Route path="/restaurant/:slug/:restaurantId" element={<RestaurantLayout />}>
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<RestaurantDashboard />} />
+        <Route path="menu" element={<RestaurantMenu />} />
+        <Route path="menu/category/new" element={<RestaurantCategoryForm />} />
+        <Route path="menu/category/:id/edit" element={<RestaurantCategoryForm />} />
+        <Route path="menu/item/new" element={<RestaurantMenuItemForm />} />
+        <Route path="menu/item/:id/edit" element={<RestaurantMenuItemForm />} />
+        <Route path="orders" element={<RestaurantOrders />} />
+        <Route path="orders/:id" element={<RestaurantOrderDetail />} />
+        <Route path="tables" element={<RestaurantTables />} />
+        <Route path="tables/new" element={<RestaurantTableForm />} />
+        <Route path="tables/:id/edit" element={<RestaurantTableForm />} />
+        <Route path="employees" element={<RestaurantEmployees />} />
+        <Route path="employees/new" element={<RestaurantEmployeeForm />} />
+        <Route path="employees/:id/edit" element={<RestaurantEmployeeForm />} />
+        <Route path="kyc" element={<RestaurantKYC />} />
+        <Route path="subscription" element={<RestaurantSubscription />} />
+        <Route path="transactions" element={<RestaurantTransactions />} />
+        <Route path="settings" element={<RestaurantSettings />} />
+        <Route path="profile" element={<RestaurantProfile />} />
       </Route>
 
       {/* Employee: forced password change (no sidebar) */}
       <Route path="/employee/change-password" element={<EmployeeChangePassword />} />
 
-      {/* Employee Routes */}
+      {/* Employee Routes: kitchen / cashier / generic employee — all include :slug :restaurantId */}
       <Route element={<EmployeeLayout />}>
-        <Route path="/kitchen/dashboard/:slug/:restaurantId" element={<KitchenDashboard />} />
-        <Route path="/kitchen/dashboard" element={<KitchenDashboard />} />
-        <Route path="/cashier/dashboard/:slug/:restaurantId" element={<CashierDashboard />} />
-        <Route path="/cashier/dashboard" element={<CashierDashboard />} />
-        <Route path="/employee/orders" element={<OrderList />} />
-        <Route path="/employee/orders/:id" element={<RestaurantOrderDetail />} />
+        <Route path="/kitchen/:slug/:restaurantId/dashboard" element={<KitchenDashboard />} />
+        <Route path="/kitchen/:slug/:restaurantId/orders" element={<OrderList />} />
+        <Route path="/kitchen/:slug/:restaurantId/orders/:id" element={<RestaurantOrderDetail />} />
+        <Route path="/cashier/:slug/:restaurantId/dashboard" element={<CashierDashboard />} />
+        <Route path="/cashier/:slug/:restaurantId/orders/:id" element={<RestaurantOrderDetail />} />
+        <Route path="/employee/:slug/:restaurantId/orders" element={<OrderList />} />
+        <Route path="/employee/:slug/:restaurantId/orders/:id" element={<RestaurantOrderDetail />} />
       </Route>
 
       {/* Customer Routes - Public */}
@@ -199,16 +167,12 @@ function App() {
             <Navigate to="/login" />
           ) : isEmployeeUser && user.mustChangePassword ? (
             <Navigate to="/employee/change-password" />
-          ) : isEmployeeUser && user.role === "kitchen" ? (
-            <Navigate to={`/kitchen/dashboard/${userSlug}/${userRestaurantId}`} />
-          ) : isEmployeeUser && user.role === "cashier" ? (
-            <Navigate to={`/cashier/dashboard/${userSlug}/${userRestaurantId}`} />
-          ) : isEmployeeUser ? (
-            <Navigate to="/employee/orders" />
+          ) : isEmployeeUser && userSlug != null && userRestaurantId != null ? (
+            <Navigate to={defaultPortalPathForUser(user)} replace />
           ) : user.role === "super_admin" || user.role === "admin" ? (
             <Navigate to="/platform/dashboard" />
-          ) : user.role === "restaurant" ? (
-            <Navigate to={`/restaurant/dashboard/${userSlug}/${userRestaurantId}`} />
+          ) : user.role === "restaurant" && userSlug != null && userRestaurantId != null ? (
+            <Navigate to={defaultPortalPathForUser(user)} replace />
           ) : (
             <Navigate to="/login" />
           )

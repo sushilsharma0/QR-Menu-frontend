@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { FiEye, FiRefreshCw } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
@@ -9,6 +10,7 @@ import { useSocket } from '../../hooks/useSocket'
 
 const Orders = () => {
   const navigate = useNavigate()
+  const { restaurantBase } = useTenantRoutes()
   const { socket } = useSocket()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
@@ -202,7 +204,7 @@ const Orders = () => {
             </div>
 
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => navigate(`/restaurant/orders/${order._id}`)}>
+              <Button size="sm" onClick={() => navigate(`${restaurantBase}/orders/${order._id}`)}>
                 <FiEye className="mr-1" /> View Details
               </Button>
               
