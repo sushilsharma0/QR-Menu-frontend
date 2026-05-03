@@ -63,16 +63,22 @@ const MenuCategories = () => {
   const { slug, token } = useParams();
 
   useEffect(() => {
-    fetchMenuData();
-  }, []);
+    if (slug) {
+      fetchMenuData();
+    }
+  }, [slug]);
 
   const fetchMenuData = async () => {
     try {
       setLoading(true);
-      const categoriesRes = await api.get("/restaurant/menu/categories");
-      setCategories(categoriesRes.data.data);
-      console.log(categoriesRes.data.data);
+      // Use public endpoint with restaurant slug
+      const response = await api.get(`/restaurant/menu/public/${slug}`);
+      // response.data.data contains { restaurant, menu }
+      const menuData = response.data.data.menu || [];
+      setCategories(menuData);
+      console.log('Menu data loaded:', menuData);
     } catch (error) {
+      console.error("Failed to fetch menu data:", error);
       // toast.error("Failed to fetch menu data");
     } finally {
       setLoading(false);
