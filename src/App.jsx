@@ -107,64 +107,6 @@ function App() {
         <Route path="/platform/settings" element={<PlatformSettings />} />
       </Route>
 
-<<<<<<< HEAD
-      {/* Restaurant Routes */}
-      <Route element={<RestaurantLayout />}>
-        <Route path="/restaurant/dashboard/:slug/:restaurantId" element={<RestaurantDashboard />} />
-        <Route path="/restaurant/dashboard" element={<RestaurantDashboard />} />
-        <Route path="/restaurant/menu" element={<RestaurantMenu />} />
-        <Route
-          path="/restaurant/menu/category/new"
-          element={<RestaurantCategoryForm />}
-        />
-        <Route
-          path="/restaurant/menu/category/:id/edit"
-          element={<RestaurantCategoryForm />}
-        />
-        <Route
-          path="/restaurant/menu/item/new"
-          element={<RestaurantMenuItemForm />}
-        />
-        <Route
-          path="/restaurant/menu/item/:id/edit"
-          element={<RestaurantMenuItemForm />}
-        />
-        <Route path="/restaurant/orders" element={<RestaurantOrders />} />
-        <Route
-          path="/restaurant/orders/:id"
-          element={<RestaurantOrderDetail />}
-        />
-        <Route path="/restaurant/tables" element={<RestaurantTables />} />
-        <Route
-          path="/restaurant/tables/new"
-          element={<RestaurantTableForm />}
-        />
-        <Route
-          path="/restaurant/tables/:id/edit"
-          element={<RestaurantTableForm />}
-        />
-        <Route path="/restaurant/employees" element={<RestaurantEmployees />} />
-        <Route
-          path="/restaurant/employees/new"
-          element={<RestaurantEmployeeForm />}
-        />
-        <Route
-          path="/restaurant/employees/:id/edit"
-          element={<RestaurantEmployeeForm />}
-        />
-        <Route path="/restaurant/kyc" element={<RestaurantKYC />} />
-        <Route
-          path="/restaurant/subscription"
-          element={<RestaurantSubscription />}
-        />
-        <Route
-          path="/restaurant/transactions"
-          element={<RestaurantTransactions />}
-        />
-        <Route path="/restaurant/promotions" element={<RestaurantPromotions />} />
-        <Route path="/restaurant/settings" element={<RestaurantSettings />} />
-        <Route path="/restaurant/profile" element={<RestaurantProfile />} />
-=======
       {/* Restaurant Routes: /restaurant/:slug/:restaurantId/... */}
       <Route path="/restaurant/:slug/:restaurantId" element={<RestaurantLayout />}>
         <Route index element={<Navigate to="dashboard" replace />} />
@@ -185,9 +127,9 @@ function App() {
         <Route path="kyc" element={<RestaurantKYC />} />
         <Route path="subscription" element={<RestaurantSubscription />} />
         <Route path="transactions" element={<RestaurantTransactions />} />
+        <Route path="promotions" element={<RestaurantPromotions />} />
         <Route path="settings" element={<RestaurantSettings />} />
         <Route path="profile" element={<RestaurantProfile />} />
->>>>>>> c853aeaec5f8f7aab1834fb5cf91b97674bb8c18
       </Route>
 
       {/* Employee: forced password change (no sidebar) */}

@@ -18,19 +18,6 @@ import { useAuth } from '../../hooks/useAuth'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 
 const menuItems = [
-<<<<<<< HEAD
-  { path: '/restaurant/dashboard', icon: FiHome, label: 'Dashboard' },
-  { path: '/restaurant/menu', icon: FiMenu, label: 'Menu' },
-  { path: '/restaurant/orders', icon: FiShoppingCart, label: 'Orders' },
-  { path: '/restaurant/tables', icon: FiGrid, label: 'Tables' },
-  { path: '/restaurant/employees', icon: FiUsers, label: 'Employees' },
-  { path: '/restaurant/kyc', icon: FiFileText, label: 'KYC' },
-  { path: '/restaurant/subscription', icon: FiCreditCard, label: 'Subscription' },
-  { path: '/restaurant/transactions', icon: FiCreditCard, label: 'Transactions' },
-  { path: '/restaurant/promotions', icon: FiTag, label: 'Promotions' },
-  { path: '/restaurant/profile', icon: FiUser, label: 'Profile' },
-  { path: '/restaurant/settings', icon: FiSettings, label: 'Settings' },
-=======
   { segment: 'dashboard', icon: FiHome, label: 'Dashboard' },
   { segment: 'menu', icon: FiMenu, label: 'Menu' },
   { segment: 'orders', icon: FiShoppingCart, label: 'Orders' },
@@ -39,9 +26,9 @@ const menuItems = [
   { segment: 'kyc', icon: FiFileText, label: 'KYC' },
   { segment: 'subscription', icon: FiCreditCard, label: 'Subscription' },
   { segment: 'transactions', icon: FiCreditCard, label: 'Transactions' },
+  { segment: 'promotions', icon: FiTag, label: 'Promotions' },
   { segment: 'profile', icon: FiUser, label: 'Profile' },
   { segment: 'settings', icon: FiSettings, label: 'Settings' },
->>>>>>> c853aeaec5f8f7aab1834fb5cf91b97674bb8c18
 ]
 
 const RestaurantSidebar = () => {
