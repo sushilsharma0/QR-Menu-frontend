@@ -5,6 +5,7 @@ import { FiPlus, FiEdit2, FiTrash2, FiRefreshCw, FiCode, FiImage, FiPrinter } fr
 import QRCode from 'react-qr-code'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
+import { getParsedAuthUser } from '../../utils/authStorage'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import Modal from '../../components/common/Modal'
@@ -57,9 +58,8 @@ const Tables = () => {
   }
 
   const getQRUrl = (table) => {
-    // Get restaurant slug from localStorage or use default
-    const user = JSON.parse(localStorage.getItem('user') || '{}')
-    const restaurantSlug = user.slug || 'restaurant'
+    const authUser = getParsedAuthUser() || {}
+    const restaurantSlug = authUser.slug || 'restaurant'
     
     if (!table.qrToken) {
       return '#'

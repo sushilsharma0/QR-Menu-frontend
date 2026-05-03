@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { Outlet, Link, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Outlet, Link, NavLink, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { FiLogOut, FiUser, FiClock, FiDollarSign } from 'react-icons/fi'
-import toast from 'react-hot-toast'
 import NotificationMenu from '../common/NotificationMenu'
 import api from '../../services/api'
 import { useSocket } from '../../hooks/useSocket'
@@ -10,7 +9,6 @@ import { cashierPortalBase, kitchenPortalBase } from '../../utils/tenantPaths'
 
 const EmployeeLayout = () => {
   const { user, logout } = useAuth()
-  const navigate = useNavigate()
   const location = useLocation()
   const { socket } = useSocket()
   const [pendingCount, setPendingCount] = useState(0)
@@ -20,9 +18,7 @@ const EmployeeLayout = () => {
   }
 
   const handleLogout = () => {
-    logout()
-    navigate('/login')
-    toast.success('Logged out successfully')
+    logout({ loginRole: 'employee' })
   }
 
   const getRoleIcon = () => {

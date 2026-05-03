@@ -60,19 +60,25 @@ const MenuCategories = () => {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
 
-  const {token} = useParams();
+  const { slug, token } = useParams();
 
   useEffect(() => {
-    fetchMenuData();
-  }, []);
+    if (slug) {
+      fetchMenuData();
+    }
+  }, [slug]);
 
   const fetchMenuData = async () => {
     try {
       setLoading(true);
-      const categoriesRes = await api.get("/restaurant/menu/categories");
-      setCategories(categoriesRes.data.data);
-      console.log(categoriesRes.data.data);
+      // Use public endpoint with restaurant slug
+      const response = await api.get(`/restaurant/menu/public/${slug}`);
+      // response.data.data contains { restaurant, menu }
+      const menuData = response.data.data.menu || [];
+      setCategories(menuData);
+      console.log('Menu data loaded:', menuData);
     } catch (error) {
+      console.error("Failed to fetch menu data:", error);
       // toast.error("Failed to fetch menu data");
     } finally {
       setLoading(false);
@@ -204,7 +210,7 @@ const MenuCategories = () => {
           ) : (
             filteredCategories.map((cat) => (
               <Link
-                to={`/item/${JSON.parse(localStorage.getItem("user")).slug}/${token}/${cat.name}`}
+                to={`/item/${slug}/${token}/${cat.name}`}
                 key={cat._id}
                 className="group flex items-center p-3 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-all cursor-pointer hover:border-orange-200"
               >

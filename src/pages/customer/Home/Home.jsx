@@ -18,6 +18,7 @@ import Waiters from "../../../components/customer/homepage/Waiters";
 import QRScannerModal from "../../../components/customer/homepage/QRScannerModal";
 import Offers from "../../../components/customer/homepage/Offers";
 import Feedback from "../../../components/customer/homepage/Feedback";
+import PromoCodeModal from "../../../components/customer/homepage/PromoCodeModal";
 import PageTransition from '../../../components/customer/PageTransition';
 import api from "../../../services/api";
 import { getRestaurantInfo } from "../../../services/customer";
@@ -31,17 +32,19 @@ export default function Home() {
   const [showWaiters, setShowWaiters] = useState(false);
   const [showOffers, setShowOffers] = useState(false);
   const [promoBanners, setPromoBanners] = useState([]);
+  const [showPromoModal, setShowPromoModal] = useState(false);
+  const [promoModalShown, setPromoModalShown] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [tableNumber, setTableNumber] = useState("");
   const [restaurantInfo, setRestaurantInfo] = useState(null);
-  const { token } = useParams();
-  const { slug: restaurantSlug } = useParams();
+  const { slug, token } = useParams();
+
+  const restaurantDisplayName = slug
+    ? decodeURIComponent(slug).replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+    : "Restaurant";
   
   
-
-
- 
 
   const handleScanSuccess = (data) => {
     console.log("QR Data Scanned:", data);
@@ -50,15 +53,17 @@ export default function Home() {
     alert(`Scanned: ${data}`);
   };
 
-  useEffect(()=>{
-    fetchTables();
-    fetchPromoBanners();
-    fetchRestaurantInfo();
-  },[])
+  useEffect(() => {
+    if (!slug || !token) return
+    fetchTables()
+    fetchPromoBanners()
+    fetchRestaurantInfo()
+  }, [slug, token])
 
   const fetchRestaurantInfo = async () => {
     try {
-      const info = await getRestaurantInfo(restaurantSlug)
+      if (!slug) return
+      const info = await getRestaurantInfo(slug)
       setRestaurantInfo(info)
     } catch (error) {
       console.error('Failed to fetch restaurant info:', error)
@@ -83,9 +88,18 @@ export default function Home() {
 
   const fetchPromoBanners = async () => {
     try {
-      const res = await api.get(`/customer/promotions/${restaurantSlug}/banners`);
-      setPromoBanners(res?.data?.data || []);
+      if (!slug) return
+      const res = await api.get(`/customer/promotions/${slug}/banners`);
+      const promos = res?.data?.data || [];
+      setPromoBanners(promos);
+      
+      // Show promo modal automatically if not shown before and there are promos
+      if (!promoModalShown && promos.length > 0) {
+        setShowPromoModal(true);
+        setPromoModalShown(true);
+      }
     } catch (err) {
+      console.error('Failed to fetch promotions:', err);
       setPromoBanners([]);
     }
   };
@@ -94,7 +108,7 @@ export default function Home() {
 let userId = localStorage.getItem("customer_guest_id");
 
 if (!userId) {
-  userId = "guest_" +restaurantSlug + "_" + CryptoJS.lib.WordArray.random(16).toString();
+  userId = "guest_" + (slug || "unknown") + "_" + CryptoJS.lib.WordArray.random(16).toString();
   localStorage.setItem("customer_guest_id", userId);
 }
 
@@ -135,13 +149,7 @@ if (!userId) {
             <span className="text-2xl">🍽️</span>
           </div>
           <h1 className="text-3xl font-bold tracking-tight">
-            {restaurantInfo?.name || (() => {
-              try {
-                return JSON.parse(localStorage.getItem("user"))?.name || 'Welcome'
-              } catch {
-                return 'Welcome'
-              }
-            })()}
+            {restaurantInfo?.name || restaurantDisplayName}
           </h1>
           <p className="text-sm opacity-90 mt-2 italic">
             Delicious food, served with love
@@ -161,7 +169,7 @@ if (!userId) {
           <span className="rotate-180">🔄</span> Scan another QR code
         </button>
         <Link
-          to={`/menu/${JSON.parse(localStorage.getItem("user")).slug}/${token}`}
+          to={`/menu/${slug}/${token}`}
           className="w-48 bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-2xl mt-8 shadow-lg shadow-orange-200 transition-all active:scale-95"
         >
           View Menu
@@ -184,8 +192,13 @@ if (!userId) {
 
         <button 
           onClick={() => setShowOffers(true)}
-          className="flex flex-col items-center justify-center bg-white p-4 rounded-2xl shadow-sm border border-gray-50 active:bg-gray-100"
+          className="relative flex flex-col items-center justify-center bg-white p-4 rounded-2xl shadow-sm border border-gray-50 active:bg-gray-100"
         >
+          {promoBanners.length > 0 && (
+            <div className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white">
+              {promoBanners.length}
+            </div>
+          )}
           <div className="bg-orange-50 p-3 rounded-full text-orange-500 mb-2">
             <Tag size={20} />
           </div>
@@ -204,7 +217,7 @@ if (!userId) {
       </div>
 
       {/* Branding Footer */}
-      {promoBanners.length > 0 && (
+      {/* {promoBanners.length > 0 && (
         <div className="w-[90%] max-w-md mt-8 space-y-3">
           {promoBanners.map((promo) => (
             <div
@@ -219,7 +232,7 @@ if (!userId) {
             </div>
           ))}
         </div>
-      )}
+      )} */}
 
       <p className="mt-12 text-gray-400 text-xs">
         Powered by{" "}
@@ -236,12 +249,21 @@ if (!userId) {
         onClose={() => setIsProfileOpen(false)}
       />
       <Waiters isOpen={showWaiters} onClose={() => setShowWaiters(false)} />
-      <Offers isOpen={showOffers} onClose={() => setShowOffers(false)} />
+      <Offers 
+        isOpen={showOffers} 
+        onClose={() => setShowOffers(false)}
+        slug={slug}
+      />
       <Feedback isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
       <QRScannerModal
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
         onScanSuccess={handleScanSuccess}
+      />
+      <PromoCodeModal
+        isOpen={showPromoModal}
+        onClose={() => setShowPromoModal(false)}
+        promos={promoBanners}
       />
       {/* Nav */}
 

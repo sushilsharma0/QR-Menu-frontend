@@ -1,19 +1,26 @@
 import api from './api'
+import {
+  setAuthSession,
+  clearAuthSession,
+  getAuthToken,
+  getAuthUserRaw,
+} from '../utils/authStorage'
 
 // Platform Auth
 export const platformLogin = async (email, password) => {
   const response = await api.post('/platform/auth/login', { email, password })
   if (response.data.data.token) {
-    localStorage.setItem('token', response.data.data.token)
-    localStorage.setItem('user', JSON.stringify(response.data.data.user))
+    setAuthSession(
+      response.data.data.token,
+      JSON.stringify(response.data.data.user),
+    )
   }
   return response.data
 }
 
 export const platformLogout = async () => {
   await api.post('/platform/auth/logout')
-  localStorage.removeItem('token')
-  localStorage.removeItem('user')
+  clearAuthSession()
 }
 
 export const getPlatformUser = async () => {
@@ -24,7 +31,8 @@ export const getPlatformUser = async () => {
 export const updatePlatformUser = async (data) => {
   const response = await api.put('/platform/auth/profile', data)
   if (response.data.data) {
-    localStorage.setItem('user', JSON.stringify(response.data.data))
+    const t = getAuthToken()
+    if (t) setAuthSession(t, JSON.stringify(response.data.data))
   }
   return response.data
 }
@@ -42,18 +50,17 @@ export const restaurantRegister = async (userData) => {
 export const restaurantLogin = async (email, password) => {
   const response = await api.post('/restaurant/auth/login', { email, password })
   if (response.data.data.token) {
-    localStorage.setItem('token', response.data.data.token)
     const payload = response.data.data.user || response.data.data.restaurant
-    if (payload) {
-      localStorage.setItem('user', JSON.stringify({ ...payload, scope: 'restaurant' }))
-    }
+    setAuthSession(
+      response.data.data.token,
+      payload ? JSON.stringify({ ...payload, scope: 'restaurant' }) : null,
+    )
   }
   return response.data
 }
 
 export const restaurantLogout = async () => {
-  localStorage.removeItem('token')
-  localStorage.removeItem('user')
+  clearAuthSession()
 }
 
 export const getRestaurantUser = async () => {
@@ -70,7 +77,8 @@ export const updateRestaurantProfile = async (data) => {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
   if (response.data.data) {
-    localStorage.setItem('user', JSON.stringify(response.data.data))
+    const t = getAuthToken()
+    if (t) setAuthSession(t, JSON.stringify(response.data.data))
   }
   return response.data
 }
@@ -91,8 +99,10 @@ export const changeRestaurantPassword = async (currentPassword, newPassword) => 
 export const employeeLogin = async (username, password, restaurantId) => {
   const response = await api.post('/restaurant/employees/login', { username, password, restaurantId })
   if (response.data.data.token) {
-    localStorage.setItem('token', response.data.data.token)
-    localStorage.setItem('user', JSON.stringify(response.data.data.employee))
+    setAuthSession(
+      response.data.data.token,
+      JSON.stringify(response.data.data.employee),
+    )
   }
   return response.data
 }
@@ -102,23 +112,21 @@ export const employeeChangePassword = async (currentPassword, newPassword) => {
 }
 
 export const logout = () => {
-  localStorage.removeItem('token')
-  localStorage.removeItem('user')
+  clearAuthSession()
   window.location.href = '/login'
 }
 
 export const isAuthenticated = () => {
-  const token = localStorage.getItem('token')
-  return !!token
+  return !!getAuthToken()
 }
 
 export const getCurrentUser = () => {
-  const user = localStorage.getItem('user')
+  const user = getAuthUserRaw()
   return user ? JSON.parse(user) : null
 }
 
 export const getToken = () => {
-  return localStorage.getItem('token')
+  return getAuthToken()
 }
 
 export default {

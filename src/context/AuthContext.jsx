@@ -1,30 +1,110 @@
-import React, { createContext, useState, useEffect } from 'react'
+import React, { createContext, useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import api from '../services/api'
 import { defaultPortalPathForUser } from '../utils/tenantPaths'
+import {
+  readInitialAuthToken,
+  getAuthUserRaw,
+  getAuthToken,
+  setAuthSession,
+  clearAuthSession,
+} from '../utils/authStorage'
+
+/** Log out authenticated dashboard users after this much inactivity (visible tab) or hidden tab time */
+const SESSION_IDLE_MS = 60 * 60 * 1000 // 1 hour
 
 export const AuthContext = createContext()
 
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate()
   const [user, setUser] = useState(null)
-  const [token, setToken] = useState(localStorage.getItem('token'))
+  const [token, setToken] = useState(readInitialAuthToken)
   const [isLoading, setIsLoading] = useState(true)
   const isAuthenticated = Boolean(token && user)
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user')
+    const storedUser = getAuthUserRaw()
     if (storedUser && token) {
       try {
         setUser(JSON.parse(storedUser))
       } catch (e) {
         console.error('Failed to parse user:', e)
-        localStorage.removeItem('user')
+        clearAuthSession()
       }
     }
     setIsLoading(false)
   }, [token])
+
+  const logout = useCallback((options = {}) => {
+    let loginRole = options.loginRole
+    if (loginRole === undefined && options.idleTimeout && user) {
+      if (user.role === 'super_admin' || user.role === 'admin') loginRole = 'platform'
+      else if (user.scope === 'employee') loginRole = 'employee'
+      else if (user.role === 'restaurant') loginRole = 'restaurant'
+    }
+
+    clearAuthSession()
+    setToken(null)
+    setUser(null)
+    if (options.idleTimeout) {
+      toast.error('Your session ended after being inactive. Please sign in again.')
+    } else {
+      toast.success('Logged out successfully')
+    }
+    const loginPath =
+      loginRole === 'platform' || loginRole === 'restaurant' || loginRole === 'employee'
+        ? `/login?role=${loginRole}`
+        : '/login'
+    navigate(loginPath)
+  }, [navigate, user])
+
+  /** Auto logout after 1h idle (no input while tab visible) or 1h with tab in background */
+  useEffect(() => {
+    if (!token || !user) return undefined
+
+    const lastActivityRef = { current: Date.now() }
+    let hiddenAt = null
+
+    const bumpActivity = () => {
+      lastActivityRef.current = Date.now()
+    }
+
+    const activityEvents = ['mousedown', 'keydown', 'touchstart', 'scroll', 'click']
+    activityEvents.forEach((evt) => {
+      window.addEventListener(evt, bumpActivity, { passive: true })
+    })
+
+    const tick = () => {
+      if (document.hidden) return
+      if (Date.now() - lastActivityRef.current >= SESSION_IDLE_MS) {
+        logout({ idleTimeout: true })
+      }
+    }
+    const intervalId = window.setInterval(tick, 60 * 1000)
+
+    const onVisibility = () => {
+      if (document.hidden) {
+        hiddenAt = Date.now()
+      } else {
+        if (hiddenAt != null && Date.now() - hiddenAt >= SESSION_IDLE_MS) {
+          logout({ idleTimeout: true })
+          return
+        }
+        hiddenAt = null
+        bumpActivity()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+
+    return () => {
+      activityEvents.forEach((evt) => {
+        window.removeEventListener(evt, bumpActivity)
+      })
+      window.clearInterval(intervalId)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [token, user, logout])
 
   const login = async (email, password, role, restaurantId = null) => {
     try {
@@ -59,9 +139,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Invalid response structure from server')
       }
       
-      // Store in localStorage
-      localStorage.setItem('token', newToken)
-      localStorage.setItem('user', JSON.stringify(authUser))
+      setAuthSession(newToken, JSON.stringify(authUser))
       
       // Update state
       setToken(newToken)
@@ -114,20 +192,12 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const logout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    setToken(null)
-    setUser(null)
-    toast.success('Logged out successfully')
-    navigate('/login')
-  }
-
   const mergeUser = (updates) => {
     setUser((prev) => {
       if (!prev) return prev
       const next = { ...prev, ...updates }
-      localStorage.setItem('user', JSON.stringify(next))
+      const t = getAuthToken()
+      if (t) setAuthSession(t, JSON.stringify(next))
       return next
     })
   }
