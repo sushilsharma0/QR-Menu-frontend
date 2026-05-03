@@ -55,7 +55,7 @@ const OrderList = () => {
   }
 
   const handleOrderUpdate = (order) => {
-    toast.info(`Order #${order.orderNumber} status updated`)
+    toast(`Order #${order.orderNumber} status updated`)
     fetchOrders()
   }
 

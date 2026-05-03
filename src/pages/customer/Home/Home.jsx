@@ -20,6 +20,7 @@ import Offers from "../../../components/customer/homepage/Offers";
 import Feedback from "../../../components/customer/homepage/Feedback";
 import PageTransition from '../../../components/customer/PageTransition';
 import api from "../../../services/api";
+import { getRestaurantInfo } from "../../../services/customer";
 import toast from "react-hot-toast";
 import CryptoJS from "crypto-js";
 
@@ -29,9 +30,11 @@ export default function Home() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showWaiters, setShowWaiters] = useState(false);
   const [showOffers, setShowOffers] = useState(false);
+  const [promoBanners, setPromoBanners] = useState([]);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [tableNumber, setTableNumber] = useState("");
+  const [restaurantInfo, setRestaurantInfo] = useState(null);
   const { slug, token } = useParams();
 
   const restaurantDisplayName = slug
@@ -50,9 +53,22 @@ export default function Home() {
     alert(`Scanned: ${data}`);
   };
 
-  useEffect(()=>{
-    fetchTables();
-  },[])
+  useEffect(() => {
+    if (!slug || !token) return
+    fetchTables()
+    fetchPromoBanners()
+    fetchRestaurantInfo()
+  }, [slug, token])
+
+  const fetchRestaurantInfo = async () => {
+    try {
+      if (!slug) return
+      const info = await getRestaurantInfo(slug)
+      setRestaurantInfo(info)
+    } catch (error) {
+      console.error('Failed to fetch restaurant info:', error)
+    }
+  }
 
     const fetchTables = async () => {
       try {
@@ -69,6 +85,16 @@ export default function Home() {
         setLoading(false)
       }
     }
+
+  const fetchPromoBanners = async () => {
+    try {
+      if (!slug) return
+      const res = await api.get(`/customer/promotions/${slug}/banners`);
+      setPromoBanners(res?.data?.data || []);
+    } catch (err) {
+      setPromoBanners([]);
+    }
+  };
 
 
 let userId = localStorage.getItem("customer_guest_id");
@@ -87,7 +113,9 @@ if (!userId) {
       <div
         className="relative w-full h-[45vh] bg-cover bg-center flex flex-col items-center justify-center text-white p-6"
         style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80')`,
+          backgroundImage: restaurantInfo?.backgroundPhoto
+            ? `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('${restaurantInfo.backgroundPhoto}')`
+            : `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80')`,
         }}
       >
         <div className="absolute top-6 left-0 right-0 px-6 flex justify-between z-20">
@@ -112,8 +140,9 @@ if (!userId) {
           <div className="bg-white/20 backdrop-blur-md inline-block p-3 rounded-full mb-4">
             <span className="text-2xl">🍽️</span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">{restaurantDisplayName}</h1>
-          {/* <h1 className="text-3xl font-bold tracking-tight">Foodies Cafe 🌿</h1> */}
+          <h1 className="text-3xl font-bold tracking-tight">
+            {restaurantInfo?.name || restaurantDisplayName}
+          </h1>
           <p className="text-sm opacity-90 mt-2 italic">
             Delicious food, served with love
           </p>
@@ -175,6 +204,23 @@ if (!userId) {
       </div>
 
       {/* Branding Footer */}
+      {promoBanners.length > 0 && (
+        <div className="w-[90%] max-w-md mt-8 space-y-3">
+          {promoBanners.map((promo) => (
+            <div
+              key={promo._id}
+              className="rounded-2xl p-4 text-white shadow"
+              style={{ backgroundColor: promo.bannerColor || "#f97316" }}
+            >
+              <p className="font-bold text-sm">{promo.bannerText || promo.name}</p>
+              <p className="text-xs opacity-90 mt-1">
+                Code: {promo.code} | {promo.discountType === "percent" ? `${promo.discountValue}% OFF` : `Rs. ${promo.discountValue} OFF`}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
       <p className="mt-12 text-gray-400 text-xs">
         Powered by{" "}
         <span className="font-bold text-gray-600 uppercase tracking-widest text-[10px]">

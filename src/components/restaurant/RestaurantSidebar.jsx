@@ -10,6 +10,7 @@ import {
   FiCreditCard,
   FiSettings,
   FiUser,
+  FiTag,
 } from 'react-icons/fi'
 import api from '../../services/api'
 import { useSocket } from '../../hooks/useSocket'
@@ -34,6 +35,7 @@ const menuItems = [
   { segment: 'kyc', icon: FiFileText, label: 'KYC' },
   { segment: 'subscription', icon: FiCreditCard, label: 'Subscription' },
   { segment: 'transactions', icon: FiCreditCard, label: 'Transactions' },
+  { segment: 'promotions', icon: FiTag, label: 'Promotions' },
   { segment: 'profile', icon: FiUser, label: 'Profile' },
   { segment: 'settings', icon: FiSettings, label: 'Settings' },
 ]

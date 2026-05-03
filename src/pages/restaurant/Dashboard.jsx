@@ -58,10 +58,12 @@ const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [salesData, setSalesData] = useState([]);
   const [popularItems, setPopularItems] = useState([]);
+  const [restaurant, setRestaurant] = useState(null);
   const [loading, setLoading] = useState(true);
   const { socket } = useSocket();
 
   useEffect(() => {
+    fetchRestaurantProfile();
     fetchDashboardData();
 
     // Listen for real-time order updates
@@ -117,7 +119,7 @@ const Dashboard = () => {
   };
 
   const handleOrderUpdate = (order) => {
-    toast.info(`Order #${order.orderNumber} status updated to ${order.status}`);
+    toast(`Order #${order.orderNumber} status updated to ${order.status}`);
     fetchDashboardData();
   };
 
@@ -125,6 +127,15 @@ const Dashboard = () => {
     toast.success(`Payment updated for order #${payment.orderNumber}`);
     fetchDashboardData();
   };
+
+  const fetchRestaurantProfile = async () => {
+    try {
+      const res = await api.get('/restaurant/auth/profile')
+      setRestaurant(res.data.data)
+    } catch (error) {
+      console.error('Failed to fetch restaurant profile', error)
+    }
+  }
 
   if (loading) {
     return (
@@ -180,27 +191,36 @@ const Dashboard = () => {
         <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-indigo-400/20 blur-3xl" />
         <div className="absolute -bottom-20 left-10 h-48 w-48 rounded-full bg-cyan-300/10 blur-3xl" />
         <div className="relative flex justify-between items-center gap-4 flex-wrap">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-indigo-200 font-medium">
-              Operational Overview
-            </p>
-            <h1 className="text-3xl md:text-4xl font-bold mt-2">
-              Restaurant Dashboard
-            </h1>
-            <p className="text-indigo-100/90 mt-2 max-w-2xl">
-              Track live orders, revenue trends, and service performance from one place.
-            </p>
-            <div className="flex flex-wrap items-center gap-2 mt-4">
-              <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/15 border border-white/20">
-                Live Orders
-              </span>
-              <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/15 border border-white/20">
-                Revenue Tracking
-              </span>
-              <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/15 border border-white/20">
-                Real-time Updates
-              </span>
+          <div className="flex items-center gap-4">
+            {restaurant?.logo && (
+              <img
+                src={restaurant.logo}
+                alt={restaurant.name || 'Restaurant Logo'}
+                className="h-16 w-16 rounded-2xl object-cover border border-white/20"
+              />
+            )}
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-indigo-200 font-medium">
+                Operational Overview
+              </p>
+              <h1 className="text-3xl md:text-4xl font-bold mt-2">
+                {restaurant?.name || 'Restaurant Dashboard'}
+              </h1>
+              <p className="text-indigo-100/90 mt-2 max-w-2xl">
+                Track live orders, revenue trends, and service performance from one place.
+              </p>
             </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 mt-4 md:mt-0">
+            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/15 border border-white/20">
+              Live Orders
+            </span>
+            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/15 border border-white/20">
+              Revenue Tracking
+            </span>
+            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/15 border border-white/20">
+              Real-time Updates
+            </span>
           </div>
           <div className="flex items-center gap-3">
             <div className="hidden md:block rounded-2xl border border-white/20 bg-white/10 px-4 py-3">

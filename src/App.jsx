@@ -36,6 +36,7 @@ import RestaurantSubscription from "./pages/restaurant/Subscription";
 import RestaurantTransactions from "./pages/restaurant/Transactions";
 import RestaurantSettings from "./pages/restaurant/Settings";
 import RestaurantProfile from "./pages/restaurant/Profile";
+import RestaurantPromotions from "./pages/restaurant/Promotions";
 
 // Employee Pages
 import KitchenDashboard from "./pages/employee/KitchenDashboard";
@@ -106,6 +107,7 @@ function App() {
         <Route path="/platform/settings" element={<PlatformSettings />} />
       </Route>
 
+
       {/* Restaurant Routes: /restaurant/:slug/:restaurantId/... */}
       <Route path="/restaurant/:slug/:restaurantId" element={<RestaurantLayout />}>
         <Route index element={<Navigate to="dashboard" replace />} />
@@ -128,6 +130,7 @@ function App() {
         <Route path="transactions" element={<RestaurantTransactions />} />
         <Route path="settings" element={<RestaurantSettings />} />
         <Route path="profile" element={<RestaurantProfile />} />
+        <Route path="promotions" element={<RestaurantPromotions />} />
       </Route>
 
       {/* Employee: forced password change (no sidebar) */}
