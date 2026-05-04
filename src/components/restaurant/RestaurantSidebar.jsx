@@ -44,6 +44,7 @@ const RestaurantSidebar = () => {
     { segment: 'transactions', icon: FiCreditCard, label: 'Transactions' },
     { segment: 'promotions', icon: FiTag, label: 'Promotions' },
     { segment: 'tickets', icon: FiActivity, label: 'Support Tickets' },
+    { segment: 'logs', icon: FiActivity, label: 'System Logs' },
     { segment: 'settings', icon: FiSettings, label: 'Settings' },
   ]
 

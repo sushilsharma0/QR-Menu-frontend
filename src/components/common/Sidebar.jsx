@@ -15,6 +15,7 @@ import {
   FiGrid,
   FiUser,
 } from 'react-icons/fi'
+import { FaRegCreditCard } from "react-icons/fa";
 
 const Sidebar = () => {
   const { user } = useAuth()
@@ -43,7 +44,7 @@ const Sidebar = () => {
       { path: `${restaurantBase}/tables`, icon: FiGrid, label: 'Tables' },
       { path: `${restaurantBase}/employees`, icon: FiUsers, label: 'Employees' },
       { path: `${restaurantBase}/kyc`, icon: FiFileText, label: 'KYC' },
-      { path: `${restaurantBase}/subscription`, icon: FiCreditCard, label: 'Subscription' },
+      { path: `${restaurantBase}/subscription`, icon: FaRegCreditCard, label: 'Subscription' },
       { path: `${restaurantBase}/transactions`, icon: FiCreditCard, label: 'Transactions' },
       { path: `${restaurantBase}/profile`, icon: FiUser, label: 'Profile' },
       { path: `${restaurantBase}/settings`, icon: FiSettings, label: 'Settings' },
