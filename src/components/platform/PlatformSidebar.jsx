@@ -18,6 +18,7 @@ const menuItems = [
   { path: '/platform/kyc', icon: FiFileText, label: 'KYC Verification' },
   { path: '/platform/subscriptions', icon: FiCreditCard, label: 'Subscriptions' },
   { path: '/platform/cms', icon: FiLayout, label: 'CMS' },
+  { path: '/platform/tickets', icon: FiActivity, label: 'Support Tickets' },
   { path: '/platform/admins', icon: FiShield, label: 'Admins' },
   { path: '/platform/logs', icon: FiActivity, label: 'System Logs' },
   { path: '/platform/settings', icon: FiSettings, label: 'Settings' },

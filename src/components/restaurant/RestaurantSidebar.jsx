@@ -27,26 +27,25 @@ function staffLoginHref(restaurantId, staff) {
   return `/login?${q.toString()}`
 }
 
-const menuItems = [
-  { segment: 'dashboard', icon: FiHome, label: 'Dashboard' },
-  { segment: 'menu', icon: FiMenu, label: 'Menu' },
-  { segment: 'orders', icon: FiShoppingCart, label: 'Orders' },
-  { segment: 'tables', icon: FiGrid, label: 'Tables' },
-  { segment: 'employees', icon: FiUsers, label: 'Employees' },
-  { segment: 'kyc', icon: FiFileText, label: 'KYC' },
-  { segment: 'subscription', icon: FiCreditCard, label: 'Subscription' },
-  { segment: 'transactions', icon: FiCreditCard, label: 'Transactions' },
-  { segment: 'promotions', icon: FiTag, label: 'Promotions' },
-  { segment: 'logs', icon: FiActivity, label: 'System Logs' },
-  { segment: 'profile', icon: FiUser, label: 'Profile' },
-  { segment: 'settings', icon: FiSettings, label: 'Settings' },
-]
-
 const RestaurantSidebar = () => {
-  const [pendingCount, setPendingCount] = useState(0)
-  const { socket } = useSocket()
   const { user } = useAuth()
-  const { restaurantBase, hasTenant, restaurantId } = useTenantRoutes()
+  const { socket } = useSocket()
+  const { restaurantBase, restaurantId, hasTenant } = useTenantRoutes()
+  const [pendingCount, setPendingCount] = useState(0)
+
+  const menuItems = [
+    { segment: 'dashboard', icon: FiHome, label: 'Dashboard' },
+    { segment: 'menu', icon: FiMenu, label: 'Menu' },
+    { segment: 'orders', icon: FiShoppingCart, label: 'Orders' },
+    { segment: 'tables', icon: FiGrid, label: 'Tables' },
+    { segment: 'employees', icon: FiUsers, label: 'Employees' },
+    { segment: 'kyc', icon: FiFileText, label: 'KYC' },
+    { segment: 'subscription', icon: FiCreditCard, label: 'Subscription' },
+    { segment: 'transactions', icon: FiCreditCard, label: 'Transactions' },
+    { segment: 'promotions', icon: FiTag, label: 'Promotions' },
+    { segment: 'tickets', icon: FiActivity, label: 'Support Tickets' },
+    { segment: 'settings', icon: FiSettings, label: 'Settings' },
+  ]
 
   const fetchPendingCount = async () => {
     try {
@@ -79,13 +78,15 @@ const RestaurantSidebar = () => {
     }
   }, [socket])
 
+  if (!user || !hasTenant) return null
+
   return (
     <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
       <div className="p-6 border-b border-gray-200">
         <h1 className="text-xl font-bold text-primary-600">QR Menu SaaS</h1>
         <p className="text-sm text-gray-500 mt-1">Restaurant Portal</p>
       </div>
-      
+
       <nav className="flex-1 px-4 py-6 space-y-1">
         {menuItems.map((item) => (
           <NavLink

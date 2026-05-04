@@ -1,0 +1,263 @@
+import React, { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
+import { FiArrowLeft, FiSend, FiCheck } from 'react-icons/fi'
+import ticketService from '../../services/ticket'
+import Card from '../../components/common/Card'
+import Button from '../../components/common/Button'
+
+const PlatformTicketDetail = () => {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const [ticket, setTicket] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [replyText, setReplyText] = useState('')
+  const [replyLoading, setReplyLoading] = useState(false)
+  const [statusLoading, setStatusLoading] = useState(false)
+  const [assignLoading, setAssignLoading] = useState(false)
+
+  useEffect(() => {
+    fetchTicket()
+  }, [id])
+
+  const fetchTicket = async () => {
+    try {
+      setLoading(true)
+      const res = await ticketService.getAdminTicketDetail(id)
+      setTicket(res.data.data)
+    } catch (error) {
+      toast.error('Failed to load ticket')
+      navigate('..')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAddReply = async () => {
+    if (!replyText.trim()) {
+      toast.error('Please enter a reply message')
+      return
+    }
+
+    try {
+      setReplyLoading(true)
+      const res = await ticketService.addAdminReply(id, replyText)
+      setTicket(res.data.data)
+      setReplyText('')
+      toast.success('Reply sent successfully')
+    } catch (error) {
+      toast.error('Failed to send reply')
+    } finally {
+      setReplyLoading(false)
+    }
+  }
+
+  const handleStatusChange = async (newStatus) => {
+    try {
+      setStatusLoading(true)
+      const res = await ticketService.updateTicketStatus(id, newStatus)
+      setTicket(res.data.data)
+      toast.success(`Ticket marked as ${newStatus}`)
+    } catch (error) {
+      toast.error('Failed to update status')
+    } finally {
+      setStatusLoading(false)
+    }
+  }
+
+  const handleAssign = async () => {
+    try {
+      setAssignLoading(true)
+      const res = await ticketService.assignTicket(id)
+      setTicket(res.data.data)
+      toast.success('Ticket assigned to you')
+    } catch (error) {
+      toast.error('Failed to assign ticket')
+    } finally {
+      setAssignLoading(false)
+    }
+  }
+
+  const statusColors = {
+    open: 'bg-blue-100 text-blue-800',
+    in_progress: 'bg-yellow-100 text-yellow-800',
+    resolved: 'bg-green-100 text-green-800',
+    closed: 'bg-gray-100 text-gray-800'
+  }
+
+  const priorityColors = {
+    low: 'bg-green-100 text-green-700',
+    medium: 'bg-yellow-100 text-yellow-700',
+    high: 'bg-orange-100 text-orange-700',
+    urgent: 'bg-red-100 text-red-700'
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    )
+  }
+
+  if (!ticket) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500">Ticket not found</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      <button
+        onClick={() => navigate('..')}
+        className="flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium"
+      >
+        <FiArrowLeft size={18} />
+        Back to Tickets
+      </button>
+
+      <Card>
+        <div className="space-y-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Ticket Number</p>
+              <p className="text-lg font-mono font-bold">{ticket.ticketNumber}</p>
+            </div>
+            <div className="flex gap-2 flex-wrap justify-end">
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[ticket.status]}`}>
+                {ticket.status.replace('_', ' ')}
+              </span>
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${priorityColors[ticket.priority]}`}>
+                {ticket.priority}
+              </span>
+            </div>
+          </div>
+
+          <div className="border-t pt-4">
+            <p className="text-sm text-gray-600">From</p>
+            <div className="mt-2">
+              <p className="font-medium text-gray-900">{ticket.restaurant?.name}</p>
+              <p className="text-sm text-gray-500">{ticket.restaurant?.email}</p>
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">{ticket.subject}</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Created on {new Date(ticket.createdAt).toLocaleDateString()}
+            </p>
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <p className="text-gray-700 whitespace-pre-wrap">{ticket.description}</p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 text-sm">
+            <div>
+              <p className="text-gray-600">Category</p>
+              <p className="font-medium capitalize">{ticket.category.replace('_', ' ')}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">Status</p>
+              <p className="font-medium capitalize">{ticket.status.replace('_', ' ')}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">Assigned To</p>
+              <p className="font-medium">{ticket.assignedTo?.name || 'Unassigned'}</p>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      <Card title="Actions">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Change Status</label>
+            <select
+              value={ticket.status}
+              onChange={(e) => handleStatusChange(e.target.value)}
+              disabled={statusLoading || ticket.status === 'closed'}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 disabled:opacity-50"
+            >
+              <option value="open">Open</option>
+              <option value="in_progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+              <option value="closed">Closed</option>
+            </select>
+          </div>
+          {!ticket.assignedTo && (
+            <Button
+              onClick={handleAssign}
+              loading={assignLoading}
+              className="mt-6 flex items-center justify-center gap-2"
+            >
+              <FiCheck size={16} />
+              Assign to Me
+            </Button>
+          )}
+        </div>
+      </Card>
+
+      <Card title="Conversation">
+        <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
+          {ticket.replies.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">No replies yet</p>
+          ) : (
+            ticket.replies.map((reply, idx) => (
+              <div
+                key={idx}
+                className={`p-4 rounded-lg ${
+                  reply.responder.model === 'Platform'
+                    ? 'bg-blue-50 border-l-4 border-blue-500'
+                    : 'bg-gray-50 border-l-4 border-gray-300'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <p className="font-semibold text-gray-900">{reply.responder.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {reply.responder.model === 'Platform' ? 'Admin' : 'Restaurant'}
+                    </p>
+                  </div>
+                  <p className="text-xs text-gray-500">{new Date(reply.createdAt).toLocaleString()}</p>
+                </div>
+                <p className="text-gray-700">{reply.message}</p>
+              </div>
+            ))
+          )}
+        </div>
+
+        {ticket.status !== 'closed' && (
+          <div className="space-y-3 pt-4 border-t">
+            <textarea
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              placeholder="Write your response..."
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 h-24"
+            />
+            <Button
+              onClick={handleAddReply}
+              loading={replyLoading}
+              className="flex items-center gap-2"
+            >
+              <FiSend size={16} />
+              Send Response
+            </Button>
+          </div>
+        )}
+      </Card>
+
+      {ticket.status === 'closed' && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <p className="text-sm text-green-800">
+            This ticket has been closed on {new Date(ticket.closedAt).toLocaleDateString()}
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default PlatformTicketDetail

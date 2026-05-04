@@ -20,6 +20,8 @@ import PlatformCMS from "./pages/platform/CMS";
 import PlatformAdmins from "./pages/platform/Admins";
 import PlatformSettings from "./pages/platform/Settings";
 import PlatformSystemLogs from "./pages/platform/SystemLogs";
+import PlatformTickets from "./pages/platform/Tickets";
+import PlatformTicketDetail from "./pages/platform/TicketDetail";
 
 // Restaurant Pages
 import RestaurantDashboard from "./pages/restaurant/Dashboard";
@@ -39,6 +41,8 @@ import RestaurantSettings from "./pages/restaurant/Settings";
 import RestaurantProfile from "./pages/restaurant/Profile";
 import RestaurantPromotions from "./pages/restaurant/Promotions";
 import RestaurantSystemLogs from "./pages/restaurant/SystemLogs";
+import RestaurantTickets from "./pages/restaurant/Tickets";
+import RestaurantTicketDetail from "./pages/restaurant/TicketDetail";
 
 // Employee Pages
 import KitchenDashboard from "./pages/employee/KitchenDashboard";
@@ -106,6 +110,8 @@ function App() {
         />
         <Route path="/platform/cms" element={<PlatformCMS />} />
         <Route path="/platform/admins" element={<PlatformAdmins />} />
+        <Route path="/platform/tickets" element={<PlatformTickets />} />
+        <Route path="/platform/tickets/:id" element={<PlatformTicketDetail />} />
         <Route path="/platform/logs" element={<PlatformSystemLogs />} />
         <Route path="/platform/settings" element={<PlatformSettings />} />
       </Route>
@@ -131,6 +137,9 @@ function App() {
         <Route path="subscription" element={<RestaurantSubscription />} />
         <Route path="transactions" element={<RestaurantTransactions />} />
         <Route path="promotions" element={<RestaurantPromotions />} />
+        <Route path="tickets" element={<RestaurantTickets />} />
+        <Route path="tickets/create" element={<RestaurantTicketDetail />} />
+        <Route path="tickets/:id" element={<RestaurantTicketDetail />} />
         <Route path="logs" element={<RestaurantSystemLogs />} />
         <Route path="settings" element={<RestaurantSettings />} />
         <Route path="profile" element={<RestaurantProfile />} />
