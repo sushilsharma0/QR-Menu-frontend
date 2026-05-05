@@ -66,6 +66,7 @@ import PlatformLayout from "./components/platform/PlatformLayout";
 import RestaurantLayout from "./components/restaurant/RestaurantLayout";
 import EmployeeLayout from "./components/employee/EmployeeLayout";
 import { defaultPortalPathForUser, getTenantSegments } from "./utils/tenantPaths";
+import LandingPage from "./pages/LandingPage";
 
 function App() {
   const { user, isLoading } = useAuth();
@@ -84,6 +85,8 @@ function App() {
 
   return (
     <Routes>
+      {/* Landing Page */}
+      <Route path="/" element={<LandingPage />} />
       {/* Auth Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
