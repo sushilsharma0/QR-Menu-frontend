@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { FiGrid, FiSearch, FiUser } from 'react-icons/fi'
 import { useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
@@ -33,7 +34,7 @@ const TakeOrder = () => {
         setCategories(categoriesRes.data?.data || [])
         setMenuItems(itemsRes.data?.data || [])
       } catch (err) {
-        toast.error('Failed to load menu and tables')
+        toast.error(err.response?.data?.message || 'Failed to load menu and tables')
       } finally {
         setLoading(false)
       }
@@ -130,11 +131,19 @@ const TakeOrder = () => {
   }
 
   return (
-    <div className="grid lg:grid-cols-[1fr_360px] gap-4">
+    <div className="space-y-4">
+      <div className="rounded-3xl border border-secondary-200 bg-gradient-to-r from-surface-50 to-white p-4 md:p-5">
+        <h1 className="text-2xl font-bold text-primary-900">Take Order</h1>
+        <p className="text-sm text-accent-700">POS mode: choose table, add items quickly, and send directly to kitchen.</p>
+      </div>
+
+      <div className="grid lg:grid-cols-[1fr_380px] gap-4">
       <div className="space-y-4">
         <div className="card p-4">
-          <h1 className="text-xl font-bold text-primary-900">Take Order</h1>
-          <p className="text-sm text-accent-700">Fast POS flow for waiter ordering.</p>
+          <h2 className="text-lg font-bold text-primary-900 flex items-center gap-2">
+            <FiGrid /> Order Details
+          </h2>
+          <p className="text-sm text-accent-700">Select table and optional customer name.</p>
           <div className="grid sm:grid-cols-2 gap-3 mt-3">
             <select
               className="input-field"
@@ -154,6 +163,10 @@ const TakeOrder = () => {
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
             />
+          </div>
+          <div className="mt-3 text-xs text-accent-700 flex items-center gap-2">
+            <FiUser />
+            You are placing this as waiter: <span className="font-semibold text-primary-700">{user?.name || user?.username}</span>
           </div>
         </div>
 
@@ -184,12 +197,15 @@ const TakeOrder = () => {
             ))}
           </div>
 
-          <input
-            className="input-field mb-3"
-            placeholder="Search menu item..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <div className="relative mb-3">
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-accent-600" />
+            <input
+              className="input-field pl-9"
+              placeholder="Search menu item..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {filteredItems.map((item) => (
@@ -197,7 +213,7 @@ const TakeOrder = () => {
                 type="button"
                 key={item._id}
                 onClick={() => addToCart(item)}
-                className="text-left border border-surface-200 rounded-xl p-3 hover:border-primary-300"
+                className="text-left border border-surface-200 rounded-xl p-3 hover:border-primary-300 hover:shadow-sm transition-all"
               >
                 <p className="font-semibold text-primary-900 text-sm">{item.name}</p>
                 <p className="text-xs text-accent-700">
@@ -207,6 +223,9 @@ const TakeOrder = () => {
               </button>
             ))}
           </div>
+          {filteredItems.length === 0 && (
+            <p className="text-sm text-accent-700 mt-2">No menu items match your filters.</p>
+          )}
         </div>
       </div>
 
@@ -222,6 +241,7 @@ const TakeOrder = () => {
           submitting={submitting}
           disabled={!selectedTableId}
         />
+      </div>
       </div>
     </div>
   )

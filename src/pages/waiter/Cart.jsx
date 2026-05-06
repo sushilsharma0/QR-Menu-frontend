@@ -16,7 +16,7 @@ const Cart = ({
     <div className="bg-white border border-surface-200 rounded-2xl p-4 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg font-semibold text-primary-900">Current Order</h3>
-        <span className="text-sm text-accent-700">{items.length} items</span>
+        <span className="text-sm text-accent-700 bg-surface-100 px-2 py-1 rounded-full">{items.length} items</span>
       </div>
 
       <div className="space-y-3 max-h-[40vh] overflow-y-auto custom-scrollbar pr-1">
