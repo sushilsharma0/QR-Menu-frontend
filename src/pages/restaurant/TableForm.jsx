@@ -14,6 +14,23 @@ const TableForm = () => {
   const { restaurantBase } = useTenantRoutes()
   const [loading, setLoading] = useState(false)
   const { register, handleSubmit, setValue, formState: { errors } } = useForm()
+  const tableTypes = [
+    { value: 'regular', label: 'Regular' },
+    { value: 'family', label: 'Family' },
+    { value: 'couple', label: 'Couple' },
+    { value: 'private', label: 'Private' },
+    { value: 'outdoor', label: 'Outdoor' },
+    { value: 'bar', label: 'Bar' },
+    { value: 'other', label: 'Other' }
+  ]
+  const floors = [
+    { value: 'ground', label: 'Ground' },
+    { value: 'first', label: 'First' },
+    { value: 'second', label: 'Second' },
+    { value: 'third', label: 'Third' },
+    { value: 'top', label: 'Top / Rooftop' },
+    { value: 'other', label: 'Other' }
+  ]
 
   useEffect(() => {
     if (id) fetchTable()
@@ -25,6 +42,9 @@ const TableForm = () => {
       const table = res.data.data
       setValue('tableNumber', table.tableNumber)
       setValue('capacity', table.capacity)
+      setValue('tableType', table.tableType || 'regular')
+      setValue('floor', table.floor || 'ground')
+      setValue('area', table.area || '')
       setValue('isActive', table.isActive)
     } catch (error) {
       toast.error('Failed to fetch table')
@@ -34,11 +54,15 @@ const TableForm = () => {
   const onSubmit = async (data) => {
     try {
       setLoading(true)
+      const payload = {
+        ...data,
+        capacity: Number(data.capacity || 4)
+      }
       if (id) {
-        await api.put(`/restaurant/tables/${id}`, data)
+        await api.put(`/restaurant/tables/${id}`, payload)
         toast.success('Table updated')
       } else {
-        await api.post('/restaurant/tables', data)
+        await api.post('/restaurant/tables', payload)
         toast.success('Table created with QR code')
       }
       navigate(`${restaurantBase}/tables`)
@@ -71,6 +95,42 @@ const TableForm = () => {
             placeholder="Number of seats"
             {...register('capacity', { required: 'Capacity is required', min: 1 })}
             error={errors.capacity?.message}
+          />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Table Type</label>
+            <select
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+              {...register('tableType')}
+              defaultValue="regular"
+            >
+              {tableTypes.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Floor</label>
+            <select
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+              {...register('floor')}
+              defaultValue="ground"
+            >
+              {floors.map((floor) => (
+                <option key={floor.value} value={floor.value}>
+                  {floor.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <Input
+            label="Area / Section (Optional)"
+            placeholder="e.g., Window side, Garden, Hall A"
+            {...register('area')}
           />
 
           <label className="flex items-center gap-2">

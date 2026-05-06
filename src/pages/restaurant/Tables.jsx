@@ -26,6 +26,7 @@ const Tables = () => {
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
   const [qrModal, setQrModal] = useState({ open: false, table: null });
+  const [tableMetrics, setTableMetrics] = useState(null);
 
   useEffect(() => {
     fetchTables();
@@ -37,6 +38,8 @@ const Tables = () => {
       const res = await api.get("/restaurant/tables");
       console.log('Tables response:', res.data.data)
       setTables(res.data.data || []);
+      const statsRes = await api.get("/restaurant/dashboard/stats");
+      setTableMetrics(statsRes?.data?.data?.resources?.tableMetrics || null);
     } catch (error) {
       console.error("Failed to fetch tables:", error);
       toast.error("Failed to fetch tables");
@@ -102,6 +105,39 @@ const Tables = () => {
       </div>
 
       {/* Tables Grid */}
+      {tableMetrics && (
+        <Card>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
+              <p className="text-xs uppercase tracking-wide text-gray-500">Total Tables</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{tableMetrics.total || 0}</p>
+            </div>
+            <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
+              <p className="text-xs uppercase tracking-wide text-gray-500">By Floor</p>
+              <div className="text-sm text-gray-700 mt-1 space-y-1">
+                {Object.entries(tableMetrics.byFloor || {}).length === 0 && <p>Not set</p>}
+                {Object.entries(tableMetrics.byFloor || {}).map(([k, v]) => (
+                  <p key={k}>
+                    {k}: <span className="font-semibold">{v}</span>
+                  </p>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
+              <p className="text-xs uppercase tracking-wide text-gray-500">By Type</p>
+              <div className="text-sm text-gray-700 mt-1 space-y-1">
+                {Object.entries(tableMetrics.byType || {}).length === 0 && <p>Not set</p>}
+                {Object.entries(tableMetrics.byType || {}).map(([k, v]) => (
+                  <p key={k}>
+                    {k}: <span className="font-semibold">{v}</span>
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {tables.length === 0 ? (
         <Card>
           <div className="text-center py-12">
@@ -129,6 +165,12 @@ const Tables = () => {
                   <p className="text-sm text-gray-500">
                     Capacity: {table.capacity || 4} persons
                   </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Type: {table.tableType || "regular"} • Floor: {table.floor || "ground"}
+                  </p>
+                  {table.area && (
+                    <p className="text-xs text-gray-500">Area: {table.area}</p>
+                  )}
                 </div>
                 <span
                   className={`px-2 py-1 text-xs rounded-full ${table.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
@@ -200,7 +242,15 @@ const Tables = () => {
         <div className="p-6 text-center">
           <div className="flex justify-center mb-4 bg-white p-4 rounded-lg">
             {qrModal.table?.qrToken ? (
-              <QRCode value={getQRUrl(qrModal.table)} size={200} />
+              qrModal.table?.qrCode ? (
+                <img
+                  src={qrModal.table.qrCode}
+                  alt={`QR for Table ${qrModal.table?.tableNumber || ""}`}
+                  className="w-52 h-52 object-contain"
+                />
+              ) : (
+                <QRCode value={getQRUrl(qrModal.table)} size={200} />
+              )
             ) : (
               <div className="w-48 h-48 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
                 No QR Code Available
