@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { FiPlus, FiMinus } from 'react-icons/fi'
 import Button from '../common/Button'
 
-const MenuItem = ({ item, onAddToCart }) => {
+const MenuItem = ({ item, onAddToCart, currency = 'Rs.' }) => {
   const [quantity, setQuantity] = useState(1)
 
   return (
@@ -24,9 +24,9 @@ const MenuItem = ({ item, onAddToCart }) => {
         </div>
         <div className="mt-3 flex justify-between items-center">
           <div>
-            <span className="text-lg font-bold text-primary-600">${item.price}</span>
+            <span className="text-lg font-bold text-primary-600">{currency}{item.price}</span>
             {item.originalPrice && (
-              <span className="text-sm text-gray-400 line-through ml-2">${item.originalPrice}</span>
+              <span className="text-sm text-gray-400 line-through ml-2">{currency}{item.originalPrice}</span>
             )}
           </div>
           {!item.isAvailable ? (

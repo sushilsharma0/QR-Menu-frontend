@@ -30,6 +30,7 @@ import RestaurantMenuItemForm from "./pages/restaurant/MenuItemForm";
 import RestaurantCategoryForm from "./pages/restaurant/CategoryForm";
 import RestaurantOrders from "./pages/restaurant/Orders";
 import RestaurantOrderDetail from "./pages/restaurant/OrderDetail";
+import RestaurantCreateOrder from "./pages/restaurant/CreateOrder";
 import RestaurantTables from "./pages/restaurant/Tables";
 import RestaurantTableForm from "./pages/restaurant/TableForm";
 import RestaurantEmployees from "./pages/restaurant/Employees";
@@ -129,6 +130,7 @@ function App() {
         <Route path="menu/item/new" element={<RestaurantMenuItemForm />} />
         <Route path="menu/item/:id/edit" element={<RestaurantMenuItemForm />} />
         <Route path="orders" element={<RestaurantOrders />} />
+        <Route path="orders/new" element={<RestaurantCreateOrder />} />
         <Route path="orders/:id" element={<RestaurantOrderDetail />} />
         <Route path="tables" element={<RestaurantTables />} />
         <Route path="tables/new" element={<RestaurantTableForm />} />

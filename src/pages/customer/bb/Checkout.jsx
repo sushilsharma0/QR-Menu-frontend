@@ -12,6 +12,7 @@ const Checkout = () => {
   const { cart, clearCart } = useCart()
   const [loading, setLoading] = useState(false)
   const { register, handleSubmit, formState: { errors } } = useForm()
+  const currency = cart.items?.[0]?.currency || 'Rs.'
 
   if (!cart.items.length) {
     navigate('/cart')
@@ -56,14 +57,14 @@ const Checkout = () => {
             {cart.items.map((item) => (
               <div key={item._id} className="flex justify-between">
                 <span>{item.quantity}x {item.name}</span>
-                <span>${(item.price * item.quantity).toFixed(2)}</span>
+                <span>{currency}{(item.price * item.quantity).toFixed(2)}</span>
               </div>
             ))}
           </div>
           <div className="border-t pt-4">
             <div className="flex justify-between font-bold">
               <span>Total</span>
-              <span className="text-primary-600">${cart.total.toFixed(2)}</span>
+              <span className="text-primary-600">{currency}{cart.total.toFixed(2)}</span>
             </div>
           </div>
         </div>

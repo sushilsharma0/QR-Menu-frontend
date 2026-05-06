@@ -2,11 +2,12 @@ import React from 'react'
 import { FiTrash2, FiPlus, FiMinus } from 'react-icons/fi'
 
 const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
+  const currency = item?.currency || 'Rs.'
   return (
     <div className="flex items-center justify-between py-3 border-b last:border-0">
       <div className="flex-1">
         <h4 className="font-medium text-gray-900">{item.name}</h4>
-        <p className="text-sm text-gray-500">${item.price}</p>
+        <p className="text-sm text-gray-500">{currency}{item.price}</p>
       </div>
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 bg-gray-100 rounded-lg">

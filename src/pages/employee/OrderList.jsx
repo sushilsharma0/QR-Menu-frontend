@@ -8,11 +8,14 @@ import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import { useSocket } from '../../hooks/useSocket'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
+import { useAuth } from '../../hooks/useAuth'
 
 const OrderList = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { kitchenBase, employeeBase } = useTenantRoutes()
+  const { user } = useAuth()
+  const currency = user?.currency || 'Rs.'
   const ordersBase = location.pathname.startsWith('/kitchen/') ? kitchenBase : employeeBase
   const { socket } = useSocket()
   const [orders, setOrders] = useState([])
@@ -223,7 +226,7 @@ const OrderList = () => {
                   {order.items?.slice(0, 4).map((item, idx) => (
                     <div key={idx} className="text-sm flex justify-between">
                       <span>{item.quantity}x {item.name}</span>
-                      <span className="text-gray-600">${(item.price * item.quantity).toFixed(2)}</span>
+                      <span className="text-gray-600">{currency}{(item.price * item.quantity).toFixed(2)}</span>
                     </div>
                   ))}
                   {order.items?.length > 4 && (
@@ -235,7 +238,7 @@ const OrderList = () => {
               {/* Total Amount */}
               <div className="border-t pt-3 flex justify-between items-center">
                 <span className="text-gray-600">Total Amount</span>
-                <span className="text-xl font-bold text-primary-600">${order.grandTotal ?? order.totalAmount}</span>
+                <span className="text-xl font-bold text-primary-600">{currency}{order.grandTotal ?? order.totalAmount}</span>
               </div>
 
               {/* Actions */}

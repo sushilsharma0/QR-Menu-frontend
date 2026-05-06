@@ -37,6 +37,7 @@ export const getRestaurantInfo = async (restaurantSlug) => {
     logo: menu.data.restaurant?.logo,
     backgroundPhoto: menu.data.restaurant?.backgroundPhoto,
     description: menu.data.restaurant?.description,
+    currency: menu.data.restaurant?.currency || 'Rs.',
     openingTime: menu.data.restaurant?.openingTime,
     closingTime: menu.data.restaurant?.closingTime,
   }

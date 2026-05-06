@@ -7,11 +7,14 @@ import api from '../../services/api'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import { useSocket } from '../../hooks/useSocket'
+import { useAuth } from '../../hooks/useAuth'
 
 const Orders = () => {
   const navigate = useNavigate()
   const { restaurantBase } = useTenantRoutes()
   const { socket } = useSocket()
+  const { user } = useAuth()
+  const currency = user?.currency || 'Rs.'
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
@@ -102,9 +105,14 @@ const Orders = () => {
           <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
           <p className="text-gray-500 mt-1">Manage and track customer orders</p>
         </div>
-        <Button variant="secondary" onClick={fetchOrders}>
-          <FiRefreshCw className="mr-2" /> Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => navigate(`${restaurantBase}/orders/new`)}>
+            + Create Order
+          </Button>
+          <Button variant="secondary" onClick={fetchOrders}>
+            <FiRefreshCw className="mr-2" /> Refresh
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-2">
@@ -181,7 +189,7 @@ const Orders = () => {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Total:</span>
-                <span className="font-bold text-primary-600">${order.grandTotal}</span>
+                <span className="font-bold text-primary-600">{currency}{order.grandTotal}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Payment:</span>

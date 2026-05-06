@@ -43,13 +43,14 @@ const Menu = () => {
   const handleAddToCart = (item) => {
     const quantity = quantities[item._id] || 1
     if (quantity > 0) {
-      addToCart({ ...item, quantity, restaurantId: restaurant?.id })
+      addToCart({ ...item, quantity, restaurantId: restaurant?.id, currency: restaurant?.currency || 'Rs.' })
       setQuantities(prev => ({ ...prev, [item._id]: 0 }))
       toast.success(`${quantity}x ${item.name} added to cart`)
     }
   }
 
   const categories = ['all', ...menu.map(c => c.name)]
+  const currency = restaurant?.currency || 'Rs.'
 
   const filteredMenu = selectedCategory === 'all' 
     ? menu 
@@ -132,9 +133,9 @@ const Menu = () => {
                     </div>
                     <div className="mt-3 flex justify-between items-center">
                       <div>
-                        <span className="text-lg font-bold text-primary-600">${item.price}</span>
+                        <span className="text-lg font-bold text-primary-600">{currency}{item.price}</span>
                         {item.originalPrice && (
-                          <span className="text-sm text-gray-400 line-through ml-2">${item.originalPrice}</span>
+                          <span className="text-sm text-gray-400 line-through ml-2">{currency}{item.originalPrice}</span>
                         )}
                       </div>
                       <div className="flex items-center gap-2">

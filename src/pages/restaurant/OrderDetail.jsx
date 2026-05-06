@@ -20,7 +20,8 @@ const OrderDetail = () => {
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const isCashierView = user?.scope === 'employee' && user?.role === 'cashier'
-  const formatNpr = (value) => `Rs. ${Number(value || 0).toFixed(2)}`
+  const currency = user?.currency || restaurant?.settings?.currency || 'Rs.'
+  const formatMoney = (value) => `${currency} ${Number(value || 0).toFixed(2)}`
   const backPath = isCashierView
     ? `${cashierBase}/dashboard`
     : user?.role === 'kitchen'
@@ -266,8 +267,8 @@ const OrderDetail = () => {
                   <div key={idx} className="text-sm">
                     <p className="font-medium text-gray-900">{item.name}</p>
                     <div className="flex justify-between text-gray-600">
-                      <span>{item.quantity} x {formatNpr(item.price).replace('Rs. ', '')}</span>
-                      <span>{formatNpr(item.price * item.quantity)}</span>
+                      <span>{item.quantity} x {Number(item.price || 0).toFixed(2)}</span>
+                      <span>{formatMoney(item.price * item.quantity)}</span>
                     </div>
                   </div>
                 ))}
@@ -275,11 +276,11 @@ const OrderDetail = () => {
             </div>
 
             <div className="py-4 space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-gray-500">Sub Total</span><span>{formatNpr(order.totalAmount)}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">VAT</span><span>{formatNpr(order.taxAmount)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Sub Total</span><span>{formatMoney(order.totalAmount)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">VAT</span><span>{formatMoney(order.taxAmount)}</span></div>
               <div className="flex justify-between text-base font-bold border-t pt-2">
                 <span>Grand Total</span>
-                <span className="text-primary-600">{formatNpr(order.grandTotal)}</span>
+                <span className="text-primary-600">{formatMoney(order.grandTotal)}</span>
               </div>
             </div>
 
@@ -347,7 +348,7 @@ const OrderDetail = () => {
                       <p className="text-sm text-gray-500 mt-1">Note: {item.specialInstructions}</p>
                     )}
                   </div>
-                  <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                  <p className="font-medium">{currency}{(item.price * item.quantity).toFixed(2)}</p>
                 </div>
               ))}
             </div>
@@ -355,15 +356,15 @@ const OrderDetail = () => {
             <div className="border-t pt-4 mt-4 space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-600">Subtotal:</span>
-                <span>${order.totalAmount}</span>
+                <span>{currency}{order.totalAmount}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Tax:</span>
-                <span>${order.taxAmount}</span>
+                <span>{currency}{order.taxAmount}</span>
               </div>
               <div className="flex justify-between text-lg font-bold pt-2 border-t">
                 <span>Total:</span>
-                <span className="text-primary-600">${order.grandTotal}</span>
+                <span className="text-primary-600">{currency}{order.grandTotal}</span>
               </div>
             </div>
           </Card>

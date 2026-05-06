@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
+const DEFAULT_CURRENCY = "Rs.";
+
 const restaurantInfo = {
   name: "Foodies Cafe",
   tagline: "Delicious food, served with love",
@@ -21,7 +23,7 @@ const restaurantInfo = {
   reviews: 234,
   established: 2018,
   cuisine: "Multi-cuisine",
-  priceRange: "₹₹",
+  priceRange: DEFAULT_CURRENCY,
   address: "123 Food Street, Culinary District, City - 400001",
   phone: "+91 98765 43210",
   email: "info@foodiescafe.com",
