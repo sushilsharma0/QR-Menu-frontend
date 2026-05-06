@@ -212,6 +212,9 @@ const OrderList = () => {
                 <div>
                   <p className="text-gray-500">Customer</p>
                   <p className="font-medium">{order.customerName || 'Walk-in'}</p>
+                  {order.createdBy?.type === 'waiter' && order.createdBy?.employeeId?.name && (
+                    <p className="text-xs text-accent-700">Order by: {order.createdBy.employeeId.name} (Waiter)</p>
+                  )}
                 </div>
                 <div className="text-right">
                   <p className="text-gray-500">Table</p>

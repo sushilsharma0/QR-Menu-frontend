@@ -50,6 +50,9 @@ import KitchenDashboard from "./pages/employee/KitchenDashboard";
 import CashierDashboard from "./pages/employee/CashierDashboard";
 import OrderList from "./pages/employee/OrderList";
 import EmployeeChangePassword from "./pages/employee/EmployeeChangePassword";
+import WaiterDashboard from "./pages/waiter/Dashboard";
+import WaiterTakeOrder from "./pages/waiter/TakeOrder";
+import WaiterLogin from "./pages/waiter/Login";
 
 // Customer Pages
 import CustomerHome from "./pages/customer/Home/Home";
@@ -90,6 +93,7 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       {/* Auth Routes */}
       <Route path="/login" element={<Login />} />
+      <Route path="/waiter/login" element={<WaiterLogin />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
@@ -160,6 +164,8 @@ function App() {
         <Route path="/kitchen/:slug/:restaurantId/orders/:id" element={<RestaurantOrderDetail />} />
         <Route path="/cashier/:slug/:restaurantId/dashboard" element={<CashierDashboard />} />
         <Route path="/cashier/:slug/:restaurantId/orders/:id" element={<RestaurantOrderDetail />} />
+        <Route path="/waiter/:slug/:restaurantId/dashboard" element={<WaiterDashboard />} />
+        <Route path="/waiter/:slug/:restaurantId/order" element={<WaiterTakeOrder />} />
         <Route path="/employee/:slug/:restaurantId/orders" element={<OrderList />} />
         <Route path="/employee/:slug/:restaurantId/orders/:id" element={<RestaurantOrderDetail />} />
       </Route>

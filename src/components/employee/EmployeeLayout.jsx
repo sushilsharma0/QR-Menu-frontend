@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import { Outlet, Link, NavLink, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import { FiLogOut, FiUser, FiClock, FiDollarSign } from 'react-icons/fi'
+import { FiLogOut, FiUser, FiClock, FiDollarSign, FiGrid, FiPlusCircle } from 'react-icons/fi'
 import NotificationMenu from '../common/NotificationMenu'
 import api from '../../services/api'
 import { useSocket } from '../../hooks/useSocket'
-import { cashierPortalBase, kitchenPortalBase } from '../../utils/tenantPaths'
+import { cashierPortalBase, kitchenPortalBase, waiterPortalBase } from '../../utils/tenantPaths'
 
 const EmployeeLayout = () => {
   const { user, logout } = useAuth()
@@ -24,12 +24,14 @@ const EmployeeLayout = () => {
   const getRoleIcon = () => {
     if (user?.role === 'kitchen') return '👨‍🍳'
     if (user?.role === 'cashier') return '💰'
+    if (user?.role === 'waiter') return '🧾'
     return '👤'
   }
 
   const getRoleTitle = () => {
     if (user?.role === 'kitchen') return 'Kitchen Dashboard'
     if (user?.role === 'cashier') return 'Cashier Dashboard'
+    if (user?.role === 'waiter') return 'Waiter POS'
     return 'Employee Dashboard'
   }
 
@@ -38,13 +40,18 @@ const EmployeeLayout = () => {
   const hasTenant = slug != null && restaurantId != null
   const kb = hasTenant ? kitchenPortalBase(slug, restaurantId) : ''
   const cb = hasTenant ? cashierPortalBase(slug, restaurantId) : ''
+  const wb = hasTenant ? waiterPortalBase(slug, restaurantId) : ''
   const kitchenDashboardPath = kb ? `${kb}/dashboard` : ''
   const kitchenOrdersPath = kb ? `${kb}/orders` : ''
   const cashierDashboardPath = cb ? `${cb}/dashboard` : ''
+  const waiterDashboardPath = wb ? `${wb}/dashboard` : ''
+  const waiterOrderPath = wb ? `${wb}/order` : ''
 
   const navItems = [
     { path: kitchenOrdersPath, label: 'Order History', icon: FiClock, role: 'kitchen', showPending: true },
     { path: cashierDashboardPath, label: 'Orders', icon: FiDollarSign, role: 'cashier' },
+    { path: waiterDashboardPath, label: 'Dashboard', icon: FiGrid, role: 'waiter' },
+    { path: waiterOrderPath, label: 'Take Order', icon: FiPlusCircle, role: 'waiter' },
   ]
 
   const currentNavItems = navItems.filter(
@@ -98,6 +105,8 @@ const EmployeeLayout = () => {
                     ? kitchenDashboardPath || '/login'
                     : user?.role === 'cashier'
                       ? cashierDashboardPath || '/login'
+                      : user?.role === 'waiter'
+                        ? waiterDashboardPath || '/login'
                       : '/'
                 }
                 className="flex items-center gap-2"

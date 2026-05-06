@@ -34,6 +34,11 @@ export function employeePortalBase(slug, restaurantId) {
   return `/employee/${encodePathSegment(slug)}/${encodePathSegment(restaurantId)}`
 }
 
+export function waiterPortalBase(slug, restaurantId) {
+  if (slug == null || restaurantId == null) return ''
+  return `/waiter/${encodePathSegment(slug)}/${encodePathSegment(restaurantId)}`
+}
+
 /** Post-login or default home path for the current auth user. */
 export function defaultPortalPathForUser(user) {
   const { slug, restaurantId } = getTenantSegments(user)
@@ -44,6 +49,9 @@ export function defaultPortalPathForUser(user) {
   }
   if (user?.scope === 'employee' && user?.role === 'cashier') {
     return `${cashierPortalBase(slug, restaurantId)}/dashboard`
+  }
+  if (user?.scope === 'employee' && user?.role === 'waiter') {
+    return `${waiterPortalBase(slug, restaurantId)}/dashboard`
   }
   if (user?.scope === 'employee') {
     return `${employeePortalBase(slug, restaurantId)}/orders`

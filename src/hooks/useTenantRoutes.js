@@ -7,6 +7,7 @@ import {
   kitchenPortalBase,
   cashierPortalBase,
   employeePortalBase,
+  waiterPortalBase,
 } from '../utils/tenantPaths'
 
 /**
@@ -31,6 +32,7 @@ export function useTenantRoutes() {
       kitchenBase: hasTenant ? kitchenPortalBase(slug, restaurantId) : '',
       cashierBase: hasTenant ? cashierPortalBase(slug, restaurantId) : '',
       employeeBase: hasTenant ? employeePortalBase(slug, restaurantId) : '',
+      waiterBase: hasTenant ? waiterPortalBase(slug, restaurantId) : '',
     }
   }, [slugParam, ridParam, user])
 }

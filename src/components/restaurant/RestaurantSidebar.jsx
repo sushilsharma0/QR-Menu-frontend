@@ -132,6 +132,14 @@ const RestaurantSidebar = () => {
             >
               Open cashier staff login
             </Link>
+            <Link
+              to={staffLoginHref(restaurantId, 'waiter')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-4 py-3 text-accent-800 rounded-lg hover:bg-surface-100 hover:text-primary-900 text-sm"
+            >
+              Open waiter staff login
+            </Link>
           </div>
         )}
       </nav>

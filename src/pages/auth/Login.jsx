@@ -83,11 +83,13 @@ const Login = () => {
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
           {role === "employee" &&
-            (staffPortal === "kitchen" || staffPortal === "cashier") && (
+            (staffPortal === "kitchen" || staffPortal === "cashier" || staffPortal === "waiter") && (
               <p className="mb-4 text-sm text-gray-600 rounded-lg bg-amber-50 border border-amber-100 px-3 py-2">
                 {staffPortal === "kitchen"
                   ? "Kitchen staff: sign in with your username, restaurant ID, and password."
-                  : "Cashier: sign in with your username, restaurant ID, and password."}
+                  : staffPortal === "cashier"
+                    ? "Cashier: sign in with your username, restaurant ID, and password."
+                    : "Waiter: sign in with your username, restaurant ID, and password."}
               </p>
             )}
           {/* Role Selection Tabs */}
