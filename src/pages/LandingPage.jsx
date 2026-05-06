@@ -14,7 +14,7 @@ gsap.registerPlugin(ScrollTrigger);
 // --- STYLES ---
 const styles = {
   glass: "bg-white/80 backdrop-blur-md border border-white/20 shadow-xl",
-  gradientText: "bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600",
+  gradientText: "bg-clip-text text-transparent bg-gradient-to-r from-secondary-500 to-primary-500",
   section: "py-24 px-6 max-w-7xl mx-auto",
 };
 
@@ -34,13 +34,14 @@ const FEATURES = [
 
 
 const THEME = {
-  primary: "#f97316",       // Orange-500
-  primaryLight: "#ffedd5",  // Orange-100
-  secondary: "#3b82f6",     // Blue-500
-  accent: "#8b5cf6",        // Purple-500
-  bg: "#f8fafc",            // Slate-50
-  text: "#0f172a",          // Slate-900
-  textMuted: "#64748b",     // Slate-500
+  primary: "#8f2800",
+  primaryLight: "#b64a26",
+  secondary: "#b64a26",
+  accent: "#756a03",
+  attention: "#a69b02",
+  bg: "#feefa5",
+  text: "#8f2800",
+  textMuted: "#756a03",
 };
 
 const CAROUSEL_IMAGES = [
@@ -104,17 +105,17 @@ export default function LandingPage() {
 
   
   return (
-    <div className="bg-slate-50 text-slate-900 font-sans selection:bg-orange-200">
+    <div className="bg-surface-50 text-primary-900 font-sans selection:bg-surface-200">
       
       {/* 1. NAV BAR */}
       <nav className="fixed top-0 w-full z-50 py-4 px-8 flex justify-between items-center bg-white/70 backdrop-blur-md border-b">
-        <div className="text-2xl font-black italic text-orange-500">QUICKBITE.</div>
+        <div className="text-2xl font-black italic text-primary-500">QUICKBITE.</div>
         <div className="hidden md:flex gap-8 font-medium">
-          <a href="#features" className="hover:text-orange-500 transition-colors">Features</a>
-          <a href="#restaurants" className="hover:text-orange-500 transition-colors">Restaurants</a>
-          <a href="#feedback" className="hover:text-orange-500 transition-colors">Feedback</a>
+          <a href="#features" className="hover:text-primary-500 transition-colors">Features</a>
+          <a href="#restaurants" className="hover:text-primary-500 transition-colors">Restaurants</a>
+          <a href="#feedback" className="hover:text-primary-500 transition-colors">Feedback</a>
         </div>
-        <Link to="/login" className="bg-orange-500 text-white px-6 py-3 rounded-full font-bold shadow-lg shadow-orange-200 hover:scale-105 transition-transform">
+        <Link to="/login" className="bg-primary-500 text-white px-6 py-3 rounded-full font-bold shadow-lg shadow-secondary-200 hover:scale-105 transition-transform">
           Admin Login
         </Link>
       </nav>
@@ -133,7 +134,7 @@ export default function LandingPage() {
             Automatic updates, real-time syncing, and a beautiful interface 
             designed for the modern diner.
           </p>
-          <button className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-2">
+          <button className="bg-primary-900 text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-2">
             Get Started <FiChevronRight />
           </button>
         </div>
@@ -169,7 +170,7 @@ export default function LandingPage() {
           animate={{ opacity: 1, y: 0 }}
           className="absolute bottom-6 left-6 right-6 p-4 bg-white/90 backdrop-blur-md rounded-2xl"
         >
-          <p className="text-xs font-black text-orange-500 uppercase">Featured</p>
+          <p className="text-xs font-black text-primary-500 uppercase">Featured</p>
           <h3 className="font-bold">{img.title}</h3>
         </motion.div>
       )}
@@ -178,7 +179,7 @@ export default function LandingPage() {
 })}
 
           {/* Background Glow */}
-          <div className="absolute -z-10 w-80 h-80 bg-orange-200 blur-[100px] rounded-full opacity-50" />
+          <div className="absolute -z-10 w-80 h-80 bg-secondary-200 blur-[100px] rounded-full opacity-50" />
         </div>
 
       </section>
@@ -188,20 +189,20 @@ export default function LandingPage() {
         <div className={styles.section}>
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold">Smart Features for Modern Tables</h2>
-            <p className="text-slate-500 mt-4">Everything you need to run a 5-star digital restaurant.</p>
+            <p className="text-accent-700 mt-4">Everything you need to run a 5-star digital restaurant.</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {FEATURES.map((f, i) => (
               <motion.div 
                 whileHover={{ y: -10 }}
                 key={i} 
-                className="p-8 rounded-3xl border border-slate-100 hover:border-orange-200 hover:shadow-xl hover:shadow-orange-100/50 transition-all group"
+                className="p-8 rounded-3xl border border-surface-200 hover:border-secondary-200 hover:shadow-xl hover:shadow-secondary-100/50 transition-all group"
               >
-                <div className="w-14 h-14 bg-orange-50 text-orange-500 rounded-2xl flex items-center justify-center text-2xl mb-6 group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                <div className="w-14 h-14 bg-secondary-50 text-secondary-600 rounded-2xl flex items-center justify-center text-2xl mb-6 group-hover:bg-primary-500 group-hover:text-white transition-colors">
                   {f.icon}
                 </div>
                 <h3 className="font-bold text-xl mb-3">{f.title}</h3>
-                <p className="text-slate-500 text-sm leading-relaxed">{f.desc}</p>
+                <p className="text-accent-700 text-sm leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -213,14 +214,14 @@ export default function LandingPage() {
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
           <div>
             <h2 className="text-4xl font-bold">Trusted by Top Kitchens</h2>
-            <p className="text-slate-500 mt-2">Discover local favorites using QuickBite.</p>
+            <p className="text-accent-700 mt-2">Discover local favorites using QuickBite.</p>
           </div>
-          <div className="flex bg-slate-200 p-1 rounded-xl">
+          <div className="flex bg-surface-200 p-1 rounded-xl">
             {["All", "Fast Food", "Fine Dining", "Japanese"].map(cat => (
               <button 
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeCategory === cat ? 'bg-white shadow-sm' : 'text-slate-500'}`}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeCategory === cat ? 'bg-white shadow-sm' : 'text-accent-700'}`}
               >
                 {cat}
               </button>
@@ -242,17 +243,17 @@ export default function LandingPage() {
                 <div className="relative overflow-hidden rounded-3xl">
                   <img src={r.img} alt={r.name} className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-700" />
                   <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1">
-                    <FiStar className="fill-orange-400 text-orange-400" /> {r.rating}
+                    <FiStar className="fill-attention-500 text-attention-500" /> {r.rating}
                   </div>
                 </div>
                 <div className="mt-4 flex justify-between items-start">
                   <div>
                     <h3 className="text-xl font-bold">{r.name}</h3>
-                    <p className="text-slate-500 text-sm">{r.category}</p>
+                    <p className="text-accent-700 text-sm">{r.category}</p>
                   </div>
                   <div className="flex gap-2">
                     {r.tags.map(t => (
-                      <span key={t} className="text-[10px] bg-slate-100 px-2 py-1 rounded-md font-bold uppercase tracking-wider text-slate-500">{t}</span>
+                      <span key={t} className="text-[10px] bg-surface-100 px-2 py-1 rounded-md font-bold uppercase tracking-wider text-accent-700">{t}</span>
                     ))}
                   </div>
                 </div>
@@ -263,7 +264,7 @@ export default function LandingPage() {
       </section>
 
       {/* 5. LIVE STATS */}
-      <section className="bg-slate-900 py-20 my-20">
+      <section className="bg-primary-900 py-20 my-20">
         <div className={styles.section + " grid grid-cols-2 lg:grid-cols-4 gap-12 text-center"}>
           {[
             { label: "Daily Orders", val: "12k+", icon: <FiTrendingUp /> },
@@ -272,9 +273,9 @@ export default function LandingPage() {
             { label: "Wait Time Saved", val: "3.5y", icon: <FiClock /> },
           ].map((s, i) => (
             <div key={i} className="text-white">
-              <div className="text-orange-500 text-3xl mb-4 flex justify-center">{s.icon}</div>
+              <div className="text-secondary-300 text-3xl mb-4 flex justify-center">{s.icon}</div>
               <div className="text-4xl font-black mb-1">{s.val}</div>
-              <div className="text-slate-400 text-sm uppercase tracking-widest">{s.label}</div>
+              <div className="text-surface-200 text-sm uppercase tracking-widest">{s.label}</div>
             </div>
           ))}
         </div>
@@ -285,16 +286,16 @@ export default function LandingPage() {
         <div className="grid lg:grid-cols-2 gap-20 items-center">
           <div>
             <h2 className="text-4xl font-bold mb-6">We Value Your Experience</h2>
-            <p className="text-slate-500 mb-8">QuickBite evolves through your feedback. Share your dining experience and help us make every meal better.</p>
+            <p className="text-accent-700 mb-8">QuickBite evolves through your feedback. Share your dining experience and help us make every meal better.</p>
             
             <div className="space-y-6">
               {[
                 { name: "Jessica R.", comment: "Orders are so much faster now. Love not having to wait for the bill!" },
                 { name: "Marco V.", comment: "The UI is buttery smooth. Best contactless system I've used so far." },
               ].map((rev, i) => (
-                <div key={i} className="bg-white p-6 rounded-2xl border-l-4 border-orange-500 shadow-sm">
-                  <p className="italic text-slate-600 mb-2">"{rev.comment}"</p>
-                  <p className="font-bold text-sm text-slate-900">— {rev.name}</p>
+                <div key={i} className="bg-white p-6 rounded-2xl border-l-4 border-primary-500 shadow-sm">
+                  <p className="italic text-accent-700 mb-2">"{rev.comment}"</p>
+                  <p className="font-bold text-sm text-primary-900">— {rev.name}</p>
                 </div>
               ))}
             </div>
@@ -311,7 +312,7 @@ export default function LandingPage() {
                   <input 
                     type="text" 
                     placeholder="John Doe" 
-                    className="w-full bg-slate-50 border-none p-4 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none"
+                    className="w-full bg-surface-50 border-none p-4 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
                     required
                   />
                 </div>
@@ -320,7 +321,7 @@ export default function LandingPage() {
                   <textarea 
                     rows="4" 
                     placeholder="Tell us everything..." 
-                    className="w-full bg-slate-50 border-none p-4 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none"
+                    className="w-full bg-surface-50 border-none p-4 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
                     required
                   ></textarea>
                 </div>
@@ -331,12 +332,12 @@ export default function LandingPage() {
                       <FiStar 
                         key={star} 
                         onClick={() => setFormData({...formData, rating: star})}
-                        className={`text-2xl cursor-pointer transition-colors ${formData.rating >= star ? 'fill-orange-500 text-orange-500' : 'text-slate-300'}`} 
+                        className={`text-2xl cursor-pointer transition-colors ${formData.rating >= star ? 'fill-attention-500 text-attention-500' : 'text-surface-400'}`} 
                       />
                     ))}
                   </div>
                 </div>
-                <button type="submit" className="w-full bg-orange-500 text-white py-4 rounded-xl font-bold shadow-lg shadow-orange-200 flex items-center justify-center gap-2">
+                <button type="submit" className="w-full bg-primary-500 text-white py-4 rounded-xl font-bold shadow-lg shadow-secondary-200 flex items-center justify-center gap-2">
                   Send Feedback <FiSend />
                 </button>
               </form>
@@ -346,10 +347,10 @@ export default function LandingPage() {
                 animate={{ scale: 1, opacity: 1 }}
                 className="text-center py-20"
               >
-                <div className="text-6xl text-green-500 mb-6 flex justify-center"><FiCheckCircle /></div>
+                <div className="text-6xl text-accent-500 mb-6 flex justify-center"><FiCheckCircle /></div>
                 <h3 className="text-2xl font-bold mb-2">Thank you!</h3>
-                <p className="text-slate-500">Your feedback has been successfully shared.</p>
-                <button onClick={() => setSubmitted(false)} className="mt-8 text-orange-500 font-bold underline">Send another</button>
+                <p className="text-accent-700">Your feedback has been successfully shared.</p>
+                <button onClick={() => setSubmitted(false)} className="mt-8 text-primary-500 font-bold underline">Send another</button>
               </motion.div>
             )}
           </motion.div>
@@ -357,30 +358,30 @@ export default function LandingPage() {
       </section>
 
       {/* 7. FOOTER */}
-      <footer className="bg-slate-50 border-t py-16">
+      <footer className="bg-surface-50 border-t py-16">
         <div className={styles.section + " flex flex-col md:flex-row justify-between items-center gap-10"}>
           <div>
-            <div className="text-2xl font-black text-orange-500 mb-4">QUICKBITE.</div>
-            <p className="text-slate-500 max-w-xs text-sm">Empowering restaurants to deliver contactless excellence since 2024.</p>
+            <div className="text-2xl font-black text-primary-500 mb-4">QUICKBITE.</div>
+            <p className="text-accent-700 max-w-xs text-sm">Empowering restaurants to deliver contactless excellence since 2024.</p>
           </div>
           <div className="flex gap-10 text-sm font-bold">
             <div className="space-y-4">
-              <p className="uppercase text-slate-400 tracking-widest text-[10px]">Product</p>
-              <a href="#" className="block hover:text-orange-500">For Restaurants</a>
-              <a href="#" className="block hover:text-orange-500">Order System</a>
+              <p className="uppercase text-accent-500 tracking-widest text-[10px]">Product</p>
+              <a href="#" className="block hover:text-primary-500">For Restaurants</a>
+              <a href="#" className="block hover:text-primary-500">Order System</a>
             </div>
             <div className="space-y-4">
-              <p className="uppercase text-slate-400 tracking-widest text-[10px]">Company</p>
-              <a href="#" className="block hover:text-orange-500">Privacy Policy</a>
-              <a href="#" className="block hover:text-orange-500">Contact Us</a>
+              <p className="uppercase text-accent-500 tracking-widest text-[10px]">Company</p>
+              <a href="#" className="block hover:text-primary-500">Privacy Policy</a>
+              <a href="#" className="block hover:text-primary-500">Contact Us</a>
             </div>
           </div>
           <div className="flex gap-4">
-            <div className="w-10 h-10 bg-white border rounded-full flex items-center justify-center hover:bg-orange-500 hover:text-white cursor-pointer transition-colors"><FiSmartphone /></div>
-            <div className="w-10 h-10 bg-white border rounded-full flex items-center justify-center hover:bg-orange-500 hover:text-white cursor-pointer transition-colors"><FiZap /></div>
+            <div className="w-10 h-10 bg-white border rounded-full flex items-center justify-center hover:bg-primary-500 hover:text-white cursor-pointer transition-colors"><FiSmartphone /></div>
+            <div className="w-10 h-10 bg-white border rounded-full flex items-center justify-center hover:bg-primary-500 hover:text-white cursor-pointer transition-colors"><FiZap /></div>
           </div>
         </div>
-        <div className="text-center text-slate-400 text-xs mt-12">
+        <div className="text-center text-accent-500 text-xs mt-12">
           &copy; 2024 QuickBite Technologies. All rights reserved.
         </div>
       </footer>

@@ -82,29 +82,29 @@ const RestaurantSidebar = () => {
   if (!user || !hasTenant) return null
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-6 border-b border-gray-200">
+    <aside className="w-64 bg-white border-r border-surface-200 flex flex-col">
+      <div className="p-6 border-b border-surface-200">
         <h1 className="text-xl font-bold text-primary-600">QR Menu SaaS</h1>
-        <p className="text-sm text-gray-500 mt-1">Restaurant Portal</p>
+        <p className="text-sm text-accent-700 mt-1">Restaurant Portal</p>
       </div>
 
-      <nav className="flex-1 px-4 py-6 space-y-1">
+      <nav className="flex flex-col gap-2 overflow-y-auto custom-scrollbar px-4 py-6">
         {menuItems.map((item) => (
           <NavLink
             key={item.segment}
             to={`${restaurantBase}/${item.segment}`}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 text-gray-600 rounded-lg transition-all duration-200 ${
+              `flex items-center gap-3 px-4 py-3 text-accent-800 rounded-lg transition-all duration-200 ${
                 isActive
                   ? 'bg-primary-50 text-primary-700 font-medium'
-                  : 'hover:bg-gray-100 hover:text-gray-900'
+                  : 'hover:bg-surface-100 hover:text-primary-900'
               }`
             }
           >
             <item.icon className="h-5 w-5" />
             <span>{item.label}</span>
             {item.segment === 'orders' && pendingCount > 0 && (
-              <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-semibold flex items-center justify-center">
+              <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-attention-500 text-white text-xs font-semibold flex items-center justify-center">
                 {pendingCount > 99 ? '99+' : pendingCount}
               </span>
             )}
@@ -112,15 +112,15 @@ const RestaurantSidebar = () => {
         ))}
 
         {hasTenant && restaurantId != null && (
-          <div className="mt-8 pt-6 border-t border-gray-200 space-y-1">
-            <p className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+          <div className="mt-8 pt-6 border-t border-surface-200 space-y-1">
+            <p className="px-4 text-xs font-semibold text-accent-700 uppercase tracking-wide mb-2">
               Staff login pages
             </p>
             <Link
               to={staffLoginHref(restaurantId, 'kitchen')}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 px-4 py-3 text-gray-600 rounded-lg hover:bg-gray-100 hover:text-gray-900 text-sm"
+              className="flex items-center gap-3 px-4 py-3 text-accent-800 rounded-lg hover:bg-surface-100 hover:text-primary-900 text-sm"
             >
               Open kitchen staff login
             </Link>
@@ -128,7 +128,7 @@ const RestaurantSidebar = () => {
               to={staffLoginHref(restaurantId, 'cashier')}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 px-4 py-3 text-gray-600 rounded-lg hover:bg-gray-100 hover:text-gray-900 text-sm"
+              className="flex items-center gap-3 px-4 py-3 text-accent-800 rounded-lg hover:bg-surface-100 hover:text-primary-900 text-sm"
             >
               Open cashier staff login
             </Link>

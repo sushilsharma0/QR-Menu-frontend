@@ -2,11 +2,11 @@ import React from 'react'
 
 const Badge = ({ children, variant = 'default', className = '' }) => {
   const variants = {
-    default: 'bg-gray-100 text-gray-800',
+    default: 'bg-surface-100 text-primary-800',
     primary: 'bg-primary-100 text-primary-800',
-    success: 'bg-green-100 text-green-800',
-    warning: 'bg-yellow-100 text-yellow-800',
-    danger: 'bg-red-100 text-red-800',
+    success: 'bg-accent-100 text-accent-800',
+    warning: 'bg-attention-100 text-attention-800',
+    danger: 'bg-secondary-100 text-secondary-800',
   }
 
   return (

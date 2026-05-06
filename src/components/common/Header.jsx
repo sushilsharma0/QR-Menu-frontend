@@ -14,13 +14,13 @@ const Header = () => {
   }
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
+    <header className="bg-white border-b border-surface-200 px-6 py-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-800">
+          <h2 className="text-xl font-semibold text-primary-900">
             Welcome back, {user?.name?.split(' ')[0] || 'User'}!
           </h2>
-          <p className="text-sm text-gray-500 mt-1">Here's what's happening with your account today.</p>
+          <p className="text-sm text-accent-700 mt-1">Here's what's happening with your account today.</p>
         </div>
         
         <div className="flex items-center gap-4">
@@ -31,14 +31,14 @@ const Header = () => {
               <FiUser className="h-4 w-4 text-primary-600" />
             </div>
             <div className="hidden md:block">
-              <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-              <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+              <p className="text-sm font-medium text-primary-900">{user?.name}</p>
+              <p className="text-xs text-accent-700 capitalize">{user?.role}</p>
             </div>
           </div>
           
           <button
             onClick={() => logout({ loginRole: loginRoleAfterLogout() })}
-            className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+            className="p-2 text-accent-500 hover:text-secondary-600 transition-colors"
             title="Logout"
           >
             <FiLogOut className="h-5 w-5" />

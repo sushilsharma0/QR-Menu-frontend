@@ -17,10 +17,10 @@ const Alert = ({ type = 'info', message, duration = 5000, onClose }) => {
   if (!visible) return null
 
   const config = {
-    success: { icon: FiCheckCircle, bg: 'bg-green-50', text: 'text-green-800', border: 'border-green-400' },
-    error: { icon: FiAlertCircle, bg: 'bg-red-50', text: 'text-red-800', border: 'border-red-400' },
-    warning: { icon: FiAlertTriangle, bg: 'bg-yellow-50', text: 'text-yellow-800', border: 'border-yellow-400' },
-    info: { icon: FiInfo, bg: 'bg-blue-50', text: 'text-blue-800', border: 'border-blue-400' },
+    success: { icon: FiCheckCircle, bg: 'bg-accent-50', text: 'text-accent-800', border: 'border-accent-400' },
+    error: { icon: FiAlertCircle, bg: 'bg-secondary-50', text: 'text-secondary-800', border: 'border-secondary-400' },
+    warning: { icon: FiAlertTriangle, bg: 'bg-attention-50', text: 'text-attention-800', border: 'border-attention-400' },
+    info: { icon: FiInfo, bg: 'bg-surface-50', text: 'text-primary-800', border: 'border-primary-300' },
   }
 
   const { icon: Icon, bg, text, border } = config[type]
@@ -31,7 +31,7 @@ const Alert = ({ type = 'info', message, duration = 5000, onClose }) => {
         <Icon className={`h-5 w-5 mt-0.5 ${text}`} />
         <p className={`text-sm ${text}`}>{message}</p>
       </div>
-      <button onClick={() => { setVisible(false); onClose?.() }} className="text-gray-400 hover:text-gray-600">
+      <button onClick={() => { setVisible(false); onClose?.() }} className="text-accent-500 hover:text-primary-700">
         <FiX className="h-4 w-4" />
       </button>
     </div>

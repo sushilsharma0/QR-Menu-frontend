@@ -61,10 +61,10 @@ const Sidebar = () => {
   if (!user || user.role === 'kitchen' || user.role === 'cashier') return null
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-6 border-b border-gray-200">
+    <aside className="w-64 bg-white border-r border-surface-200 flex flex-col">
+      <div className="p-6 border-b border-surface-200">
         <h1 className="text-xl font-bold text-primary-600">QR Menu SaaS</h1>
-        <p className="text-sm text-gray-500 mt-1 capitalize">{user?.role} Portal</p>
+        <p className="text-sm text-accent-700 mt-1 capitalize">{user?.role} Portal</p>
       </div>
       <nav className="flex-1 px-4 py-6 space-y-1">
         {menus.map((item) => (
@@ -72,10 +72,10 @@ const Sidebar = () => {
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 text-gray-600 rounded-lg transition-all duration-200 ${
+              `flex items-center gap-3 px-4 py-3 text-accent-800 rounded-lg transition-all duration-200 ${
                 isActive
                   ? 'bg-primary-50 text-primary-700 font-medium'
-                  : 'hover:bg-gray-100 hover:text-gray-900'
+                  : 'hover:bg-surface-100 hover:text-primary-900'
               }`
             }
           >
@@ -84,7 +84,7 @@ const Sidebar = () => {
           </NavLink>
         ))}
       </nav>
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-surface-200">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
             <span className="text-primary-600 font-medium">
@@ -92,8 +92,8 @@ const Sidebar = () => {
             </span>
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-            <p className="text-xs text-gray-500">{user?.email}</p>
+            <p className="text-sm font-medium text-primary-900">{user?.name}</p>
+            <p className="text-xs text-accent-700">{user?.email}</p>
           </div>
         </div>
       </div>
