@@ -5,7 +5,7 @@ import {
   FiHome, FiMenu, FiShoppingCart, FiGrid, FiUsers,
   FiFileText, FiCreditCard, FiSettings, FiTag,
   FiActivity, FiChevronLeft, FiChevronRight, FiX,
-  FiExternalLink,
+  FiExternalLink, FiBarChart2,
 } from 'react-icons/fi'
 import api from '../../services/api'
 import { useSocket } from '../../hooks/useSocket'
@@ -21,6 +21,7 @@ const NAV_ITEMS = [
   { segment: 'dashboard',    icon: FiHome,        label: 'Dashboard'       },
   { segment: 'menu',         icon: FiMenu,        label: 'Menu'            },
   { segment: 'orders',       icon: FiShoppingCart,label: 'Orders'          },
+  { segment: 'orders/activity', icon: FiBarChart2, label: 'Sales activity' },
   { segment: 'tables',       icon: FiGrid,        label: 'Tables'          },
   { segment: 'employees',    icon: FiUsers,       label: 'Employees'       },
   { segment: 'kyc',          icon: FiFileText,    label: 'KYC'             },
@@ -43,6 +44,7 @@ function NavItem({ item, restaurantBase, pendingCount, collapsed, onClick }) {
   return (
     <NavLink
       to={`${restaurantBase}/${item.segment}`}
+      end={item.segment === 'orders'}
       onClick={onClick}
       title={collapsed ? item.label : undefined}
       className={({ isActive }) =>

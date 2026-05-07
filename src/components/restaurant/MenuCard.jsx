@@ -1,6 +1,7 @@
 import React from 'react'
 import { FiEdit2, FiTrash2, FiEye, FiEyeOff } from 'react-icons/fi'
 import Card from '../common/Card'
+import { DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
 
 const MenuCard = ({ item, onEdit, onDelete, onToggleAvailability }) => {
   return (
@@ -15,7 +16,9 @@ const MenuCard = ({ item, onEdit, onDelete, onToggleAvailability }) => {
               <h3 className="font-semibold text-gray-900">{item.name}</h3>
               <p className="text-sm text-gray-500">{item.category?.name}</p>
             </div>
-            <span className="text-lg font-bold text-primary-600">${item.price}</span>
+            <span className="text-lg font-bold text-primary-600">
+              {DEFAULT_CURRENCY_SYMBOL}{Number(item.price).toFixed(2)}
+            </span>
           </div>
           {item.description && (
             <p className="text-sm text-gray-500 mt-1 line-clamp-2">{item.description}</p>

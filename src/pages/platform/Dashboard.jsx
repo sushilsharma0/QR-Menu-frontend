@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { 
-  FiUsers, 
-  FiShoppingBag, 
-  FiDollarSign, 
+import {
+  FiUsers,
+  FiShoppingBag,
   FiClock,
   FiTrendingUp,
 } from 'react-icons/fi'
+import { TbCurrencyRupee } from 'react-icons/tb'
 import {
   AreaChart,
   Area,
@@ -22,6 +22,7 @@ import toast from 'react-hot-toast'
 import api from '../../services/api'
 import StatsCard from '../../components/platform/StatsCard'
 import Card from '../../components/common/Card'
+import { DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']
 
@@ -92,8 +93,8 @@ const Dashboard = () => {
     },
     {
       title: 'Total Revenue',
-      value: `$${(stats?.revenue?.total || 0).toLocaleString()}`,
-      icon: FiDollarSign,
+      value: `${DEFAULT_CURRENCY_SYMBOL} ${(stats?.revenue?.total || 0).toLocaleString('en-IN')}`,
+      icon: TbCurrencyRupee,
       color: 'bg-yellow-500',
       trend: '+23%',
       trendUp: true,
@@ -178,7 +179,9 @@ const Dashboard = () => {
                 <tr key={order._id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">#{order.orderNumber}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.restaurant?.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${order.grandTotal}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {DEFAULT_CURRENCY_SYMBOL} {Number(order.grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs rounded-full ${
                       order.status === 'served' ? 'bg-green-100 text-green-800' :

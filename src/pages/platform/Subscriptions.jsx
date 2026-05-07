@@ -108,7 +108,7 @@ const Subscriptions = () => {
               <thead>
                 <tr className="text-left text-gray-500">
                   <th className="py-2 pr-4">Restaurant</th>
-                  <th className="py-2 pr-4">Requested plan</th>
+                  <th className="py-2 pr-4">Requested plan &amp; price</th>
                   <th className="py-2 pr-4">Proof</th>
                   <th className="py-2 pr-4">Submitted</th>
                   <th className="py-2">Actions</th>
@@ -121,7 +121,25 @@ const Subscriptions = () => {
                       <div className="font-medium text-gray-900">{row.name}</div>
                       <div className="text-gray-500">{row.email}</div>
                     </td>
-                    <td className="py-3 pr-4">{row.requestedPlan?.name || '—'}</td>
+                    <td className="py-3 pr-4">
+                      <div className="font-medium text-gray-900">{row.requestedPlan?.name || '—'}</div>
+                      {row.requestedPlan?.pricing && (
+                        <div className="text-xs text-gray-600 mt-1 space-y-0.5">
+                          <div>
+                            Excl. VAT: {row.requestedPlan.pricing.currencySymbol}
+                            {Number(row.requestedPlan.pricing.priceExclVat).toFixed(2)}
+                          </div>
+                          <div>
+                            VAT: {row.requestedPlan.pricing.currencySymbol}
+                            {Number(row.requestedPlan.pricing.vatAmount).toFixed(2)}
+                          </div>
+                          <div className="text-gray-900 font-medium">
+                            Total: {row.requestedPlan.pricing.currencySymbol}
+                            {Number(row.requestedPlan.pricing.totalInclVat).toFixed(2)}
+                          </div>
+                        </div>
+                      )}
+                    </td>
                     <td className="py-3 pr-4">
                       {row.planPaymentProofPath ? (
                         <a
