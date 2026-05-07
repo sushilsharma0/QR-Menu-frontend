@@ -208,6 +208,39 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const loginWithGoogle = async (credential) => {
+    try {
+      const response = await api.post('/restaurant/auth/google', { credential })
+      const { token: newToken, user: userData, created } = response.data.data
+      const authUser = { ...userData, scope: 'restaurant' }
+
+      if (!newToken || !userData) {
+        throw new Error('Invalid response structure from server')
+      }
+
+      setAuthSession(newToken, JSON.stringify(authUser))
+      localStorage.setItem(THEME_KEY, 'light')
+      document.documentElement.classList.remove('dark')
+      setToken(newToken)
+      setUser(authUser)
+
+      toast.success(response.data?.message || 'Google sign-in successful')
+      if (created) {
+        toast('Complete your vendor profile and KYC after login to unlock all restaurant tools.', {
+          duration: 7000,
+        })
+      }
+      navigate(defaultPortalPathForUser(authUser))
+      return { success: true }
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || error.message || 'Google sign-in failed'
+      if (!error.__toastShown) {
+        toast.error(errorMsg)
+      }
+      return { success: false, error: errorMsg }
+    }
+  }
+
   const mergeUser = (updates) => {
     setUser((prev) => {
       if (!prev) return prev
@@ -219,7 +252,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, mergeUser }}>
+    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, loginWithGoogle, logout, mergeUser }}>
       {children}
     </AuthContext.Provider>
   )

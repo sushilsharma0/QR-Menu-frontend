@@ -1,246 +1,371 @@
-import React, { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
 import {
-  FiMail,
+  FiArrowRight,
+  FiBriefcase,
+  FiCoffee,
+  FiGrid,
   FiLock,
-  FiUsers,
-  FiUserCheck,
+  FiMail,
+  FiShield,
+  FiZap,
   FiUser,
-  FiHome,
-} from "react-icons/fi";
-import { useAuth } from "../../hooks/useAuth";
-import Button from "../../components/common/Button";
-import Input from "../../components/common/Input";
+  FiUsers,
+} from 'react-icons/fi'
+import { FcGoogle } from 'react-icons/fc'
+import { useAuth } from '../../hooks/useAuth'
+import Button from '../../components/common/Button'
+import Input from '../../components/common/Input'
 
-const VALID_ROLES = ["platform", "restaurant", "employee"];
+const VALID_ROLES = ['restaurant', 'employee', 'platform']
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
+
+const portalMeta = {
+  restaurant: {
+    title: 'Vendor Login',
+    eyebrow: 'Restaurant workspace',
+    description: 'Manage menus, orders, tables, billing, staff and KYC from your restaurant dashboard.',
+    icon: FiCoffee,
+    accent: 'bg-emerald-500',
+  },
+  employee: {
+    title: 'Staff Login',
+    eyebrow: 'Kitchen, cashier and waiter',
+    description: 'Staff sign in with the username and restaurant ID provided by the vendor account.',
+    icon: FiUsers,
+    accent: 'bg-sky-500',
+  },
+  platform: {
+    title: 'Platform Admin',
+    eyebrow: 'Internal operations',
+    description: 'A separate secure area for subscriptions, restaurant approvals, admins and platform settings.',
+    icon: FiShield,
+    accent: 'bg-slate-900',
+  },
+}
+
+const GoogleSignIn = ({ onSuccess, disabled }) => {
+  const buttonRef = useRef(null)
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID || disabled) return undefined
+
+    const renderButton = () => {
+      if (!window.google?.accounts?.id || !buttonRef.current) return
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: (response) => onSuccess(response.credential),
+      })
+      buttonRef.current.innerHTML = ''
+      window.google.accounts.id.renderButton(buttonRef.current, {
+        theme: 'outline',
+        size: 'large',
+        text: 'continue_with',
+        shape: 'pill',
+        logo_alignment: 'left',
+        width: buttonRef.current.offsetWidth || 360,
+      })
+      setReady(true)
+    }
+
+    if (window.google?.accounts?.id) {
+      renderButton()
+      return undefined
+    }
+
+    const script = document.createElement('script')
+    script.src = 'https://accounts.google.com/gsi/client'
+    script.async = true
+    script.defer = true
+    script.onload = renderButton
+    document.head.appendChild(script)
+
+    return () => {
+      script.onload = null
+    }
+  }, [disabled, onSuccess])
+
+  if (!GOOGLE_CLIENT_ID) {
+    return (
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+        <div className="flex items-start gap-3">
+          <FcGoogle className="mt-0.5 h-5 w-5 shrink-0" />
+          <p>
+            Add <span className="font-mono">VITE_GOOGLE_CLIENT_ID</span> and <span className="font-mono">GOOGLE_CLIENT_ID</span> to enable Google sign-in.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-gradient-to-br from-white to-emerald-50/50 p-4 shadow-sm dark:border-gray-800 dark:from-gray-950 dark:to-emerald-950/20">
+      <div className="mb-4 flex items-center gap-3">
+        <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
+          <FcGoogle className="h-5 w-5" />
+        </span>
+        <div>
+          <p className="text-sm font-bold text-gray-950 dark:text-white">Google vendor access</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Quick sign-in for restaurant owners</p>
+        </div>
+      </div>
+      <div ref={buttonRef} className="min-h-[44px] w-full [&>div]:!w-full [&_iframe]:!mx-auto" />
+      {!ready && (
+        <button
+          type="button"
+          disabled
+          className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-500 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400"
+        >
+          <FcGoogle className="h-5 w-5" />
+          Loading Google sign-in
+        </button>
+      )}
+      <div className="mt-4 flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-xs text-gray-500 dark:bg-gray-900/70 dark:text-gray-400">
+        <FiZap className="h-4 w-4 text-emerald-600" />
+        <span>No password needed when your Google email matches your vendor account.</span>
+      </div>
+    </div>
+  )
+}
 
 const Login = () => {
-  const { login } = useAuth();
-  const [searchParams] = useSearchParams();
-  const roleQuery = searchParams.get("role");
+  const { login, loginWithGoogle } = useAuth()
+  const location = useLocation()
+  const [searchParams] = useSearchParams()
+  const roleQuery = searchParams.get('role')
+  const staffPortal = searchParams.get('staff')
+  const restaurantIdFromUrl = searchParams.get('restaurantId')?.trim() || ''
 
-  const [role, setRole] = useState(() =>
-    VALID_ROLES.includes(roleQuery) ? roleQuery : "restaurant",
-  );
-  const [loading, setLoading] = useState(false);
+  const roleFromPath = location.pathname.startsWith('/platform')
+    ? 'platform'
+    : location.pathname.startsWith('/staff')
+      ? 'employee'
+      : 'restaurant'
+  const initialRole = location.pathname.startsWith('/platform') && VALID_ROLES.includes(roleQuery)
+    ? roleQuery
+    : roleFromPath
+  const [role, setRole] = useState(initialRole)
+  const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const {
     register,
     handleSubmit,
     setValue,
     formState: { errors },
-  } = useForm();
+  } = useForm()
+
+  const activeMeta = portalMeta[role]
+  const ActiveIcon = activeMeta.icon
+  const isPlatformOnly = role === 'platform'
+  const availablePortals = isPlatformOnly
+    ? [['platform', portalMeta.platform]]
+    : [
+        ['restaurant', portalMeta.restaurant],
+        ['employee', portalMeta.employee],
+      ]
 
   useEffect(() => {
-    if (VALID_ROLES.includes(roleQuery)) {
-      setRole(roleQuery);
+    if (location.pathname.startsWith('/platform') && VALID_ROLES.includes(roleQuery)) {
+      setRole(roleQuery)
+    } else {
+      setRole(roleFromPath)
     }
-  }, [roleQuery]);
-
-  const staffPortal = searchParams.get("staff");
-  const restaurantIdFromUrl = searchParams.get("restaurantId")?.trim() || "";
+  }, [roleFromPath, roleQuery])
 
   useEffect(() => {
-    if (role === "employee" && restaurantIdFromUrl) {
-      setValue("restaurantId", restaurantIdFromUrl);
+    if (role === 'employee' && restaurantIdFromUrl) {
+      setValue('restaurantId', restaurantIdFromUrl)
     }
-  }, [role, restaurantIdFromUrl, setValue]);
+  }, [role, restaurantIdFromUrl, setValue])
+
+  const staffCopy = useMemo(() => {
+    if (staffPortal === 'kitchen') return 'Kitchen staff can continue with their assigned username and restaurant ID.'
+    if (staffPortal === 'cashier') return 'Cashiers can continue with their assigned username and restaurant ID.'
+    if (staffPortal === 'waiter') return 'Waiters can continue with their assigned username and restaurant ID.'
+    return 'Use the staff details created by your restaurant vendor.'
+  }, [staffPortal])
 
   const onSubmit = async (data) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      if (role === "platform") {
-        await login(data.email, data.password, "platform");
-      } else if (role === "restaurant") {
-        await login(data.email, data.password, "restaurant");
-      } else if (role === "employee") {
-        await login(
-          data.username,
-          data.password,
-          "employee",
-          data.restaurantId,
-        );
+      if (role === 'employee') {
+        await login(data.username, data.password, 'employee', data.restaurantId)
+      } else {
+        await login(data.email, data.password, role)
       }
-    } catch (error) {
-      // Error is already handled by AuthContext with toast
-      console.log("Login error:", error);
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
+
+  const handleGoogleSuccess = async (credential) => {
+    setGoogleLoading(true)
+    try {
+      await loginWithGoogle(credential)
+    } finally {
+      setGoogleLoading(false)
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
-        {/* Logo/Brand */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-2xl mb-4">
-            <FiHome className="h-8 w-8 text-primary-600" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">QR Menu SaaS</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-2">Login to your account</p>
-        </div>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#ecfeff,transparent_32%),linear-gradient(135deg,#f8fafc,#ffffff_44%,#f0fdf4)] px-4 py-6 text-gray-950 dark:bg-gray-950 dark:bg-none dark:text-gray-100 sm:px-6 lg:px-8">
+      <div className="mx-auto grid min-h-[calc(100vh-3rem)] w-full max-w-6xl items-center gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+        <section className="space-y-8">
+          <Link to="/" className="inline-flex items-center gap-3 text-sm font-semibold text-gray-700 hover:text-gray-950 dark:text-gray-300 dark:hover:text-white">
+            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-950 text-white dark:bg-white dark:text-gray-950">
+              <FiGrid className="h-5 w-5" />
+            </span>
+            QR Menu SaaS
+          </Link>
 
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-transparent dark:border-gray-800 p-8">
-          {role === "employee" &&
-            (staffPortal === "kitchen" || staffPortal === "cashier" || staffPortal === "waiter") && (
-              <p className="mb-4 text-sm text-gray-600 dark:text-gray-300 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-100 dark:border-amber-800 px-3 py-2">
-                {staffPortal === "kitchen"
-                  ? "Kitchen staff: sign in with your username, restaurant ID, and password."
-                  : staffPortal === "cashier"
-                    ? "Cashier: sign in with your username, restaurant ID, and password."
-                    : "Waiter: sign in with your username, restaurant ID, and password."}
-              </p>
-            )}
-          {/* Role Selection Tabs */}
-          <div className="flex gap-2 mb-6 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-            <button
-              type="button"
-              onClick={() => setRole("platform")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all text-sm font-medium ${
-                role === "platform"
-                  ? "bg-primary-600 text-white shadow-md"
-                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-              }`}
-            >
-              <FiUserCheck className="h-4 w-4" />
-              <span>Platform</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setRole("restaurant")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all text-sm font-medium ${
-                role === "restaurant"
-                  ? "bg-primary-600 text-white shadow-md"
-                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-              }`}
-            >
-              <FiUsers className="h-4 w-4" />
-              <span>Restaurant</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setRole("employee")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all text-sm font-medium ${
-                role === "employee"
-                  ? "bg-primary-600 text-white shadow-md"
-                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-              }`}
-            >
-              <FiUser className="h-4 w-4" />
-              <span>Employee</span>
-            </button>
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-300">
+              {isPlatformOnly ? 'Internal access' : 'Choose your workspace'}
+            </p>
+            <h1 className="mt-4 max-w-xl text-4xl font-bold leading-tight text-gray-950 dark:text-white sm:text-5xl">
+              {isPlatformOnly ? 'Platform admin login is separate.' : 'Vendor and staff access for restaurant operations.'}
+            </h1>
+            <p className="mt-5 max-w-lg text-base leading-7 text-gray-600 dark:text-gray-300">
+              {isPlatformOnly
+                ? 'Use this secure area for subscriptions, restaurant approvals, platform admins, billing settings and operations.'
+                : 'Restaurant owners are vendors here. Their login, registration, and Google sign-in are kept apart from internal platform administration.'}
+            </p>
           </div>
+
+          <div className="grid gap-3">
+            {availablePortals.map(([key, item]) => {
+              const Icon = item.icon
+              const selected = role === key
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setRole(key)}
+                  className={`group flex items-center gap-4 rounded-lg border bg-white/85 p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:bg-gray-900/80 ${
+                    selected
+                      ? 'border-gray-950 ring-2 ring-gray-950/10 dark:border-white dark:ring-white/10'
+                      : 'border-gray-200 hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-700'
+                  }`}
+                >
+                  <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-white ${item.accent}`}>
+                    <Icon className="h-6 w-6" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold text-gray-950 dark:text-white">{item.title}</span>
+                    <span className="mt-1 block text-sm text-gray-500 dark:text-gray-400">{item.description}</span>
+                  </span>
+                  <FiArrowRight className={`h-5 w-5 text-gray-400 transition ${selected ? 'translate-x-1 text-gray-900 dark:text-white' : 'group-hover:translate-x-1'}`} />
+                </button>
+              )
+            })}
+          </div>
+        </section>
+
+        <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-2xl shadow-gray-200/70 dark:border-gray-800 dark:bg-gray-900 dark:shadow-black/30 sm:p-8">
+          <div className="mb-7 flex items-start gap-4">
+            <span className={`flex h-14 w-14 items-center justify-center rounded-lg text-white ${activeMeta.accent}`}>
+              <ActiveIcon className="h-7 w-7" />
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">{activeMeta.eyebrow}</p>
+              <h2 className="mt-1 text-2xl font-bold text-gray-950 dark:text-white">{activeMeta.title}</h2>
+            </div>
+          </div>
+
+          {role === 'employee' && (
+            <div className="mb-5 rounded-lg border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-900 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-100">
+              {staffCopy}
+            </div>
+          )}
+
+          {role === 'platform' && (
+            <div className="mb-5 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-300">
+              Platform access is intentionally separate from vendor registration and staff login.
+            </div>
+          )}
+
+          {role === 'restaurant' && (
+            <div className="mb-6">
+              <GoogleSignIn onSuccess={handleGoogleSuccess} disabled={googleLoading} />
+              <div className="my-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
+                <span className="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
+                or use email
+                <span className="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {/* Platform & Restaurant: Email Field */}
-            {(role === "platform" || role === "restaurant") && (
+            {(role === 'restaurant' || role === 'platform') && (
               <Input
                 label="Email Address"
                 icon={FiMail}
                 type="email"
-                placeholder="Enter your email"
-                {...register("email", { required: "Email is required" })}
+                placeholder={role === 'platform' ? 'admin@company.com' : 'vendor@restaurant.com'}
+                {...register('email', { required: 'Email is required' })}
                 error={errors.email?.message}
               />
             )}
 
-            {/* Employee: Username & Restaurant ID Fields */}
-            {role === "employee" && (
+            {role === 'employee' && (
               <>
                 <Input
                   label="Username"
                   icon={FiUser}
-                  placeholder="Enter your username"
-                  {...register("username", {
-                    required: "Username is required",
-                  })}
+                  placeholder="staff username"
+                  {...register('username', { required: 'Username is required' })}
                   error={errors.username?.message}
                 />
                 <Input
                   label="Restaurant ID"
-                  icon={FiUsers}
-                  placeholder="Enter restaurant ID"
-                  {...register("restaurantId", {
-                    required: "Restaurant ID is required",
-                  })}
+                  icon={FiBriefcase}
+                  placeholder="restaurant id"
+                  {...register('restaurantId', { required: 'Restaurant ID is required' })}
                   error={errors.restaurantId?.message}
                 />
               </>
             )}
 
-            {/* Password Field */}
             <Input
               label="Password"
               icon={FiLock}
               type="password"
-              placeholder="Enter your password"
-              {...register("password", { required: "Password is required" })}
+              placeholder="Enter password"
+              {...register('password', { required: 'Password is required' })}
               error={errors.password?.message}
             />
 
-            <div className="flex justify-end">
-              <Link
-                to="/forgot-password"
-                className="text-sm text-primary-600 hover:text-primary-700"
-              >
+            <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+              <Link to="/forgot-password" className="font-medium text-primary-600 hover:text-primary-700">
                 Forgot password?
               </Link>
+              {role === 'restaurant' && (
+                <Link to="/vendor/register" className="font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-300">
+                  Register vendor
+                </Link>
+              )}
             </div>
 
-            <Button type="submit" loading={loading} className="w-full py-3">
-              Sign In
+            <Button type="submit" loading={loading || googleLoading} className="w-full py-3">
+              Sign in to {role === 'restaurant' ? 'Vendor Dashboard' : role === 'employee' ? 'Staff Workspace' : 'Platform'}
             </Button>
           </form>
 
-          {/* Register Link - Only for Restaurant */}
-          {role === "restaurant" && (
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Don't have an account?{" "}
-                <Link
-                  to="/register"
-                  className="text-primary-600 hover:text-primary-700 font-medium"
-                >
-                  Register as Restaurant
-                </Link>
-              </p>
-            </div>
-          )}
-
-          {/* Demo Credentials */}
-          <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-            <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-2">
-              📋 Demo Credentials
-            </p>
-
-            {role === "platform" && (
-              <div className="space-y-1 text-xs">
-                <p className="text-gray-600 dark:text-gray-300">👑 Super Admin</p>
-                <p className="font-mono text-gray-500 dark:text-gray-400">
-                  Email: superadmin@qrmenu.com
-                </p>
-                <p className="font-mono text-gray-500 dark:text-gray-400">Password: Admin@123</p>
-              </div>
-            )}
-
-            {role === "restaurant" && (
-              <div className="space-y-1 text-xs">
-                <p className="text-gray-600 dark:text-gray-300">🍽️ Restaurant Owner</p>
-                <p className="font-mono text-gray-500 dark:text-gray-400">
-                  Email: test@restaurant.com
-                </p>
-                <p className="font-mono text-gray-500 dark:text-gray-400">Password: Test@123456</p>
-                <p className="text-yellow-600 mt-1">
-                  ⚠️ Register first if not exists
-                </p>
-              </div>
+          <div className="mt-6 rounded-lg bg-gray-50 p-4 text-xs text-gray-600 dark:bg-gray-950 dark:text-gray-400">
+            {role === 'platform' ? (
+              <p><span className="font-semibold text-gray-800 dark:text-gray-200">Demo:</span> superadmin@qrmenu.com / Admin@123</p>
+            ) : role === 'restaurant' ? (
+              <p><span className="font-semibold text-gray-800 dark:text-gray-200">Demo:</span> test@restaurant.com / Test@123456</p>
+            ) : (
+              <p>Ask your restaurant vendor for your staff username, password, and restaurant ID.</p>
             )}
           </div>
-        </div>
+        </section>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Login;
+export default Login

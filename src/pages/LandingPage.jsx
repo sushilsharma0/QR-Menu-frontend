@@ -1,390 +1,330 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  FiSmartphone, FiZap, FiWifi, FiStar, FiChevronRight, 
-  FiMapPin, FiClock, FiPlus, FiCheckCircle, FiTrendingUp,
-  FiLayout, FiShield, FiSend
-} from 'react-icons/fi';
-import { Link } from 'react-router-dom';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import {
+  ArrowRight,
+  BadgeCheck,
+  BarChart3,
+  BellRing,
+  BookOpenText,
+  ChefHat,
+  ClipboardList,
+  CreditCard,
+  LayoutDashboard,
+  Menu,
+  QrCode,
+  ShieldCheck,
+  Sparkles,
+  Store,
+  TabletSmartphone,
+  TicketCheck,
+  Users,
+  X,
+} from 'lucide-react'
 
-gsap.registerPlugin(ScrollTrigger);
+const navItems = [
+  { label: 'Home', href: '#home' },
+  { label: 'Software', href: '#software' },
+  { label: 'Modules', href: '#modules' },
+  { label: 'Workflow', href: '#workflow' },
+  { label: 'Blog', to: '/blog' },
+]
 
-// --- STYLES ---
-const styles = {
-  glass: "bg-white/80 backdrop-blur-md border border-white/20 shadow-xl",
-  gradientText: "bg-clip-text text-transparent bg-gradient-to-r from-secondary-500 to-primary-500",
-  section: "py-24 px-6 max-w-7xl mx-auto",
-};
+const modules = [
+  { icon: Store, title: 'Vendor portal', text: 'Restaurant profile, KYC, subscription, billing, support tickets, and settings.' },
+  { icon: ClipboardList, title: 'Menu builder', text: 'Categories, menu items, images, pricing, tax, availability, and promotions.' },
+  { icon: QrCode, title: 'QR table system', text: 'Create tables, print QR codes, and let guests order directly from their seats.' },
+  { icon: Users, title: 'Staff roles', text: 'Kitchen, cashier, waiter, and employee workflows separated by secure access.' },
+  { icon: BellRing, title: 'Live order flow', text: 'Real-time notifications and order status tracking across every dashboard.' },
+  { icon: BarChart3, title: 'Reports', text: 'Dashboard stats, order activity, billing records, and operational visibility.' },
+]
 
-// --- MOCK DATA ---
-const RESTAURANTS = [
-  { id: 1, name: "Urban Bistro", category: "Fine Dining", rating: 4.8, img: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=400", tags: ["Contactless", "Fast"] },
-  { id: 2, name: "Pizza Heaven", category: "Fast Food", rating: 4.5, img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=400", tags: ["Rewards", "Veg"] },
-  { id: 3, name: "Sushi Zen", category: "Japanese", rating: 4.9, img: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=400", tags: ["Fresh", "QR-Pay"] },
-];
+const softwareDetails = [
+  ['Separate access', 'Vendor, staff, and platform admin login systems are kept cleanly separated.'],
+  ['Email verification', 'Vendor registration validates email codes before activating accounts.'],
+  ['Google sign-in', 'Restaurant vendors can use Google auth for faster verified access.'],
+  ['Platform control', 'Admins handle CMS, blogs, restaurants, KYC, plans, billing, and tickets.'],
+]
 
-const FEATURES = [
-  { icon: <FiZap />, title: "Instant QR Entry", desc: "Scan and start browsing. No app downloads or account creation required." },
-  { icon: <FiWifi />, title: "Offline Sync", desc: "Place orders even with spotty Wi-Fi. We sync automatically when you're back." },
-  { icon: <FiShield />, title: "Safe & Secure", desc: "Encrypted guest IDs and secure payment gateways for peace of mind." },
-  { icon: <FiLayout />, title: "Waiter Call", desc: "Need assistance? Call a waiter to your specific table with one tap." },
-];
+const workflow = [
+  ['01', 'Vendor registers', 'The restaurant owner creates a vendor account, verifies email, and completes profile/KYC.'],
+  ['02', 'Menu goes live', 'Vendor adds categories, items, tables, QR codes, staff, and subscription details.'],
+  ['03', 'Guests order', 'Customers scan QR, browse the digital menu, and place table orders instantly.'],
+  ['04', 'Teams fulfill', 'Kitchen, cashier, waiter, and vendor dashboards stay updated in real time.'],
+]
 
+const LandingPage = () => {
+  const [open, setOpen] = useState(false)
 
-const THEME = {
-  primary: "#8f2800",
-  primaryLight: "#b64a26",
-  secondary: "#b64a26",
-  accent: "#756a03",
-  attention: "#a69b02",
-  bg: "#feefa5",
-  text: "#8f2800",
-  textMuted: "#756a03",
-};
-
-const CAROUSEL_IMAGES = [
-  {
-    id: 1,
-    url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=800",
-    title: "Luxury Dining"
-  },
-  {
-    id: 2,
-    url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=800",
-    title: "Modern Restaurants"
-  },
-  {
-    id: 3,
-    url: "https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&q=80&w=800",
-    title: "Fine Experience"
-  },
-  {
-    id: 4,
-    url: "https://images.unsplash.com/photo-1537047902294-62a40c20a6ae?auto=format&fit=crop&q=80&w=800",
-    title: "Cozy Ambience"
-  },
-];
-export default function LandingPage() {
-  const [activeCategory, setActiveCategory] = useState("All");
-  const [formData, setFormData] = useState({ name: "", comment: "", rating: 5 });
-  const [submitted, setSubmitted] = useState(false);
-
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const carouselRef = useRef(null);
-
-  // --- 1. AUTO-PLAY LOGIC ---
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % CAROUSEL_IMAGES.length);
-    }, 3500);
-  
-    return () => clearInterval(interval);
-  }, []);
+    document.body.style.overflow = open ? 'hidden' : ''
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [open])
 
-  // --- 2. GSAP SHUFFLE ANIMATION ---
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        ".active-card",
-        { x: 0, opacity: 1, scale: 1, rotation: 0 },
-        {
-          x: 120,
-          opacity: 0,
-          scale: 0.85,
-          rotation: 8,
-          duration: 0.5,
-          ease: "power2.inOut"
-        }
-      );
-    }, carouselRef);
-  
-    return () => ctx.revert(); // CLEANUP
-  }, [currentIndex]);
-
-  
-  return (
-    <div className="bg-surface-50 text-primary-900 font-sans selection:bg-surface-200">
-      
-      {/* 1. NAV BAR */}
-      <nav className="fixed top-0 w-full z-50 py-4 px-8 flex justify-between items-center bg-white/70 backdrop-blur-md border-b">
-        <div className="text-2xl font-black italic text-primary-500">QUICKBITE.</div>
-        <div className="hidden md:flex gap-8 font-medium">
-          <a href="#features" className="hover:text-primary-500 transition-colors">Features</a>
-          <a href="#restaurants" className="hover:text-primary-500 transition-colors">Restaurants</a>
-          <a href="#feedback" className="hover:text-primary-500 transition-colors">Feedback</a>
-        </div>
-        <Link to="/login" className="bg-primary-500 text-white px-6 py-3 rounded-full font-bold shadow-lg shadow-secondary-200 hover:scale-105 transition-transform">
-          Admin Login
-        </Link>
-      </nav>
-
-      
-      {/* 2. HERO SECTION WITH GSAP CAROUSEL */}
-      <section className="pt-32 pb-20 max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
-        
-        {/* Left Side: Content */}
-        <div>
-          <h1 className="text-7xl font-black mb-6">
-            Fast Food. <br />
-            <span style={{ color: THEME.primary }}>Faster Tech.</span>
-          </h1>
-          <p className="text-lg mb-10" style={{ color: THEME.textMuted }}>
-            Automatic updates, real-time syncing, and a beautiful interface 
-            designed for the modern diner.
-          </p>
-          <button className="bg-primary-900 text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-2">
-            Get Started <FiChevronRight />
-          </button>
-        </div>
-
-        {/* Right Side: Auto-Playing Stacked Carousel */}
-        <div ref={carouselRef} className="relative h-[450px] w-full flex items-center justify-center">
-        {CAROUSEL_IMAGES.map((img, i) => {
-  const position = (i - currentIndex + CAROUSEL_IMAGES.length) % CAROUSEL_IMAGES.length;
-  const isTop = position === 0;
+  const close = () => setOpen(false)
 
   return (
-    <div
-      key={img.id}
-      className={`carousel-card absolute w-72 h-96 rounded-[2rem] overflow-hidden shadow-2xl border-8 border-white transition-all duration-700 ${
-        isTop ? "active-card" : ""
-      }`}
-      style={{
-        zIndex: CAROUSEL_IMAGES.length - position,
-        transform: `
-          translateX(${position * 25}px)
-          translateY(${position * -15}px)
-          rotate(${position * 3}deg)
-          scale(${1 - position * 0.07})
-        `,
-        opacity: position > 3 ? 0 : 1,
-      }}
-    >
-      <img src={img.url} alt={img.title} className="w-full h-full object-cover" />
+    <div id="home" className="min-h-screen overflow-hidden bg-[#f8fbf8] text-slate-950">
+      <header className="fixed inset-x-0 top-0 z-50 px-3 py-3 sm:px-5">
+        <nav className="mx-auto grid h-16 max-w-7xl grid-cols-[auto_1fr_auto] items-center rounded-2xl border border-white/70 bg-white/90 px-4 shadow-xl shadow-slate-900/5 backdrop-blur-xl lg:px-5">
+          <Link to="/" className="flex items-center gap-3" aria-label="QR Menu home">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white">
+              <QrCode className="h-5 w-5" />
+            </span>
+            <span className="hidden text-lg font-black tracking-tight sm:block">QR Menu</span>
+          </Link>
 
-      {isTop && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="absolute bottom-6 left-6 right-6 p-4 bg-white/90 backdrop-blur-md rounded-2xl"
-        >
-          <p className="text-xs font-black text-primary-500 uppercase">Featured</p>
-          <h3 className="font-bold">{img.title}</h3>
-        </motion.div>
-      )}
-    </div>
-  );
-})}
-
-          {/* Background Glow */}
-          <div className="absolute -z-10 w-80 h-80 bg-secondary-200 blur-[100px] rounded-full opacity-50" />
-        </div>
-
-      </section>
-
-      {/* 3. FEATURES GRID */}
-      <section id="features" className="bg-white py-24">
-        <div className={styles.section}>
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold">Smart Features for Modern Tables</h2>
-            <p className="text-accent-700 mt-4">Everything you need to run a 5-star digital restaurant.</p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {FEATURES.map((f, i) => (
-              <motion.div 
-                whileHover={{ y: -10 }}
-                key={i} 
-                className="p-8 rounded-3xl border border-surface-200 hover:border-secondary-200 hover:shadow-xl hover:shadow-secondary-100/50 transition-all group"
-              >
-                <div className="w-14 h-14 bg-secondary-50 text-secondary-600 rounded-2xl flex items-center justify-center text-2xl mb-6 group-hover:bg-primary-500 group-hover:text-white transition-colors">
-                  {f.icon}
-                </div>
-                <h3 className="font-bold text-xl mb-3">{f.title}</h3>
-                <p className="text-accent-700 text-sm leading-relaxed">{f.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 4. RESTAURANT BROWSER */}
-      <section id="restaurants" className={styles.section}>
-        <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
-          <div>
-            <h2 className="text-4xl font-bold">Trusted by Top Kitchens</h2>
-            <p className="text-accent-700 mt-2">Discover local favorites using QuickBite.</p>
-          </div>
-          <div className="flex bg-surface-200 p-1 rounded-xl">
-            {["All", "Fast Food", "Fine Dining", "Japanese"].map(cat => (
-              <button 
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeCategory === cat ? 'bg-white shadow-sm' : 'text-accent-700'}`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-8">
-          <AnimatePresence mode='popLayout'>
-            {RESTAURANTS.filter(r => activeCategory === "All" || r.category === activeCategory).map((r) => (
-              <motion.div 
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                key={r.id} 
-                className="group cursor-pointer"
-              >
-                <div className="relative overflow-hidden rounded-3xl">
-                  <img src={r.img} alt={r.name} className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-700" />
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1">
-                    <FiStar className="fill-attention-500 text-attention-500" /> {r.rating}
-                  </div>
-                </div>
-                <div className="mt-4 flex justify-between items-start">
-                  <div>
-                    <h3 className="text-xl font-bold">{r.name}</h3>
-                    <p className="text-accent-700 text-sm">{r.category}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    {r.tags.map(t => (
-                      <span key={t} className="text-[10px] bg-surface-100 px-2 py-1 rounded-md font-bold uppercase tracking-wider text-accent-700">{t}</span>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      </section>
-
-      {/* 5. LIVE STATS */}
-      <section className="bg-primary-900 py-20 my-20">
-        <div className={styles.section + " grid grid-cols-2 lg:grid-cols-4 gap-12 text-center"}>
-          {[
-            { label: "Daily Orders", val: "12k+", icon: <FiTrendingUp /> },
-            { label: "Restaurants", val: "500+", icon: <FiCheckCircle /> },
-            { label: "Happy Diners", val: "1M+", icon: <FiStar /> },
-            { label: "Wait Time Saved", val: "3.5y", icon: <FiClock /> },
-          ].map((s, i) => (
-            <div key={i} className="text-white">
-              <div className="text-secondary-300 text-3xl mb-4 flex justify-center">{s.icon}</div>
-              <div className="text-4xl font-black mb-1">{s.val}</div>
-              <div className="text-surface-200 text-sm uppercase tracking-widest">{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 6. FEEDBACK SYSTEM */}
-      <section id="feedback" className={styles.section}>
-        <div className="grid lg:grid-cols-2 gap-20 items-center">
-          <div>
-            <h2 className="text-4xl font-bold mb-6">We Value Your Experience</h2>
-            <p className="text-accent-700 mb-8">QuickBite evolves through your feedback. Share your dining experience and help us make every meal better.</p>
-            
-            <div className="space-y-6">
-              {[
-                { name: "Jessica R.", comment: "Orders are so much faster now. Love not having to wait for the bill!" },
-                { name: "Marco V.", comment: "The UI is buttery smooth. Best contactless system I've used so far." },
-              ].map((rev, i) => (
-                <div key={i} className="bg-white p-6 rounded-2xl border-l-4 border-primary-500 shadow-sm">
-                  <p className="italic text-accent-700 mb-2">"{rev.comment}"</p>
-                  <p className="font-bold text-sm text-primary-900">— {rev.name}</p>
-                </div>
+          <div className="hidden justify-center lg:flex">
+            <div className="flex items-center gap-1 rounded-full bg-slate-100 p-1">
+              {navItems.map((item) => (
+                item.to ? (
+                  <Link key={item.label} to={item.to} className="rounded-full px-4 py-2 text-sm font-black text-slate-600 transition hover:bg-white hover:text-slate-950 hover:shadow-sm">
+                    {item.label}
+                  </Link>
+                ) : (
+                  <a key={item.label} href={item.href} className="rounded-full px-4 py-2 text-sm font-black text-slate-600 transition hover:bg-white hover:text-slate-950 hover:shadow-sm">
+                    {item.label}
+                  </a>
+                )
               ))}
             </div>
           </div>
 
-          <motion.div 
-            whileHover={{ rotate: 1 }}
-            className={`p-10 rounded-[2.5rem] ${styles.glass}`}
+          <div className="hidden items-center justify-end gap-3 lg:flex">
+            <Link to="/vendor/login" className="rounded-xl px-4 py-2 text-sm font-black text-slate-700 transition hover:bg-slate-100">
+              Login
+            </Link>
+            <Link to="/vendor/register" className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-700">
+              Start Free
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="ml-auto flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-800 lg:hidden"
+            aria-label="Open menu"
           >
-            {!submitted ? (
-              <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }}>
-                <div>
-                  <label className="block text-sm font-bold mb-2 uppercase tracking-tight">Full Name</label>
-                  <input 
-                    type="text" 
-                    placeholder="John Doe" 
-                    className="w-full bg-surface-50 border-none p-4 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
-                    required
+            <Menu className="h-5 w-5" />
+          </button>
+        </nav>
+      </header>
+
+      {open && (
+        <div className="fixed inset-0 z-[60] bg-slate-950/50 lg:hidden" onClick={close}>
+          <motion.aside
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            className="ml-auto h-full w-[min(88vw,390px)] bg-white shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex h-16 items-center justify-between border-b border-slate-200 px-5">
+              <div className="flex items-center gap-3 font-black">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white">
+                  <QrCode className="h-5 w-5" />
+                </span>
+                QR Menu
+              </div>
+              <button type="button" onClick={close} className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-slate-100" aria-label="Close menu">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="grid gap-2 p-5">
+              {navItems.map((item) => (
+                item.to ? (
+                  <Link key={item.label} to={item.to} onClick={close} className="rounded-xl px-4 py-3 text-base font-black text-slate-800 hover:bg-slate-100">
+                    {item.label}
+                  </Link>
+                ) : (
+                  <a key={item.label} href={item.href} onClick={close} className="rounded-xl px-4 py-3 text-base font-black text-slate-800 hover:bg-slate-100">
+                    {item.label}
+                  </a>
+                )
+              ))}
+            </div>
+            <div className="mt-auto grid gap-3 border-t border-slate-200 p-5">
+              <Link to="/vendor/register" onClick={close} className="rounded-xl bg-emerald-600 px-5 py-3 text-center text-sm font-black text-white">
+                Register Vendor
+              </Link>
+              <Link to="/vendor/login" onClick={close} className="rounded-xl border border-slate-200 px-5 py-3 text-center text-sm font-black text-slate-700">
+                Vendor Login
+              </Link>
+            </div>
+          </motion.aside>
+        </div>
+      )}
+
+      <main>
+        <section className="relative px-4 pt-28 sm:px-6 lg:px-8">
+          <div className="absolute left-1/2 top-16 -z-10 h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-emerald-200/50 blur-3xl" />
+          <div className="mx-auto grid min-h-[calc(100vh-7rem)] max-w-7xl items-center gap-12 py-12 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-black text-emerald-700 shadow-sm">
+                <Sparkles className="h-4 w-4" />
+                Complete SaaS for QR restaurant operations
+              </div>
+              <h1 className="mt-7 text-4xl font-black leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl">
+                One beautiful platform for digital menus, orders, staff, and vendors.
+              </h1>
+              <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg lg:mx-0">
+                QR Menu SaaS helps restaurants launch contactless ordering, manage vendor operations, verify accounts, control subscriptions, and run live service from responsive dashboards.
+              </p>
+              <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
+                <Link to="/vendor/register" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-7 py-4 text-sm font-black text-white shadow-2xl shadow-slate-900/20 transition hover:-translate-y-0.5">
+                  Register Restaurant Vendor
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link to="/blog" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-7 py-4 text-sm font-black text-slate-800 shadow-sm transition hover:-translate-y-0.5">
+                  Read Blog
+                  <BookOpenText className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="rounded-[2rem] border border-white bg-white p-3 shadow-2xl shadow-slate-900/15">
+                <div className="overflow-hidden rounded-[1.5rem] bg-slate-950">
+                  <img
+                    src="https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=1200"
+                    alt="Restaurant using QR ordering"
+                    className="h-[360px] w-full object-cover sm:h-[520px]"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-bold mb-2 uppercase tracking-tight">How was the food?</label>
-                  <textarea 
-                    rows="4" 
-                    placeholder="Tell us everything..." 
-                    className="w-full bg-surface-50 border-none p-4 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
-                    required
-                  ></textarea>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold mb-4 uppercase tracking-tight">Rating</label>
-                  <div className="flex gap-4">
-                    {[1, 2, 3, 4, 5].map(star => (
-                      <FiStar 
-                        key={star} 
-                        onClick={() => setFormData({...formData, rating: star})}
-                        className={`text-2xl cursor-pointer transition-colors ${formData.rating >= star ? 'fill-attention-500 text-attention-500' : 'text-surface-400'}`} 
-                      />
-                    ))}
+              </div>
+              <div className="absolute -bottom-6 left-4 right-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl sm:left-8 sm:right-auto sm:w-80">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+                    <TicketCheck className="h-6 w-6" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-black text-slate-950">Order #QR-1048 received</p>
+                    <p className="text-xs font-semibold text-slate-500">Kitchen and cashier synced instantly</p>
                   </div>
                 </div>
-                <button type="submit" className="w-full bg-primary-500 text-white py-4 rounded-xl font-bold shadow-lg shadow-secondary-200 flex items-center justify-center gap-2">
-                  Send Feedback <FiSend />
-                </button>
-              </form>
-            ) : (
-              <motion.div 
-                initial={{ scale: 0.5, opacity: 0 }} 
-                animate={{ scale: 1, opacity: 1 }}
-                className="text-center py-20"
-              >
-                <div className="text-6xl text-accent-500 mb-6 flex justify-center"><FiCheckCircle /></div>
-                <h3 className="text-2xl font-bold mb-2">Thank you!</h3>
-                <p className="text-accent-700">Your feedback has been successfully shared.</p>
-                <button onClick={() => setSubmitted(false)} className="mt-8 text-primary-500 font-bold underline">Send another</button>
-              </motion.div>
-            )}
-          </motion.div>
-        </div>
-      </section>
+              </div>
+              <div className="absolute -right-2 top-8 hidden rounded-2xl bg-slate-950 p-4 text-white shadow-2xl sm:block">
+                <p className="text-3xl font-black">98%</p>
+                <p className="text-xs font-bold text-slate-300">mobile ready</p>
+              </div>
+            </div>
+          </div>
+        </section>
 
-      {/* 7. FOOTER */}
-      <footer className="bg-surface-50 border-t py-16">
-        <div className={styles.section + " flex flex-col md:flex-row justify-between items-center gap-10"}>
-          <div>
-            <div className="text-2xl font-black text-primary-500 mb-4">QUICKBITE.</div>
-            <p className="text-accent-700 max-w-xs text-sm">Empowering restaurants to deliver contactless excellence since 2024.</p>
-          </div>
-          <div className="flex gap-10 text-sm font-bold">
-            <div className="space-y-4">
-              <p className="uppercase text-accent-500 tracking-widest text-[10px]">Product</p>
-              <a href="#" className="block hover:text-primary-500">For Restaurants</a>
-              <a href="#" className="block hover:text-primary-500">Order System</a>
+        <section id="software" className="bg-white py-16 sm:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-sm font-black uppercase tracking-[0.25em] text-emerald-700">Software Details</p>
+              <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">Designed as a real restaurant SaaS platform.</h2>
+              <p className="mt-5 text-base leading-8 text-slate-600">
+                This is more than a menu page. It separates platform admins, restaurant vendors, staff roles, and customers into the right workflows.
+              </p>
             </div>
-            <div className="space-y-4">
-              <p className="uppercase text-accent-500 tracking-widest text-[10px]">Company</p>
-              <a href="#" className="block hover:text-primary-500">Privacy Policy</a>
-              <a href="#" className="block hover:text-primary-500">Contact Us</a>
+            <div className="mt-12 grid gap-4 md:grid-cols-2">
+              {softwareDetails.map(([title, text]) => (
+                <div key={title} className="rounded-2xl border border-slate-200 bg-[#f8fbf8] p-6">
+                  <BadgeCheck className="h-6 w-6 text-emerald-600" />
+                  <h3 className="mt-4 text-xl font-black">{title}</h3>
+                  <p className="mt-2 text-sm leading-7 text-slate-600">{text}</p>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="flex gap-4">
-            <div className="w-10 h-10 bg-white border rounded-full flex items-center justify-center hover:bg-primary-500 hover:text-white cursor-pointer transition-colors"><FiSmartphone /></div>
-            <div className="w-10 h-10 bg-white border rounded-full flex items-center justify-center hover:bg-primary-500 hover:text-white cursor-pointer transition-colors"><FiZap /></div>
+        </section>
+
+        <section id="modules" className="py-16 sm:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-sm font-black uppercase tracking-[0.25em] text-emerald-700">Modules</p>
+                <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">Everything restaurants need in one place.</h2>
+              </div>
+              <Link to="/vendor/register" className="inline-flex w-fit items-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black text-white">
+                Start setup
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {modules.map((module) => {
+                const Icon = module.icon
+                return (
+                  <motion.div key={module.title} whileHover={{ y: -5 }} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-950 text-white">
+                      <Icon className="h-6 w-6" />
+                    </span>
+                    <h3 className="mt-5 text-xl font-black">{module.title}</h3>
+                    <p className="mt-3 text-sm leading-7 text-slate-600">{module.text}</p>
+                  </motion.div>
+                )
+              })}
+            </div>
           </div>
-        </div>
-        <div className="text-center text-accent-500 text-xs mt-12">
-          &copy; 2024 QuickBite Technologies. All rights reserved.
+        </section>
+
+        <section id="workflow" className="bg-slate-950 py-16 text-white sm:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid gap-10 lg:grid-cols-[0.75fr_1.25fr]">
+              <div>
+                <p className="text-sm font-black uppercase tracking-[0.25em] text-emerald-300">Workflow</p>
+                <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">From vendor signup to live table orders.</h2>
+              </div>
+              <div className="grid gap-4">
+                {workflow.map(([step, title, text]) => (
+                  <div key={step} className="grid gap-4 rounded-2xl border border-white/10 bg-white/5 p-5 sm:grid-cols-[auto_1fr]">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500 text-lg font-black">{step}</span>
+                    <div>
+                      <h3 className="text-lg font-black">{title}</h3>
+                      <p className="mt-2 text-sm leading-7 text-slate-300">{text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-white py-16 sm:py-24">
+          <div className="mx-auto grid max-w-7xl gap-6 px-4 sm:px-6 lg:grid-cols-3 lg:px-8">
+            {[
+              { icon: LayoutDashboard, title: 'Platform admin controls blogs', text: 'Blog articles are CMS entries created and published by platform admins.' },
+              { icon: CreditCard, title: 'Subscription ready', text: 'Restaurants can request plans, upload proof, and track invoices.' },
+              { icon: ShieldCheck, title: 'Secure operations', text: 'JWT auth, role checks, and separate portals protect each workflow.' },
+            ].map((item) => {
+              const Icon = item.icon
+              return (
+                <div key={item.title} className="rounded-2xl bg-[#f8fbf8] p-6">
+                  <Icon className="h-7 w-7 text-emerald-700" />
+                  <h3 className="mt-4 text-xl font-black">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-7 text-slate-600">{item.text}</p>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-slate-200 bg-[#f8fbf8] py-10">
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white">
+              <QrCode className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="font-black">QR Menu SaaS</p>
+              <p className="text-sm text-slate-500">Digital menu and restaurant operations platform.</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3 text-sm font-black text-slate-600">
+            <span className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2"><TabletSmartphone className="h-4 w-4 text-emerald-600" />Responsive</span>
+            <span className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2"><ChefHat className="h-4 w-4 text-orange-600" />Restaurant first</span>
+            <span className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2"><BookOpenText className="h-4 w-4 text-sky-600" />Admin blog</span>
+          </div>
         </div>
       </footer>
     </div>
-  );
+  )
 }
+
+export default LandingPage

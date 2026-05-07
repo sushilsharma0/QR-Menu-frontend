@@ -75,6 +75,7 @@ import RestaurantLayout from "./components/restaurant/RestaurantLayout";
 import EmployeeLayout from "./components/employee/EmployeeLayout";
 import { defaultPortalPathForUser, getTenantSegments } from "./utils/tenantPaths";
 import LandingPage from "./pages/LandingPage";
+import Blog from "./pages/Blog";
 import NotificationsPage from "./pages/Notifications";
 
 function App() {
@@ -96,10 +97,15 @@ function App() {
     <Routes>
       {/* Landing Page */}
       <Route path="/" element={<LandingPage />} />
+      <Route path="/blog" element={<Blog />} />
       {/* Auth Routes */}
       <Route path="/login" element={<Login />} />
+      <Route path="/vendor/login" element={<Login />} />
+      <Route path="/platform/login" element={<Login />} />
+      <Route path="/staff/login" element={<Login />} />
       <Route path="/waiter/login" element={<WaiterLogin />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/vendor/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
