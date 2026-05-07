@@ -88,7 +88,7 @@ const NotificationMenu = () => {
             onClick={() => setIsOpen(false)}
             aria-label="Close notifications"
           />
-          <div className="absolute right-0 mt-2 w-[430px] max-w-[95vw] bg-white border border-surface-200 rounded-2xl shadow-[0_20px_50px_-12px_rgba(143,40,0,0.25)] z-20 overflow-hidden">
+          <div className="absolute right-[-280%] md:right-0 mt-2 w-[430px] max-w-[95vw] bg-white border border-surface-200 rounded-2xl shadow-[0_20px_50px_-12px_rgba(143,40,0,0.25)] z-20 overflow-hidden">
             <div className="px-4 py-4 border-b bg-gradient-to-br from-surface-50 via-secondary-50 to-white">
               <div className="flex items-center justify-between">
                 <div>
