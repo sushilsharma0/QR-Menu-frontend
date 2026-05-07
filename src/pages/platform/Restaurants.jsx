@@ -66,8 +66,8 @@ const Restaurants = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Restaurants</h1>
-          <p className="text-gray-500 mt-1">Manage all restaurants on the platform</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Restaurants</h1>
+          <p className="mt-1 text-gray-500 dark:text-gray-400">Manage all restaurants on the platform</p>
         </div>
         <Button onClick={() => navigate('/platform/restaurants/create')}>
           Add Restaurant
@@ -87,7 +87,7 @@ const Restaurants = () => {
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:ring-2 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>
@@ -96,10 +96,10 @@ const Restaurants = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+            <thead className="bg-gray-50 dark:bg-gray-800">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Restaurant</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Restaurant</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">KYC Status</th>
@@ -108,9 +108,9 @@ const Restaurants = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-800 dark:bg-gray-900">
               {restaurants.map((restaurant) => (
-                <tr key={restaurant._id}>
+                <tr key={restaurant._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/70">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       {restaurant.logo ? (
@@ -120,11 +120,11 @@ const Restaurants = () => {
                           <span className="text-primary-600 font-medium">{restaurant.name?.charAt(0)}</span>
                         </div>
                       )}
-                      <span className="font-medium text-gray-900">{restaurant.name}</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">{restaurant.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{restaurant.email}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{restaurant.phone}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{restaurant.email}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{restaurant.phone}</td>
                   <td className="px-6 py-4">{getKYCStatusBadge(restaurant.kycStatus)}</td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 text-xs rounded-full ${
@@ -133,14 +133,14 @@ const Restaurants = () => {
                       {restaurant.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                  <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                     {new Date(restaurant.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex gap-2">
                       <button
                         onClick={() => navigate(`/platform/restaurants/${restaurant._id}`)}
-                        className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                        className="p-1 text-gray-400 transition-colors hover:text-blue-600 dark:text-gray-500 dark:hover:text-blue-400"
                         title="View Details"
                       >
                         <FiEye className="h-4 w-4" />
@@ -158,7 +158,7 @@ const Restaurants = () => {
               ))}
               {restaurants.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                     No restaurants found
                   </td>
                 </tr>

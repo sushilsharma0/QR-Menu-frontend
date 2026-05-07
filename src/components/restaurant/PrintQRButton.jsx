@@ -1,38 +1,49 @@
-import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { FiPrinter } from "react-icons/fi";
 import api from "../../services/api";
-const PrintQRButton = ({ qrModal }) => {
-const [restaurantName, setRestaurantName] = useState("");
 
-useEffect(() => {
-    if (qrModal.table) {
+const escapeHtml = (value) =>
+  String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+const PrintQRButton = ({ qrModal, qrUrl, restaurant }) => {
+  const [qrRestaurant, setQrRestaurant] = useState(null);
+
+  useEffect(() => {
+    if (qrModal.table?.qrToken) {
       fetchRestaurantData();
     }
-  }, [qrModal.table]);
+  }, [qrModal.table?.qrToken]);
 
   const fetchRestaurantData = async () => {
     try {
-      const res = await api.get(
-        `/restaurant/tables/qr/${qrModal.table?.qrToken}`,
-      );
-      const restaurantData = res.data.data.restaurantName;
-      setRestaurantName(restaurantData);
-      
+      const res = await api.get(`/restaurant/tables/qr/${qrModal.table?.qrToken}`);
+      setQrRestaurant(res.data.data);
     } catch (error) {
       console.error("Failed to fetch restaurant data:", error);
     }
   };
 
-  const handlePrint = () => {
-    // 1. Data extraction with fallbacks to match image defaults
-    // const restaurantName = qrModal.table?.restaurantName || "Urban Bistro";
-    const restaurantTagline =
-      qrModal.table?.tagline || "Crafted Flavors, Modern Dining";
-    const tableNumber = qrModal.table?.tableNumber || "14";
-    const qrCode = qrModal.table?.qrCode; // Should be base64 string or URL
+  const printableData = useMemo(() => {
+    const table = qrModal.table || {};
+    return {
+      restaurantName:
+        restaurant?.name || qrRestaurant?.restaurantName || table.restaurantName || "Restaurant",
+      restaurantLogo:
+        restaurant?.logo || qrRestaurant?.restaurantLogo || table.restaurantLogo || "",
+      restaurantTagline:
+        restaurant?.tagline || restaurant?.description || "Scan, choose, and order from your table",
+      tableNumber: table.tableNumber || "N/A",
+      qrCode: table.qrCode || "",
+      qrUrl: qrUrl || "",
+    };
+  }, [qrModal.table, qrRestaurant, qrUrl, restaurant]);
 
-    // 2. Create hidden iframe
+  const handlePrint = () => {
     const iframe = document.createElement("iframe");
     iframe.style.position = "fixed";
     iframe.style.right = "0";
@@ -42,164 +53,182 @@ useEffect(() => {
     iframe.style.border = "0";
     document.body.appendChild(iframe);
 
-    // 3. Generate content exactly matching the image design
     const printContent = `
     <html>
       <head>
         <style>
-          /* Loading clean, professional fonts */
-          @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap');
-
-          body { 
-            margin: 0; 
-            padding: 0; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            background-color: white;
-            -webkit-print-color-adjust: exact; /* Crucial for background colors in print */
-            print-color-adjust: exact;
-          }
-
-          /* Main Card Container - Optimized for standard cardstock size */
-          .card {
-            width: 320px; /* Adjust based on actual card size needed */
-            font-family: 'Inter', sans-serif;
-            text-align: center;
-            color: #1a1a1a;
-            padding: 8px;
-          }
-
-          /* Header Styling - Restaurant Info */
-          .restaurant-name { 
-            font-family: 'Playfair Display', serif; /* Serif font like image */
-            font-size: 50px; 
-            margin: 0; 
-            font-weight: 700;
-          }
-          .tagline { 
-            font-size: 18px; 
-            color: #666; 
-            margin: 6px 0 24px; 
-            font-weight: 400;
-          }
-
-          /* QR Code Container - Matches light grey box in image */
-          .qr-container {
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            display: inline-block;
-            padding: 12px;
-            margin-bottom: 16px;
-          }
-          .qr-container img {
-            width: 300px;
-            height: 300px;
-            display: block;
-          }
-
-          /* Primary CTA */
-          .call-to-action {
-            font-size: 20px;
-            font-weight: 700;
-            margin: 0 0 10px;
-            text-transform: uppercase;
-          }
-
-          /* Table Number Badge - Black pill with white text */
-          .table-badge {
-            background-color: #000;
-            color: #fff;
-            padding: 8px 16px;
-            border-radius: 50px;
-            font-size: 16px;
-            font-weight: 700;
-            display: inline-block;
-            margin-bottom: 24px;
-            text-transform: uppercase;
-          }
-
-          /* Bottom Feature List */
-          .features {
-            border-top: 1px solid #e0e0e0;
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+          * { box-sizing: border-box; }
+          body {
+            margin: 0;
+            padding: 18px;
             display: flex;
             justify-content: center;
-            gap: 20px;
-            padding-top: 20px;
-            margin-top: 20px;
+            align-items: center;
+            background: #ffffff;
+            font-family: 'Inter', Arial, sans-serif;
+            color: #1f2937;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
-          .feature-item {
+          .stand {
+            width: 360px;
+            overflow: hidden;
+            border: 1px solid #e7d8cf;
+            border-radius: 28px;
+            background: linear-gradient(180deg, #fffaf5 0%, #ffffff 44%);
+            box-shadow: 0 22px 60px rgba(79, 22, 0, 0.16);
+          }
+          .hero {
+            padding: 24px 22px 16px;
+            text-align: center;
+            background: radial-gradient(circle at top left, #faece8, transparent 45%), #ffffff;
+          }
+          .logo {
+            width: 64px;
+            height: 64px;
+            object-fit: cover;
+            border-radius: 18px;
+            border: 3px solid #ffffff;
+            box-shadow: 0 10px 24px rgba(79, 22, 0, 0.18);
+            margin: 0 auto 10px;
+            display: block;
+          }
+          .name {
+            margin: 0;
+            font-size: 25px;
+            line-height: 1.1;
+            font-weight: 800;
+            color: #391000;
+          }
+          .tagline {
+            margin: 8px auto 0;
+            max-width: 280px;
+            font-size: 13px;
+            line-height: 1.45;
+            color: #6b7280;
+          }
+          .qr-wrap {
+            margin: 18px auto 14px;
+            width: 280px;
+            height: 280px;
+            position: relative;
             display: flex;
             align-items: center;
-            gap: 6px;
-            font-size: 13px;
-            color: #444;
-            font-weight: 600;
+            justify-content: center;
+            border-radius: 26px;
+            border: 1px solid #eadbd3;
+            background: #ffffff;
+            padding: 16px;
+            box-shadow: inset 0 0 0 8px #fffcf1;
+          }
+          .qr-wrap img.qr {
+            width: 240px;
+            height: 240px;
+            object-fit: contain;
+            display: block;
+          }
+          .qr-logo {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 54px;
+            height: 54px;
+            transform: translate(-50%, -50%);
+            border-radius: 16px;
+            border: 5px solid #ffffff;
+            background: #ffffff;
+            object-fit: cover;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
+          }
+          .cta {
+            margin: 0;
+            font-size: 21px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            color: #391000;
+          }
+          .table {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 9px 18px;
+            border-radius: 999px;
+            background: #391000;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+          }
+          .footer {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            padding: 16px 18px 20px;
+            border-top: 1px solid #f0e2db;
+            background: #ffffff;
+          }
+          .feature {
+            border-radius: 16px;
+            background: #fffcf1;
+            padding: 10px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: 700;
             text-transform: uppercase;
+            color: #4f1600;
           }
-          .feature-icon {
-            width: 16px;
-            height: 16px;
-            opacity: 0.7;
+          .url {
+            grid-column: 1 / -1;
+            margin: 4px 0 0;
+            word-break: break-all;
+            text-align: center;
+            font-size: 9px;
+            color: #9ca3af;
           }
-
-          /* Final Slogan */
-          .slogan {
-            margin-top: 20px;
-            font-size: 12px;
-            color: #888;
-            font-weight: 400;
-          }
-
           @media print {
             body { padding: 0; }
-            .card { border: none; box-shadow: none; margin: 0 auto; }
+            .stand { box-shadow: none; }
           }
         </style>
       </head>
       <body>
-        <div class="card">
-          <div class="restaurant-name">${restaurantName}</div>
-          <p class="tagline">${restaurantTagline}</p>
-
-          <div class="qr-container">
-            <!-- Ensure qrCode is a valid base64 image or accessible URL -->
-            <img src="${qrCode}" alt="Menu QR Code" />
-          </div>
-
-          <p class="call-to-action">SCAN TO ORDER</p>
-          <div class="table-badge">TABLE ${tableNumber}</div>
-
-          <div class="features">
-            <div class="feature-item">
-              <!-- Using simple Unicode or SVGs for icons -->
-              <span class="feature-icon">🍴</span>
-              <span>Digital Menu</span>
+        <div class="stand">
+          <div class="hero">
+            ${
+              printableData.restaurantLogo
+                ? `<img class="logo" src="${escapeHtml(printableData.restaurantLogo)}" alt="Restaurant logo" />`
+                : ""
+            }
+            <h1 class="name">${escapeHtml(printableData.restaurantName)}</h1>
+            <p class="tagline">${escapeHtml(printableData.restaurantTagline)}</p>
+            <div class="qr-wrap">
+              <img class="qr" src="${escapeHtml(printableData.qrCode)}" alt="Menu QR Code" />
+              ${
+                printableData.restaurantLogo
+                  ? `<img class="qr-logo" src="${escapeHtml(printableData.restaurantLogo)}" alt="" />`
+                  : ""
+              }
             </div>
-            <div class="feature-item">
-              <span class="feature-icon">📱</span>
-              <span>Instant Ordering</span>
-            </div>
+            <p class="cta">SCAN TO ORDER</p>
+            <div class="table">TABLE ${escapeHtml(printableData.tableNumber)}</div>
           </div>
-
-          <p class="slogan">Powered by QR Menu.</p>
+          <div class="footer">
+            <div class="feature">Digital Menu</div>
+            <div class="feature">Instant Ordering</div>
+            <p class="url">${escapeHtml(printableData.qrUrl)}</p>
+          </div>
         </div>
       </body>
-    </html>
-    `;
+    </html>`;
 
-    // 4. Write content to iframe
     const doc = iframe.contentWindow.document;
     doc.open();
     doc.write(printContent);
     doc.close();
 
-    // 5. Wait for image/fonts to load, then print
     iframe.contentWindow.onload = () => {
       iframe.contentWindow.focus();
       iframe.contentWindow.print();
-
-      // Cleanup: Remove iframe after the print dialog handles it
       setTimeout(() => {
         document.body.removeChild(iframe);
       }, 1000);
@@ -208,8 +237,9 @@ useEffect(() => {
 
   return (
     <button
+      type="button"
       onClick={handlePrint}
-      className="gap-2 flex items-center px-3 rounded-lg bg-red-400 border-slate-300 hover:bg-red-300 transition-colors"
+      className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700"
     >
       <FiPrinter className="h-4 w-4" /> Print QR Stand
     </button>

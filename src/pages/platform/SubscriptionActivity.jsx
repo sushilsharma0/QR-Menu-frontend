@@ -113,23 +113,23 @@ export default function SubscriptionActivity() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Subscription activity report</h1>
-        <p className="text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Subscription activity report</h1>
+        <p className="mt-1 text-gray-500 dark:text-gray-400">
           Packages billed per restaurant: actual amount (ex VAT), tax, and invoice — filter by date range.
         </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card title="Invoices in range">
-          <p className="text-2xl font-bold text-gray-900">{s.invoiceCount ?? 0}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{s.invoiceCount ?? 0}</p>
         </Card>
         <Card title="Subtotal (ex VAT)">
-          <p className="text-2xl font-bold text-gray-900">
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             {DEFAULT_CURRENCY_SYMBOL}{Number(s.subtotalExclVat || 0).toFixed(2)}
           </p>
         </Card>
         <Card title="Total tax (VAT)">
-          <p className="text-2xl font-bold text-gray-900">
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             {DEFAULT_CURRENCY_SYMBOL}{Number(s.vatAmount || 0).toFixed(2)}
           </p>
         </Card>
@@ -143,7 +143,7 @@ export default function SubscriptionActivity() {
       <Card title="Filters">
         <div className="flex flex-wrap gap-4 items-end">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">From</label>
             <input
               type="date"
               value={from}
@@ -151,11 +151,11 @@ export default function SubscriptionActivity() {
                 setFrom(e.target.value)
                 setPage(1)
               }}
-              className="px-3 py-2 border border-gray-300 rounded-lg"
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">To</label>
             <input
               type="date"
               value={to}
@@ -163,7 +163,7 @@ export default function SubscriptionActivity() {
                 setTo(e.target.value)
                 setPage(1)
               }}
-              className="px-3 py-2 border border-gray-300 rounded-lg"
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
             />
           </div>
           <div className="w-56">

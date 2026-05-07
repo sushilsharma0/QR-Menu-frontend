@@ -1,13 +1,36 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { FiFileText, FiClock, FiExternalLink } from 'react-icons/fi'
 import toast from 'react-hot-toast'
-import Card from '../../components/common/Card'
 import Table from '../../components/common/Table'
 import Pagination from '../../components/common/Pagination'
 import { getPackageHistory, getSubscriptionInvoices } from '../../services/restaurant'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { formatters } from '../../utils/formatters'
 import { DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
+import { formatRestaurantCurrency } from '../../components/restaurant/RestaurantUI'
+
+function BillingSection({ title, subtitle, icon: Icon, children }) {
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-3xl border border-surface-200 bg-white shadow-sm"
+    >
+      <div className="flex items-center gap-3 border-b border-surface-200 px-5 py-4">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-50 text-primary-700">
+          <Icon className="h-5 w-5" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-gray-950">{title}</h2>
+          <p className="text-sm text-gray-500">{subtitle}</p>
+        </div>
+      </div>
+      <div className="p-5">{children}</div>
+    </motion.section>
+  )
+}
 
 export default function SubscriptionBillingPanel() {
   const { restaurantBase } = useTenantRoutes()
@@ -60,120 +83,82 @@ export default function SubscriptionBillingPanel() {
 
   const invoiceColumns = [
     { header: 'Invoice #', accessor: 'invoiceNumber' },
-    {
-      header: 'Plan',
-      render: (row) => row.subscriptionPlan?.name || '—',
-    },
-    {
-      header: 'Type',
-      render: (row) => <span className="capitalize">{row.transactionType}</span>,
-    },
+    { header: 'Plan', render: (row) => row.subscriptionPlan?.name || 'N/A' },
+    { header: 'Type', render: (row) => <span className="capitalize">{row.transactionType}</span> },
     {
       header: 'Ex VAT',
-      render: (row) => {
-        const sym = row.issuerSnapshot?.currencySymbol || DEFAULT_CURRENCY_SYMBOL
-        return `${sym}${Number(row.subtotalExclVat || 0).toFixed(2)}`
-      },
+      render: (row) => formatRestaurantCurrency(row.subtotalExclVat, row.issuerSnapshot?.currencySymbol || DEFAULT_CURRENCY_SYMBOL),
     },
     {
       header: 'VAT',
-      render: (row) => {
-        const sym = row.issuerSnapshot?.currencySymbol || DEFAULT_CURRENCY_SYMBOL
-        return `${sym}${Number(row.vatAmount || 0).toFixed(2)}`
-      },
+      render: (row) => formatRestaurantCurrency(row.vatAmount, row.issuerSnapshot?.currencySymbol || DEFAULT_CURRENCY_SYMBOL),
     },
     {
       header: 'Grand total',
-      render: (row) => {
-        const sym = row.issuerSnapshot?.currencySymbol || DEFAULT_CURRENCY_SYMBOL
-        return `${sym}${Number(row.totalInclVat || 0).toFixed(2)}`
-      },
+      render: (row) => (
+        <span className="font-bold text-primary-700">
+          {formatRestaurantCurrency(row.totalInclVat, row.issuerSnapshot?.currencySymbol || DEFAULT_CURRENCY_SYMBOL)}
+        </span>
+      ),
     },
-    {
-      header: 'Issued',
-      render: (row) => formatters.date(row.issuedAt),
-    },
+    { header: 'Issued', render: (row) => formatters.date(row.issuedAt) },
     {
       header: '',
       render: (row) => (
-        <Link
-          to={`${restaurantBase}/subscription/invoice/${row._id}`}
-          className="text-primary-600 font-medium hover:underline"
-        >
-          View bill
+        <Link to={`${restaurantBase}/subscription/invoice/${row._id}`} className="inline-flex items-center gap-1 font-semibold text-primary-600 hover:underline">
+          View <FiExternalLink className="h-3.5 w-3.5" />
         </Link>
       ),
     },
   ]
 
   const historyColumns = [
-    {
-      header: 'Date',
-      render: (row) => formatters.datetime(row.createdAt),
-    },
-    {
-      header: 'Action',
-      render: (row) => <span className="capitalize">{row.action}</span>,
-    },
-    {
-      header: 'Package',
-      render: (row) => row.package?.name || '—',
-    },
+    { header: 'Date', render: (row) => formatters.datetime(row.createdAt) },
+    { header: 'Action', render: (row) => <span className="capitalize">{row.action}</span> },
+    { header: 'Package', render: (row) => row.package?.name || 'N/A' },
     {
       header: 'Period',
-      render: (row) =>
-        `${formatters.date(row.startDate)} → ${formatters.date(row.endDate)}`,
+      render: (row) => `${formatters.date(row.startDate)} -> ${formatters.date(row.endDate)}`,
     },
     {
       header: 'Amount',
       render: (row) => {
-        const p = row.package?.price
-        const amt = row.amount ?? p
-        return amt != null ? `${DEFAULT_CURRENCY_SYMBOL}${Number(amt).toFixed(2)}` : '—'
+        const amt = row.amount ?? row.package?.price
+        return amt != null ? formatRestaurantCurrency(amt, DEFAULT_CURRENCY_SYMBOL) : 'N/A'
       },
     },
     {
       header: 'Invoice',
       render: (row) =>
         row.invoice ? (
-          <Link
-            to={`${restaurantBase}/subscription/invoice/${row.invoice._id}`}
-            className="text-primary-600 font-medium hover:underline"
-          >
+          <Link to={`${restaurantBase}/subscription/invoice/${row.invoice._id}`} className="font-semibold text-primary-600 hover:underline">
             {row.invoice.invoiceNumber}
           </Link>
         ) : (
-          <span className="text-gray-400">—</span>
+          <span className="text-gray-400">N/A</span>
         ),
     },
   ]
 
   return (
-    <div className="space-y-8">
-      <Card title="Your tax invoices">
-        <p className="text-sm text-gray-600 mb-4">
-          Official bills for subscription charges (VAT breakdown included). Use print to save a PDF for your records.
-        </p>
+    <div className="space-y-6">
+      <BillingSection
+        title="Tax invoices"
+        subtitle="Official bills with VAT breakdown for your accounting records."
+        icon={FiFileText}
+      >
         <Table columns={invoiceColumns} data={invoices} loading={loadingInv} />
-        <Pagination
-          currentPage={invPagination.page}
-          totalPages={invPagination.pages}
-          onPageChange={setInvPage}
-        />
-      </Card>
+        <Pagination currentPage={invPagination.page} totalPages={invPagination.pages} onPageChange={setInvPage} />
+      </BillingSection>
 
-      <Card title="Package activity history">
-        <p className="text-sm text-gray-600 mb-4">
-          Timeline of plan assignments and changes — similar to an ISP billing history. New rows appear when the platform
-          approves a plan.
-        </p>
+      <BillingSection
+        title="Package activity"
+        subtitle="A timeline of plan requests, approvals, renewals, and changes."
+        icon={FiClock}
+      >
         <Table columns={historyColumns} data={history} loading={loadingHist} />
-        <Pagination
-          currentPage={histPagination.page}
-          totalPages={histPagination.pages}
-          onPageChange={setHistPage}
-        />
-      </Card>
+        <Pagination currentPage={histPagination.page} totalPages={histPagination.pages} onPageChange={setHistPage} />
+      </BillingSection>
     </div>
   )
 }

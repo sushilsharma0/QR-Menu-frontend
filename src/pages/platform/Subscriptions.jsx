@@ -89,8 +89,8 @@ const Subscriptions = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Subscription Plans</h1>
-          <p className="text-gray-500 mt-1">Manage subscription plans for restaurants</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Subscription Plans</h1>
+          <p className="mt-1 text-gray-500 dark:text-gray-400">Manage subscription plans for restaurants</p>
         </div>
         <Button onClick={() => navigate('/platform/subscriptions/create')}>
           <FiPlus className="mr-2" /> Create Plan
@@ -99,14 +99,14 @@ const Subscriptions = () => {
 
       <Card title="Pending plan requests (payment verified queue)">
         {pendingLoading ? (
-          <p className="text-gray-500 text-sm">Loading…</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>
         ) : pendingRequests.length === 0 ? (
-          <p className="text-gray-500 text-sm">No requests awaiting approval.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No requests awaiting approval.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
+            <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-800">
               <thead>
-                <tr className="text-left text-gray-500">
+                <tr className="text-left text-gray-500 dark:text-gray-400">
                   <th className="py-2 pr-4">Restaurant</th>
                   <th className="py-2 pr-4">Requested plan &amp; price</th>
                   <th className="py-2 pr-4">Proof</th>
@@ -114,17 +114,17 @@ const Subscriptions = () => {
                   <th className="py-2">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {pendingRequests.map((row) => (
                   <tr key={row._id}>
                     <td className="py-3 pr-4">
-                      <div className="font-medium text-gray-900">{row.name}</div>
-                      <div className="text-gray-500">{row.email}</div>
+                      <div className="font-medium text-gray-900 dark:text-gray-100">{row.name}</div>
+                      <div className="text-gray-500 dark:text-gray-400">{row.email}</div>
                     </td>
                     <td className="py-3 pr-4">
-                      <div className="font-medium text-gray-900">{row.requestedPlan?.name || '—'}</div>
+                      <div className="font-medium text-gray-900 dark:text-gray-100">{row.requestedPlan?.name || '—'}</div>
                       {row.requestedPlan?.pricing && (
-                        <div className="text-xs text-gray-600 mt-1 space-y-0.5">
+                        <div className="mt-1 space-y-0.5 text-xs text-gray-600 dark:text-gray-300">
                           <div>
                             Excl. VAT: {row.requestedPlan.pricing.currencySymbol}
                             {Number(row.requestedPlan.pricing.priceExclVat).toFixed(2)}
@@ -133,7 +133,7 @@ const Subscriptions = () => {
                             VAT: {row.requestedPlan.pricing.currencySymbol}
                             {Number(row.requestedPlan.pricing.vatAmount).toFixed(2)}
                           </div>
-                          <div className="text-gray-900 font-medium">
+                          <div className="font-medium text-gray-900 dark:text-gray-100">
                             Total: {row.requestedPlan.pricing.currencySymbol}
                             {Number(row.requestedPlan.pricing.totalInclVat).toFixed(2)}
                           </div>
@@ -151,10 +151,10 @@ const Subscriptions = () => {
                           View <FiExternalLink className="h-3 w-3" />
                         </a>
                       ) : (
-                        <span className="text-gray-400">Legacy / no file</span>
+                        <span className="text-gray-400 dark:text-gray-500">Legacy / no file</span>
                       )}
                     </td>
-                    <td className="py-3 pr-4 text-gray-600">
+                    <td className="py-3 pr-4 text-gray-600 dark:text-gray-300">
                       {row.planRequestDate ? new Date(row.planRequestDate).toLocaleString() : '—'}
                     </td>
                     <td className="py-3">
@@ -188,7 +188,7 @@ const Subscriptions = () => {
 
       <Modal isOpen={deleteModal.open} onClose={() => setDeleteModal({ open: false, plan: null })} title="Delete Plan">
         <div className="p-6">
-          <p className="text-gray-700">
+          <p className="text-gray-700 dark:text-gray-300">
             Are you sure you want to delete <strong>{deleteModal.plan?.name}</strong>?
           </p>
           <div className="flex gap-3 mt-6">

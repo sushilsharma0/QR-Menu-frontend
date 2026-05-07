@@ -1,51 +1,175 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useTenantRoutes } from "../../hooks/useTenantRoutes";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  FiPlus,
-  FiEdit2,
-  FiTrash2,
-  FiRefreshCw,
   FiCode,
+  FiCopy,
+  FiEdit2,
+  FiExternalLink,
+  FiGrid,
   FiImage,
-  FiPrinter,
+  FiList,
+  FiPlus,
+  FiRefreshCw,
+  FiSearch,
+  FiTrash2,
+  FiUsers,
 } from "react-icons/fi";
 import QRCode from "react-qr-code";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import { getParsedAuthUser } from "../../utils/authStorage";
-import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
+import Card from "../../components/common/Card";
+import Input from "../../components/common/Input";
 import Modal from "../../components/common/Modal";
-import Loader from "../../components/common/Loader";
 import PrintQRButton from "../../components/restaurant/PrintQRButton";
+import {
+  RestaurantPageLoader,
+  RestaurantStatusPill,
+} from "../../components/restaurant/RestaurantUI";
+import { useTenantRoutes } from "../../hooks/useTenantRoutes";
+
+const tableStatusStyles = {
+  active: "bg-green-100 text-green-800",
+  inactive: "bg-red-100 text-red-800",
+};
+
+function QRPreview({ table, qrUrl, logo, size = 132, className = "" }) {
+  const logoSize = Math.max(34, Math.round(size * 0.22));
+
+  if (!table?.qrToken) {
+    return (
+      <div
+        className={`flex items-center justify-center rounded-2xl bg-surface-100 text-gray-400 ${className}`}
+        style={{ width: size, height: size }}
+      >
+        <FiImage className="h-8 w-8" />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`relative flex items-center justify-center rounded-3xl border border-surface-200 bg-white p-3 shadow-sm ${className}`}
+      style={{ width: size, height: size }}
+    >
+      {table.qrCode ? (
+        <img
+          src={table.qrCode}
+          alt={`QR for Table ${table.tableNumber}`}
+          className="h-full w-full object-contain"
+        />
+      ) : (
+        <QRCode value={qrUrl} size={size - 28} />
+      )}
+      {logo && (
+        <img
+          src={logo}
+          alt=""
+          className="absolute left-1/2 top-1/2 object-cover shadow-md"
+          style={{
+            width: logoSize,
+            height: logoSize,
+            transform: "translate(-50%, -50%)",
+            borderRadius: Math.round(logoSize * 0.28),
+            border: "4px solid white",
+            background: "white",
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function MetricTile({ label, value, sub, icon: Icon, accent }) {
+  return (
+    <motion.div
+      whileHover={{ y: -3 }}
+      className="rounded-2xl border border-surface-200 bg-white/90 p-4 shadow-sm"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
+          <p className="mt-2 text-2xl font-bold text-gray-950">{value}</p>
+          {sub && <p className="mt-1 text-xs text-gray-500">{sub}</p>}
+        </div>
+        <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${accent} text-white shadow-md`}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function TableActions({ table, onQr, onRegenerate, onEdit, onDelete }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Button type="button" size="sm" variant="secondary" onClick={() => onQr(table)}>
+        <FiCode className="mr-1" /> QR
+      </Button>
+      <button
+        type="button"
+        onClick={() => onRegenerate(table._id)}
+        className="rounded-lg p-2 text-gray-500 transition hover:bg-blue-50 hover:text-blue-600"
+        title="Regenerate QR"
+      >
+        <FiRefreshCw className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        onClick={() => onEdit(table)}
+        className="rounded-lg p-2 text-gray-500 transition hover:bg-green-50 hover:text-green-600"
+        title="Edit Table"
+      >
+        <FiEdit2 className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        onClick={() => onDelete(table._id)}
+        className="rounded-lg p-2 text-gray-500 transition hover:bg-red-50 hover:text-red-600"
+        title="Delete Table"
+      >
+        <FiTrash2 className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
 
 const Tables = () => {
   const navigate = useNavigate();
   const { restaurantBase } = useTenantRoutes();
   const [tables, setTables] = useState([]);
+  const [restaurant, setRestaurant] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [qrModal, setQrModal] = useState({ open: false, table: null });
-  const [tableMetrics, setTableMetrics] = useState(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [floorFilter, setFloorFilter] = useState("all");
+  const [viewMode, setViewMode] = useState("card");
 
   useEffect(() => {
     fetchTables();
   }, []);
 
-  const fetchTables = async () => {
+  const fetchTables = async (quiet = false) => {
     try {
-      setLoading(true);
-      const res = await api.get("/restaurant/tables");
-      console.log('Tables response:', res.data.data)
-      setTables(res.data.data || []);
-      const statsRes = await api.get("/restaurant/dashboard/stats");
-      setTableMetrics(statsRes?.data?.data?.resources?.tableMetrics || null);
+      if (quiet) setRefreshing(true);
+      else setLoading(true);
+      const [tablesRes, profileRes] = await Promise.all([
+        api.get("/restaurant/tables"),
+        api.get("/restaurant/auth/profile").catch(() => null),
+      ]);
+      setTables(tablesRes.data.data || []);
+      setRestaurant(profileRes?.data?.data || null);
     } catch (error) {
       console.error("Failed to fetch tables:", error);
       toast.error("Failed to fetch tables");
       setTables([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -53,7 +177,7 @@ const Tables = () => {
     try {
       await api.delete(`/restaurant/tables/${id}`);
       toast.success("Table deleted");
-      fetchTables();
+      fetchTables(true);
     } catch (error) {
       toast.error("Failed to delete table");
     }
@@ -63,7 +187,7 @@ const Tables = () => {
     try {
       await api.patch(`/restaurant/tables/${id}/regenerate-qr`);
       toast.success("QR code regenerated");
-      fetchTables();
+      fetchTables(true);
     } catch (error) {
       toast.error("Failed to regenerate QR code");
     }
@@ -71,205 +195,320 @@ const Tables = () => {
 
   const getQRUrl = (table) => {
     const authUser = getParsedAuthUser() || {};
-    const restaurantSlug = authUser.slug || "restaurant";
+    const restaurantSlug = restaurant?.slug || authUser.slug || "restaurant";
 
-    if (!table.qrToken) {
-      return "#";
-    }
+    if (!table?.qrToken) return "#";
 
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/home/${restaurantSlug}/${table.qrToken}`;
+    return `${window.location.origin}/home/${restaurantSlug}/${table.qrToken}`;
   };
 
+  const logo = restaurant?.logo || "";
+
+  const metrics = useMemo(() => {
+    const active = tables.filter((table) => table.isActive).length;
+    const capacity = tables.reduce((sum, table) => sum + Number(table.capacity || 0), 0);
+    const floors = new Set(tables.map((table) => table.floor || "ground"));
+    return {
+      total: tables.length,
+      active,
+      inactive: tables.length - active,
+      capacity,
+      floors: floors.size,
+    };
+  }, [tables]);
+
+  const floorOptions = useMemo(
+    () =>
+      Array.from(new Set(tables.map((table) => table.floor || "ground")))
+        .filter(Boolean)
+        .sort(),
+    [tables],
+  );
+
+  const filteredTables = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return tables.filter((table) => {
+      const matchesSearch =
+        !q ||
+        String(table.tableNumber || "").toLowerCase().includes(q) ||
+        String(table.area || "").toLowerCase().includes(q) ||
+        String(table.tableType || "").toLowerCase().includes(q) ||
+        String(table.floor || "").toLowerCase().includes(q);
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" ? table.isActive : !table.isActive);
+      const matchesFloor = floorFilter === "all" || String(table.floor || "ground") === floorFilter;
+      return matchesSearch && matchesStatus && matchesFloor;
+    });
+  }, [floorFilter, search, statusFilter, tables]);
+
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Loader size="lg" />
-      </div>
-    );
+    return <RestaurantPageLoader />;
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Tables</h1>
-          <p className="text-gray-500 mt-1">
-            Manage restaurant tables and QR codes
-          </p>
-        </div>
-        <Button onClick={() => navigate(`${restaurantBase}/tables/new`)}>
-          <FiPlus className="mr-2" /> Add Table
-        </Button>
-      </div>
-
-      {/* Tables Grid */}
-      {tableMetrics && (
-        <Card>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
-              <p className="text-xs uppercase tracking-wide text-gray-500">Total Tables</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{tableMetrics.total || 0}</p>
-            </div>
-            <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
-              <p className="text-xs uppercase tracking-wide text-gray-500">By Floor</p>
-              <div className="text-sm text-gray-700 mt-1 space-y-1">
-                {Object.entries(tableMetrics.byFloor || {}).length === 0 && <p>Not set</p>}
-                {Object.entries(tableMetrics.byFloor || {}).map(([k, v]) => (
-                  <p key={k}>
-                    {k}: <span className="font-semibold">{v}</span>
-                  </p>
-                ))}
+      <motion.section
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease: "easeOut" }}
+        className="relative overflow-hidden rounded-3xl border border-surface-200 bg-white shadow-sm"
+      >
+        <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-r from-primary-50 via-surface-50 to-emerald-50" />
+        <div className="relative p-5 md:p-7">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-700 shadow-sm">
+                <FiGrid className="h-4 w-4" />
+                Table QR Studio
               </div>
+              <h1 className="mt-3 text-3xl font-bold tracking-tight text-gray-950">Tables & QR Codes</h1>
+              <p className="mt-2 max-w-3xl text-sm text-gray-500">
+                Manage dining areas, table capacity, and branded QR stands with your restaurant logo in the center.
+              </p>
             </div>
-            <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
-              <p className="text-xs uppercase tracking-wide text-gray-500">By Type</p>
-              <div className="text-sm text-gray-700 mt-1 space-y-1">
-                {Object.entries(tableMetrics.byType || {}).length === 0 && <p>Not set</p>}
-                {Object.entries(tableMetrics.byType || {}).map(([k, v]) => (
-                  <p key={k}>
-                    {k}: <span className="font-semibold">{v}</span>
-                  </p>
-                ))}
-              </div>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="secondary" onClick={() => fetchTables(true)} disabled={refreshing}>
+                <FiRefreshCw className={`mr-2 ${refreshing ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+              <Button type="button" onClick={() => navigate(`${restaurantBase}/tables/new`)}>
+                <FiPlus className="mr-2" />
+                Add Table
+              </Button>
             </div>
           </div>
-        </Card>
-      )}
 
-      {tables.length === 0 ? (
-        <Card>
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🍽️</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No Tables Yet
-            </h3>
-            <p className="text-gray-500 mb-4">
-              Create your first table to start accepting orders
-            </p>
-            <Button onClick={() => navigate(`${restaurantBase}/tables/new`)}>
-              <FiPlus className="mr-2" /> Add Your First Table
-            </Button>
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricTile label="Total tables" value={metrics.total} sub={`${metrics.floors} floors/areas`} icon={FiGrid} accent="from-primary-600 to-secondary-500" />
+            <MetricTile label="Active" value={metrics.active} sub={`${metrics.inactive} inactive`} icon={FiCode} accent="from-emerald-500 to-teal-500" />
+            <MetricTile label="Total capacity" value={metrics.capacity} sub="Guests seated at once" icon={FiUsers} accent="from-indigo-500 to-violet-500" />
+            <MetricTile label="Logo QR" value={logo ? "Ready" : "No logo"} sub={logo ? "Logo will appear in QR center" : "Add logo in settings/profile"} icon={FiImage} accent="from-amber-500 to-orange-500" />
           </div>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tables.map((table) => (
-            <Card key={table._id} className="hover:shadow-lg transition-shadow">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">
-                    Table {table.tableNumber}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    Capacity: {table.capacity || 4} persons
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Type: {table.tableType || "regular"} • Floor: {table.floor || "ground"}
-                  </p>
-                  {table.area && (
-                    <p className="text-xs text-gray-500">Area: {table.area}</p>
-                  )}
-                </div>
-                <span
-                  className={`px-2 py-1 text-xs rounded-full ${table.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
-                >
-                  {table.isActive ? "Active" : "Inactive"}
-                </span>
-              </div>
-
-              <div className="flex justify-center mb-4">
-                {table.qrCode ? (
-                  <img
-                    src={table.qrCode}
-                    alt={`QR for Table ${table.tableNumber}`}
-                    className="w-32 h-32"
-                  />
-                ) : table.qrToken ? (
-                  <div className="w-32 h-32 bg-gray-50 rounded-lg flex items-center justify-center p-2 border border-gray-200">
-                    <QRCode value={getQRUrl(table)} size={100} />
-                  </div>
-                ) : (
-                  <div className="w-32 h-32 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
-                    <FiImage className="h-8 w-8" />
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setQrModal({ open: true, table })}
-                  className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm flex items-center justify-center gap-1"
-                >
-                  <FiCode className="h-4 w-4" /> View QR
-                </button>
-                <button
-                  onClick={() => handleRegenerateQR(table._id)}
-                  className="p-2 text-gray-500 hover:text-blue-600 transition-colors"
-                  title="Regenerate QR"
-                >
-                  <FiRefreshCw className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() =>
-                    navigate(`${restaurantBase}/tables/${table._id}/edit`)
-                  }
-                  className="p-2 text-gray-500 hover:text-green-600 transition-colors"
-                  title="Edit Table"
-                >
-                  <FiEdit2 className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => handleDelete(table._id)}
-                  className="p-2 text-gray-500 hover:text-red-600 transition-colors"
-                  title="Delete Table"
-                >
-                  <FiTrash2 className="h-4 w-4" />
-                </button>
-              </div>
-            </Card>
-          ))}
         </div>
-      )}
+      </motion.section>
 
-      {/* QR Code Modal */}
+      <Card
+        title={`Tables (${filteredTables.length})`}
+        actions={
+          <div className="flex overflow-hidden rounded-xl border border-surface-200 bg-white">
+            <button
+              type="button"
+              onClick={() => setViewMode("card")}
+              className={`flex items-center gap-1 px-3 py-2 text-sm font-semibold transition ${
+                viewMode === "card" ? "bg-primary-600 text-white" : "text-gray-600 hover:bg-surface-50"
+              }`}
+            >
+              <FiGrid className="h-4 w-4" />
+              Card
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={`flex items-center gap-1 px-3 py-2 text-sm font-semibold transition ${
+                viewMode === "list" ? "bg-primary-600 text-white" : "text-gray-600 hover:bg-surface-50"
+              }`}
+            >
+              <FiList className="h-4 w-4" />
+              List
+            </button>
+          </div>
+        }
+      >
+        <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <Input
+            icon={FiSearch}
+            label="Search tables"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Table, area, floor, or type"
+          />
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Status</label>
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="all">All tables</option>
+              <option value="active">Active only</option>
+              <option value="inactive">Inactive only</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Floor / area</label>
+            <select
+              value={floorFilter}
+              onChange={(event) => setFloorFilter(event.target.value)}
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="all">All floors</option>
+              {floorOptions.map((floor) => (
+                <option key={floor} value={floor}>
+                  {floor}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <AnimatePresence mode="wait">
+          {filteredTables.length === 0 ? (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              className="flex min-h-80 flex-col items-center justify-center rounded-3xl bg-surface-50 px-4 text-center"
+            >
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-primary-600 shadow-sm">
+                <FiGrid className="h-7 w-7" />
+              </div>
+              <h3 className="mt-4 text-lg font-semibold text-gray-950">No tables found</h3>
+              <p className="mt-1 max-w-md text-sm text-gray-500">
+                Try clearing filters or create your first table to start accepting QR orders.
+              </p>
+              <Button className="mt-4" onClick={() => navigate(`${restaurantBase}/tables/new`)}>
+                <FiPlus className="mr-2" /> Add Table
+              </Button>
+            </motion.div>
+          ) : viewMode === "card" ? (
+            <motion.div
+              key="cards"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3"
+            >
+              {filteredTables.map((table, index) => (
+                <motion.article
+                  key={table._id}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.2) }}
+                  whileHover={{ y: -4 }}
+                  className="rounded-3xl border border-surface-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-lg"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-950">Table {table.tableNumber}</h3>
+                      <p className="mt-1 text-sm text-gray-500">
+                        {table.capacity || 4} seats - {table.tableType || "regular"}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-400">
+                        Floor {table.floor || "ground"}{table.area ? ` - ${table.area}` : ""}
+                      </p>
+                    </div>
+                    <RestaurantStatusPill value={table.isActive ? "active" : "inactive"} styles={tableStatusStyles} />
+                  </div>
+
+                  <div className="my-5 flex justify-center">
+                    <QRPreview table={table} qrUrl={getQRUrl(table)} logo={logo} size={156} />
+                  </div>
+
+                  <div className="rounded-2xl bg-surface-50 p-3">
+                    <p className="break-all text-center text-xs text-gray-500">{getQRUrl(table)}</p>
+                  </div>
+
+                  <div className="mt-4">
+                    <TableActions
+                      table={table}
+                      onQr={(selected) => setQrModal({ open: true, table: selected })}
+                      onRegenerate={handleRegenerateQR}
+                      onEdit={(selected) => navigate(`${restaurantBase}/tables/${selected._id}/edit`)}
+                      onDelete={handleDelete}
+                    />
+                  </div>
+                </motion.article>
+              ))}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="list"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="overflow-x-auto rounded-2xl border border-surface-200"
+            >
+              <table className="min-w-full divide-y divide-surface-200 text-sm">
+                <thead className="bg-surface-50">
+                  <tr>
+                    {["Table", "Capacity", "Floor", "Type", "Status", "QR", "Actions"].map((header) => (
+                      <th key={header} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-surface-200 bg-white">
+                  {filteredTables.map((table) => (
+                    <tr key={table._id} className="transition hover:bg-surface-50">
+                      <td className="px-5 py-4 font-bold text-gray-950">Table {table.tableNumber}</td>
+                      <td className="px-5 py-4 text-gray-600">{table.capacity || 4} seats</td>
+                      <td className="px-5 py-4 text-gray-600">{table.floor || "ground"}</td>
+                      <td className="px-5 py-4 capitalize text-gray-600">{table.tableType || "regular"}</td>
+                      <td className="px-5 py-4">
+                        <RestaurantStatusPill value={table.isActive ? "active" : "inactive"} styles={tableStatusStyles} />
+                      </td>
+                      <td className="px-5 py-4">
+                        <QRPreview table={table} qrUrl={getQRUrl(table)} logo={logo} size={74} />
+                      </td>
+                      <td className="px-5 py-4">
+                        <TableActions
+                          table={table}
+                          onQr={(selected) => setQrModal({ open: true, table: selected })}
+                          onRegenerate={handleRegenerateQR}
+                          onEdit={(selected) => navigate(`${restaurantBase}/tables/${selected._id}/edit`)}
+                          onDelete={handleDelete}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </Card>
+
       <Modal
         isOpen={qrModal.open}
         onClose={() => setQrModal({ open: false, table: null })}
-        title={`QR Code - Table ${qrModal.table?.tableNumber}`}
+        title={`QR Code - Table ${qrModal.table?.tableNumber || ""}`}
       >
         <div className="p-6 text-center">
-          <div className="flex justify-center mb-4 bg-white p-4 rounded-lg">
-            {qrModal.table?.qrToken ? (
-              qrModal.table?.qrCode ? (
-                <img
-                  src={qrModal.table.qrCode}
-                  alt={`QR for Table ${qrModal.table?.tableNumber || ""}`}
-                  className="w-52 h-52 object-contain"
-                />
-              ) : (
-                <QRCode value={getQRUrl(qrModal.table)} size={200} />
-              )
-            ) : (
-              <div className="w-48 h-48 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
-                No QR Code Available
-              </div>
+          <div className="mx-auto max-w-sm rounded-3xl border border-surface-200 bg-gradient-to-b from-surface-50 to-white p-5 shadow-sm">
+            {logo && (
+              <img
+                src={logo}
+                alt={restaurant?.name || "Restaurant logo"}
+                className="mx-auto mb-3 h-16 w-16 rounded-2xl border-4 border-white object-cover shadow-md"
+              />
             )}
+            <h3 className="text-xl font-bold text-gray-950">{restaurant?.name || "Restaurant"}</h3>
+            <p className="mt-1 text-sm text-gray-500">Scan to view menu and order from your table</p>
+            <div className="my-5 flex justify-center">
+              {qrModal.table?.qrToken ? (
+                <QRPreview table={qrModal.table} qrUrl={getQRUrl(qrModal.table)} logo={logo} size={236} />
+              ) : (
+                <div className="flex h-52 w-52 items-center justify-center rounded-2xl bg-surface-100 text-gray-400">
+                  No QR Code Available
+                </div>
+              )}
+            </div>
+            <p className="text-lg font-bold tracking-wide text-primary-700">
+              TABLE {qrModal.table?.tableNumber || ""}
+            </p>
           </div>
-          <p className="text-sm text-gray-500 mb-4">
-            Scan this QR code to view menu and place orders
-          </p>
 
           {qrModal.table?.qrToken && (
             <>
-              <div className="bg-gray-100 p-3 rounded-lg mb-4">
-                <p className="text-xs text-gray-600 break-all">
-                  {getQRUrl(qrModal.table)}
-                </p>
+              <div className="mt-4 rounded-2xl bg-surface-50 p-3">
+                <p className="break-all text-xs text-gray-600">{getQRUrl(qrModal.table)}</p>
               </div>
-              <div className="flex gap-3 justify-around">
+              <div className="mt-4 flex flex-wrap justify-center gap-3">
                 <Button
+                  type="button"
                   onClick={() => {
                     navigator.clipboard.writeText(getQRUrl(qrModal.table));
                     toast.success("URL copied to clipboard");
@@ -277,17 +516,17 @@ const Tables = () => {
                   variant="outline"
                   size="sm"
                 >
-                  Copy URL
+                  <FiCopy className="mr-2" /> Copy URL
                 </Button>
                 <a
                   href={getQRUrl(qrModal.table)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                  className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
                 >
-                  Open in New Tab
+                  <FiExternalLink className="mr-2" /> Open
                 </a>
-         <PrintQRButton qrModal={qrModal} />
+                <PrintQRButton qrModal={qrModal} qrUrl={getQRUrl(qrModal.table)} restaurant={restaurant} />
               </div>
             </>
           )}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { useForm } from 'react-hook-form'
@@ -13,6 +13,8 @@ const EmployeeForm = () => {
   const navigate = useNavigate()
   const { restaurantBase } = useTenantRoutes()
   const [loading, setLoading] = useState(false)
+  const [photoPreview, setPhotoPreview] = useState('')
+  const [photoFile, setPhotoFile] = useState(null)
   const { register, handleSubmit, setValue, formState: { errors } } = useForm()
 
   useEffect(() => {
@@ -29,24 +31,39 @@ const EmployeeForm = () => {
       setValue('username', emp.username)
       setValue('role', emp.role)
       setValue('isActive', emp.isActive)
+      setPhotoPreview(emp.profileImage || '')
     } catch (error) {
       toast.error('Failed to fetch employee')
     }
   }
 
+  const onPhotoChange = (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setPhotoFile(file)
+    setPhotoPreview(URL.createObjectURL(file))
+  }
+
   const onSubmit = async (data) => {
     try {
       setLoading(true)
+      const formData = new FormData()
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) formData.append(key, value)
+      })
+      if (photoFile) formData.append('employeePhoto', photoFile)
+
+      const config = { headers: { 'Content-Type': 'multipart/form-data' } }
       if (id) {
-        await api.put(`/restaurant/employees/${id}`, data)
+        await api.put(`/restaurant/employees/${id}`, formData, config)
         toast.success('Employee updated')
       } else {
-        const res = await api.post('/restaurant/employees', data)
+        const res = await api.post('/restaurant/employees', formData, config)
         const { credentialsEmailSent, defaultPassword } = res.data.data || {}
         if (credentialsEmailSent) {
           toast.success('Employee created. Login details were sent by email.')
         } else if (defaultPassword) {
-          toast.success(`Employee created. Email not sent — share default password: ${defaultPassword}`)
+          toast.success(`Employee created. Email not sent - share default password: ${defaultPassword}`)
         } else {
           toast.success('Employee created.')
         }
@@ -60,14 +77,36 @@ const EmployeeForm = () => {
   }
 
   return (
-    <div className="max-w-md mx-auto">
+    <div className="mx-auto max-w-2xl">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">{id ? 'Edit' : 'Add'} Employee</h1>
-        <p className="text-gray-500 mt-1">Create or update employee details</p>
+        <p className="mt-1 text-gray-500">Create a polished staff profile for the restaurant team.</p>
       </div>
 
       <Card>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <div className="flex flex-col gap-4 rounded-2xl bg-surface-50 p-4 sm:flex-row sm:items-center">
+            <div className="h-24 w-24 overflow-hidden rounded-3xl border-4 border-white bg-primary-50 shadow-sm">
+              {photoPreview ? (
+                <img src={photoPreview} alt="Employee preview" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-3xl font-black text-primary-600">
+                  ?
+                </div>
+              )}
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700">Employee Photo</label>
+              <p className="mb-2 text-xs text-gray-500">Shown in restaurant employee cards.</p>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={onPhotoChange}
+                className="w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+
           <Input
             label="Full Name"
             placeholder="Enter full name"
@@ -83,25 +122,21 @@ const EmployeeForm = () => {
             error={errors.email?.message}
           />
 
-          <Input
-            label="Phone"
-            placeholder="Enter phone number"
-            {...register('phone')}
-            error={errors.phone?.message}
-          />
+          <Input label="Phone" placeholder="Enter phone number" {...register('phone')} error={errors.phone?.message} />
 
           <Input
             label="Username"
             placeholder="Enter username"
             {...register('username', { required: 'Username is required' })}
             error={errors.username?.message}
+            disabled={Boolean(id)}
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Role</label>
             <select
               {...register('role', { required: 'Role is required' })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-primary-500"
             >
               <option value="">Select Role</option>
               <option value="admin">Admin</option>
@@ -114,16 +149,16 @@ const EmployeeForm = () => {
           </div>
 
           <label className="flex items-center gap-2">
-            <input type="checkbox" {...register('isActive')} className="w-4 h-4" />
-            <span className="text-sm text-gray-700">Active</span>
+            <input type="checkbox" {...register('isActive')} className="h-4 w-4" />
+            <span className="text-sm text-gray-700">Active employee</span>
           </label>
 
           {!id && (
-            <div className="bg-blue-50 p-3 rounded-lg">
+            <div className="rounded-2xl bg-blue-50 p-4">
               <p className="text-sm text-blue-800">
                 Default password will be set to: <strong>username@123</strong>
               </p>
-              <p className="text-xs text-blue-600 mt-1">Employee must change password on first login</p>
+              <p className="mt-1 text-xs text-blue-600">Employee must change password on first login.</p>
             </div>
           )}
 

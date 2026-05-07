@@ -139,8 +139,8 @@ const CreatePlan = () => {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">{id ? 'Edit' : 'Create'} Subscription Plan</h1>
-        <p className="text-gray-500 mt-1">Configure plan details and pricing</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{id ? 'Edit' : 'Create'} Subscription Plan</h1>
+        <p className="mt-1 text-gray-500 dark:text-gray-400">Configure plan details and pricing</p>
       </div>
 
       <Card>
@@ -152,8 +152,8 @@ const CreatePlan = () => {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Plan Type</label>
-            <select {...register('planType', { required: 'Plan type is required' })} className="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Plan Type</label>
+            <select {...register('planType', { required: 'Plan type is required' })} className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
               <option value="">Select Type</option>
               <option value="basic">Basic</option>
               <option value="standard">Standard</option>
@@ -183,27 +183,27 @@ const CreatePlan = () => {
             error={errors.priceExclVat?.message}
           />
           {billing && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               Platform VAT rate: <strong>{Number(billing.vatRatePercent ?? 0).toFixed(2)}%</strong> (change under Settings → Billing &amp; VAT).
             </p>
           )}
           {pricePreview && (
-            <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 space-y-1">
-              <p className="font-medium text-gray-900">Charge preview (what restaurants pay)</p>
+            <div className="space-y-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+              <p className="font-medium text-gray-900 dark:text-gray-100">Charge preview (what restaurants pay)</p>
               <p>Subtotal (excl. VAT): {pricePreview.sym}{pricePreview.excl.toFixed(2)}</p>
               <p>VAT ({pricePreview.rate}%): {pricePreview.sym}{pricePreview.vat.toFixed(2)}</p>
-              <p className="font-semibold text-gray-900 pt-1 border-t border-gray-200">
+              <p className="border-t border-gray-200 pt-1 font-semibold text-gray-900 dark:border-gray-700 dark:text-gray-100">
                 Grand total (incl. VAT): {pricePreview.sym}{pricePreview.total.toFixed(2)}
               </p>
             </div>
           )}
 
-          <div className="border-t pt-4">
-            <h3 className="font-semibold mb-3">Plan Limits</h3>
+          <div className="border-t border-gray-200 pt-4 dark:border-gray-800">
+            <h3 className="mb-3 font-semibold text-gray-900 dark:text-gray-100">Plan Limits</h3>
             <div className="grid grid-cols-2 gap-4">
               {LIMIT_KEYS.map((key) => (
                 <div key={key}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{LIMIT_LABELS[key]}</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{LIMIT_LABELS[key]}</label>
                   <select
                     value={limitState[key].selectValue}
                     onChange={(e) => setLimitState((prev) => ({
@@ -213,7 +213,7 @@ const CreatePlan = () => {
                         selectValue: e.target.value,
                       },
                     }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                   >
                     {LIMIT_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -234,17 +234,17 @@ const CreatePlan = () => {
                         },
                       }))}
                       placeholder="Enter custom limit"
-                      className="mt-2 w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                     />
                   )}
                 </div>
               ))}
             </div>
-            <p className="text-xs text-gray-500 mt-2">Set to Unlimited when you do not want to restrict that resource.</p>
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Set to Unlimited when you do not want to restrict that resource.</p>
           </div>
 
-          <div className="border-t pt-4">
-            <h3 className="font-semibold mb-3">Features</h3>
+          <div className="border-t border-gray-200 pt-4 dark:border-gray-800">
+            <h3 className="mb-3 font-semibold text-gray-900 dark:text-gray-100">Features</h3>
             {fields.map((field, index) => (
               <div key={field.id} className="flex gap-2 mb-2">
                 <Input
@@ -260,9 +260,9 @@ const CreatePlan = () => {
             </button>
           </div>
 
-          <label className="flex items-center gap-2">
+          <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
             <input type="checkbox" {...register('isPopular')} />
-            <span className="text-sm text-gray-700">Mark as Popular</span>
+            <span className="text-sm">Mark as Popular</span>
           </label>
 
           <div className="flex gap-3 pt-4">

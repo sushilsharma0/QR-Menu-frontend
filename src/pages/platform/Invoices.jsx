@@ -135,8 +135,8 @@ export default function PlatformInvoices() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Subscription invoices</h1>
-        <p className="text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Subscription invoices</h1>
+        <p className="mt-1 text-gray-500 dark:text-gray-400">
           Track billing per restaurant, renewal counts, and open printable tax documents for compliance.
         </p>
       </div>

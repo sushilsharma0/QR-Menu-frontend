@@ -1,58 +1,168 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  FiShoppingBag,
-  FiUsers,
-  FiGrid,
-  FiTrendingUp,
-  FiTrendingDown,
-  FiClock,
-  FiCheckCircle,
   FiAlertCircle,
+  FiBarChart2,
+  FiCalendar,
+  FiCheckCircle,
+  FiClock,
+  FiRefreshCw,
+  FiShoppingBag,
+  FiTrendingDown,
+  FiTrendingUp,
+  FiUsers,
 } from "react-icons/fi";
 import { TbCurrencyRupee } from "react-icons/tb";
+import { motion } from "framer-motion";
 import {
-  LineChart,
+  Bar,
+  CartesianGrid,
+  ComposedChart,
   Line,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
 import toast from "react-hot-toast";
 import api from "../../services/api";
-import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import { useSocket } from "../../hooks/useSocket";
+import {
+  RestaurantPageLoader,
+  RestaurantStatusPill,
+  formatRestaurantCurrency,
+  formatRestaurantShortDate,
+  orderStatusStyles,
+} from "../../components/restaurant/RestaurantUI";
 
-const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
-const STAT_ICON_BG = [
-  "bg-gradient-to-br from-blue-500 to-indigo-600",
-  "bg-gradient-to-br from-emerald-500 to-green-600",
-  "bg-gradient-to-br from-violet-500 to-purple-600",
-  "bg-gradient-to-br from-amber-500 to-orange-500",
-];
+const cardVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: "easeOut" } },
+};
 
-const fmtRs = (v) =>
-  `Rs. ${Number(v || 0).toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.07, delayChildren: 0.08 },
+  },
+};
 
 const formatPctTrend = (pct) => {
   if (pct === null || pct === undefined) return { text: "New", up: true };
-  const n = Number(pct);
-  const rounded = Math.round(n * 10) / 10;
+  const rounded = Math.round(Number(pct) * 10) / 10;
   return {
     text: `${rounded >= 0 ? "+" : ""}${rounded}%`,
     up: rounded >= 0,
   };
 };
+
+function SalesTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+
+  const revenue = payload.find((item) => item.dataKey === "revenue")?.value || 0;
+  const orders = payload.find((item) => item.dataKey === "orders")?.value || 0;
+
+  return (
+    <div className="rounded-2xl border border-surface-200 bg-white/95 px-4 py-3 shadow-xl backdrop-blur">
+      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        {formatRestaurantShortDate(label)}
+      </p>
+      <div className="mt-2 space-y-1">
+        <p className="flex items-center justify-between gap-6 text-sm">
+          <span className="text-gray-500">Revenue</span>
+          <span className="font-bold text-primary-700">{formatRestaurantCurrency(revenue)}</span>
+        </p>
+        <p className="flex items-center justify-between gap-6 text-sm">
+          <span className="text-gray-500">Orders</span>
+          <span className="font-bold text-emerald-700">{orders}</span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function MetricCard({ title, value, sub, icon: Icon, accent, trend }) {
+  return (
+    <motion.div
+      variants={cardVariants}
+      whileHover={{ y: -5, transition: { duration: 0.18 } }}
+      className="relative overflow-hidden rounded-3xl border border-surface-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-xl"
+    >
+      <div className={`absolute -right-10 -top-10 h-28 w-28 rounded-full bg-gradient-to-br ${accent} opacity-10`} />
+      <div className="relative flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{title}</p>
+          <p className="mt-2 text-2xl font-bold tracking-tight text-gray-950">{value}</p>
+          {sub && <p className="mt-1 text-sm text-gray-500">{sub}</p>}
+        </div>
+        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${accent} text-white shadow-md`}>
+          <Icon className="h-6 w-6" />
+        </div>
+      </div>
+      {trend && (
+        <div className="relative mt-4 flex items-center gap-1 text-sm">
+          {trend.up ? (
+            <FiTrendingUp className="h-4 w-4 text-green-600" />
+          ) : (
+            <FiTrendingDown className="h-4 w-4 text-red-600" />
+          )}
+          <span className={`font-semibold ${trend.up ? "text-green-700" : "text-red-700"}`}>
+            {trend.text}
+          </span>
+          <span className="text-gray-500">{trend.label}</span>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+function ActiveOrderTile({ label, value, icon: Icon, classes }) {
+  return (
+    <motion.div
+      variants={cardVariants}
+      whileHover={{ y: -4 }}
+      className={`rounded-2xl border p-4 shadow-sm ${classes.wrap}`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className={`text-sm font-semibold ${classes.text}`}>{label}</p>
+          <p className={`mt-1 text-3xl font-bold ${classes.value}`}>{value || 0}</p>
+        </div>
+        <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${classes.icon}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function SectionShell({ title, eyebrow, icon: Icon, children, actions, className = "" }) {
+  return (
+    <motion.section
+      variants={cardVariants}
+      initial="hidden"
+      animate="visible"
+      className={`rounded-3xl border border-surface-200 bg-white shadow-sm ${className}`}
+    >
+      <div className="flex flex-col gap-3 border-b border-surface-200 px-5 py-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-3">
+          {Icon && (
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-50 text-primary-700">
+              <Icon className="h-5 w-5" />
+            </div>
+          )}
+          <div>
+            {eyebrow && <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{eyebrow}</p>}
+            <h2 className="text-lg font-bold text-gray-950">{title}</h2>
+          </div>
+        </div>
+        {actions}
+      </div>
+      <div className="p-5">{children}</div>
+    </motion.section>
+  );
+}
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
@@ -60,39 +170,30 @@ const Dashboard = () => {
   const [popularItems, setPopularItems] = useState([]);
   const [restaurant, setRestaurant] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const { socket } = useSocket();
 
-  useEffect(() => {
-    fetchRestaurantProfile();
-    fetchDashboardData();
-
-    // Listen for real-time order updates
-    if (socket) {
-      socket.on("new_order", handleNewOrder);
-      socket.on("order_updated", handleOrderUpdate);
-      socket.on("payment_updated", handlePaymentUpdate);
-
-      return () => {
-        socket.off("new_order", handleNewOrder);
-        socket.off("order_updated", handleOrderUpdate);
-        socket.off("payment_updated", handlePaymentUpdate);
-      };
-    }
-  }, [socket]);
-
-  const fetchDashboardData = async () => {
+  const fetchRestaurantProfile = async () => {
     try {
-      setLoading(true);
+      const res = await api.get("/restaurant/auth/profile");
+      setRestaurant(res.data.data);
+    } catch (error) {
+      console.error("Failed to fetch restaurant profile", error);
+    }
+  };
+
+  const fetchDashboardData = async (quiet = false) => {
+    try {
+      if (quiet) setRefreshing(true);
+      else setLoading(true);
+
       const [statsRes, salesRes, popularRes] = await Promise.all([
         api.get("/restaurant/dashboard/stats"),
         api.get("/restaurant/dashboard/analytics/sales?days=7"),
-        api.get(
-          "/restaurant/dashboard/analytics/popular-items?days=30&limit=5",
-        ),
+        api.get("/restaurant/dashboard/analytics/popular-items?days=30&limit=5"),
       ]);
 
       setStats(statsRes.data.data);
-
       const sales = salesRes.data.data.data || [];
       setSalesData(
         sales.map((item) => ({
@@ -101,384 +202,469 @@ const Dashboard = () => {
           orders: item.orders,
         })),
       );
-
       setPopularItems(popularRes.data.data || []);
     } catch (error) {
       toast.error("Failed to fetch dashboard data");
       console.error(error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const handleNewOrder = (order) => {
-    toast.success(`New order #${order.orderNumber} received!`, {
-      duration: 5000,
-    });
+  useEffect(() => {
+    fetchRestaurantProfile();
     fetchDashboardData();
-  };
+  }, []);
 
-  const handleOrderUpdate = (order) => {
-    toast(`Order #${order.orderNumber} status updated to ${order.status}`);
-    fetchDashboardData();
-  };
+  useEffect(() => {
+    if (!socket) return undefined;
 
-  const handlePaymentUpdate = (payment) => {
-    toast.success(`Payment updated for order #${payment.orderNumber}`);
-    fetchDashboardData();
-  };
+    const handleNewOrder = (order) => {
+      toast.success(`New order #${order.orderNumber} received`, { duration: 5000 });
+      fetchDashboardData(true);
+    };
+    const handleOrderUpdate = (order) => {
+      toast(`Order #${order.orderNumber} moved to ${order.status}`);
+      fetchDashboardData(true);
+    };
+    const handlePaymentUpdate = (payment) => {
+      toast.success(`Payment updated for order #${payment.orderNumber}`);
+      fetchDashboardData(true);
+    };
 
-  const fetchRestaurantProfile = async () => {
-    try {
-      const res = await api.get('/restaurant/auth/profile')
-      setRestaurant(res.data.data)
-    } catch (error) {
-      console.error('Failed to fetch restaurant profile', error)
-    }
-  }
+    socket.on("new_order", handleNewOrder);
+    socket.on("order_updated", handleOrderUpdate);
+    socket.on("payment_updated", handlePaymentUpdate);
+    return () => {
+      socket.off("new_order", handleNewOrder);
+      socket.off("order_updated", handleOrderUpdate);
+      socket.off("payment_updated", handlePaymentUpdate);
+    };
+  }, [socket]);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
+  const dashboardModel = useMemo(() => {
+    const activeOrders = stats?.activeOrders || {};
+    const activeOrdersTotal = Object.values(activeOrders).reduce((a, b) => a + Number(b || 0), 0);
+    const totalSalesRevenue = salesData.reduce((sum, item) => sum + Number(item.revenue || 0), 0);
+    const totalSalesOrders = salesData.reduce((sum, item) => sum + Number(item.orders || 0), 0);
+    const averageOrderValue = totalSalesOrders ? totalSalesRevenue / totalSalesOrders : 0;
+    const bestSalesDay = salesData.reduce(
+      (best, item) => (Number(item.revenue || 0) > Number(best?.revenue || 0) ? item : best),
+      null,
     );
-  }
+    const hasSalesData = salesData.some(
+      (item) => Number(item.revenue || 0) > 0 || Number(item.orders || 0) > 0,
+    );
 
-  const todayTrend = formatPctTrend(stats?.overview?.todayVsYesterdayPercent);
-  const weekTrend = formatPctTrend(stats?.overview?.weekVsPrevWeekPercent);
+    return {
+      activeOrders,
+      activeOrdersTotal,
+      totalSalesRevenue,
+      totalSalesOrders,
+      averageOrderValue,
+      bestSalesDay,
+      hasSalesData,
+      todayTrend: formatPctTrend(stats?.overview?.todayVsYesterdayPercent),
+      weekTrend: formatPctTrend(stats?.overview?.weekVsPrevWeekPercent),
+    };
+  }, [salesData, stats]);
 
-  const statsCards = [
+  if (loading) return <RestaurantPageLoader />;
+
+  const metricCards = [
     {
       title: "Today's Orders",
       value: stats?.overview?.todayOrders || 0,
+      sub: "Orders opened today",
       icon: FiShoppingBag,
-      trend: null,
-      trendLabel: null,
+      accent: "from-primary-600 to-secondary-500",
     },
     {
       title: "Today's Revenue",
-      value: fmtRs(stats?.overview?.todayRevenue),
+      value: formatRestaurantCurrency(stats?.overview?.todayRevenue),
+      sub: "Paid transactions",
       icon: TbCurrencyRupee,
-      trend: todayTrend,
-      trendLabel: "vs yesterday (paid)",
+      accent: "from-emerald-500 to-teal-500",
+      trend: { ...dashboardModel.todayTrend, label: "vs yesterday" },
     },
     {
-      title: "This Week's Revenue",
-      value: fmtRs(stats?.overview?.weekRevenue),
+      title: "Week Revenue",
+      value: formatRestaurantCurrency(stats?.overview?.weekRevenue),
+      sub: "Current week paid",
       icon: FiTrendingUp,
-      trend: weekTrend,
-      trendLabel: "vs last week (paid)",
+      accent: "from-indigo-500 to-violet-500",
+      trend: { ...dashboardModel.weekTrend, label: "vs last week" },
     },
     {
-      title: "Total Revenue",
-      value: fmtRs(stats?.overview?.totalRevenue),
+      title: "All-Time Revenue",
+      value: formatRestaurantCurrency(stats?.overview?.totalRevenue),
+      sub: `${stats?.overview?.totalOrders || 0} total orders`,
       icon: TbCurrencyRupee,
-      trend: null,
-      trendLabel: null,
+      accent: "from-amber-500 to-orange-500",
     },
   ];
 
-  const activeOrders = stats?.activeOrders || {};
-  const activeOrdersTotal = Object.values(activeOrders).reduce(
-    (a, b) => a + b,
-    0,
-  );
+  const salesSummary = [
+    {
+      label: "7-day revenue",
+      value: formatRestaurantCurrency(dashboardModel.totalSalesRevenue),
+      icon: TbCurrencyRupee,
+      accent: "from-primary-600 to-secondary-500",
+    },
+    {
+      label: "Orders",
+      value: dashboardModel.totalSalesOrders,
+      icon: FiShoppingBag,
+      accent: "from-emerald-500 to-teal-500",
+    },
+    {
+      label: "Average order",
+      value: formatRestaurantCurrency(dashboardModel.averageOrderValue),
+      icon: FiBarChart2,
+      accent: "from-amber-500 to-orange-500",
+    },
+    {
+      label: "Best day",
+      value: formatRestaurantShortDate(dashboardModel.bestSalesDay?.date),
+      icon: FiCalendar,
+      accent: "from-indigo-500 to-violet-500",
+    },
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 p-6 md:p-8 text-white shadow-[0_22px_55px_-18px_rgba(15,23,42,0.8)]">
-        <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-indigo-400/20 blur-3xl" />
-        <div className="absolute -bottom-20 left-10 h-48 w-48 rounded-full bg-cyan-300/10 blur-3xl" />
-        <div className="relative flex justify-between items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-4">
-            {restaurant?.logo && (
+      <motion.section
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="relative overflow-hidden rounded-[2rem] border border-primary-900/10 bg-[#210b02] p-5 text-white shadow-[0_28px_70px_-28px_rgba(57,16,0,0.75)] md:p-8"
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_15%,rgba(231,199,75,0.22),transparent_28%),radial-gradient(circle_at_85%_0%,rgba(16,185,129,0.2),transparent_26%),linear-gradient(135deg,#391000_0%,#641c00_42%,#1f2937_100%)]" />
+        <div className="absolute inset-x-8 bottom-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent" />
+        <div className="relative flex flex-col gap-7 xl:flex-row xl:items-end xl:justify-between">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center">
+            {restaurant?.logo ? (
               <img
                 src={restaurant.logo}
-                alt={restaurant.name || 'Restaurant Logo'}
-                className="h-16 w-16 rounded-2xl object-cover border border-white/20"
+                alt={restaurant.name || "Restaurant Logo"}
+                className="h-20 w-20 rounded-3xl border border-white/20 object-cover shadow-2xl"
               />
+            ) : (
+              <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-white/20 bg-white/10 shadow-2xl">
+                <FiShoppingBag className="h-9 w-9 text-white" />
+              </div>
             )}
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-indigo-200 font-medium">
-                Operational Overview
-              </p>
-              <h1 className="text-3xl md:text-4xl font-bold mt-2">
-                {restaurant?.name || 'Restaurant Dashboard'}
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-surface-100">
+                Live Restaurant Command Center
+              </div>
+              <h1 className="mt-3 text-3xl font-black tracking-tight md:text-5xl">
+                {restaurant?.name || "Restaurant Dashboard"}
               </h1>
-              <p className="text-indigo-100/90 mt-2 max-w-2xl">
-                Track live orders, revenue trends, and service performance from one place.
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/78 md:text-base">
+                Watch revenue, orders, table readiness, stock signals, and service movement from one beautiful operational cockpit.
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 mt-4 md:mt-0">
-            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/15 border border-white/20">
-              Live Orders
-            </span>
-            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/15 border border-white/20">
-              Revenue Tracking
-            </span>
-            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/15 border border-white/20">
-              Real-time Updates
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden md:block rounded-2xl border border-white/20 bg-white/10 px-4 py-3">
-              <p className="text-xs text-indigo-100">Active Orders</p>
-              <p className="text-2xl font-bold">{activeOrdersTotal}</p>
+
+          <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center">
+            <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
+              <p className="text-xs text-white/65">Active Orders</p>
+              <p className="text-3xl font-black">{dashboardModel.activeOrdersTotal}</p>
+            </div>
+            <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
+              <p className="text-xs text-white/65">Low Stock</p>
+              <p className="text-3xl font-black">{stats?.resources?.lowStockCount || 0}</p>
             </div>
             <Button
               variant="secondary"
-              onClick={fetchDashboardData}
-              className="!bg-white !text-slate-900 hover:!bg-slate-100 !border-0"
+              onClick={() => fetchDashboardData(true)}
+              disabled={refreshing}
+              className="col-span-2 !border-0 !bg-white !text-primary-900 hover:!bg-surface-50 sm:col-span-1"
             >
-              <FiTrendingUp className="mr-2" /> Refresh
+              <FiRefreshCw className={`mr-2 ${refreshing ? "animate-spin" : ""}`} />
+              Refresh
             </Button>
           </div>
         </div>
-      </div>
+      </motion.section>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statsCards.map((stat, index) => (
-          <div
-            key={index}
-            className="relative overflow-hidden bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-6 border border-gray-100 dark:border-gray-800 hover:shadow-lg hover:-translate-y-0.5 transition-all"
-          >
-            <div className="absolute -top-10 -right-8 h-24 w-24 rounded-full bg-slate-100/70" />
-            <div className="flex items-center justify-between">
-              <div className="relative">
-                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
-                  {stat.title}
-                </p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-2 tracking-tight">
-                  {stat.value}
-                </p>
-              </div>
-              <div className={`${STAT_ICON_BG[index % STAT_ICON_BG.length]} p-3 rounded-xl text-white shadow-md relative`}>
-                <stat.icon className="h-6 w-6" />
-              </div>
-            </div>
-            {stat.trend && stat.trendLabel && (
-              <div className="flex items-center gap-1 mt-4">
-                {stat.trend.up ? (
-                  <FiTrendingUp className="h-4 w-4 text-green-500" />
-                ) : (
-                  <FiTrendingDown className="h-4 w-4 text-red-500" />
-                )}
-                <span
-                  className={`text-sm font-medium ${stat.trend.up ? "text-green-600" : "text-red-600"}`}
-                >
-                  {stat.trend.text}
-                </span>
-                <span className="text-sm text-gray-500 dark:text-gray-400">{stat.trendLabel}</span>
-              </div>
-            )}
-          </div>
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        {metricCards.map((metric) => (
+          <MetricCard key={metric.title} {...metric} />
         ))}
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card title="Active Orders" icon={FiClock}>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-xl p-4 text-center border border-yellow-100 shadow-sm">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <FiClock className="h-5 w-5 text-yellow-600" />
-                  <span className="text-sm font-medium text-yellow-600">
-                    Pending
-                  </span>
-                </div>
-                <p className="text-2xl font-bold text-yellow-700">
-                  {activeOrders.pending || 0}
-                </p>
-              </div>
-              <div className="bg-gradient-to-br from-blue-50 to-sky-50 rounded-xl p-4 text-center border border-blue-100 shadow-sm">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <FiTrendingUp className="h-5 w-5 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-600">
-                    Preparing
-                  </span>
-                </div>
-                <p className="text-2xl font-bold text-blue-700">
-                  {activeOrders.preparing || 0}
-                </p>
-              </div>
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 text-center border border-green-100 shadow-sm">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <FiCheckCircle className="h-5 w-5 text-green-600" />
-                  <span className="text-sm font-medium text-green-600">
-                    Ready to Serve
-                  </span>
-                </div>
-                <p className="text-2xl font-bold text-green-700">
-                  {activeOrders.ready || 0}
-                </p>
-              </div>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <SectionShell title="Active Order Flow" eyebrow="Kitchen pulse" icon={FiClock} className="xl:col-span-2">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-1 gap-4 md:grid-cols-3"
+          >
+            <ActiveOrderTile
+              label="Pending"
+              value={dashboardModel.activeOrders.pending}
+              icon={FiClock}
+              classes={{
+                wrap: "border-yellow-100 bg-gradient-to-br from-yellow-50 to-amber-50",
+                text: "text-yellow-700",
+                value: "text-yellow-800",
+                icon: "bg-yellow-100 text-yellow-700",
+              }}
+            />
+            <ActiveOrderTile
+              label="Preparing"
+              value={dashboardModel.activeOrders.preparing}
+              icon={FiTrendingUp}
+              classes={{
+                wrap: "border-blue-100 bg-gradient-to-br from-blue-50 to-sky-50",
+                text: "text-blue-700",
+                value: "text-blue-800",
+                icon: "bg-blue-100 text-blue-700",
+              }}
+            />
+            <ActiveOrderTile
+              label="Ready"
+              value={dashboardModel.activeOrders.ready}
+              icon={FiCheckCircle}
+              classes={{
+                wrap: "border-emerald-100 bg-gradient-to-br from-green-50 to-emerald-50",
+                text: "text-emerald-700",
+                value: "text-emerald-800",
+                icon: "bg-emerald-100 text-emerald-700",
+              }}
+            />
+          </motion.div>
+          {dashboardModel.activeOrdersTotal === 0 && (
+            <div className="mt-4 rounded-2xl bg-surface-50 px-4 py-5 text-center text-sm text-gray-500">
+              Calm service right now. New orders will appear here instantly.
             </div>
-            {activeOrdersTotal === 0 && (
-              <p className="text-center text-gray-500 dark:text-gray-400 py-5 rounded-xl bg-gray-50 dark:bg-gray-800 mt-4">
-                No active orders at the moment
-              </p>
-            )}
-          </Card>
-        </div>
+          )}
+        </SectionShell>
 
-        <Card title="Quick Stats" icon={FiUsers}>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center py-1 border-b border-gray-100 dark:border-gray-800">
-              <span className="text-gray-600 dark:text-gray-300">Total Orders</span>
-              <span className="font-bold text-lg">
-                {stats?.overview?.totalOrders || 0}
-              </span>
-            </div>
-            <div className="flex justify-between items-center py-1 border-b border-gray-100 dark:border-gray-800">
-              <span className="text-gray-600 dark:text-gray-300">Total Tables</span>
-              <span className="font-bold text-lg">
-                {stats?.resources?.totalTables || 0}
-              </span>
-            </div>
-            <div className="flex justify-between items-center py-1 border-b border-gray-100 dark:border-gray-800">
-              <span className="text-gray-600 dark:text-gray-300">Active Tables</span>
-              <span className="font-bold text-lg">
-                {stats?.resources?.activeTables || 0}
-              </span>
-            </div>
-            <div className="flex justify-between items-center py-1 border-b border-gray-100 dark:border-gray-800">
-              <span className="text-gray-600 dark:text-gray-300">Total Employees</span>
-              <span className="font-bold text-lg">
-                {stats?.resources?.totalEmployees || 0}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600 dark:text-gray-300">Low Stock Items</span>
-              <span className="font-bold text-lg text-red-600 bg-red-50 px-2 py-0.5 rounded-lg">
-                {stats?.resources?.lowStockCount || 0}
-              </span>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      <Card title="Sales Overview (Last 7 Days)" icon={FiTrendingUp}>
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={salesData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="date" />
-              <YAxis yAxisId="left" />
-              <YAxis yAxisId="right" orientation="right" />
-              <Tooltip />
-              <Line
-                yAxisId="left"
-                type="monotone"
-                dataKey="revenue"
-                stroke="#3b82f6"
-                name="Revenue (Rs.)"
-                strokeWidth={2}
-              />
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey="orders"
-                stroke="#10b981"
-                name="Orders"
-                strokeWidth={2}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </Card>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card title="Popular Items" icon={FiTrendingUp}>
+        <SectionShell title="Operations Snapshot" eyebrow="Resources" icon={FiUsers}>
           <div className="space-y-3">
-            {popularItems.map((item, idx) => (
-              <div
-                key={idx}
-                className="flex justify-between items-center p-3 bg-gradient-to-r from-gray-50 via-gray-50 to-indigo-50/40 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 hover:shadow-sm transition-shadow"
-              >
-                <div>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
-                    {idx + 1}. {item.name}
-                  </span>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {item.totalQuantity} orders
-                  </p>
-                </div>
-                <span className="font-bold text-primary-600">
-                  {fmtRs(item.totalRevenue)}
+            {[
+              ["Total Orders", stats?.overview?.totalOrders || 0],
+              ["Total Tables", stats?.resources?.totalTables || 0],
+              ["Active Tables", stats?.resources?.activeTables || 0],
+              ["Employees", stats?.resources?.totalEmployees || 0],
+              ["Low Stock Items", stats?.resources?.lowStockCount || 0],
+            ].map(([label, value]) => (
+              <div key={label} className="flex items-center justify-between rounded-2xl bg-surface-50 px-4 py-3">
+                <span className="text-sm font-medium text-gray-600">{label}</span>
+                <span className={`text-lg font-black ${label === "Low Stock Items" && value > 0 ? "text-red-600" : "text-gray-950"}`}>
+                  {value}
                 </span>
               </div>
             ))}
-            {popularItems.length === 0 && (
-              <p className="text-center text-gray-500 dark:text-gray-400 py-6 rounded-xl bg-gray-50 dark:bg-gray-800">
-                No data available
+          </div>
+        </SectionShell>
+      </div>
+
+      <SectionShell
+        title="Sales Performance"
+        eyebrow="Last 7 days"
+        icon={FiTrendingUp}
+        actions={
+          <div className="rounded-2xl border border-surface-200 bg-white px-4 py-2 text-sm">
+            <span className="text-gray-500">Total:</span>{" "}
+            <span className="font-black text-primary-700">
+              {formatRestaurantCurrency(dashboardModel.totalSalesRevenue)}
+            </span>
+          </div>
+        }
+      >
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"
+        >
+          {salesSummary.map((item) => (
+            <motion.div
+              key={item.label}
+              variants={cardVariants}
+              whileHover={{ y: -4 }}
+              className="rounded-2xl border border-surface-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-lg"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{item.label}</p>
+                  <p className="mt-2 text-2xl font-black text-gray-950">{item.value}</p>
+                </div>
+                <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${item.accent} text-white shadow-md`}>
+                  <item.icon className="h-5 w-5" />
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        <div className="mt-5 rounded-3xl border border-surface-200 bg-gradient-to-b from-white to-surface-50 p-3 md:p-5">
+          {dashboardModel.hasSalesData ? (
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={salesData} margin={{ top: 12, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="salesRevenueGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#8f2800" stopOpacity={0.92} />
+                      <stop offset="100%" stopColor="#b64a26" stopOpacity={0.22} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={formatRestaurantShortDate}
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#6b7280", fontSize: 12 }}
+                    dy={8}
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#6b7280", fontSize: 12 }}
+                    tickFormatter={(value) => `Rs. ${Math.round(Number(value || 0) / 1000)}k`}
+                    width={58}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#6b7280", fontSize: 12 }}
+                    width={34}
+                  />
+                  <Tooltip content={<SalesTooltip />} cursor={{ fill: "#fffcf1" }} />
+                  <Bar
+                    yAxisId="left"
+                    dataKey="revenue"
+                    name="Revenue"
+                    fill="url(#salesRevenueGradient)"
+                    radius={[12, 12, 4, 4]}
+                    barSize={38}
+                    animationDuration={1000}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="orders"
+                    name="Orders"
+                    stroke="#059669"
+                    strokeWidth={3}
+                    dot={{ r: 4, strokeWidth: 2, fill: "#ffffff" }}
+                    activeDot={{ r: 7, strokeWidth: 0, fill: "#059669" }}
+                    animationDuration={1000}
+                    animationEasing="ease-out"
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="flex min-h-80 flex-col items-center justify-center rounded-2xl bg-surface-50 px-4 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-primary-600 shadow-sm">
+                <FiBarChart2 className="h-7 w-7" />
+              </div>
+              <h3 className="mt-4 text-lg font-semibold text-gray-950">No sales data yet</h3>
+              <p className="mt-1 max-w-md text-sm text-gray-500">
+                Paid transactions from the last seven days will appear here as soon as orders are completed.
               </p>
+            </div>
+          )}
+        </div>
+      </SectionShell>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <SectionShell title="Popular Items" eyebrow="Top sellers" icon={FiTrendingUp}>
+          <div className="space-y-3">
+            {popularItems.map((item, idx) => (
+              <motion.div
+                key={`${item.name}-${idx}`}
+                variants={cardVariants}
+                initial="hidden"
+                animate="visible"
+                whileHover={{ x: 4 }}
+                className="flex items-center justify-between gap-4 rounded-2xl border border-surface-200 bg-white p-4 shadow-sm"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-50 text-sm font-black text-primary-700">
+                    {idx + 1}
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-950">{item.name}</p>
+                    <p className="text-sm text-gray-500">{item.totalQuantity} sold</p>
+                  </div>
+                </div>
+                <p className="font-black text-primary-700">{formatRestaurantCurrency(item.totalRevenue)}</p>
+              </motion.div>
+            ))}
+            {popularItems.length === 0 && (
+              <div className="rounded-2xl bg-surface-50 py-8 text-center text-sm text-gray-500">No item data available yet.</div>
             )}
           </div>
-        </Card>
+        </SectionShell>
 
-        <Card title="Recent Orders">
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {stats?.recentOrders?.slice(0, 5).map((order) => (
-              <div
+        <SectionShell title="Recent Orders" eyebrow="Latest activity" icon={FiShoppingBag}>
+          <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
+            {stats?.recentOrders?.slice(0, 6).map((order) => (
+              <motion.div
                 key={order._id}
-                className="flex justify-between items-center p-3 border border-gray-100 dark:border-gray-700 rounded-xl bg-white/80 dark:bg-gray-900 hover:border-indigo-100 dark:hover:border-gray-600 hover:shadow-sm transition-all"
+                variants={cardVariants}
+                initial="hidden"
+                animate="visible"
+                whileHover={{ x: 4 }}
+                className="flex items-center justify-between gap-4 rounded-2xl border border-surface-200 bg-white p-4 shadow-sm"
               >
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">
-                    #{order.orderNumber}
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {order.customerName} • Table {order.table?.tableNumber}
+                  <p className="font-bold text-gray-950">#{order.orderNumber}</p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {order.customerName || "Guest"} - Table {order.table?.tableNumber || "N/A"}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-primary-600">
-                    {fmtRs(order.grandTotal)}
-                  </p>
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full ${
-                      order.status === "served"
-                        ? "bg-green-100 text-green-800"
-                        : order.status === "pending"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : order.status === "preparing"
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {order.status}
-                  </span>
+                  <p className="font-black text-primary-700">{formatRestaurantCurrency(order.grandTotal)}</p>
+                  <RestaurantStatusPill value={order.status} styles={orderStatusStyles} />
                 </div>
-              </div>
+              </motion.div>
             ))}
             {(!stats?.recentOrders || stats.recentOrders.length === 0) && (
-              <p className="text-center text-gray-500 dark:text-gray-400 py-6 rounded-xl bg-gray-50 dark:bg-gray-800">No recent orders</p>
+              <div className="rounded-2xl bg-surface-50 py-8 text-center text-sm text-gray-500">No recent orders.</div>
             )}
           </div>
-        </Card>
+        </SectionShell>
       </div>
 
       {stats?.lowStockItemsList && stats.lowStockItemsList.length > 0 && (
-        <Card title="Low Stock Alert" icon={FiAlertCircle}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <SectionShell title="Low Stock Alert" eyebrow="Inventory attention" icon={FiAlertCircle}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {stats.lowStockItemsList.map((item, idx) => (
-              <div
-                key={idx}
-                className="bg-gradient-to-br from-red-50 to-orange-50 rounded-xl p-3 border border-red-200 shadow-sm"
+              <motion.div
+                key={`${item.name}-${idx}`}
+                variants={cardVariants}
+                initial="hidden"
+                animate="visible"
+                whileHover={{ y: -4 }}
+                className="rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 to-orange-50 p-4 shadow-sm"
               >
-                <p className="font-medium text-gray-900 dark:text-gray-100">{item.name}</p>
-                <p className="text-sm text-red-600">
+                <p className="font-bold text-gray-950">{item.name}</p>
+                <p className="mt-2 text-sm font-semibold text-red-700">
                   Only {item.currentStock} {item.unit} left
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Min stock: {item.minStock}
-                </p>
-              </div>
+                <p className="mt-1 text-xs text-gray-500">Minimum stock: {item.minStock}</p>
+              </motion.div>
             ))}
           </div>
-        </Card>
+        </SectionShell>
       )}
     </div>
   );

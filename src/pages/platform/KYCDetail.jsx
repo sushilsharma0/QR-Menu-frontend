@@ -67,8 +67,8 @@ const KYCDetail = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">KYC Review</h1>
-          <p className="text-gray-500 mt-1">{kyc?.restaurant?.name}</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">KYC Review</h1>
+          <p className="mt-1 text-gray-500 dark:text-gray-400">{kyc?.restaurant?.name}</p>
         </div>
         <div className="flex gap-3">
           <Button variant="success" onClick={handleApprove}>Approve</Button>
@@ -150,10 +150,10 @@ const KYCDetail = () => {
 
       <Modal isOpen={rejectModal} onClose={() => setRejectModal(false)} title="Reject KYC">
         <div className="p-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Rejection Reason</label>
+          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Rejection Reason</label>
           <textarea
             rows={4}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:ring-2 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
             placeholder="Enter reason for rejection..."
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}

@@ -9,10 +9,16 @@ import api from '../../services/api'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import { useSocket } from '../../hooks/useSocket'
+import {
+  RestaurantPageLoader,
+  RestaurantStatusPill,
+  formatRestaurantCurrency,
+  formatRestaurantDateTime,
+  paymentMethodStyles,
+  paymentStatusStyles,
+} from '../../components/restaurant/RestaurantUI'
 
 // ── Helpers
-const fmt     = (v) => `Rs. ${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-const fmtDate = (d) => new Date(d).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
 const isToday = (dateStr) => new Date(dateStr).toDateString() === new Date().toDateString()
 
 // ── Recalculate summary state after a new payment event
@@ -98,32 +104,11 @@ function MetricCard({ label, value, sub, icon: Icon, color }) {
 }
 
 function MethodBadge({ method }) {
-  const styles = {
-    cash:   'bg-green-100  text-green-800',
-    card:   'bg-blue-100   text-blue-800',
-    online: 'bg-purple-100 text-purple-800',
-    upi:    'bg-indigo-100 text-indigo-800',
-    wallet: 'bg-yellow-100 text-yellow-800',
-  }
-  return (
-    <span className={`px-2 py-1 text-xs rounded-full capitalize font-medium ${styles[method] || styles.cash}`}>
-      {method}
-    </span>
-  )
+  return <RestaurantStatusPill value={method} styles={paymentMethodStyles} />
 }
 
 function StatusBadge({ status }) {
-  const styles = {
-    success:  'bg-green-100  text-green-800',
-    pending:  'bg-yellow-100 text-yellow-800',
-    failed:   'bg-red-100    text-red-800',
-    refunded: 'bg-gray-100   text-gray-800',
-  }
-  return (
-    <span className={`px-2 py-1 text-xs rounded-full capitalize font-medium ${styles[status] || styles.pending}`}>
-      {status}
-    </span>
-  )
+  return <RestaurantStatusPill value={status} styles={paymentStatusStyles} />
 }
 
 function MethodBreakdown({ summary }) {
@@ -185,7 +170,7 @@ function exportCSV(transactions) {
     Number(tx.amount || 0).toFixed(2),
     tx.paymentMethod,
     tx.status,
-    fmtDate(tx.createdAt),
+    formatRestaurantDateTime(tx.createdAt),
   ])
   const csv  = [headers, ...rows].map(r => r.join(',')).join('\n')
   const blob = new Blob([csv], { type: 'text/csv' })
@@ -256,7 +241,7 @@ function TransactionDetail({ transaction, onClose }) {
               </div>
               <div>
                 <p className="text-xs text-gray-500 uppercase">Amount</p>
-                <p className="text-sm font-semibold text-gray-900">{fmt(transaction.amount)}</p>
+                <p className="text-sm font-semibold text-gray-900">{formatRestaurantCurrency(transaction.amount)}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 uppercase">Payment Method</p>
@@ -309,11 +294,11 @@ function TransactionDetail({ transaction, onClose }) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-gray-500">Refund Amount</p>
-                  <p className="text-sm font-semibold text-gray-900">{fmt(transaction.refundAmount || transaction.amount)}</p>
+                  <p className="text-sm font-semibold text-gray-900">{formatRestaurantCurrency(transaction.refundAmount || transaction.amount)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Refund Date</p>
-                  <p className="text-sm font-semibold text-gray-900">{fmtDate(transaction.refundedAt)}</p>
+                  <p className="text-sm font-semibold text-gray-900">{formatRestaurantDateTime(transaction.refundedAt)}</p>
                 </div>
                 <div className="col-span-2">
                   <p className="text-xs text-gray-500">Refund Reason</p>
@@ -352,7 +337,7 @@ function TransactionDetail({ transaction, onClose }) {
                     <div className="pb-6">
                       <div className="flex items-baseline gap-2">
                         <p className="text-sm font-semibold text-gray-900 capitalize">{history.status}</p>
-                        <p className="text-xs text-gray-500">{fmtDate(history.timestamp)}</p>
+                        <p className="text-xs text-gray-500">{formatRestaurantDateTime(history.timestamp)}</p>
                       </div>
                       {history.note && (
                         <p className="text-sm text-gray-600 mt-1">{history.note}</p>
@@ -375,7 +360,7 @@ function TransactionDetail({ transaction, onClose }) {
             </div>
             <div className="flex justify-between">
               <span>Created At:</span>
-              <span className="font-semibold">{fmtDate(transaction.createdAt)}</span>
+              <span className="font-semibold">{formatRestaurantDateTime(transaction.createdAt)}</span>
             </div>
             {transaction.notes && (
               <div className="flex justify-between">
@@ -511,11 +496,7 @@ const Transactions = () => {
   const activeFilters = Object.values(filters).filter(Boolean).length
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
-      </div>
-    )
+    return <RestaurantPageLoader />
   }
 
   return (
@@ -542,14 +523,14 @@ const Transactions = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           <MetricCard
             label="Total Revenue"
-            value={fmt(summary.totalRevenue ?? summary.totalAmount)}
+            value={formatRestaurantCurrency(summary.totalRevenue ?? summary.totalAmount)}
             sub="All successful payments"
             icon={TbCurrencyRupee}
             color="green"
           />
           <MetricCard
             label="Today's Revenue"
-            value={fmt(summary.todayAmount)}
+            value={formatRestaurantCurrency(summary.todayAmount)}
             sub={`${summary.todayTransactions || 0} transactions today`}
             icon={FiCalendar}
             color="orange"
@@ -563,7 +544,7 @@ const Transactions = () => {
           />
           <MetricCard
             label="Avg. Ticket Size"
-            value={fmt(summary.averageAmount)}
+            value={formatRestaurantCurrency(summary.averageAmount)}
             sub="Per transaction"
             icon={FiCreditCard}
             color="purple"
@@ -684,7 +665,7 @@ const Transactions = () => {
                     {tx.customerOrder?.orderNumber || tx.order?.orderNumber || 'N/A'}
                   </td>
                   <td className="px-6 py-4 text-sm font-semibold text-gray-900">
-                    {fmt(tx.amount)}
+                    {formatRestaurantCurrency(tx.amount)}
                   </td>
                   <td className="px-6 py-4">
                     <MethodBadge method={tx.paymentMethod} />
@@ -693,7 +674,7 @@ const Transactions = () => {
                     <StatusBadge status={tx.status} />
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                    {fmtDate(tx.createdAt)}
+                    {formatRestaurantDateTime(tx.createdAt)}
                   </td>
                 </tr>
               ))}

@@ -30,13 +30,13 @@ const SystemLogs = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">System Logs</h1>
-          <p className="text-gray-500 mt-1">Track restaurant and employee authentication / validation events</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">System Logs</h1>
+          <p className="mt-1 text-gray-500 dark:text-gray-400">Track restaurant and employee authentication / validation events</p>
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
         >
           <option value="">All Events</option>
           <option value="success">Successful events</option>
@@ -46,14 +46,14 @@ const SystemLogs = () => {
 
       <Card>
         {loading ? (
-          <p className="text-sm text-gray-500">Loading logs...</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Loading logs...</p>
         ) : logs.length === 0 ? (
-          <p className="text-sm text-gray-500">No logs found.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No logs found.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
-                <tr className="text-left text-gray-500">
+            <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-800">
+              <thead className="bg-gray-50 dark:bg-gray-800">
+                <tr className="text-left text-gray-500 dark:text-gray-400">
                   <th className="px-4 py-3">Time</th>
                   <th className="px-4 py-3">Actor</th>
                   <th className="px-4 py-3">Action</th>
@@ -61,27 +61,27 @@ const SystemLogs = () => {
                   <th className="px-4 py-3">Details</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-900">
                 {logs.map((log) => (
-                  <tr key={log._id}>
-                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                  <tr key={log._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/70">
+                    <td className="whitespace-nowrap px-4 py-3 text-gray-600 dark:text-gray-300">
                       {new Date(log.timestamp || log.createdAt).toLocaleString()}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">
+                      <div className="font-medium text-gray-900 dark:text-gray-100">
                         {log.user?.name || log.user?.username || 'Unknown'}
                       </div>
-                      <div className="text-xs text-gray-500">{log.userModel}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{log.userModel}</div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
+                      <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
                         {log.action}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
                       {log.details?.restaurantId || '-'}
                     </td>
-                    <td className="px-4 py-3 text-gray-600 max-w-md break-words">
+                    <td className="max-w-md break-words px-4 py-3 text-gray-600 dark:text-gray-300">
                       {log.details?.message || log.details?.reason || '-'}
                     </td>
                   </tr>

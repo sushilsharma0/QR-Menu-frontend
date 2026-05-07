@@ -23,15 +23,15 @@ const PlanCard = ({ plan, onEdit, onDelete }) => {
         </div>
       )}
       <div className="text-center mb-4">
-        <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
-        <p className="text-sm text-gray-500">{plan.durationLabel}</p>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{plan.name}</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{plan.durationLabel}</p>
         {p ? (
-          <div className="mt-3 text-sm text-gray-600 space-y-1 text-left max-w-[220px] mx-auto">
-            <p>Subtotal (excl. VAT): <span className="font-medium text-gray-900">{sym}{Number(p.priceExclVat).toFixed(2)}</span></p>
-            <p>VAT ({Number(p.vatRatePercent).toFixed(2)}%): <span className="font-medium text-gray-900">{sym}{Number(p.vatAmount).toFixed(2)}</span></p>
-            <p className="text-2xl font-bold text-primary-600 pt-2 border-t border-gray-100">
+          <div className="mx-auto mt-3 max-w-[220px] space-y-1 text-left text-sm text-gray-600 dark:text-gray-300">
+            <p>Subtotal (excl. VAT): <span className="font-medium text-gray-900 dark:text-gray-100">{sym}{Number(p.priceExclVat).toFixed(2)}</span></p>
+            <p>VAT ({Number(p.vatRatePercent).toFixed(2)}%): <span className="font-medium text-gray-900 dark:text-gray-100">{sym}{Number(p.vatAmount).toFixed(2)}</span></p>
+            <p className="border-t border-gray-100 pt-2 text-2xl font-bold text-primary-600 dark:border-gray-800">
               {sym}{Number(p.totalInclVat).toFixed(2)}
-              <span className="block text-xs font-normal text-gray-500">Grand total (incl. VAT)</span>
+              <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">Grand total (incl. VAT)</span>
             </p>
           </div>
         ) : (
@@ -42,20 +42,20 @@ const PlanCard = ({ plan, onEdit, onDelete }) => {
         {plan.features?.slice(0, 5).map((feature, idx) => (
           <div key={idx} className="flex items-center gap-2 text-sm">
             <FiCheck className="text-green-500 flex-shrink-0" />
-            <span className="text-gray-600">{feature}</span>
+            <span className="text-gray-600 dark:text-gray-300">{feature}</span>
           </div>
         ))}
       </div>
 
-      <div className="mb-6 border rounded-lg p-3 bg-gray-50">
-        <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">Limits</p>
+      <div className="mb-6 rounded-lg border bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/60">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-300">Limits</p>
         <div className="space-y-1.5">
           {limitRows.map((row) => {
             const value = Number(row.value ?? 0)
             return (
               <div key={row.key} className="flex justify-between text-sm">
-                <span className="text-gray-600">{row.key}</span>
-                <span className="font-medium text-gray-900">{value <= 0 ? 'Unlimited' : value}</span>
+                <span className="text-gray-600 dark:text-gray-300">{row.key}</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{value <= 0 ? 'Unlimited' : value}</span>
               </div>
             )
           })}

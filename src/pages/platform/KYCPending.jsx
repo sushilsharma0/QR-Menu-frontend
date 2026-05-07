@@ -28,8 +28,8 @@ const KYCPending = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">KYC Verification</h1>
-        <p className="text-gray-500 mt-1">Review and verify restaurant KYC applications</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">KYC Verification</h1>
+        <p className="mt-1 text-gray-500 dark:text-gray-400">Review and verify restaurant KYC applications</p>
       </div>
 
       <Card title={`Pending Applications (${applications.length})`}>

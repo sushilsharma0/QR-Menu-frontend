@@ -249,9 +249,6 @@ export const getPlatformDashboardStats = () =>
 export const getRevenueAnalytics = (params) => 
   api.get('/platform/dashboard/analytics/revenue', { params })
 
-export const getOrderAnalytics = (params) => 
-  api.get('/platform/dashboard/analytics/orders', { params })
-
 export const getRestaurantGrowth = () => 
   api.get('/platform/dashboard/analytics/restaurants')
 

@@ -160,11 +160,6 @@ export const getRevenueAnalytics = async (params = {}) => {
   return response.data
 }
 
-export const getOrderAnalytics = async (params = {}) => {
-  const response = await api.get('/platform/dashboard/analytics/orders', { params })
-  return response.data
-}
-
 export const getRestaurantGrowth = async () => {
   const response = await api.get('/platform/dashboard/analytics/restaurants')
   return response.data
@@ -233,7 +228,6 @@ export default {
   toggleAdminStatus,
   getDashboardStats,
   getRevenueAnalytics,
-  getOrderAnalytics,
   getRestaurantGrowth,
   getSubscriptionAnalytics,
   getCMSContents,

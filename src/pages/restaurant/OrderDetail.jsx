@@ -8,6 +8,14 @@ import Button from '../../components/common/Button'
 import { useSocket } from '../../hooks/useSocket'
 import { useAuth } from '../../hooks/useAuth'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
+import OrderStatusBadge from '../../components/restaurant/OrderStatusBadge'
+import {
+  RestaurantPageLoader,
+  RestaurantStatusPill,
+  formatRestaurantCurrency,
+  formatRestaurantDateTime,
+  paymentStatusStyles,
+} from '../../components/restaurant/RestaurantUI'
 
 const OrderDetail = () => {
   const { id } = useParams()
@@ -21,7 +29,7 @@ const OrderDetail = () => {
   const [updating, setUpdating] = useState(false)
   const isCashierView = user?.scope === 'employee' && user?.role === 'cashier'
   const currency = user?.currency || restaurant?.settings?.currency || 'Rs.'
-  const formatMoney = (value) => `${currency} ${Number(value || 0).toFixed(2)}`
+  const formatMoney = (value) => formatRestaurantCurrency(value, currency)
   const backPath = isCashierView
     ? `${cashierBase}/dashboard`
     : user?.role === 'kitchen'
@@ -49,7 +57,7 @@ const OrderDetail = () => {
       socket.emit('join:order', id)
       socket.on('order_status', handleStatusUpdate)
       return () => {
-        socket.off('order_status', handleStatusUpdate)
+        socket.off('order_status')
       }
     }
   }, [socket, id])
@@ -91,7 +99,7 @@ const OrderDetail = () => {
     const vat = Number(order?.taxAmount || 0)
     const grandTotal = Number(order?.grandTotal || subtotal + vat)
     const paymentMethod = (order?.paymentMethod || 'cash').toUpperCase()
-    const billDate = new Date(order?.createdAt).toLocaleString()
+    const billDate = formatRestaurantDateTime(order?.createdAt)
 
     const cur = currency
     const restaurantName = order?.restaurant?.name || restaurant?.name || 'Restaurant'
@@ -203,28 +211,8 @@ const OrderDetail = () => {
     }
   }
 
-  const getStatusBadge = () => {
-    const config = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      confirmed: 'bg-blue-100 text-blue-800',
-      preparing: 'bg-purple-100 text-purple-800',
-      ready: 'bg-green-100 text-green-800',
-      served: 'bg-gray-100 text-gray-800',
-      cancelled: 'bg-red-100 text-red-800',
-    }
-    return (
-      <span className={`px-3 py-1 rounded-full text-sm font-medium ${config[order?.status] || config.pending}`}>
-        {order?.status?.toUpperCase()}
-      </span>
-    )
-  }
-
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    )
+    return <RestaurantPageLoader />
   }
 
   if (!order) return null
@@ -252,7 +240,7 @@ const OrderDetail = () => {
 
             <div className="py-4 space-y-2 border-b border-dashed text-sm">
               <div className="flex justify-between"><span className="text-gray-500">Bill No</span><span className="font-semibold">{order.orderNumber}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Date</span><span>{new Date(order.createdAt).toLocaleString()}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Date</span><span>{formatRestaurantDateTime(order.createdAt)}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">Table</span><span>{order.table?.tableNumber || 'N/A'}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">Customer</span><span>{order.customerName || 'Guest'}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">Payment</span><span className="uppercase">{order.paymentMethod || 'cash'}</span></div>
@@ -317,11 +305,11 @@ const OrderDetail = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Status</p>
-                  {getStatusBadge()}
+                  <OrderStatusBadge status={order.status} />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Date & Time</p>
-                  <p className="font-medium">{new Date(order.createdAt).toLocaleString()}</p>
+                  <p className="font-medium">{formatRestaurantDateTime(order.createdAt)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Estimated Wait Time</p>
@@ -349,7 +337,7 @@ const OrderDetail = () => {
                       <p className="text-sm text-gray-500 mt-1">Note: {item.specialInstructions}</p>
                     )}
                   </div>
-                  <p className="font-medium">{currency}{(item.price * item.quantity).toFixed(2)}</p>
+                  <p className="font-medium">{formatMoney(item.price * item.quantity)}</p>
                 </div>
               ))}
             </div>
@@ -357,15 +345,15 @@ const OrderDetail = () => {
             <div className="border-t pt-4 mt-4 space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-600">Subtotal:</span>
-                <span>{currency}{order.totalAmount}</span>
+                <span>{formatMoney(order.totalAmount)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Tax:</span>
-                <span>{currency}{order.taxAmount}</span>
+                <span>{formatMoney(order.taxAmount)}</span>
               </div>
               <div className="flex justify-between text-lg font-bold pt-2 border-t">
                 <span>Total:</span>
-                <span className="text-primary-600">{currency}{order.grandTotal}</span>
+                <span className="text-primary-600">{formatMoney(order.grandTotal)}</span>
               </div>
             </div>
           </Card>
@@ -375,7 +363,7 @@ const OrderDetail = () => {
               {order.statusHistory?.map((history, idx) => (
                 <div key={idx} className="flex gap-4">
                   <div className="w-24 text-sm text-gray-500">
-                    {new Date(history.timestamp).toLocaleTimeString()}
+                    {formatRestaurantDateTime(history.timestamp)}
                   </div>
                   <div className="flex-1">
                     <span className="font-medium capitalize">{history.status}</span>
@@ -423,11 +411,7 @@ const OrderDetail = () => {
               <div className="space-y-3">
                 <div>
                   <p className="text-sm text-gray-500">Payment Status</p>
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    order.paymentStatus === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {order.paymentStatus.toUpperCase()}
-                  </span>
+                  <RestaurantStatusPill value={order.paymentStatus} styles={paymentStatusStyles} uppercase />
                 </div>
                 {order.paymentMethod && (
                   <div>

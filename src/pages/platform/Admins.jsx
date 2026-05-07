@@ -85,8 +85,8 @@ const Admins = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Admin Management</h1>
-          <p className="text-gray-500 mt-1">Manage platform administrators</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Admin Management</h1>
+          <p className="mt-1 text-gray-500 dark:text-gray-400">Manage platform administrators</p>
         </div>
         <Button onClick={() => { setEditing(null); reset(); setModalOpen(true); }}>Add Admin</Button>
       </div>
@@ -101,7 +101,7 @@ const Admins = () => {
           <Input label="Email" type="email" {...register('email', { required: 'Email is required' })} error={errors.email?.message} />
           {!editing && <Input label="Password" type="password" {...register('password', { required: 'Password is required', minLength: 8 })} error={errors.password?.message} />}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Permissions</label>
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Permissions</label>
             <div className="space-y-2">
               <label className="flex items-center gap-2"><input type="checkbox" {...register('permissions.manageRestaurants')} /> Manage Restaurants</label>
               <label className="flex items-center gap-2"><input type="checkbox" {...register('permissions.manageSubscriptions')} /> Manage Subscriptions</label>

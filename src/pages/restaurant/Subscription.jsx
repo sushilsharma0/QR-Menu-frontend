@@ -1,35 +1,185 @@
-import React, { useState, useEffect } from 'react'
-import { FiCheck, FiClock, FiCalendar, FiUpload, FiAlertTriangle } from 'react-icons/fi'
+import React, { useEffect, useMemo, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  FiAlertTriangle,
+  FiCalendar,
+  FiCheck,
+  FiClock,
+  FiCreditCard,
+  FiFileText,
+  FiRefreshCw,
+  FiShield,
+  FiStar,
+  FiUpload,
+  FiZap,
+} from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
-import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
-import Tabs from '../../components/common/Tabs'
-import { useAuth } from '../../hooks/useAuth'
 import SubscriptionBillingPanel from './SubscriptionBillingPanel'
-import { DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
+import { useAuth } from '../../hooks/useAuth'
+import {
+  RestaurantPageLoader,
+  RestaurantStatusPill,
+  formatRestaurantCurrency,
+  formatRestaurantDateTime,
+} from '../../components/restaurant/RestaurantUI'
+
+const requestStatusStyles = {
+  active: 'bg-green-100 text-green-800',
+  trial: 'bg-blue-100 text-blue-800',
+  awaiting_proof: 'bg-yellow-100 text-yellow-800',
+  pending_review: 'bg-amber-100 text-amber-800',
+  inactive: 'bg-red-100 text-red-800',
+}
+
+const tabs = [
+  { key: 'plans', label: 'Plans', icon: FiCreditCard },
+  { key: 'billing', label: 'Invoices & history', icon: FiFileText },
+]
+
+function planTotal(plan) {
+  return plan?.pricing?.totalInclVat ?? plan?.price ?? 0
+}
+
+function planSymbol(plan) {
+  return plan?.pricing?.currencySymbol || 'Rs.'
+}
+
+function statusLabel(currentPlan) {
+  if (currentPlan?.hasPaidPlanActive) return 'active'
+  if (currentPlan?.isTrialActive) return 'trial'
+  if (currentPlan?.planRequestStatus) return currentPlan.planRequestStatus
+  return 'inactive'
+}
+
+function MetricTile({ label, value, sub, icon: Icon, accent }) {
+  return (
+    <motion.div whileHover={{ y: -3 }} className="rounded-2xl border border-surface-200 bg-white/90 p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
+          <p className="mt-2 text-2xl font-bold text-gray-950">{value}</p>
+          {sub && <p className="mt-1 text-xs text-gray-500">{sub}</p>}
+        </div>
+        <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${accent} text-white shadow-md`}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+function Notice({ tone = 'amber', icon: Icon = FiAlertTriangle, title, children }) {
+  const styles = {
+    amber: 'border-amber-200 bg-amber-50 text-amber-900',
+    red: 'border-red-200 bg-red-50 text-red-900',
+    blue: 'border-blue-200 bg-blue-50 text-blue-900',
+    green: 'border-green-200 bg-green-50 text-green-900',
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`flex gap-3 rounded-2xl border px-4 py-3 text-sm ${styles[tone]}`}
+    >
+      <Icon className="mt-0.5 h-5 w-5 flex-shrink-0" />
+      <div>
+        <p className="font-bold">{title}</p>
+        <div className="mt-1 leading-6">{children}</div>
+      </div>
+    </motion.div>
+  )
+}
+
+function PlanCard({ plan, currentPlan, disabled, requesting, onSelect }) {
+  const isCurrent = currentPlan?.currentPlan?._id === plan._id
+  const isRequested =
+    currentPlan?.requestedPlan?._id === plan._id &&
+    ['awaiting_proof', 'pending_review'].includes(currentPlan?.planRequestStatus)
+
+  return (
+    <motion.article
+      layout
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -6 }}
+      className={`relative overflow-hidden rounded-3xl border bg-white p-5 shadow-sm transition-shadow hover:shadow-xl ${
+        plan.isPopular ? 'border-primary-500 ring-4 ring-primary-50' : 'border-surface-200'
+      }`}
+    >
+      {plan.isPopular && (
+        <div className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-primary-600 px-3 py-1 text-xs font-bold text-white">
+          <FiStar className="h-3.5 w-3.5" /> Popular
+        </div>
+      )}
+
+      <div className="pr-20">
+        <h3 className="text-xl font-black text-gray-950">{plan.name}</h3>
+        <p className="mt-1 text-sm text-gray-500">{plan.durationLabel || 'Subscription plan'}</p>
+      </div>
+
+      <div className="mt-5 rounded-2xl bg-surface-50 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Grand total</p>
+        <p className="mt-1 text-3xl font-black text-primary-700">
+          {formatRestaurantCurrency(planTotal(plan), planSymbol(plan))}
+        </p>
+        {plan.pricing && (
+          <div className="mt-3 space-y-1 text-sm text-gray-600">
+            <p>Subtotal: {formatRestaurantCurrency(plan.pricing.priceExclVat, plan.pricing.currencySymbol)}</p>
+            <p>VAT: {formatRestaurantCurrency(plan.pricing.vatAmount, plan.pricing.currencySymbol)}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-5 space-y-2">
+        {(plan.features || []).slice(0, 6).map((feature, idx) => (
+          <div key={idx} className="flex items-center gap-2 text-sm">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-green-700">
+              <FiCheck className="h-3.5 w-3.5" />
+            </span>
+            <span className="text-gray-600">{feature}</span>
+          </div>
+        ))}
+      </div>
+
+      <Button
+        className="mt-6 w-full"
+        variant={isCurrent ? 'secondary' : 'primary'}
+        disabled={disabled || isCurrent || isRequested || requesting}
+        onClick={() => onSelect(plan._id)}
+      >
+        {isCurrent ? 'Current Plan' : isRequested ? 'Already Requested' : 'Select Plan'}
+      </Button>
+    </motion.article>
+  )
+}
 
 const Subscription = () => {
   const { mergeUser, user: authUser } = useAuth()
   const [plans, setPlans] = useState([])
   const [currentPlan, setCurrentPlan] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [requesting, setRequesting] = useState(false)
   const [proofFile, setProofFile] = useState(null)
   const [uploadingProof, setUploadingProof] = useState(false)
+  const [activeTab, setActiveTab] = useState('plans')
 
   useEffect(() => {
     fetchData()
   }, [authUser?.id])
 
-  const fetchData = async () => {
+  const fetchData = async (quiet = false) => {
     try {
-      setLoading(true)
+      if (quiet) setRefreshing(true)
+      else setLoading(true)
       const [plansRes, statusRes] = await Promise.all([
         api.get('/platform/subscriptions/plans'),
         api.get('/restaurant/package/status'),
       ])
-      setPlans(plansRes.data.data)
+      setPlans(plansRes.data.data || [])
       const status = statusRes.data.data
       setCurrentPlan(status)
       if (authUser?.role === 'restaurant') {
@@ -39,24 +189,24 @@ const Subscription = () => {
           needsPlanUpgrade: !status.canUseFeatures,
         })
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to fetch subscription data')
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }
 
   const requestPlan = async (planId) => {
     if (!authUser?.isKYCVerified) {
-      toast.error('You must complete KYC verification before selecting a subscription plan.')
+      toast.error('Complete KYC verification before selecting a subscription plan.')
       return
     }
-
     try {
       setRequesting(true)
       await api.post('/restaurant/package/request', { packageId: planId })
-      toast.success('Plan selected. Upload your payment proof below for platform verification.')
-      fetchData()
+      toast.success('Plan selected. Upload payment proof for verification.')
+      fetchData(true)
     } catch (error) {
       toast.error(error.response?.data?.message || 'Request failed')
     } finally {
@@ -74,9 +224,9 @@ const Subscription = () => {
       const fd = new FormData()
       fd.append('paymentProof', proofFile)
       await api.post('/restaurant/package/payment-proof', fd)
-      toast.success('Payment proof submitted. Your request is pending platform approval.')
+      toast.success('Payment proof submitted for platform verification.')
       setProofFile(null)
-      fetchData()
+      fetchData(true)
     } catch (error) {
       toast.error(error.response?.data?.message || 'Upload failed')
     } finally {
@@ -84,260 +234,236 @@ const Subscription = () => {
     }
   }
 
-  const getDaysLeft = () => {
-    if (!currentPlan?.planEndDate) return 0
-    const days = Math.ceil((new Date(currentPlan.planEndDate) - new Date()) / (1000 * 60 * 60 * 24))
-    return days > 0 ? days : 0
+  const toggleAutoRenew = async () => {
+    try {
+      await api.patch('/restaurant/package/auto-renew', { autoRenew: !currentPlan?.autoRenew })
+      toast.success(`Auto-renew ${!currentPlan?.autoRenew ? 'enabled' : 'disabled'}`)
+      fetchData(true)
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to update auto-renew')
+    }
   }
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    )
-  }
-
+  const subscriptionState = statusLabel(currentPlan)
   const awaitingProof = currentPlan?.planRequestStatus === 'awaiting_proof'
   const pendingReview = currentPlan?.planRequestStatus === 'pending_review'
   const isKYCVerified = authUser?.isKYCVerified === true
+  const daysLeft = currentPlan?.daysLeft ?? 0
+  const currentTotal = currentPlan?.currentPlan ? planTotal(currentPlan.currentPlan) : 0
 
-  const plansTab = (
-    <div className="space-y-6">
-      {!isKYCVerified && (
-        <Card title="KYC verification required" className="bg-green-200">
-          <p className="text-gray-700">
-            Subscription plan selection is locked until your KYC is approved by the platform. Complete KYC verification first, then you can choose a plan.
-          </p>
-        </Card>
-      )}
-
-      {currentPlan?.planRequestRejectionReason && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 flex gap-2 items-start">
-          <FiAlertTriangle className="h-5 w-5 flex-shrink-0" />
-          <div>
-            <p className="font-medium">Previous request was rejected</p>
-            <p className="mt-1">{currentPlan.planRequestRejectionReason}</p>
-            <p className="mt-2 text-red-800">You can select a plan again and submit new payment proof.</p>
-          </div>
-        </div>
-      )}
-
-      {currentPlan?.isTrialActive && !currentPlan?.hasPaidPlanActive && (
-        <Card title="Free trial">
-          <p className="text-gray-700">
-            <strong>{currentPlan.trialDaysLeft}</strong> day(s) remaining on your trial. After it ends, choose a paid plan
-            and submit payment proof — platform approval is required to restore full access.
-          </p>
-        </Card>
-      )}
-
-      {!currentPlan?.canUseFeatures && (
-        <Card title="Access paused">
-          <p className="text-gray-700">
-            Your trial has ended or your subscription is inactive. Select a plan below, upload payment proof, and wait for
-            the platform team to approve your subscription.
-          </p>
-        </Card>
-      )}
-
-      {(awaitingProof || pendingReview) && currentPlan?.requestedPlan && (
-        <Card title={awaitingProof ? 'Upload payment proof' : 'Request status'}>
-          {pendingReview ? (
-            <p className="text-amber-800 text-sm flex items-center gap-2">
-              <FiClock />
-              <span>
-                Pending platform verification for <strong>{currentPlan.requestedPlan.name}</strong>
-                {currentPlan.requestedPlan.pricing && (
-                  <>
-                    {' '}
-                    ({currentPlan.requestedPlan.pricing.currencySymbol}
-                    {Number(currentPlan.requestedPlan.pricing.totalInclVat).toFixed(2)} incl. VAT:{' '}
-                    {currentPlan.requestedPlan.pricing.currencySymbol}
-                    {Number(currentPlan.requestedPlan.pricing.priceExclVat).toFixed(2)} +{' '}
-                    {currentPlan.requestedPlan.pricing.currencySymbol}
-                    {Number(currentPlan.requestedPlan.pricing.vatAmount).toFixed(2)} VAT)
-                  </>
-                )}
-                . You’ll get full access once approved.
-              </span>
-            </p>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-gray-700">
-                You chose <strong>{currentPlan.requestedPlan.name}</strong>
-                {currentPlan.requestedPlan.pricing && (
-                  <span className="block mt-2 text-sm">
-                    Subtotal (excl. VAT): {currentPlan.requestedPlan.pricing.currencySymbol}
-                    {Number(currentPlan.requestedPlan.pricing.priceExclVat).toFixed(2)} · VAT:{' '}
-                    {currentPlan.requestedPlan.pricing.currencySymbol}
-                    {Number(currentPlan.requestedPlan.pricing.vatAmount).toFixed(2)} ·{' '}
-                    <strong>
-                      Pay {currentPlan.requestedPlan.pricing.currencySymbol}
-                      {Number(currentPlan.requestedPlan.pricing.totalInclVat).toFixed(2)} incl. VAT
-                    </strong>
-                  </span>
-                )}
-                . Upload a screenshot or PDF of your payment / bank transfer statement so we can verify and activate your plan.
-              </p>
-              <div className="flex flex-wrap items-end gap-3">
-                <label className="block">
-                  <span className="text-sm text-gray-600 block mb-1">Payment statement</span>
-                  <input
-                    type="file"
-                    accept="image/*,.pdf"
-                    className="text-sm"
-                    onChange={(e) => setProofFile(e.target.files?.[0] || null)}
-                  />
-                </label>
-                <Button onClick={submitPaymentProof} loading={uploadingProof} disabled={!proofFile}>
-                  <FiUpload className="inline mr-2" />
-                  Submit for verification
-                </Button>
-              </div>
-            </div>
-          )}
-          {currentPlan?.planPaymentProofUrl && (
-            <p className="mt-3 text-xs text-gray-500">
-              Proof on file:{' '}
-              <a href={currentPlan.planPaymentProofUrl} target="_blank" rel="noopener noreferrer" className="text-primary-600 underline">
-                View uploaded file
-              </a>
-            </p>
-          )}
-        </Card>
-      )}
-
-      {currentPlan?.currentPlan && (
-        <Card title="Current Plan">
-          <div className="flex justify-between items-center flex-wrap gap-4">
-            <div>
-              <h3 className="text-xl font-bold text-primary-600">{currentPlan.currentPlan.name}</h3>
-              {currentPlan.currentPlan.pricing && (
-                <div className="mt-2 text-sm text-gray-600 space-y-0.5">
-                  <p>
-                    Subtotal (excl. VAT):{' '}
-                    <span className="font-medium text-gray-900">
-                      {currentPlan.currentPlan.pricing.currencySymbol}
-                      {Number(currentPlan.currentPlan.pricing.priceExclVat).toFixed(2)}
-                    </span>
-                  </p>
-                  <p>
-                    VAT ({Number(currentPlan.currentPlan.pricing.vatRatePercent).toFixed(2)}%):{' '}
-                    <span className="font-medium text-gray-900">
-                      {currentPlan.currentPlan.pricing.currencySymbol}
-                      {Number(currentPlan.currentPlan.pricing.vatAmount).toFixed(2)}
-                    </span>
-                  </p>
-                  <p className="text-gray-900 font-semibold">
-                    Billing total (incl. VAT):{' '}
-                    {currentPlan.currentPlan.pricing.currencySymbol}
-                    {Number(currentPlan.currentPlan.pricing.totalInclVat).toFixed(2)}
-                  </p>
-                </div>
-              )}
-              <div className="flex items-center gap-4 mt-2">
-                <span className="flex items-center gap-1 text-sm text-gray-600">
-                  <FiCalendar /> Expires: {new Date(currentPlan.planEndDate).toLocaleDateString()}
-                </span>
-                <span className="flex items-center gap-1 text-sm text-gray-600">
-                  <FiClock /> {getDaysLeft()} days left
-                </span>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-500">Auto-renew</p>
-              <span className={`px-2 py-1 text-xs rounded-full ${currentPlan.autoRenew ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                {currentPlan.autoRenew ? 'Enabled' : 'Disabled'}
-              </span>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {plans.map((plan) => (
-          <Card key={plan._id} className={`${plan.isPopular ? 'border-2 border-primary-500 relative' : ''}`}>
-            {plan.isPopular && (
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary-600 text-white px-3 py-1 rounded-full text-xs">
-                Most Popular
-              </div>
-            )}
-            <div className="text-center mb-4">
-              <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
-              <p className="text-sm text-gray-500">{plan.durationLabel}</p>
-              {plan.pricing ? (
-                <div className="mt-3 text-sm text-gray-600 space-y-1 text-left">
-                  <p>
-                    Subtotal (excl. VAT):{' '}
-                    <span className="font-medium text-gray-900">
-                      {plan.pricing.currencySymbol}{Number(plan.pricing.priceExclVat).toFixed(2)}
-                    </span>
-                  </p>
-                  <p>
-                    VAT ({Number(plan.pricing.vatRatePercent).toFixed(2)}%):{' '}
-                    <span className="font-medium text-gray-900">
-                      {plan.pricing.currencySymbol}{Number(plan.pricing.vatAmount).toFixed(2)}
-                    </span>
-                  </p>
-                  <p className="text-2xl font-bold text-primary-600 pt-2 border-t border-gray-100">
-                    {plan.pricing.currencySymbol}{Number(plan.pricing.totalInclVat).toFixed(2)}
-                    <span className="block text-xs font-normal text-gray-500">Grand total (incl. VAT)</span>
-                  </p>
-                </div>
-              ) : (
-                <p className="text-3xl font-bold text-primary-600 mt-2">
-                  {DEFAULT_CURRENCY_SYMBOL}{Number(plan.price).toFixed(2)}
-                </p>
-              )}
-            </div>
-            <div className="space-y-2 mb-6">
-              {plan.features?.map((feature, idx) => (
-                <div key={idx} className="flex items-center gap-2 text-sm">
-                  <FiCheck className="text-green-500 flex-shrink-0" />
-                  <span className="text-gray-600">{feature}</span>
-                </div>
-              ))}
-            </div>
-            <Button
-              className="w-full"
-              variant={currentPlan?.currentPlan?._id === plan._id ? 'secondary' : 'primary'}
-              disabled={
-                !isKYCVerified ||
-                currentPlan?.currentPlan?._id === plan._id ||
-                (currentPlan?.requestedPlan?._id === plan._id && (awaitingProof || pendingReview)) ||
-                requesting
-              }
-              onClick={() => requestPlan(plan._id)}
-            >
-              {currentPlan?.currentPlan?._id === plan._id
-                ? 'Current Plan'
-                : currentPlan?.requestedPlan?._id === plan._id && (awaitingProof || pendingReview)
-                  ? 'Already requested'
-                  : 'Select plan'}
-            </Button>
-          </Card>
-        ))}
-      </div>
-    </div>
+  const bestPlan = useMemo(
+    () => plans.find((plan) => plan.isPopular) || plans[0],
+    [plans],
   )
+
+  if (loading) return <RestaurantPageLoader />
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Subscription & billing</h1>
-        <p className="text-gray-500 mt-1">
-          Choose a plan and payment proof on the Plans tab; view official invoices and package history under Invoices &amp; history.
-        </p>
+      <motion.section
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease: 'easeOut' }}
+        className="relative overflow-hidden rounded-3xl border border-surface-200 bg-white shadow-sm"
+      >
+        <div className="absolute inset-x-0 top-0 h-44 bg-gradient-to-r from-primary-50 via-surface-50 to-emerald-50" />
+        <div className="relative p-5 md:p-7">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-700 shadow-sm">
+                <FiCreditCard className="h-4 w-4" />
+                Subscription Center
+              </div>
+              <h1 className="mt-3 text-3xl font-bold tracking-tight text-gray-950">Subscription & billing</h1>
+              <p className="mt-2 max-w-3xl text-sm text-gray-500">
+                Choose plans, upload payment proof, monitor verification, and review official billing history.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <RestaurantStatusPill value={subscriptionState} styles={requestStatusStyles} />
+              <Button type="button" variant="secondary" onClick={() => fetchData(true)} disabled={refreshing}>
+                <FiRefreshCw className={`mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricTile
+              label="Current plan"
+              value={currentPlan?.currentPlan?.name || (currentPlan?.isTrialActive ? 'Free trial' : 'No plan')}
+              sub={currentPlan?.planEndDate ? `Ends ${formatRestaurantDateTime(currentPlan.planEndDate)}` : 'Select a plan to activate'}
+              icon={FiShield}
+              accent="from-primary-600 to-secondary-500"
+            />
+            <MetricTile
+              label="Days left"
+              value={currentPlan?.isTrialActive && !currentPlan?.hasPaidPlanActive ? currentPlan?.trialDaysLeft || 0 : daysLeft}
+              sub={currentPlan?.isTrialActive && !currentPlan?.hasPaidPlanActive ? 'Trial remaining' : 'Subscription remaining'}
+              icon={FiClock}
+              accent="from-emerald-500 to-teal-500"
+            />
+            <MetricTile
+              label="Billing total"
+              value={currentPlan?.currentPlan ? formatRestaurantCurrency(currentTotal, planSymbol(currentPlan.currentPlan)) : '-'}
+              sub="Including VAT"
+              icon={FiCreditCard}
+              accent="from-indigo-500 to-violet-500"
+            />
+            <MetricTile
+              label="Recommended"
+              value={bestPlan?.name || '-'}
+              sub={bestPlan ? formatRestaurantCurrency(planTotal(bestPlan), planSymbol(bestPlan)) : 'No active plans'}
+              icon={FiStar}
+              accent="from-amber-500 to-orange-500"
+            />
+          </div>
+        </div>
+      </motion.section>
+
+      <div className="flex flex-wrap gap-2 rounded-2xl border border-surface-200 bg-white p-2 shadow-sm">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setActiveTab(tab.key)}
+            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+              activeTab === tab.key ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-600 hover:bg-surface-50'
+            }`}
+          >
+            <tab.icon className="h-4 w-4" />
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      <Tabs
-        defaultTab="plans"
-        tabs={[
-          { key: 'plans', label: 'Plans', content: plansTab },
-          { key: 'billing', label: 'Invoices & history', content: <SubscriptionBillingPanel /> },
-        ]}
-      />
+      <AnimatePresence mode="wait">
+        {activeTab === 'billing' ? (
+          <motion.div key="billing" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
+            <SubscriptionBillingPanel />
+          </motion.div>
+        ) : (
+          <motion.div key="plans" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="space-y-6">
+            {!isKYCVerified && (
+              <Notice tone="blue" icon={FiShield} title="KYC verification required">
+                Subscription selection is locked until your KYC is approved. Complete KYC first, then choose a plan.
+              </Notice>
+            )}
+
+            {currentPlan?.planRequestRejectionReason && (
+              <Notice tone="red" title="Previous request was rejected">
+                {currentPlan.planRequestRejectionReason}
+                <br />
+                You can select a plan again and submit new payment proof.
+              </Notice>
+            )}
+
+            {currentPlan?.isTrialActive && !currentPlan?.hasPaidPlanActive && (
+              <Notice tone="green" icon={FiZap} title="Free trial active">
+                <strong>{currentPlan.trialDaysLeft}</strong> day(s) remaining. Choose a paid plan before trial ends to keep full access.
+              </Notice>
+            )}
+
+            {!currentPlan?.canUseFeatures && (
+              <Notice tone="red" title="Access paused">
+                Select a plan, upload payment proof, and wait for platform approval to restore full access.
+              </Notice>
+            )}
+
+            {(awaitingProof || pendingReview) && currentPlan?.requestedPlan && (
+              <motion.section
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 shadow-sm"
+              >
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <div className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+                      <FiClock /> {pendingReview ? 'Pending Review' : 'Payment Proof Needed'}
+                    </div>
+                    <h2 className="mt-3 text-xl font-black text-gray-950">{currentPlan.requestedPlan.name}</h2>
+                    {currentPlan.requestedPlan.pricing && (
+                      <p className="mt-2 text-sm text-gray-600">
+                        Pay{' '}
+                        <strong>
+                          {formatRestaurantCurrency(
+                            currentPlan.requestedPlan.pricing.totalInclVat,
+                            currentPlan.requestedPlan.pricing.currencySymbol,
+                          )}
+                        </strong>{' '}
+                        including VAT.
+                      </p>
+                    )}
+                  </div>
+                  {!pendingReview && (
+                    <div className="rounded-2xl border border-amber-200 bg-white p-4">
+                      <label className="block text-sm font-semibold text-gray-700">Payment proof</label>
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        className="mt-2 text-sm"
+                        onChange={(e) => setProofFile(e.target.files?.[0] || null)}
+                      />
+                      <Button className="mt-3 w-full" onClick={submitPaymentProof} loading={uploadingProof} disabled={!proofFile}>
+                        <FiUpload className="mr-2" />
+                        Submit for verification
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                {currentPlan?.planPaymentProofUrl && (
+                  <p className="mt-4 text-xs text-gray-500">
+                    Proof on file:{' '}
+                    <a href={currentPlan.planPaymentProofUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-primary-600 underline">
+                      View uploaded file
+                    </a>
+                  </p>
+                )}
+              </motion.section>
+            )}
+
+            {currentPlan?.currentPlan && (
+              <motion.section
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-3xl border border-surface-200 bg-white p-5 shadow-sm"
+              >
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Current plan</p>
+                    <h2 className="mt-1 text-2xl font-black text-primary-700">{currentPlan.currentPlan.name}</h2>
+                    <p className="mt-2 text-sm text-gray-500">
+                      Expires {currentPlan.planEndDate ? formatRestaurantDateTime(currentPlan.planEndDate) : 'N/A'} - {daysLeft} days left
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <RestaurantStatusPill value={currentPlan.autoRenew ? 'auto-renew on' : 'auto-renew off'} styles={{
+                      'auto-renew on': 'bg-green-100 text-green-800',
+                      'auto-renew off': 'bg-gray-100 text-gray-700',
+                    }} />
+                    <Button type="button" variant="secondary" onClick={toggleAutoRenew}>
+                      {currentPlan.autoRenew ? 'Disable auto-renew' : 'Enable auto-renew'}
+                    </Button>
+                  </div>
+                </div>
+              </motion.section>
+            )}
+
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              {plans.map((plan) => (
+                <PlanCard
+                  key={plan._id}
+                  plan={plan}
+                  currentPlan={currentPlan}
+                  disabled={!isKYCVerified}
+                  requesting={requesting}
+                  onSelect={requestPlan}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
