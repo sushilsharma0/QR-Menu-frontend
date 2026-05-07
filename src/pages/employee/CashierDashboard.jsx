@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FiDollarSign, FiSearch } from 'react-icons/fi'
+import { FiSearch } from 'react-icons/fi'
+import { TbCurrencyRupee } from 'react-icons/tb'
+import { DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
 import Card from '../../components/common/Card'
@@ -113,7 +115,9 @@ const CashierDashboard = () => {
                     <h3 className="font-bold text-gray-900">#{order.orderNumber}</h3>
                     <p className="text-sm text-gray-500">Table: {order.table?.tableNumber}</p>
                   </div>
-                  <span className="text-lg font-bold text-green-600">${order.grandTotal ?? order.totalAmount}</span>
+                  <span className="text-lg font-bold text-green-600">
+                    {DEFAULT_CURRENCY_SYMBOL}{Number(order.grandTotal ?? order.totalAmount).toFixed(2)}
+                  </span>
                 </div>
                 <div className="flex gap-2 mt-3">
                   <Button
@@ -124,7 +128,7 @@ const CashierDashboard = () => {
                       setPaymentModal(true)
                     }}
                   >
-                    <FiDollarSign className="mr-1" /> Process Payment
+                    <TbCurrencyRupee className="mr-1" /> Process Payment
                   </Button>
                   <Button size="sm" variant="secondary" onClick={() => navigate(`${cashierBase}/orders/${order._id}`)}>
                     View Details
@@ -171,7 +175,9 @@ const CashierDashboard = () => {
             <>
               <div className="mb-4">
                 <p className="text-gray-600">Order #{selectedOrder.orderNumber}</p>
-                <p className="text-2xl font-bold text-primary-600">${selectedOrder.grandTotal ?? selectedOrder.totalAmount}</p>
+                <p className="text-2xl font-bold text-primary-600">
+                  {DEFAULT_CURRENCY_SYMBOL}{Number(selectedOrder.grandTotal ?? selectedOrder.totalAmount).toFixed(2)}
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Button onClick={() => processPayment(selectedOrder._id, 'cash', selectedOrder.grandTotal ?? selectedOrder.totalAmount)}>Cash</Button>

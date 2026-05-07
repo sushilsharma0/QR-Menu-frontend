@@ -19,6 +19,9 @@ import PlatformCreatePlan from "./pages/platform/CreatePlan";
 import PlatformCMS from "./pages/platform/CMS";
 import PlatformAdmins from "./pages/platform/Admins";
 import PlatformSettings from "./pages/platform/Settings";
+import PlatformInvoices from "./pages/platform/Invoices";
+import PlatformInvoiceDetail from "./pages/platform/InvoiceDetail";
+import PlatformSubscriptionActivity from "./pages/platform/SubscriptionActivity";
 import PlatformSystemLogs from "./pages/platform/SystemLogs";
 import PlatformTickets from "./pages/platform/Tickets";
 import PlatformTicketDetail from "./pages/platform/TicketDetail";
@@ -30,6 +33,7 @@ import RestaurantMenuItemForm from "./pages/restaurant/MenuItemForm";
 import RestaurantCategoryForm from "./pages/restaurant/CategoryForm";
 import RestaurantOrders from "./pages/restaurant/Orders";
 import RestaurantOrderDetail from "./pages/restaurant/OrderDetail";
+import RestaurantOrderActivityReport from "./pages/restaurant/OrderActivityReport";
 import RestaurantCreateOrder from "./pages/restaurant/CreateOrder";
 import RestaurantTables from "./pages/restaurant/Tables";
 import RestaurantTableForm from "./pages/restaurant/TableForm";
@@ -37,6 +41,7 @@ import RestaurantEmployees from "./pages/restaurant/Employees";
 import RestaurantEmployeeForm from "./pages/restaurant/EmployeeForm";
 import RestaurantKYC from "./pages/restaurant/KYC";
 import RestaurantSubscription from "./pages/restaurant/Subscription";
+import RestaurantSubscriptionInvoiceDetail from "./pages/restaurant/SubscriptionInvoiceDetail";
 import RestaurantTransactions from "./pages/restaurant/Transactions";
 import RestaurantSettings from "./pages/restaurant/Settings";
 import RestaurantProfile from "./pages/restaurant/Profile";
@@ -122,6 +127,9 @@ function App() {
         <Route path="/platform/tickets/:id" element={<PlatformTicketDetail />} />
         <Route path="/platform/logs" element={<PlatformSystemLogs />} />
         <Route path="/platform/settings" element={<PlatformSettings />} />
+        <Route path="/platform/invoices" element={<PlatformInvoices />} />
+        <Route path="/platform/invoices/:id" element={<PlatformInvoiceDetail />} />
+        <Route path="/platform/subscription-activity" element={<PlatformSubscriptionActivity />} />
       </Route>
 
       {/* Restaurant Routes: /restaurant/:slug/:restaurantId/... */}
@@ -135,6 +143,7 @@ function App() {
         <Route path="menu/item/:id/edit" element={<RestaurantMenuItemForm />} />
         <Route path="orders" element={<RestaurantOrders />} />
         <Route path="orders/new" element={<RestaurantCreateOrder />} />
+        <Route path="orders/activity" element={<RestaurantOrderActivityReport />} />
         <Route path="orders/:id" element={<RestaurantOrderDetail />} />
         <Route path="tables" element={<RestaurantTables />} />
         <Route path="tables/new" element={<RestaurantTableForm />} />
@@ -144,6 +153,7 @@ function App() {
         <Route path="employees/:id/edit" element={<RestaurantEmployeeForm />} />
         <Route path="kyc" element={<RestaurantKYC />} />
         <Route path="subscription" element={<RestaurantSubscription />} />
+        <Route path="subscription/invoice/:invoiceId" element={<RestaurantSubscriptionInvoiceDetail />} />
         <Route path="transactions" element={<RestaurantTransactions />} />
         <Route path="promotions" element={<RestaurantPromotions />} />
         <Route path="tickets" element={<RestaurantTickets />} />

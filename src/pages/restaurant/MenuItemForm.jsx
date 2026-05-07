@@ -7,6 +7,7 @@ import api from '../../services/api'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import Card from '../../components/common/Card'
+import Textarea from '../../components/common/Textarea'
 
 const MenuItemForm = () => {
   const { id } = useParams()
@@ -146,10 +147,12 @@ const MenuItemForm = () => {
             {errors.category && <p className="mt-1 text-sm text-red-600">{errors.category.message}</p>}
           </div>
 
-          <Input
+          <Textarea
             label="Description"
-            placeholder="Enter description"
+            rows={4}
+            placeholder="Write something..."
             {...register('description')}
+            error={errors.description?.message}
           />
 
           <div className="grid grid-cols-2 gap-4">

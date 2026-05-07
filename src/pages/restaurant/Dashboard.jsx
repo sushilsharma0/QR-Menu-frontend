@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   FiShoppingBag,
-  FiDollarSign,
   FiUsers,
   FiGrid,
   FiTrendingUp,
@@ -10,6 +9,7 @@ import {
   FiCheckCircle,
   FiAlertCircle,
 } from "react-icons/fi";
+import { TbCurrencyRupee } from "react-icons/tb";
 import {
   LineChart,
   Line,
@@ -159,7 +159,7 @@ const Dashboard = () => {
     {
       title: "Today's Revenue",
       value: fmtRs(stats?.overview?.todayRevenue),
-      icon: FiDollarSign,
+      icon: TbCurrencyRupee,
       trend: todayTrend,
       trendLabel: "vs yesterday (paid)",
     },
@@ -173,7 +173,7 @@ const Dashboard = () => {
     {
       title: "Total Revenue",
       value: fmtRs(stats?.overview?.totalRevenue),
-      icon: FiDollarSign,
+      icon: TbCurrencyRupee,
       trend: null,
       trendLabel: null,
     },
@@ -406,7 +406,7 @@ const Dashboard = () => {
                   </p>
                 </div>
                 <span className="font-bold text-primary-600">
-                  ${item.totalRevenue?.toFixed(2)}
+                  {fmtRs(item.totalRevenue)}
                 </span>
               </div>
             ))}
@@ -435,7 +435,7 @@ const Dashboard = () => {
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-primary-600">
-                    ${order.grandTotal}
+                    {fmtRs(order.grandTotal)}
                   </p>
                   <span
                     className={`text-xs px-2 py-0.5 rounded-full ${

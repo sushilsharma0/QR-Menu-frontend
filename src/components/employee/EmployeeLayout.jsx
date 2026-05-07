@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { Outlet, Link, NavLink, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import { FiLogOut, FiUser, FiClock, FiDollarSign, FiGrid, FiPlusCircle } from 'react-icons/fi'
+import { FiLogOut, FiUser, FiClock, FiGrid, FiPlusCircle } from 'react-icons/fi'
+import { TbCurrencyRupee } from 'react-icons/tb'
 import NotificationMenu from '../common/NotificationMenu'
 import api from '../../services/api'
 import { useSocket } from '../../hooks/useSocket'
@@ -49,7 +50,7 @@ const EmployeeLayout = () => {
 
   const navItems = [
     { path: kitchenOrdersPath, label: 'Order History', icon: FiClock, role: 'kitchen', showPending: true },
-    { path: cashierDashboardPath, label: 'Orders', icon: FiDollarSign, role: 'cashier' },
+    { path: cashierDashboardPath, label: 'Orders', icon: TbCurrencyRupee, role: 'cashier' },
     { path: waiterDashboardPath, label: 'Dashboard', icon: FiGrid, role: 'waiter' },
     { path: waiterOrderPath, label: 'Take Order', icon: FiPlusCircle, role: 'waiter' },
   ]

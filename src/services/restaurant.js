@@ -231,6 +231,21 @@ export const setAutoRenew = async (autoRenew) => {
   return response.data
 }
 
+export const getSubscriptionInvoices = async (params = {}) => {
+  const response = await api.get('/restaurant/billing/invoices', { params })
+  return response.data
+}
+
+export const getSubscriptionInvoice = async (id) => {
+  const response = await api.get(`/restaurant/billing/invoices/${id}`)
+  return response.data
+}
+
+export const getOrderActivityReport = async (params = {}) => {
+  const response = await api.get('/restaurant/customer-orders/activity-report', { params })
+  return response.data
+}
+
 // Cashier
 export const processPayment = async (data) => {
   const response = await api.post('/restaurant/cashier/pay', data)

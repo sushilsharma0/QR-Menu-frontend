@@ -93,6 +93,7 @@ const OrderDetail = () => {
     const paymentMethod = (order?.paymentMethod || 'cash').toUpperCase()
     const billDate = new Date(order?.createdAt).toLocaleString()
 
+    const cur = currency
     const restaurantName = order?.restaurant?.name || restaurant?.name || 'Restaurant'
     const restaurantLogo = order?.restaurant?.logo || restaurant?.logo
     const restaurantAddress = restaurant?.address || 'Kathmandu, Nepal'
@@ -134,13 +135,13 @@ const OrderDetail = () => {
           ${order?.items?.map(item => `
             <div class="item">
               <div>${item.name}</div>
-              <div class="row"><span>${item.quantity} x ${Number(item.price || 0).toFixed(2)}</span><span>${Number(item.price * item.quantity).toFixed(2)}</span></div>
+              <div class="row"><span>${item.quantity} x ${cur} ${Number(item.price || 0).toFixed(2)}</span><span>${cur} ${Number(item.price * item.quantity).toFixed(2)}</span></div>
             </div>
           `).join('')}
           <div class="divider"></div>
-          <div class="row"><span>Sub Total</span><span>${subtotal.toFixed(2)}</span></div>
-          <div class="row"><span>VAT</span><span>${vat.toFixed(2)}</span></div>
-          <div class="row total"><span>Grand Total</span><span>${grandTotal.toFixed(2)}</span></div>
+          <div class="row"><span>Sub Total</span><span>${cur} ${subtotal.toFixed(2)}</span></div>
+          <div class="row"><span>VAT</span><span>${cur} ${vat.toFixed(2)}</span></div>
+          <div class="row total"><span>Grand Total</span><span>${cur} ${grandTotal.toFixed(2)}</span></div>
           <div class="divider"></div>
           <p class="footer">Thank you. Visit Again!</p>
         </body>

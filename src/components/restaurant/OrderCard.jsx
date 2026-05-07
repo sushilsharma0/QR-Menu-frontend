@@ -3,6 +3,7 @@ import { FiEye } from 'react-icons/fi'
 import Card from '../common/Card'
 import Button from '../common/Button'
 import OrderStatusBadge from './OrderStatusBadge'
+import { DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
 
 const OrderCard = ({ order, onView, onStatusUpdate }) => {
   return (
@@ -17,7 +18,7 @@ const OrderCard = ({ order, onView, onStatusUpdate }) => {
       </div>
       <div className="mb-3">
         <p className="text-sm text-gray-600">
-          {order.items?.length} items • ${order.grandTotal}
+          {order.items?.length} items • {DEFAULT_CURRENCY_SYMBOL}{Number(order.grandTotal).toFixed(2)}
         </p>
       </div>
       <div className="flex gap-2">

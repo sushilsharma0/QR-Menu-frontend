@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   FiRefreshCw, FiDownload, FiTrendingUp, FiTrendingDown,
-  FiDollarSign, FiCreditCard, FiActivity, FiCalendar, FiX, FiClock, FiInfo
+  FiCreditCard, FiActivity, FiCalendar, FiX, FiClock, FiInfo
 } from 'react-icons/fi'
+import { TbCurrencyRupee } from 'react-icons/tb'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
 import Card from '../../components/common/Card'
@@ -543,7 +544,7 @@ const Transactions = () => {
             label="Total Revenue"
             value={fmt(summary.totalRevenue ?? summary.totalAmount)}
             sub="All successful payments"
-            icon={FiDollarSign}
+            icon={TbCurrencyRupee}
             color="green"
           />
           <MetricCard

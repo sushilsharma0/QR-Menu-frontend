@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm, useFieldArray } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
+import { DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
@@ -28,13 +29,37 @@ const CreatePlan = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
+  const [billing, setBilling] = useState(null)
   const [limitState, setLimitState] = useState({
     maxTables: { selectValue: '0', customValue: '' },
     maxEmployees: { selectValue: '0', customValue: '' },
     maxCategories: { selectValue: '0', customValue: '' },
     maxMenuItems: { selectValue: '0', customValue: '' },
   })
-  const { register, handleSubmit, setValue, control, formState: { errors } } = useForm()
+  const { register, handleSubmit, setValue, control, watch, formState: { errors } } = useForm()
+  const priceExclWatch = watch('priceExclVat')
+
+  useEffect(() => {
+    api.get('/platform/billing/settings')
+      .then((res) => setBilling(res.data.data))
+      .catch(() => setBilling(null))
+  }, [])
+
+  const pricePreview = useMemo(() => {
+    if (!billing) return null
+    const excl = Number(priceExclWatch)
+    if (priceExclWatch === '' || priceExclWatch == null || Number.isNaN(excl) || excl < 0) return null
+    const rate = Number(billing.vatRatePercent) || 0
+    const vat = Math.round(excl * (rate / 100) * 100) / 100
+    const total = Math.round((excl + vat) * 100) / 100
+    return {
+      excl,
+      vat,
+      total,
+      rate,
+      sym: billing.currencySymbol || DEFAULT_CURRENCY_SYMBOL,
+    }
+  }, [billing, priceExclWatch])
   const { fields, append, remove } = useFieldArray({ control, name: 'features' })
 
   useEffect(() => {
@@ -52,7 +77,10 @@ const CreatePlan = () => {
       setValue('planType', plan.planType)
       setValue('duration', plan.duration)
       setValue('durationLabel', plan.durationLabel)
-      setValue('price', plan.price)
+      setValue(
+        'priceExclVat',
+        plan.priceExclVat != null ? plan.priceExclVat : plan.pricing?.priceExclVat ?? ''
+      )
       const nextLimitState = {}
       LIMIT_KEYS.forEach((key) => {
         const rawValue = Number(plan.limits?.[key] ?? 0)
@@ -148,12 +176,27 @@ const CreatePlan = () => {
           </div>
 
           <Input
-            label="Price ($)"
+            label="Price excluding VAT (base amount)"
             type="number"
             step="0.01"
-            {...register('price', { required: 'Price is required', min: 0 })}
-            error={errors.price?.message}
+            {...register('priceExclVat', { required: 'Base price is required', min: 0 })}
+            error={errors.priceExclVat?.message}
           />
+          {billing && (
+            <p className="text-xs text-gray-500">
+              Platform VAT rate: <strong>{Number(billing.vatRatePercent ?? 0).toFixed(2)}%</strong> (change under Settings → Billing &amp; VAT).
+            </p>
+          )}
+          {pricePreview && (
+            <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 space-y-1">
+              <p className="font-medium text-gray-900">Charge preview (what restaurants pay)</p>
+              <p>Subtotal (excl. VAT): {pricePreview.sym}{pricePreview.excl.toFixed(2)}</p>
+              <p>VAT ({pricePreview.rate}%): {pricePreview.sym}{pricePreview.vat.toFixed(2)}</p>
+              <p className="font-semibold text-gray-900 pt-1 border-t border-gray-200">
+                Grand total (incl. VAT): {pricePreview.sym}{pricePreview.total.toFixed(2)}
+              </p>
+            </div>
+          )}
 
           <div className="border-t pt-4">
             <h3 className="font-semibold mb-3">Plan Limits</h3>

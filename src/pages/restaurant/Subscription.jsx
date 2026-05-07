@@ -4,7 +4,10 @@ import toast from 'react-hot-toast'
 import api from '../../services/api'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
+import Tabs from '../../components/common/Tabs'
 import { useAuth } from '../../hooks/useAuth'
+import SubscriptionBillingPanel from './SubscriptionBillingPanel'
+import { DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
 
 const Subscription = () => {
   const { mergeUser, user: authUser } = useAuth()
@@ -99,14 +102,10 @@ const Subscription = () => {
   const pendingReview = currentPlan?.planRequestStatus === 'pending_review'
   const isKYCVerified = authUser?.isKYCVerified === true
 
-  return (
+  const plansTab = (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Subscription Plans</h1>
-        <p className="text-gray-500 mt-1">Choose a plan, pay offline as instructed, then upload proof for verification.</p>
-      </div>
       {!isKYCVerified && (
-        <Card title="KYC verification required" className='bg-green-200'>
+        <Card title="KYC verification required" className="bg-green-200">
           <p className="text-gray-700">
             Subscription plan selection is locked until your KYC is approved by the platform. Complete KYC verification first, then you can choose a plan.
           </p>
@@ -148,15 +147,38 @@ const Subscription = () => {
             <p className="text-amber-800 text-sm flex items-center gap-2">
               <FiClock />
               <span>
-                Pending platform verification for <strong>{currentPlan.requestedPlan.name}</strong>. You’ll get full access
-                once approved.
+                Pending platform verification for <strong>{currentPlan.requestedPlan.name}</strong>
+                {currentPlan.requestedPlan.pricing && (
+                  <>
+                    {' '}
+                    ({currentPlan.requestedPlan.pricing.currencySymbol}
+                    {Number(currentPlan.requestedPlan.pricing.totalInclVat).toFixed(2)} incl. VAT:{' '}
+                    {currentPlan.requestedPlan.pricing.currencySymbol}
+                    {Number(currentPlan.requestedPlan.pricing.priceExclVat).toFixed(2)} +{' '}
+                    {currentPlan.requestedPlan.pricing.currencySymbol}
+                    {Number(currentPlan.requestedPlan.pricing.vatAmount).toFixed(2)} VAT)
+                  </>
+                )}
+                . You’ll get full access once approved.
               </span>
             </p>
           ) : (
             <div className="space-y-4">
               <p className="text-gray-700">
-                You chose <strong>{currentPlan.requestedPlan.name}</strong>. Upload a screenshot or PDF of your payment /
-                bank transfer statement so we can verify and activate your plan.
+                You chose <strong>{currentPlan.requestedPlan.name}</strong>
+                {currentPlan.requestedPlan.pricing && (
+                  <span className="block mt-2 text-sm">
+                    Subtotal (excl. VAT): {currentPlan.requestedPlan.pricing.currencySymbol}
+                    {Number(currentPlan.requestedPlan.pricing.priceExclVat).toFixed(2)} · VAT:{' '}
+                    {currentPlan.requestedPlan.pricing.currencySymbol}
+                    {Number(currentPlan.requestedPlan.pricing.vatAmount).toFixed(2)} ·{' '}
+                    <strong>
+                      Pay {currentPlan.requestedPlan.pricing.currencySymbol}
+                      {Number(currentPlan.requestedPlan.pricing.totalInclVat).toFixed(2)} incl. VAT
+                    </strong>
+                  </span>
+                )}
+                . Upload a screenshot or PDF of your payment / bank transfer statement so we can verify and activate your plan.
               </p>
               <div className="flex flex-wrap items-end gap-3">
                 <label className="block">
@@ -186,12 +208,34 @@ const Subscription = () => {
         </Card>
       )}
 
-      {/* Current Plan Status */}
       {currentPlan?.currentPlan && (
         <Card title="Current Plan">
           <div className="flex justify-between items-center flex-wrap gap-4">
             <div>
               <h3 className="text-xl font-bold text-primary-600">{currentPlan.currentPlan.name}</h3>
+              {currentPlan.currentPlan.pricing && (
+                <div className="mt-2 text-sm text-gray-600 space-y-0.5">
+                  <p>
+                    Subtotal (excl. VAT):{' '}
+                    <span className="font-medium text-gray-900">
+                      {currentPlan.currentPlan.pricing.currencySymbol}
+                      {Number(currentPlan.currentPlan.pricing.priceExclVat).toFixed(2)}
+                    </span>
+                  </p>
+                  <p>
+                    VAT ({Number(currentPlan.currentPlan.pricing.vatRatePercent).toFixed(2)}%):{' '}
+                    <span className="font-medium text-gray-900">
+                      {currentPlan.currentPlan.pricing.currencySymbol}
+                      {Number(currentPlan.currentPlan.pricing.vatAmount).toFixed(2)}
+                    </span>
+                  </p>
+                  <p className="text-gray-900 font-semibold">
+                    Billing total (incl. VAT):{' '}
+                    {currentPlan.currentPlan.pricing.currencySymbol}
+                    {Number(currentPlan.currentPlan.pricing.totalInclVat).toFixed(2)}
+                  </p>
+                </div>
+              )}
               <div className="flex items-center gap-4 mt-2">
                 <span className="flex items-center gap-1 text-sm text-gray-600">
                   <FiCalendar /> Expires: {new Date(currentPlan.planEndDate).toLocaleDateString()}
@@ -208,11 +252,9 @@ const Subscription = () => {
               </span>
             </div>
           </div>
-
         </Card>
       )}
 
-      {/* Available Plans */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {plans.map((plan) => (
           <Card key={plan._id} className={`${plan.isPopular ? 'border-2 border-primary-500 relative' : ''}`}>
@@ -224,7 +266,30 @@ const Subscription = () => {
             <div className="text-center mb-4">
               <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
               <p className="text-sm text-gray-500">{plan.durationLabel}</p>
-              <p className="text-3xl font-bold text-primary-600 mt-2">${plan.price}</p>
+              {plan.pricing ? (
+                <div className="mt-3 text-sm text-gray-600 space-y-1 text-left">
+                  <p>
+                    Subtotal (excl. VAT):{' '}
+                    <span className="font-medium text-gray-900">
+                      {plan.pricing.currencySymbol}{Number(plan.pricing.priceExclVat).toFixed(2)}
+                    </span>
+                  </p>
+                  <p>
+                    VAT ({Number(plan.pricing.vatRatePercent).toFixed(2)}%):{' '}
+                    <span className="font-medium text-gray-900">
+                      {plan.pricing.currencySymbol}{Number(plan.pricing.vatAmount).toFixed(2)}
+                    </span>
+                  </p>
+                  <p className="text-2xl font-bold text-primary-600 pt-2 border-t border-gray-100">
+                    {plan.pricing.currencySymbol}{Number(plan.pricing.totalInclVat).toFixed(2)}
+                    <span className="block text-xs font-normal text-gray-500">Grand total (incl. VAT)</span>
+                  </p>
+                </div>
+              ) : (
+                <p className="text-3xl font-bold text-primary-600 mt-2">
+                  {DEFAULT_CURRENCY_SYMBOL}{Number(plan.price).toFixed(2)}
+                </p>
+              )}
             </div>
             <div className="space-y-2 mb-6">
               {plan.features?.map((feature, idx) => (
@@ -254,6 +319,25 @@ const Subscription = () => {
           </Card>
         ))}
       </div>
+    </div>
+  )
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Subscription & billing</h1>
+        <p className="text-gray-500 mt-1">
+          Choose a plan and payment proof on the Plans tab; view official invoices and package history under Invoices &amp; history.
+        </p>
+      </div>
+
+      <Tabs
+        defaultTab="plans"
+        tabs={[
+          { key: 'plans', label: 'Plans', content: plansTab },
+          { key: 'billing', label: 'Invoices & history', content: <SubscriptionBillingPanel /> },
+        ]}
+      />
     </div>
   )
 }
