@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { FiArrowLeft, FiSend, FiCheck } from 'react-icons/fi'
+import { FiArrowLeft, FiSend, FiCheck, FiMessageSquare, FiUserCheck } from 'react-icons/fi'
 import ticketService from '../../services/ticket'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
+import { RestaurantPageLoader } from '../../components/restaurant/RestaurantUI'
+import { PlatformEmptyState, PlatformMetric, PlatformPageHeader, PlatformPill, platformStatusStyles } from '../../components/platform/PlatformUI'
 
 const PlatformTicketDetail = () => {
   const { id } = useParams()
@@ -78,26 +80,8 @@ const PlatformTicketDetail = () => {
     }
   }
 
-  const statusColors = {
-    open: 'bg-blue-100 text-blue-800',
-    in_progress: 'bg-yellow-100 text-yellow-800',
-    resolved: 'bg-green-100 text-green-800',
-    closed: 'bg-gray-100 text-gray-800'
-  }
-
-  const priorityColors = {
-    low: 'bg-green-100 text-green-700',
-    medium: 'bg-yellow-100 text-yellow-700',
-    high: 'bg-orange-100 text-orange-700',
-    urgent: 'bg-red-100 text-red-700'
-  }
-
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    )
+    return <RestaurantPageLoader />
   }
 
   if (!ticket) {
@@ -109,14 +93,20 @@ const PlatformTicketDetail = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <button
-        onClick={() => navigate('..')}
-        className="flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium"
-      >
-        <FiArrowLeft size={18} />
-        Back to Tickets
-      </button>
+    <div className="mx-auto max-w-5xl space-y-6">
+      <PlatformPageHeader
+        badge="Support Conversation"
+        title={ticket.subject}
+        description={`Ticket ${ticket.ticketNumber} from ${ticket.restaurant?.name || 'restaurant'}`}
+        icon={FiMessageSquare}
+        actions={<Button variant="secondary" onClick={() => navigate('..')}><FiArrowLeft className="mr-2" />Back to Tickets</Button>}
+      />
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <PlatformMetric label="Status" value={ticket.status.replace('_', ' ')} sub="Current ticket state" icon={FiMessageSquare} accent="from-blue-500 to-indigo-500" />
+        <PlatformMetric label="Priority" value={ticket.priority} sub={ticket.category?.replace('_', ' ')} icon={FiCheck} accent="from-amber-500 to-orange-500" />
+        <PlatformMetric label="Assigned" value={ticket.assignedTo?.name || 'Unassigned'} sub="Support owner" icon={FiUserCheck} accent="from-emerald-500 to-teal-500" />
+      </div>
 
       <Card>
         <div className="space-y-4">
@@ -126,12 +116,12 @@ const PlatformTicketDetail = () => {
               <p className="text-lg font-mono font-bold text-gray-900 dark:text-gray-100">{ticket.ticketNumber}</p>
             </div>
             <div className="flex gap-2 flex-wrap justify-end">
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[ticket.status]}`}>
+              <PlatformPill className={platformStatusStyles[ticket.status]}>
                 {ticket.status.replace('_', ' ')}
-              </span>
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${priorityColors[ticket.priority]}`}>
+              </PlatformPill>
+              <PlatformPill className={platformStatusStyles[ticket.priority]}>
                 {ticket.priority}
-              </span>
+              </PlatformPill>
             </div>
           </div>
 
@@ -203,7 +193,7 @@ const PlatformTicketDetail = () => {
       <Card title="Conversation">
         <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
           {ticket.replies.length === 0 ? (
-            <p className="text-center text-gray-500 dark:text-gray-400 py-8">No replies yet</p>
+            <PlatformEmptyState title="No replies yet" description="Send the first response to start the support conversation." icon={FiMessageSquare} />
           ) : (
             ticket.replies.map((reply, idx) => (
               <div

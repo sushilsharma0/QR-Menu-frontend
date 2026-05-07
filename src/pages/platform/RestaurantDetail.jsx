@@ -1,199 +1,476 @@
-import React, { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import React, { useEffect, useMemo, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
+import { motion } from 'framer-motion'
+import {
+  FiArrowLeft,
+  FiBarChart2,
+  FiCheckCircle,
+  FiClock,
+  FiCreditCard,
+  FiGrid,
+  FiRefreshCw,
+  FiShoppingBag,
+  FiUsers,
+} from 'react-icons/fi'
+import { TbCurrencyRupee } from 'react-icons/tb'
+import {
+  Bar,
+  CartesianGrid,
+  ComposedChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import api from '../../services/api'
-import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
+import Card from '../../components/common/Card'
 import Tabs from '../../components/common/Tabs'
+import {
+  RestaurantPageLoader,
+  RestaurantStatusPill,
+  formatRestaurantCurrency,
+  formatRestaurantShortDate,
+  orderStatusStyles,
+  paymentStatusStyles,
+} from '../../components/restaurant/RestaurantUI'
+
+const kycStatusStyles = {
+  approved: 'bg-green-100 text-green-800',
+  pending: 'bg-yellow-100 text-yellow-800',
+  rejected: 'bg-red-100 text-red-800',
+  not_submitted: 'bg-gray-100 text-gray-700',
+}
+
+const availabilityStyles = {
+  active: 'bg-green-100 text-green-800',
+  inactive: 'bg-red-100 text-red-800',
+  available: 'bg-green-100 text-green-800',
+  unavailable: 'bg-red-100 text-red-800',
+}
+
+const formatDate = (date) => {
+  if (!date) return 'N/A'
+  const parsed = new Date(date)
+  if (Number.isNaN(parsed.getTime())) return 'N/A'
+  return parsed.toLocaleDateString('en-IN', { dateStyle: 'medium' })
+}
+
+const formatDateTime = (date) => {
+  if (!date) return 'N/A'
+  const parsed = new Date(date)
+  if (Number.isNaN(parsed.getTime())) return 'N/A'
+  return parsed.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+}
+
+function MetricTile({ label, value, sub, icon: Icon, accent }) {
+  return (
+    <motion.div
+      whileHover={{ y: -3 }}
+      className="rounded-2xl border border-surface-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
+          <p className="mt-2 text-2xl font-bold text-gray-950 dark:text-gray-100">{value}</p>
+          {sub && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{sub}</p>}
+        </div>
+        <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${accent} text-white shadow-md`}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+function SalesTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null
+  const revenue = payload.find((item) => item.dataKey === 'revenue')?.value || 0
+  const transactions = payload.find((item) => item.dataKey === 'transactions')?.value || 0
+
+  return (
+    <div className="rounded-2xl border border-surface-200 bg-white/95 px-4 py-3 shadow-xl dark:border-gray-800 dark:bg-gray-900/95">
+      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+        {formatRestaurantShortDate(label)}
+      </p>
+      <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+        Revenue: <span className="font-bold text-primary-700 dark:text-primary-300">{formatRestaurantCurrency(revenue)}</span>
+      </p>
+      <p className="text-sm text-gray-600 dark:text-gray-300">
+        Transactions: <span className="font-bold text-emerald-700 dark:text-emerald-300">{transactions}</span>
+      </p>
+    </div>
+  )
+}
 
 const RestaurantDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const [restaurant, setRestaurant] = useState(null)
+  const [operations, setOperations] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
 
-  useEffect(() => {
-    fetchRestaurant()
-  }, [id])
-
-  const fetchRestaurant = async () => {
+  const loadRestaurant = async (quiet = false) => {
     try {
-      const res = await api.get(`/platform/restaurants/${id}`)
-      setRestaurant(res.data.data)
+      if (quiet) setRefreshing(true)
+      else setLoading(true)
+
+      const [restaurantRes, operationsRes] = await Promise.all([
+        api.get(`/platform/restaurants/${id}`),
+        api.get(`/platform/restaurants/${id}/operations`).catch(() => null),
+      ])
+
+      setRestaurant(restaurantRes.data.data)
+      setOperations(operationsRes?.data?.data || null)
     } catch (error) {
       toast.error('Failed to fetch restaurant details')
       navigate('/platform/restaurants')
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }
+
+  useEffect(() => {
+    loadRestaurant(false)
+  }, [id])
 
   const toggleStatus = async () => {
     try {
       await api.patch(`/platform/restaurants/${id}/toggle-status`)
       toast.success(`Restaurant ${restaurant.isActive ? 'deactivated' : 'activated'}`)
-      fetchRestaurant()
+      loadRestaurant(true)
     } catch (error) {
       toast.error('Failed to update status')
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    )
-  }
+  const sales = operations?.sales || {}
+  const tables = operations?.tables || {}
+  const menu = operations?.menu || {}
+  const activeOrders = sales.activeOrders || {}
+  const activeOrderTotal = Object.values(activeOrders).reduce((sum, value) => sum + Number(value || 0), 0)
+  const chartData = sales.daily || []
+  const hasSalesData = chartData.some((item) => Number(item.revenue || 0) > 0 || Number(item.transactions || 0) > 0)
+
+  const summaryTiles = useMemo(
+    () => [
+      {
+        label: 'Month revenue',
+        value: formatRestaurantCurrency(sales.monthRevenue),
+        sub: `${sales.monthTransactions || 0} successful payments`,
+        icon: TbCurrencyRupee,
+        accent: 'from-primary-600 to-secondary-500',
+      },
+      {
+        label: 'Orders today',
+        value: sales.todayOrders || 0,
+        sub: `${activeOrderTotal} active right now`,
+        icon: FiShoppingBag,
+        accent: 'from-emerald-500 to-teal-500',
+      },
+      {
+        label: 'Tables',
+        value: tables.total || 0,
+        sub: `${tables.active || 0} active, ${tables.capacity || 0} seats`,
+        icon: FiGrid,
+        accent: 'from-indigo-500 to-violet-500',
+      },
+      {
+        label: 'Menu items',
+        value: menu.totalMenuItems || 0,
+        sub: `${menu.availableMenuItems || 0} available across ${menu.totalCategories || 0} categories`,
+        icon: FiBarChart2,
+        accent: 'from-amber-500 to-orange-500',
+      },
+    ],
+    [activeOrderTotal, menu, sales, tables],
+  )
+
+  if (loading) return <RestaurantPageLoader />
 
   const tabs = [
     {
-      key: 'info',
-      label: 'Information',
+      key: 'operations',
+      label: 'Operations',
       content: (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <p className="text-sm text-gray-500">Restaurant Name</p>
-              <p className="font-medium">{restaurant?.name}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Email</p>
-              <p className="font-medium">{restaurant?.email}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Phone</p>
-              <p className="font-medium">{restaurant?.phone}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Slug</p>
-              <p className="font-medium">{restaurant?.slug}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Address</p>
-              <p className="font-medium">{restaurant?.address}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">City</p>
-              <p className="font-medium">{restaurant?.city}</p>
-            </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {summaryTiles.map((tile) => (
+              <MetricTile key={tile.label} {...tile} />
+            ))}
           </div>
-        </div>
-      )
-    },
-    {
-      key: 'kyc',
-      label: 'KYC Details',
-      content: (
-        <div className="space-y-6">
-          {restaurant?.kyc ? (
-            <div>
-              <div className="grid grid-cols-2 gap-6 mb-6">
-                <div>
-                  <p className="text-sm text-gray-500">Owner Name</p>
-                  <p className="font-medium">{restaurant.kyc.ownerName}</p>
+
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+            <Card title="Sales Activity" icon={FiBarChart2} className="xl:col-span-2">
+              {hasSalesData ? (
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={chartData} margin={{ top: 12, right: 10, left: 0, bottom: 0 }}>
+                      <CartesianGrid stroke="#e5e7eb" strokeDasharray="4 6" vertical={false} />
+                      <XAxis
+                        dataKey="date"
+                        tickFormatter={formatRestaurantShortDate}
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#6b7280', fontSize: 12 }}
+                      />
+                      <YAxis
+                        yAxisId="revenue"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#6b7280', fontSize: 12 }}
+                        tickFormatter={(value) => `Rs. ${Math.round(Number(value || 0) / 1000)}k`}
+                        width={58}
+                      />
+                      <YAxis yAxisId="transactions" orientation="right" axisLine={false} tickLine={false} width={34} />
+                      <Tooltip content={<SalesTooltip />} cursor={{ fill: '#fffcf1' }} />
+                      <Bar yAxisId="revenue" dataKey="revenue" fill="#8f2800" radius={[10, 10, 4, 4]} barSize={34} />
+                      <Bar yAxisId="transactions" dataKey="transactions" fill="#10b981" radius={[10, 10, 4, 4]} barSize={16} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">ID Type</p>
-                  <p className="font-medium">{restaurant.kyc.idType}</p>
+              ) : (
+                <div className="flex min-h-80 flex-col items-center justify-center rounded-2xl bg-surface-50 px-4 text-center dark:bg-gray-800/60">
+                  <FiBarChart2 className="h-8 w-8 text-primary-600" />
+                  <p className="mt-3 font-semibold text-gray-950 dark:text-gray-100">No sales activity yet</p>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Successful restaurant payments will appear here.</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">ID Number</p>
-                  <p className="font-medium">{restaurant.kyc.idNumber}</p>
+              )}
+            </Card>
+
+            <Card title="Active Order Flow" icon={FiClock}>
+              <div className="space-y-3">
+                {['pending', 'confirmed', 'preparing', 'ready'].map((status) => (
+                  <div key={status} className="flex items-center justify-between rounded-2xl bg-surface-50 px-4 py-3 dark:bg-gray-800/60">
+                    <RestaurantStatusPill value={status} styles={orderStatusStyles} />
+                    <span className="text-xl font-bold text-gray-950 dark:text-gray-100">{activeOrders[status] || 0}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <Card title="Recent Orders" icon={FiShoppingBag}>
+              <div className="space-y-3">
+                {(sales.recentOrders || []).map((order) => (
+                  <div key={order._id} className="rounded-2xl border border-surface-200 p-4 dark:border-gray-800">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-gray-950 dark:text-gray-100">#{order.orderNumber}</p>
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          {order.customerName || 'Guest'} - Table {order.table?.tableNumber || 'N/A'}
+                        </p>
+                      </div>
+                      <p className="font-bold text-primary-700 dark:text-primary-300">{formatRestaurantCurrency(order.grandTotal)}</p>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <RestaurantStatusPill value={order.status} styles={orderStatusStyles} />
+                      <RestaurantStatusPill value={order.paymentStatus} styles={paymentStatusStyles} />
+                    </div>
+                  </div>
+                ))}
+                {(sales.recentOrders || []).length === 0 && (
+                  <div className="rounded-2xl bg-surface-50 p-6 text-center text-sm text-gray-500 dark:bg-gray-800/60 dark:text-gray-400">
+                    No recent orders.
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            <Card title="Menu Snapshot" icon={FiCheckCircle}>
+              <div className="mb-4 grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-surface-50 p-4 dark:bg-gray-800/60">
+                  <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Categories</p>
+                  <p className="mt-1 text-2xl font-bold text-gray-950 dark:text-gray-100">{menu.totalCategories || 0}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">PAN Number</p>
-                  <p className="font-medium">{restaurant.kyc.panNumber || 'N/A'}</p>
+                <div className="rounded-2xl bg-surface-50 p-4 dark:bg-gray-800/60">
+                  <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Unavailable</p>
+                  <p className="mt-1 text-2xl font-bold text-gray-950 dark:text-gray-100">{menu.unavailableMenuItems || 0}</p>
                 </div>
               </div>
-              {restaurant.kyc.status === 'rejected' && (
-                <div className="p-4 bg-red-50 rounded-lg">
-                  <p className="text-sm font-medium text-red-800">Rejection Reason</p>
-                  <p className="text-sm text-red-600">{restaurant.kyc.rejectionReason}</p>
+              <div className="space-y-3">
+                {(menu.recentItems || []).map((item) => (
+                  <div key={item._id} className="flex items-center justify-between gap-3 rounded-2xl border border-surface-200 p-3 dark:border-gray-800">
+                    <div className="flex items-center gap-3">
+                      {item.image ? (
+                        <img src={item.image} alt={item.name} className="h-12 w-12 rounded-xl object-cover" />
+                      ) : (
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-100 text-xs text-gray-400 dark:bg-gray-800">
+                          Menu
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-semibold text-gray-950 dark:text-gray-100">{item.name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{item.category?.name || 'Uncategorized'}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-primary-700 dark:text-primary-300">{formatRestaurantCurrency(item.price)}</p>
+                      <RestaurantStatusPill value={item.isAvailable ? 'available' : 'unavailable'} styles={availabilityStyles} />
+                    </div>
+                  </div>
+                ))}
+                {(menu.recentItems || []).length === 0 && (
+                  <div className="rounded-2xl bg-surface-50 p-6 text-center text-sm text-gray-500 dark:bg-gray-800/60 dark:text-gray-400">
+                    No menu items available.
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'profile',
+      label: 'Profile',
+      content: (
+        <Card title="Restaurant Information" icon={FiUsers}>
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {[
+              ['Restaurant Name', restaurant?.name],
+              ['Email', restaurant?.email],
+              ['Phone', restaurant?.phone],
+              ['Slug', restaurant?.slug],
+              ['Address', restaurant?.address || 'N/A'],
+              ['City', restaurant?.city || 'N/A'],
+              ['Opening Time', restaurant?.openingTime || 'N/A'],
+              ['Closing Time', restaurant?.closingTime || 'N/A'],
+              ['Joined', formatDate(restaurant?.createdAt)],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-2xl bg-surface-50 p-4 dark:bg-gray-800/60">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
+                <p className="mt-1 font-semibold text-gray-950 dark:text-gray-100">{value}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ),
+    },
+    {
+      key: 'compliance',
+      label: 'KYC & Plan',
+      content: (
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <Card title="KYC Details" icon={FiCheckCircle}>
+            {restaurant?.kyc ? (
+              <div className="space-y-4">
+                <RestaurantStatusPill value={restaurant.kyc.status} styles={kycStatusStyles} />
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {[
+                    ['Owner Name', restaurant.kyc.ownerName],
+                    ['ID Type', restaurant.kyc.idType],
+                    ['ID Number', restaurant.kyc.idNumber],
+                    ['PAN Number', restaurant.kyc.panNumber || 'N/A'],
+                    ['Submitted', formatDateTime(restaurant.kyc.createdAt)],
+                  ].map(([label, value]) => (
+                    <div key={label} className="rounded-2xl bg-surface-50 p-4 dark:bg-gray-800/60">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
+                      <p className="mt-1 font-semibold text-gray-950 dark:text-gray-100">{value}</p>
+                    </div>
+                  ))}
+                </div>
+                {restaurant.kyc.status === 'rejected' && (
+                  <div className="rounded-2xl bg-red-50 p-4 text-sm text-red-700">
+                    {restaurant.kyc.rejectionReason || 'No rejection reason provided.'}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="rounded-2xl bg-surface-50 p-6 text-center text-sm text-gray-500 dark:bg-gray-800/60 dark:text-gray-400">
+                No KYC submitted yet.
+              </div>
+            )}
+          </Card>
+
+          <Card title="Subscription & Limits" icon={FiCreditCard}>
+            <div className="space-y-4">
+              <div className="rounded-2xl bg-surface-50 p-4 dark:bg-gray-800/60">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Current Plan</p>
+                <p className="mt-1 text-xl font-bold text-gray-950 dark:text-gray-100">{restaurant?.currentPlan?.name || 'Trial / No Plan'}</p>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Ends {formatDate(restaurant?.planEndDate || restaurant?.trialEndsAt)}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  ['Tables', restaurant?.planLimits?.maxTables || 'Trial'],
+                  ['Employees', restaurant?.planLimits?.maxEmployees || 'Trial'],
+                  ['Categories', restaurant?.planLimits?.maxCategories || 'Trial'],
+                  ['Menu Items', restaurant?.planLimits?.maxMenuItems || 'Trial'],
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-2xl border border-surface-200 p-4 dark:border-gray-800">
+                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
+                    <p className="mt-1 text-xl font-bold text-gray-950 dark:text-gray-100">{value}</p>
+                  </div>
+                ))}
+              </div>
+              {restaurant?.requestedPlan && (
+                <div className="rounded-2xl bg-yellow-50 p-4 text-sm text-yellow-800">
+                  Requested plan: <strong>{restaurant.requestedPlan.name}</strong>
                 </div>
               )}
             </div>
-          ) : (
-            <p className="text-gray-500">No KYC submitted yet</p>
-          )}
+          </Card>
         </div>
-      )
+      ),
     },
-    {
-      key: 'subscription',
-      label: 'Subscription',
-      content: (
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <p className="text-sm text-gray-500">Current Plan</p>
-              <p className="font-medium">{restaurant?.currentPlan?.name || 'No Plan'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Plan Start Date</p>
-              <p className="font-medium">{restaurant?.planStartDate ? new Date(restaurant.planStartDate).toLocaleDateString() : 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Plan End Date</p>
-              <p className="font-medium">{restaurant?.planEndDate ? new Date(restaurant.planEndDate).toLocaleDateString() : 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Auto Renew</p>
-              <p className="font-medium">{restaurant?.autoRenew ? 'Enabled' : 'Disabled'}</p>
-            </div>
-          </div>
-          {restaurant?.requestedPlan && (
-            <div className="p-4 bg-yellow-50 rounded-lg">
-              <p className="text-sm text-yellow-800">
-                Requested Plan: <strong>{restaurant.requestedPlan.name}</strong> - Awaiting approval
-              </p>
-            </div>
-          )}
-        </div>
-      )
-    },
-    {
-      key: 'limits',
-      label: 'Plan Limits',
-      content: (
-        <div className="grid grid-cols-2 gap-6">
-          <div>
-            <p className="text-sm text-gray-500">Max Tables</p>
-            <p className="font-medium">{restaurant?.planLimits?.maxTables || 'Trial Plan'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Max Employees</p>
-            <p className="font-medium">{restaurant?.planLimits?.maxEmployees || 'Trial Plan'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Max Categories</p>
-            <p className="font-medium">{restaurant?.planLimits?.maxCategories || 'Trial Plan'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Max Menu Items</p>
-            <p className="font-medium">{restaurant?.planLimits?.maxMenuItems || 'Trial Plan'}</p>
-          </div>
-        </div>
-      )
-    }
   ]
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{restaurant?.name}</h1>
-          <p className="mt-1 text-gray-500 dark:text-gray-400">Restaurant Details</p>
+      <motion.section
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease: 'easeOut' }}
+        className="relative overflow-hidden rounded-3xl border border-surface-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900"
+      >
+        <div className="absolute inset-x-0 top-0 h-44 bg-gradient-to-r from-primary-50 via-surface-50 to-emerald-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900" />
+        <div className="relative p-5 md:p-7">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              {restaurant?.logo ? (
+                <img src={restaurant.logo} alt={restaurant.name} className="h-20 w-20 rounded-3xl object-cover shadow-md" />
+              ) : (
+                <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-primary-100 text-3xl font-bold text-primary-700">
+                  {restaurant?.name?.charAt(0) || 'R'}
+                </div>
+              )}
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-primary-100 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-700 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-primary-300">
+                    Platform Restaurant Control
+                  </span>
+                  <RestaurantStatusPill value={restaurant?.isActive ? 'active' : 'inactive'} styles={availabilityStyles} />
+                  <RestaurantStatusPill value={restaurant?.kyc?.status || 'not_submitted'} styles={kycStatusStyles} />
+                </div>
+                <h1 className="mt-3 text-3xl font-bold tracking-tight text-gray-950 dark:text-gray-100">{restaurant?.name}</h1>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  {restaurant?.email} - {restaurant?.phone} - {restaurant?.slug}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" onClick={() => navigate('/platform/restaurants')}>
+                <FiArrowLeft className="mr-2" />
+                Back
+              </Button>
+              <Button variant="secondary" onClick={() => loadRestaurant(true)} disabled={refreshing}>
+                <FiRefreshCw className={`mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Button variant={restaurant?.isActive ? 'danger' : 'success'} onClick={toggleStatus}>
+                {restaurant?.isActive ? 'Deactivate' : 'Activate'}
+              </Button>
+            </div>
+          </div>
         </div>
-        <div className="flex gap-3">
-          <Button variant={restaurant?.isActive ? 'danger' : 'success'} onClick={toggleStatus}>
-            {restaurant?.isActive ? 'Deactivate' : 'Activate'}
-          </Button>
-          <Button variant="secondary" onClick={() => navigate('/platform/restaurants')}>
-            Back
-          </Button>
-        </div>
-      </div>
+      </motion.section>
 
       <Tabs tabs={tabs} />
     </div>

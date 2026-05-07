@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { FiBarChart2, FiCalendar, FiCreditCard, FiRefreshCw, FiSearch } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
 import Card from '../../components/common/Card'
@@ -9,6 +10,7 @@ import Table from '../../components/common/Table'
 import Pagination from '../../components/common/Pagination'
 import { formatters } from '../../utils/formatters'
 import { DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
+import { PlatformMetric, PlatformPageHeader } from '../../components/platform/PlatformUI'
 
 function defaultToDate() {
   const d = new Date()
@@ -41,7 +43,7 @@ export default function SubscriptionActivity() {
       const data = res.data.data
       setRows(data.rows || [])
       setSummary(data.summary || null)
-      setPagination(data.pagination || pagination)
+      setPagination(data.pagination || { page: 1, limit: 25, total: 0, pages: 1 })
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to load activity report')
     } finally {
@@ -58,21 +60,18 @@ export default function SubscriptionActivity() {
     setPage(1)
   }
 
+  const resetRange = () => {
+    setFrom(defaultFromDate())
+    setTo(defaultToDate())
+    setPage(1)
+  }
+
   const sym = (row) => row.currencySymbol || DEFAULT_CURRENCY_SYMBOL
 
   const columns = [
-    {
-      header: 'Issued',
-      render: (row) => formatters.datetime(row.issuedAt),
-    },
-    {
-      header: 'Restaurant',
-      render: (row) => row.restaurant?.name || '—',
-    },
-    {
-      header: 'Plan',
-      render: (row) => row.planName || '—',
-    },
+    { header: 'Issued', render: (row) => formatters.datetime(row.issuedAt) },
+    { header: 'Restaurant', render: (row) => row.restaurant?.name || 'N/A' },
+    { header: 'Plan', render: (row) => row.planName || 'N/A' },
     {
       header: 'Duration',
       render: (row) =>
@@ -80,28 +79,16 @@ export default function SubscriptionActivity() {
           ? `${row.durationLabel}${row.durationDays != null ? ` (${row.durationDays}d)` : ''}`
           : row.durationDays != null
             ? `${row.durationDays} days`
-            : '—',
+            : 'N/A',
     },
-    {
-      header: 'Actual (ex VAT)',
-      render: (row) => `${sym(row)}${Number(row.actualAmountExclVat || 0).toFixed(2)}`,
-    },
-    {
-      header: 'Tax (VAT)',
-      render: (row) => `${sym(row)}${Number(row.taxAmount || 0).toFixed(2)}`,
-    },
-    {
-      header: 'Grand total',
-      render: (row) => `${sym(row)}${Number(row.grandTotal || 0).toFixed(2)}`,
-    },
-    {
-      header: 'Type',
-      render: (row) => <span className="capitalize">{row.transactionType}</span>,
-    },
+    { header: 'Actual ex VAT', render: (row) => `${sym(row)}${Number(row.actualAmountExclVat || 0).toFixed(2)}` },
+    { header: 'Tax VAT', render: (row) => `${sym(row)}${Number(row.taxAmount || 0).toFixed(2)}` },
+    { header: 'Grand total', render: (row) => `${sym(row)}${Number(row.grandTotal || 0).toFixed(2)}` },
+    { header: 'Type', render: (row) => <span className="capitalize">{row.transactionType}</span> },
     {
       header: 'Invoice',
       render: (row) => (
-        <Link to={`/platform/invoices/${row.invoiceId}`} className="text-primary-600 font-medium hover:underline">
+        <Link to={`/platform/invoices/${row.invoiceId}`} className="font-medium text-primary-600 hover:underline">
           {row.invoiceNumber}
         </Link>
       ),
@@ -112,46 +99,35 @@ export default function SubscriptionActivity() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Subscription activity report</h1>
-        <p className="mt-1 text-gray-500 dark:text-gray-400">
-          Packages billed per restaurant: actual amount (ex VAT), tax, and invoice — filter by date range.
-        </p>
-      </div>
+      <PlatformPageHeader
+        badge="Billing Analytics"
+        title="Subscription Activity"
+        description="Packages billed per restaurant: actual amount excluding VAT, tax, and invoice history by date range."
+        icon={FiBarChart2}
+        actions={
+          <Button type="button" variant="secondary" onClick={load} disabled={loading}>
+            <FiRefreshCw className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        }
+      />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card title="Invoices in range">
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{s.invoiceCount ?? 0}</p>
-        </Card>
-        <Card title="Subtotal (ex VAT)">
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {DEFAULT_CURRENCY_SYMBOL}{Number(s.subtotalExclVat || 0).toFixed(2)}
-          </p>
-        </Card>
-        <Card title="Total tax (VAT)">
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {DEFAULT_CURRENCY_SYMBOL}{Number(s.vatAmount || 0).toFixed(2)}
-          </p>
-        </Card>
-        <Card title="Grand total collected">
-          <p className="text-2xl font-bold text-primary-600">
-            {DEFAULT_CURRENCY_SYMBOL}{Number(s.totalInclVat || 0).toFixed(2)}
-          </p>
-        </Card>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <PlatformMetric label="Invoices in range" value={s.invoiceCount ?? 0} sub="Generated billing docs" icon={FiCalendar} accent="from-blue-500 to-indigo-500" />
+        <PlatformMetric label="Subtotal ex VAT" value={`${DEFAULT_CURRENCY_SYMBOL}${Number(s.subtotalExclVat || 0).toFixed(2)}`} sub="Base subscription amount" icon={FiCreditCard} accent="from-emerald-500 to-teal-500" />
+        <PlatformMetric label="Total tax" value={`${DEFAULT_CURRENCY_SYMBOL}${Number(s.vatAmount || 0).toFixed(2)}`} sub="VAT collected" icon={FiBarChart2} accent="from-amber-500 to-orange-500" />
+        <PlatformMetric label="Grand total" value={`${DEFAULT_CURRENCY_SYMBOL}${Number(s.totalInclVat || 0).toFixed(2)}`} sub="Total collected" icon={FiCreditCard} accent="from-primary-600 to-secondary-500" />
       </div>
 
       <Card title="Filters">
-        <div className="flex flex-wrap gap-4 items-end">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[160px_160px_1fr_auto_auto_auto] xl:items-end">
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">From</label>
             <input
               type="date"
               value={from}
-              onChange={(e) => {
-                setFrom(e.target.value)
-                setPage(1)
-              }}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+              onChange={(e) => { setFrom(e.target.value); setPage(1) }}
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
             />
           </div>
           <div>
@@ -159,56 +135,26 @@ export default function SubscriptionActivity() {
             <input
               type="date"
               value={to}
-              onChange={(e) => {
-                setTo(e.target.value)
-                setPage(1)
-              }}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+              onChange={(e) => { setTo(e.target.value); setPage(1) }}
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
             />
           </div>
-          <div className="w-56">
-            <Input
-              label="Restaurant ID (optional)"
-              value={restaurantId}
-              onChange={(e) => setRestaurantId(e.target.value)}
-              placeholder="Mongo ObjectId"
-            />
-          </div>
-          <Button type="button" onClick={applyRestaurantFilter}>
-            Apply restaurant
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              setRestaurantId('')
-              setAppliedRestaurantId('')
-              setPage(1)
-            }}
-          >
-            Clear restaurant
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              setFrom(defaultFromDate())
-              setTo(defaultToDate())
-              setPage(1)
-            }}
-          >
-            Last 30 days
-          </Button>
+          <Input
+            label="Restaurant ID (optional)"
+            icon={FiSearch}
+            value={restaurantId}
+            onChange={(e) => setRestaurantId(e.target.value)}
+            placeholder="Mongo ObjectId"
+          />
+          <Button type="button" onClick={applyRestaurantFilter}>Apply</Button>
+          <Button type="button" variant="secondary" onClick={() => { setRestaurantId(''); setAppliedRestaurantId(''); setPage(1) }}>Clear</Button>
+          <Button type="button" variant="secondary" onClick={resetRange}>Last 30 days</Button>
         </div>
       </Card>
 
-      <Card title="Activity list">
+      <Card title={`Activity List (${pagination.total || rows.length})`}>
         <Table columns={columns} data={rows} loading={loading} />
-        <Pagination
-          currentPage={pagination.page}
-          totalPages={pagination.pages}
-          onPageChange={setPage}
-        />
+        <Pagination currentPage={pagination.page} totalPages={pagination.pages} onPageChange={setPage} />
       </Card>
     </div>
   )

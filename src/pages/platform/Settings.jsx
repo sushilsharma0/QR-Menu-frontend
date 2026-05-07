@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { FiCreditCard, FiLock, FiSettings, FiShield } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
 import { DEFAULT_CURRENCY_CODE, DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
+import { PlatformMetric, PlatformPageHeader } from '../../components/platform/PlatformUI'
 
 const Settings = () => {
   const [loading, setLoading] = useState(false)
@@ -86,13 +88,22 @@ const Settings = () => {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Settings</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Account security and platform billing details used on subscription invoices.</p>
+    <div className="mx-auto max-w-5xl space-y-6">
+      <PlatformPageHeader
+        badge="Platform Controls"
+        title="Settings"
+        description="Manage account security and platform billing details used on subscription invoices."
+        icon={FiSettings}
+      />
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <PlatformMetric label="Security" value="Password" sub="Admin credential updates" icon={FiLock} accent="from-blue-500 to-indigo-500" />
+        <PlatformMetric label="Billing issuer" value="VAT" sub="Invoice identity and tax" icon={FiCreditCard} accent="from-emerald-500 to-teal-500" />
+        <PlatformMetric label="Compliance" value="Invoices" sub="Currency and tax settings" icon={FiShield} accent="from-amber-500 to-orange-500" />
       </div>
 
-      <Card title="Change Password">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <Card title="Change Password" icon={FiLock}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input
             label="Current Password"
@@ -119,7 +130,7 @@ const Settings = () => {
         </form>
       </Card>
 
-      <Card title="Billing & VAT (subscription invoices)">
+      <Card title="Billing & VAT" icon={FiCreditCard}>
         <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
           VAT rate and currency here are used when admins create plans (base amount is ex-VAT; grand total is computed automatically)
           and on subscription tax invoices. Legacy invoices without a stored plan base may still use the “inclusive / exclusive”
@@ -184,6 +195,7 @@ const Settings = () => {
           </form>
         )}
       </Card>
+      </div>
     </div>
   )
 }

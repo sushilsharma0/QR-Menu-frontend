@@ -52,6 +52,167 @@
   }
 }
 
+@layer components {
+  /*
+    Restaurant pages predate the platform dark-mode pass and many of their
+    cards/forms use light-only utility classes. Scope these compatibility
+    overrides to the restaurant portal so platform/customer screens keep their
+    own styling while restaurant role follows the same dark neutrals.
+  */
+  .dark .restaurant-portal .bg-white,
+  .dark .restaurant-portal .bg-white\/80,
+  .dark .restaurant-portal .bg-white\/90,
+  .dark .restaurant-portal .bg-white\/95 {
+    background-color: rgb(17 24 39 / 1);
+  }
+
+  .dark .restaurant-portal .bg-surface-50,
+  .dark .restaurant-portal .bg-surface-100,
+  .dark .restaurant-portal .bg-gray-50,
+  .dark .restaurant-portal .bg-primary-50,
+  .dark .restaurant-portal .bg-secondary-50,
+  .dark .restaurant-portal .bg-accent-50,
+  .dark .restaurant-portal .bg-attention-50 {
+    background-color: rgb(31 41 55 / 0.6);
+  }
+
+  .dark .restaurant-portal .from-white {
+    --tw-gradient-from: rgb(17 24 39 / 1) var(--tw-gradient-from-position);
+    --tw-gradient-to: rgb(17 24 39 / 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+  }
+
+  .dark .restaurant-portal .to-surface-50 {
+    --tw-gradient-to: rgb(31 41 55 / 0.6) var(--tw-gradient-to-position);
+  }
+
+  .dark .restaurant-portal .from-primary-50,
+  .dark .restaurant-portal .from-secondary-50,
+  .dark .restaurant-portal .from-surface-50,
+  .dark .restaurant-portal .from-surface-100,
+  .dark .restaurant-portal .from-yellow-50,
+  .dark .restaurant-portal .from-blue-50,
+  .dark .restaurant-portal .from-green-50,
+  .dark .restaurant-portal .from-red-50 {
+    --tw-gradient-from: rgb(31 41 55 / 0.75) var(--tw-gradient-from-position);
+    --tw-gradient-to: rgb(31 41 55 / 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+  }
+
+  .dark .restaurant-portal .via-surface-50,
+  .dark .restaurant-portal .via-surface-100 {
+    --tw-gradient-to: rgb(31 41 55 / 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), rgb(31 41 55 / 0.65) var(--tw-gradient-via-position), var(--tw-gradient-to);
+  }
+
+  .dark .restaurant-portal .to-primary-50,
+  .dark .restaurant-portal .to-secondary-50,
+  .dark .restaurant-portal .to-emerald-50,
+  .dark .restaurant-portal .to-blue-50,
+  .dark .restaurant-portal .to-sky-50,
+  .dark .restaurant-portal .to-amber-50,
+  .dark .restaurant-portal .to-orange-50 {
+    --tw-gradient-to: rgb(17 24 39 / 0.95) var(--tw-gradient-to-position);
+  }
+
+  .dark .restaurant-portal .border-surface-100,
+  .dark .restaurant-portal .border-surface-200,
+  .dark .restaurant-portal .border-gray-100,
+  .dark .restaurant-portal .border-gray-200,
+  .dark .restaurant-portal .border-primary-100,
+  .dark .restaurant-portal .border-emerald-100,
+  .dark .restaurant-portal .border-yellow-100,
+  .dark .restaurant-portal .border-blue-100 {
+    border-color: rgb(31 41 55 / 1);
+  }
+
+  .dark .restaurant-portal .border-surface-300,
+  .dark .restaurant-portal .border-gray-300 {
+    border-color: rgb(55 65 81 / 1);
+  }
+
+  .dark .restaurant-portal .border-primary-500 {
+    border-color: rgb(245 158 11 / 1);
+  }
+
+  .dark .restaurant-portal .divide-surface-200 > :not([hidden]) ~ :not([hidden]),
+  .dark .restaurant-portal .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+  .dark .restaurant-portal .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: rgb(31 41 55 / 1);
+  }
+
+  .dark .restaurant-portal .text-gray-950,
+  .dark .restaurant-portal .text-gray-900,
+  .dark .restaurant-portal .text-gray-800 {
+    color: rgb(243 244 246 / 1);
+  }
+
+  .dark .restaurant-portal .text-gray-700,
+  .dark .restaurant-portal .text-gray-600 {
+    color: rgb(209 213 219 / 1);
+  }
+
+  .dark .restaurant-portal .text-gray-500,
+  .dark .restaurant-portal .text-gray-400 {
+    color: rgb(156 163 175 / 1);
+  }
+
+  .dark .restaurant-portal .text-primary-900,
+  .dark .restaurant-portal .text-primary-800,
+  .dark .restaurant-portal .text-primary-700,
+  .dark .restaurant-portal .text-primary-600,
+  .dark .restaurant-portal .text-primary-500,
+  .dark .restaurant-portal .text-secondary-900,
+  .dark .restaurant-portal .text-secondary-800,
+  .dark .restaurant-portal .text-secondary-700,
+  .dark .restaurant-portal .text-secondary-600,
+  .dark .restaurant-portal .text-accent-900,
+  .dark .restaurant-portal .text-accent-800,
+  .dark .restaurant-portal .text-accent-700,
+  .dark .restaurant-portal .text-accent-600 {
+    color: rgb(252 211 77 / 1);
+  }
+
+  .dark .restaurant-portal .text-surface-100,
+  .dark .restaurant-portal .text-surface-200,
+  .dark .restaurant-portal .text-surface-300 {
+    color: rgb(243 244 246 / 1);
+  }
+
+  .dark .restaurant-portal input,
+  .dark .restaurant-portal select,
+  .dark .restaurant-portal textarea {
+    border-color: rgb(55 65 81 / 1);
+    background-color: rgb(17 24 39 / 1);
+    color: rgb(243 244 246 / 1);
+  }
+
+  .dark .restaurant-portal input::placeholder,
+  .dark .restaurant-portal textarea::placeholder {
+    color: rgb(156 163 175 / 1);
+  }
+
+  .dark .restaurant-portal .hover\:bg-surface-50:hover,
+  .dark .restaurant-portal .hover\:bg-surface-100:hover,
+  .dark .restaurant-portal .hover\:bg-gray-50:hover,
+  .dark .restaurant-portal .hover\:bg-gray-100:hover {
+    background-color: rgb(31 41 55 / 1);
+  }
+
+  .dark .restaurant-portal .hover\:text-gray-900:hover,
+  .dark .restaurant-portal .hover\:text-gray-800:hover {
+    color: rgb(243 244 246 / 1);
+  }
+
+  .dark .restaurant-portal table thead {
+    background-color: rgb(31 41 55 / 0.7);
+  }
+
+  .dark .restaurant-portal table tbody {
+    background-color: rgb(17 24 39 / 1);
+  }
+}
+
 
 
 html {

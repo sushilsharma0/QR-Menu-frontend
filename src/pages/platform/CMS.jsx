@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
+import { FiEdit2, FiFileText, FiLayout, FiPlus, FiTrash2 } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import Table from '../../components/common/Table'
+import { PlatformMetric, PlatformPageHeader, PlatformPill, platformStatusStyles } from '../../components/platform/PlatformUI'
 
 const CMS = () => {
   const [contents, setContents] = useState([])
@@ -67,21 +69,39 @@ const CMS = () => {
   const columns = [
     { header: 'Key', accessor: 'key' },
     { header: 'Title', accessor: 'title' },
-    { header: 'Type', accessor: 'type' },
-    { header: 'Status', accessor: 'isActive', render: (row) => row.isActive ? 'Active' : 'Inactive' },
+    { header: 'Type', accessor: 'type', render: (row) => <span className="capitalize">{row.type}</span> },
+    { header: 'Status', accessor: 'isActive', render: (row) => (
+      <PlatformPill className={row.isActive ? platformStatusStyles.active : platformStatusStyles.inactive}>
+        {row.isActive ? 'Active' : 'Inactive'}
+      </PlatformPill>
+    ) },
     { header: 'Actions', accessor: '_id', render: (row) => (
       <div className="flex gap-2">
-        <button onClick={() => handleEdit(row)} className="text-blue-600 hover:text-blue-800">Edit</button>
-        <button onClick={() => handleDelete(row.key)} className="text-red-600 hover:text-red-800">Delete</button>
+        <button onClick={() => handleEdit(row)} className="rounded-lg p-2 text-gray-400 transition hover:bg-blue-50 hover:text-blue-600" title="Edit content">
+          <FiEdit2 className="h-4 w-4" />
+        </button>
+        <button onClick={() => handleDelete(row.key)} className="rounded-lg p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-600" title="Delete content">
+          <FiTrash2 className="h-4 w-4" />
+        </button>
       </div>
     ) },
   ]
 
+  const activeContent = contents.filter((item) => item.isActive).length
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Content Management</h1>
-        <p className="mt-1 text-gray-500 dark:text-gray-400">Manage website content</p>
+      <PlatformPageHeader
+        badge="Website Content"
+        title="Content Management"
+        description="Create, update, and publish CMS entries used across platform-facing website surfaces."
+        icon={FiLayout}
+      />
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <PlatformMetric label="Content blocks" value={contents.length} sub="Total CMS entries" icon={FiFileText} accent="from-blue-500 to-indigo-500" />
+        <PlatformMetric label="Active" value={activeContent} sub={`${contents.length - activeContent} inactive`} icon={FiLayout} accent="from-emerald-500 to-teal-500" />
+        <PlatformMetric label="Types" value={new Set(contents.map((item) => item.type)).size} sub="Distinct content formats" icon={FiPlus} accent="from-amber-500 to-orange-500" />
       </div>
 
       <Card title={editing ? 'Edit Content' : 'Create New Content'}>
@@ -112,7 +132,7 @@ const CMS = () => {
             <span>Active</span>
           </label>
           <div className="flex gap-3">
-            <Button type="submit">{editing ? 'Update' : 'Create'}</Button>
+            <Button type="submit"><FiPlus className="mr-2" />{editing ? 'Update' : 'Create'}</Button>
             {editing && <Button type="button" variant="secondary" onClick={() => { reset(); setEditing(null); }}>Cancel</Button>}
           </div>
         </form>
