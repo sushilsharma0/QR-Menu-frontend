@@ -47,7 +47,7 @@ const Promotions = () => {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [scopeFilter, setScopeFilter] = useState('all')
-  const [viewMode, setViewMode] = useState('card')
+  const [viewMode, setViewMode] = useState('list')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(12)
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)

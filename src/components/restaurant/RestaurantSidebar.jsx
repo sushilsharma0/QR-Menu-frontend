@@ -1,15 +1,31 @@
-// RestaurantSidebar.jsx
 import React, { useEffect, useState } from 'react'
-import { NavLink, Link } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import {
-  FiHome, FiMenu, FiShoppingCart, FiGrid, FiUsers,
-  FiFileText, FiCreditCard, FiSettings, FiTag,
-  FiActivity, FiChevronLeft, FiChevronRight, FiX,
-  FiExternalLink, FiBarChart2,
+  FiAward,
+  FiBarChart2,
+  FiBookOpen,
+  FiBriefcase,
+  FiChevronLeft,
+  FiChevronRight,
+  FiCoffee,
+  FiCreditCard,
+  FiExternalLink,
+  FiHelpCircle,
+  FiHome,
+  FiMapPin,
+  FiMenu,
+  FiPercent,
+  FiSettings,
+  FiShield,
+  FiShoppingBag,
+  FiTerminal,
+  FiUserCheck,
+  FiUsers,
+  FiX,
 } from 'react-icons/fi'
 import api from '../../services/api'
-import { useSocket } from '../../hooks/useSocket'
 import { useAuth } from '../../hooks/useAuth'
+import { useSocket } from '../../hooks/useSocket'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 
 function staffLoginHref(restaurantId, staff) {
@@ -17,29 +33,47 @@ function staffLoginHref(restaurantId, staff) {
   return `/login?${q.toString()}`
 }
 
-const NAV_ITEMS = [
-  { segment: 'dashboard',    icon: FiHome,        label: 'Dashboard'       },
-  { segment: 'menu',         icon: FiMenu,        label: 'Menu'            },
-  { segment: 'orders',       icon: FiShoppingCart,label: 'Orders'          },
-  { segment: 'orders/activity', icon: FiBarChart2, label: 'Sales activity' },
-  { segment: 'tables',       icon: FiGrid,        label: 'Tables'          },
-  { segment: 'employees',    icon: FiUsers,       label: 'Employees'       },
-  { segment: 'kyc',          icon: FiFileText,    label: 'KYC'             },
-  { segment: 'subscription', icon: FiCreditCard,  label: 'Subscription'    },
-  { segment: 'transactions', icon: FiCreditCard,  label: 'Transactions'    },
-  { segment: 'promotions',   icon: FiTag,         label: 'Promotions'      },
-  { segment: 'tickets',      icon: FiActivity,    label: 'Support Tickets' },
-  { segment: 'logs',         icon: FiActivity,    label: 'System Logs'     },
-  { segment: 'settings',     icon: FiSettings,    label: 'Settings'        },
+const NAV_GROUPS = [
+  {
+    label: 'Overview',
+    items: [
+      { segment: 'dashboard', icon: FiHome, label: 'Dashboard' },
+      { segment: 'orders/activity', icon: FiBarChart2, label: 'Sales activity' },
+    ],
+  },
+  {
+    label: 'Service',
+    items: [
+      { segment: 'orders', icon: FiShoppingBag, label: 'Orders' },
+      { segment: 'menu', icon: FiBookOpen, label: 'Menu' },
+      { segment: 'tables', icon: FiMapPin, label: 'Tables & QR' },
+      { segment: 'promotions', icon: FiPercent, label: 'Promotions' },
+    ],
+  },
+  {
+    label: 'Business',
+    items: [
+      { segment: 'employees', icon: FiUsers, label: 'Employees' },
+      { segment: 'kyc', icon: FiShield, label: 'KYC' },
+      { segment: 'subscription', icon: FiCreditCard, label: 'Subscription' },
+    ],
+  },
+  {
+    label: 'Support',
+    items: [
+      { segment: 'tickets', icon: FiHelpCircle, label: 'Support Tickets' },
+      { segment: 'logs', icon: FiTerminal, label: 'Audit Logs' },
+      { segment: 'settings', icon: FiSettings, label: 'Settings' },
+    ],
+  },
 ]
 
 const STAFF_LINKS = [
-  { staff: 'kitchen', label: 'Kitchen Staff Login' },
-  { staff: 'cashier', label: 'Cashier Staff Login' },
-  { staff: 'waiter',  label: 'Waiter Staff Login'  },
+  { staff: 'kitchen', label: 'Kitchen Staff Login', icon: FiCoffee },
+  { staff: 'cashier', label: 'Cashier Staff Login', icon: FiBriefcase },
+  { staff: 'waiter', label: 'Waiter Staff Login', icon: FiUserCheck },
 ]
 
-// ── Shared nav link used in both expanded and collapsed sidebar
 function NavItem({ item, restaurantBase, pendingCount, collapsed, onClick }) {
   return (
     <NavLink
@@ -48,43 +82,48 @@ function NavItem({ item, restaurantBase, pendingCount, collapsed, onClick }) {
       onClick={onClick}
       title={collapsed ? item.label : undefined}
       className={({ isActive }) =>
-        `relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group
-        ${isActive
-          ? 'bg-primary-50 dark:bg-gray-800 text-primary-700 dark:text-gray-100 font-semibold'
-          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100'
-        }
-        ${collapsed ? 'justify-center' : ''}`
+        `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 ${
+          isActive
+            ? 'bg-primary-50 font-semibold text-primary-800 shadow-sm ring-1 ring-primary-100 dark:bg-gray-800 dark:text-gray-100 dark:ring-gray-700'
+            : 'text-gray-600 hover:bg-surface-50 hover:text-gray-950 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100'
+        } ${collapsed ? 'justify-center' : ''}`
       }
     >
       {({ isActive }) => (
         <>
-          <item.icon className={`h-5 w-5 flex-shrink-0 ${isActive ? 'text-primary-600' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200'}`} />
+          {isActive && !collapsed && (
+            <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary-600" />
+          )}
+          <span
+            className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl transition ${
+              isActive
+                ? 'bg-white text-primary-700 shadow-sm dark:bg-gray-900 dark:text-gray-100'
+                : 'text-gray-500 group-hover:bg-white group-hover:text-primary-700 group-hover:shadow-sm dark:text-gray-400 dark:group-hover:bg-gray-900 dark:group-hover:text-gray-100'
+            }`}
+          >
+            <item.icon className="h-5 w-5" />
+          </span>
 
-          {/* Label — hidden when collapsed */}
-          {!collapsed && <span className="text-sm truncate">{item.label}</span>}
+          {!collapsed && <span className="truncate text-sm">{item.label}</span>}
 
-          {/* Pending badge */}
           {item.segment === 'orders' && pendingCount > 0 && (
-            <span className={`
-              min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold
-              flex items-center justify-center flex-shrink-0
-              ${collapsed ? 'absolute -top-1 -right-1' : 'ml-auto'}
-            `}>
+            <span
+              className={`flex h-5 min-w-[20px] flex-shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white ${
+                collapsed ? 'absolute -right-1 -top-1' : 'ml-auto'
+              }`}
+            >
               {pendingCount > 99 ? '99+' : pendingCount}
             </span>
           )}
 
-          {/* Tooltip for collapsed mode */}
           {collapsed && (
-            <div className="absolute left-full ml-3 px-2.5 py-1.5 bg-gray-900 text-white text-xs rounded-lg
-              opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-lg">
+            <div className="pointer-events-none absolute left-full z-50 ml-3 whitespace-nowrap rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
               {item.label}
               {item.segment === 'orders' && pendingCount > 0 && (
-                <span className="ml-1.5 bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">
+                <span className="ml-1.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[9px] text-white">
                   {pendingCount}
                 </span>
               )}
-              {/* Arrow */}
               <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900" />
             </div>
           )}
@@ -94,93 +133,128 @@ function NavItem({ item, restaurantBase, pendingCount, collapsed, onClick }) {
   )
 }
 
-// ── Sidebar inner content (shared between desktop + mobile drawer)
-function SidebarContent({ collapsed, setCollapsed, pendingCount, restaurantBase, restaurantId, hasTenant, onClose, isMobile }) {
+function Brand({ collapsed, isMobile }) {
+  if (collapsed && !isMobile) {
+    return (
+      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-600 to-secondary-500 text-white shadow-md">
+        <FiAward className="h-5 w-5" />
+      </div>
+    )
+  }
+
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex min-w-0 items-center gap-3">
+      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-600 to-secondary-500 text-white shadow-md">
+        <FiAward className="h-5 w-5" />
+      </div>
+      <div className="min-w-0">
+        <h1 className="truncate text-base font-black leading-none text-gray-950 dark:text-gray-100">QR Menu SaaS</h1>
+        <p className="mt-1 truncate text-xs font-medium text-gray-500 dark:text-gray-400">Restaurant Portal</p>
+      </div>
+    </div>
+  )
+}
 
-      {/* Brand header */}
-      <div className={`flex items-center border-b border-gray-100 dark:border-gray-800 flex-shrink-0
-        ${collapsed && !isMobile ? 'justify-center px-3 py-5' : 'justify-between px-5 py-5'}`}>
-        {(!collapsed || isMobile) && (
-          <div>
-            <h1 className="text-base font-bold text-primary-600 leading-none">QR Menu SaaS</h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Restaurant Portal</p>
-          </div>
-        )}
+function SidebarContent({ collapsed, setCollapsed, pendingCount, restaurantBase, restaurantId, hasTenant, onClose, isMobile }) {
+  const hideLabels = collapsed && !isMobile
 
-        {/* Desktop collapse toggle */}
+  return (
+    <div className="flex h-full flex-col">
+      <div
+        className={`flex flex-shrink-0 items-center border-b border-gray-100 bg-white/95 dark:border-gray-800 dark:bg-gray-900 ${
+          hideLabels ? 'justify-center px-3 py-5' : 'justify-between px-5 py-5'
+        }`}
+      >
+        <Brand collapsed={collapsed} isMobile={isMobile} />
+
         {!isMobile && (
           <button
-            onClick={() => setCollapsed(c => !c)}
-            className={`w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center transition-colors flex-shrink-0
-              ${collapsed ? '' : ''}`}
+            onClick={() => setCollapsed((current) => !current)}
+            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-surface-50 transition-colors hover:bg-surface-100 dark:bg-gray-800 dark:hover:bg-gray-700"
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            {collapsed
-              ? <FiChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-300" />
-              : <FiChevronLeft  className="h-4 w-4 text-gray-500 dark:text-gray-300" />
-            }
+            {collapsed ? (
+              <FiChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-300" />
+            ) : (
+              <FiChevronLeft className="h-4 w-4 text-gray-500 dark:text-gray-300" />
+            )}
           </button>
         )}
 
-        {/* Mobile close button */}
         {isMobile && (
-          <button onClick={onClose}
-            className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-xl bg-surface-50 dark:bg-gray-800"
+          >
             <FiX className="h-4 w-4 text-gray-600 dark:text-gray-300" />
           </button>
         )}
       </div>
 
-      {/* Nav items */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
-        {NAV_ITEMS.map(item => (
-          <NavItem
-            key={item.segment}
-            item={item}
-            restaurantBase={restaurantBase}
-            pendingCount={pendingCount}
-            collapsed={collapsed && !isMobile}
-            onClick={isMobile ? onClose : undefined}
-          />
-        ))}
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <div className="space-y-5">
+          {NAV_GROUPS.map((group) => (
+            <div key={group.label}>
+              {!hideLabels && (
+                <p className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
+                  {group.label}
+                </p>
+              )}
+              <div className="space-y-1">
+                {group.items.map((item) => (
+                  <NavItem
+                    key={item.segment}
+                    item={item}
+                    restaurantBase={restaurantBase}
+                    pendingCount={pendingCount}
+                    collapsed={hideLabels}
+                    onClick={isMobile ? onClose : undefined}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
 
-        {/* Staff login links */}
-        {hasTenant && restaurantId != null && (!collapsed || isMobile) && (
-          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
-            <p className="px-3 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+        {hasTenant && restaurantId != null && !hideLabels && (
+          <div className="mt-5 border-t border-gray-100 pt-4 dark:border-gray-800">
+            <p className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
               Staff Logins
             </p>
-            {STAFF_LINKS.map(({ staff, label }) => (
-              <Link key={staff}
-                to={staffLoginHref(restaurantId, staff)}
-                target="_blank" rel="noopener noreferrer"
-                onClick={isMobile ? onClose : undefined}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-gray-500 dark:text-gray-300
-                  hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-100 transition-colors group"
-              >
-                <FiExternalLink className="h-3.5 w-3.5 flex-shrink-0 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300" />
-                {label}
-              </Link>
-            ))}
+            <div className="space-y-1">
+              {STAFF_LINKS.map(({ staff, label, icon: Icon }) => (
+                <Link
+                  key={staff}
+                  to={staffLoginHref(restaurantId, staff)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={isMobile ? onClose : undefined}
+                  className="group flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-xs font-semibold text-gray-500 transition-colors hover:bg-surface-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-gray-500 shadow-sm dark:bg-gray-950 dark:text-gray-400">
+                    <Icon className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="truncate">{label}</span>
+                  <FiExternalLink className="ml-auto h-3.5 w-3.5 flex-shrink-0 text-gray-400 group-hover:text-primary-600 dark:text-gray-500 dark:group-hover:text-gray-300" />
+                </Link>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Collapsed staff links — just icons with tooltips */}
-        {hasTenant && restaurantId != null && collapsed && !isMobile && (
-          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-0.5">
-            {STAFF_LINKS.map(({ staff, label }) => (
-              <Link key={staff}
+        {hasTenant && restaurantId != null && hideLabels && (
+          <div className="mt-4 space-y-1 border-t border-gray-100 pt-4 dark:border-gray-800">
+            {STAFF_LINKS.map(({ staff, label, icon: Icon }) => (
+              <Link
+                key={staff}
                 to={staffLoginHref(restaurantId, staff)}
-                target="_blank" rel="noopener noreferrer"
+                target="_blank"
+                rel="noopener noreferrer"
                 title={label}
-                className="relative flex items-center justify-center px-3 py-2.5 rounded-xl
-                  text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-100 transition-colors group"
+                className="group relative flex items-center justify-center rounded-xl px-3 py-2.5 text-gray-500 transition-colors hover:bg-surface-50 hover:text-primary-700 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100"
               >
-                <FiExternalLink className="h-4 w-4" />
-                <div className="absolute left-full ml-3 px-2.5 py-1.5 bg-gray-900 text-white text-xs rounded-lg
-                  opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-lg">
+                <Icon className="h-5 w-5" />
+                <div className="pointer-events-none absolute left-full z-50 ml-3 whitespace-nowrap rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
                   {label}
                   <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900" />
                 </div>
@@ -193,36 +267,40 @@ function SidebarContent({ collapsed, setCollapsed, pendingCount, restaurantBase,
   )
 }
 
-// ── Main exported component
 const RestaurantSidebar = () => {
-  const { user }                                   = useAuth()
-  const { socket }                                 = useSocket()
+  const { user } = useAuth()
+  const { socket } = useSocket()
   const { restaurantBase, restaurantId, hasTenant } = useTenantRoutes()
-  const [pendingCount, setPendingCount]            = useState(0)
-  const [collapsed, setCollapsed]                  = useState(false)   // desktop only
-  const [mobileOpen, setMobileOpen]                = useState(false)   // mobile drawer
+  const [pendingCount, setPendingCount] = useState(0)
+  const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   const fetchPendingCount = async () => {
     try {
       const res = await api.get('/restaurant/customer-orders', { params: { status: 'pending', page: 1, limit: 1 } })
       setPendingCount(res?.data?.data?.pagination?.total || 0)
-    } catch { setPendingCount(0) }
+    } catch {
+      setPendingCount(0)
+    }
   }
 
-  useEffect(() => { fetchPendingCount() }, [])
+  useEffect(() => {
+    fetchPendingCount()
+  }, [])
 
   useEffect(() => {
-    if (!socket) return
-    socket.on('new_order',     fetchPendingCount)
+    if (!socket) return undefined
+    socket.on('new_order', fetchPendingCount)
     socket.on('order_updated', fetchPendingCount)
     return () => {
-      socket.off('new_order',     fetchPendingCount)
+      socket.off('new_order', fetchPendingCount)
       socket.off('order_updated', fetchPendingCount)
     }
   }, [socket])
 
-  // Close mobile drawer on route change
-  useEffect(() => { setMobileOpen(false) }, [restaurantBase])
+  useEffect(() => {
+    setMobileOpen(false)
+  }, [restaurantBase])
 
   if (!user || !hasTenant) return null
 
@@ -230,52 +308,49 @@ const RestaurantSidebar = () => {
 
   return (
     <>
-      {/* ── Mobile top bar (visible on small screens) */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 z-30 flex items-center px-4 gap-3">
+      <div className="fixed left-0 right-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-gray-200 bg-white px-4 dark:border-gray-800 dark:bg-gray-900 lg:hidden">
         <button
           onClick={() => setMobileOpen(true)}
-          className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0"
+          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-surface-50 dark:bg-gray-800"
         >
           <FiMenu className="h-5 w-5 text-gray-700 dark:text-gray-200" />
         </button>
-        <h1 className="text-sm font-bold text-primary-600">QR Menu SaaS</h1>
-        {/* Pending badge on mobile top bar */}
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary-600 to-secondary-500 text-white">
+            <FiAward className="h-4 w-4" />
+          </div>
+          <h1 className="truncate text-sm font-black text-gray-950 dark:text-gray-100">QR Menu SaaS</h1>
+        </div>
         {pendingCount > 0 && (
-          <span className="ml-auto min-w-[22px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+          <span className="ml-auto flex h-5 min-w-[22px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
             {pendingCount > 99 ? '99+' : pendingCount}
           </span>
         )}
       </div>
 
-      {/* ── Mobile drawer backdrop */}
       {mobileOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
-          onClick={() => setMobileOpen(false)}
-        />
+        <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
-      {/* ── Mobile drawer */}
-      <div className={`
-        lg:hidden fixed top-0 left-0 h-full w-72 bg-white dark:bg-gray-900 z-50 shadow-2xl
-        transform transition-transform duration-300 ease-in-out
-        ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
+      <div
+        className={`fixed left-0 top-0 z-50 h-full w-72 transform bg-white shadow-2xl transition-transform duration-300 ease-in-out dark:bg-gray-900 lg:hidden ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
         <SidebarContent
           {...sharedProps}
           collapsed={false}
           setCollapsed={setCollapsed}
           onClose={() => setMobileOpen(false)}
-          isMobile={true}
+          isMobile
         />
       </div>
 
-      {/* ── Desktop sidebar */}
-      <aside className={`
-        hidden lg:flex flex-col h-screen sticky top-0 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800
-        transition-all duration-300 ease-in-out flex-shrink-0
-        ${collapsed ? 'w-[68px]' : 'w-64'}
-      `}>
+      <aside
+        className={`sticky top-0 hidden h-screen flex-shrink-0 flex-col border-r border-gray-100 bg-white transition-all duration-300 ease-in-out dark:border-gray-800 dark:bg-gray-900 lg:flex ${
+          collapsed ? 'w-[76px]' : 'w-72'
+        }`}
+      >
         <SidebarContent
           {...sharedProps}
           collapsed={collapsed}

@@ -42,7 +42,6 @@ import RestaurantEmployeeForm from "./pages/restaurant/EmployeeForm";
 import RestaurantKYC from "./pages/restaurant/KYC";
 import RestaurantSubscription from "./pages/restaurant/Subscription";
 import RestaurantSubscriptionInvoiceDetail from "./pages/restaurant/SubscriptionInvoiceDetail";
-import RestaurantTransactions from "./pages/restaurant/Transactions";
 import RestaurantSettings from "./pages/restaurant/Settings";
 import RestaurantProfile from "./pages/restaurant/Profile";
 import RestaurantPromotions from "./pages/restaurant/Promotions";
@@ -156,7 +155,7 @@ function App() {
         <Route path="kyc" element={<RestaurantKYC />} />
         <Route path="subscription" element={<RestaurantSubscription />} />
         <Route path="subscription/invoice/:invoiceId" element={<RestaurantSubscriptionInvoiceDetail />} />
-        <Route path="transactions" element={<RestaurantTransactions />} />
+        <Route path="transactions" element={<Navigate to="../orders/activity" replace />} />
         <Route path="promotions" element={<RestaurantPromotions />} />
         <Route path="tickets" element={<RestaurantTickets />} />
         <Route path="tickets/create" element={<RestaurantTicketDetail />} />

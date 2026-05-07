@@ -1,6 +1,21 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { FiArrowLeft, FiPrinter, FiCheck, FiX, FiClock } from 'react-icons/fi'
+import { motion } from 'framer-motion'
+import {
+  FiArrowLeft,
+  FiCheck,
+  FiClock,
+  FiCreditCard,
+  FiHash,
+  FiMail,
+  FiMapPin,
+  FiPhone,
+  FiPrinter,
+  FiShoppingBag,
+  FiSliders,
+  FiUser,
+  FiX,
+} from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
 import Card from '../../components/common/Card'
@@ -17,6 +32,49 @@ import {
   paymentStatusStyles,
 } from '../../components/restaurant/RestaurantUI'
 
+const SectionCard = ({ title, icon: Icon, children, actions, className = '' }) => (
+  <Card
+    className={`overflow-hidden rounded-2xl border-surface-200 shadow-sm hover:shadow-lg ${className}`}
+  >
+    <div className="-mx-6 -mt-6 mb-5 flex items-center justify-between border-b border-surface-200 bg-surface-50/70 px-6 py-4">
+      <div className="flex items-center gap-3">
+        {Icon && (
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-primary-700 shadow-sm">
+            <Icon className="h-5 w-5" />
+          </span>
+        )}
+        <h3 className="text-base font-bold text-gray-950">{title}</h3>
+      </div>
+      {actions}
+    </div>
+    {children}
+  </Card>
+)
+
+const InfoTile = ({ label, value, icon: Icon, accent = 'text-primary-700 bg-primary-50' }) => (
+  <div className="rounded-2xl border border-surface-200 bg-white p-4 shadow-sm">
+    <div className="flex items-start gap-3">
+      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${accent}`}>
+        <Icon className="h-5 w-5" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
+        <p className="mt-1 truncate text-lg font-bold text-gray-950">{value}</p>
+      </div>
+    </div>
+  </div>
+)
+
+const DetailRow = ({ label, value, icon: Icon }) => (
+  <div className="flex items-start gap-3 rounded-xl bg-surface-50/70 px-3 py-3">
+    {Icon && <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary-600" />}
+    <div className="min-w-0">
+      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
+      <p className="mt-1 break-words text-sm font-semibold text-gray-900">{value || 'N/A'}</p>
+    </div>
+  </div>
+)
+
 const OrderDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -27,9 +85,15 @@ const OrderDetail = () => {
   const [restaurant, setRestaurant] = useState(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
+  const suppressNextSocketToastRef = useRef(false)
   const isCashierView = user?.scope === 'employee' && user?.role === 'cashier'
   const currency = user?.currency || restaurant?.settings?.currency || 'Rs.'
   const formatMoney = (value) => formatRestaurantCurrency(value, currency)
+  const subtotal = Number(order?.totalAmount || 0)
+  const taxAmount = Number(order?.taxAmount || 0)
+  const grandTotal = Number(order?.grandTotal || subtotal + taxAmount)
+  const itemCount = order?.items?.reduce((sum, item) => sum + Number(item.quantity || 0), 0) || 0
+  const customerName = order?.customerName || 'Guest'
   const backPath = isCashierView
     ? `${cashierBase}/dashboard`
     : user?.role === 'kitchen'
@@ -77,17 +141,23 @@ const OrderDetail = () => {
 
   const handleStatusUpdate = (data) => {
     setOrder(prev => ({ ...prev, ...data }))
-    toast.success(`Order status updated to ${data.status}`)
+    if (suppressNextSocketToastRef.current) {
+      suppressNextSocketToastRef.current = false
+    } else {
+      toast.success(`Order status updated to ${data.status}`)
+    }
     fetchOrder()
   }
 
   const updateStatus = async (status, estimatedWaitTime = null) => {
     try {
       setUpdating(true)
+      suppressNextSocketToastRef.current = true
       await api.patch(`/restaurant/customer-orders/${id}/status`, { status, estimatedWaitTime })
       toast.success(`Order status updated to ${status}`)
       fetchOrder()
     } catch (error) {
+      suppressNextSocketToastRef.current = false
       toast.error('Failed to update status')
     } finally {
       setUpdating(false)
@@ -180,12 +250,13 @@ const OrderDetail = () => {
             </Button>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Update Wait Time</label>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {[10, 15, 20, 30, 45].map(mins => (
                   <button
                     key={mins}
+                    type="button"
                     onClick={() => updateStatus('confirmed', mins)}
-                    className="px-3 py-1 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm"
+                    className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-sm font-medium text-gray-700 transition-colors hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:border-primary-700 dark:hover:bg-primary-900/20"
                   >
                     {mins} min
                   </button>
@@ -220,8 +291,8 @@ const OrderDetail = () => {
   if (isCashierView) {
     return (
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <button onClick={() => navigate(backPath)} className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <button onClick={() => navigate(backPath)} className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-950">
             <FiArrowLeft /> Back to Cashier
           </button>
           <Button onClick={printReceipt}>
@@ -229,8 +300,21 @@ const OrderDetail = () => {
           </Button>
         </div>
 
-        <div className="max-w-xl mx-auto">
-          <Card>
+        <div className="mx-auto max-w-2xl">
+          <Card className="overflow-hidden rounded-3xl border-surface-200 shadow-xl">
+            <div className="-mx-6 -mt-6 mb-6 bg-gradient-to-r from-primary-800 via-secondary-700 to-accent-700 px-6 py-7 text-white">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/70">Cashier Receipt</p>
+                  <h1 className="mt-2 text-3xl font-bold">#{order.orderNumber}</h1>
+                </div>
+                <div className="text-left sm:text-right">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-white/70">Grand Total</p>
+                  <p className="mt-1 text-3xl font-bold text-surface-100">{formatMoney(grandTotal)}</p>
+                </div>
+              </div>
+            </div>
+
             <div className="text-center border-b border-dashed pb-4">
               <h2 className="text-2xl font-bold text-gray-900">{order?.restaurant?.name || 'Restaurant'}</h2>
               <p className="text-sm text-gray-500">Kathmandu, Nepal</p>
@@ -242,7 +326,7 @@ const OrderDetail = () => {
               <div className="flex justify-between"><span className="text-gray-500">Bill No</span><span className="font-semibold">{order.orderNumber}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">Date</span><span>{formatRestaurantDateTime(order.createdAt)}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">Table</span><span>{order.table?.tableNumber || 'N/A'}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Customer</span><span>{order.customerName || 'Guest'}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Customer</span><span>{customerName}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">Payment</span><span className="uppercase">{order.paymentMethod || 'cash'}</span></div>
             </div>
 
@@ -265,11 +349,11 @@ const OrderDetail = () => {
             </div>
 
             <div className="py-4 space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-gray-500">Sub Total</span><span>{formatMoney(order.totalAmount)}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">VAT</span><span>{formatMoney(order.taxAmount)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Sub Total</span><span>{formatMoney(subtotal)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">VAT</span><span>{formatMoney(taxAmount)}</span></div>
               <div className="flex justify-between text-base font-bold border-t pt-2">
                 <span>Grand Total</span>
-                <span className="text-primary-600">{formatMoney(order.grandTotal)}</span>
+                <span className="text-primary-600">{formatMoney(grandTotal)}</span>
               </div>
             </div>
 
@@ -284,8 +368,8 @@ const OrderDetail = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <button onClick={() => navigate(backPath)} className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <button onClick={() => navigate(backPath)} className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-950">
           <FiArrowLeft /> Back to Orders
         </button>
         <Button variant="secondary" onClick={printReceipt}>
@@ -293,134 +377,170 @@ const OrderDetail = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Order Info - Left Column */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card title="Order Information">
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500">Order Number</p>
-                  <p className="font-medium text-lg">#{order.orderNumber}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Status</p>
-                  <OrderStatusBadge status={order.status} />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Date & Time</p>
-                  <p className="font-medium">{formatRestaurantDateTime(order.createdAt)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Estimated Wait Time</p>
-                  <p className="font-medium">{order.estimatedWaitTime || 'Not set'} minutes</p>
-                </div>
+      <motion.section
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        className="relative overflow-hidden rounded-3xl border border-surface-200 bg-white shadow-sm"
+      >
+        <div className="absolute inset-x-0 top-0 h-44 bg-gradient-to-r from-primary-50 via-surface-50 to-emerald-50" />
+        <div className="relative p-5 md:p-7">
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-700 shadow-sm">
+                <FiShoppingBag className="h-4 w-4" />
+                Order Details
               </div>
-
-              {order.specialRequests && (
-                <div className="border-t pt-4">
-                  <p className="text-sm text-gray-500">Special Requests</p>
-                  <p className="mt-1">{order.specialRequests}</p>
-                </div>
-              )}
-            </div>
-          </Card>
-
-          <Card title="Order Items">
-            <div className="space-y-3">
-              {order.items?.map((item, idx) => (
-                <div key={idx} className="flex justify-between py-3 border-b last:border-0">
-                  <div>
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
-                    {item.specialInstructions && (
-                      <p className="text-sm text-gray-500 mt-1">Note: {item.specialInstructions}</p>
-                    )}
-                  </div>
-                  <p className="font-medium">{formatMoney(item.price * item.quantity)}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="border-t pt-4 mt-4 space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Subtotal:</span>
-                <span>{formatMoney(order.totalAmount)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Tax:</span>
-                <span>{formatMoney(order.taxAmount)}</span>
-              </div>
-              <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                <span>Total:</span>
-                <span className="text-primary-600">{formatMoney(order.grandTotal)}</span>
-              </div>
-            </div>
-          </Card>
-
-          <Card title="Order Timeline">
-            <div className="space-y-4">
-              {order.statusHistory?.map((history, idx) => (
-                <div key={idx} className="flex gap-4">
-                  <div className="w-24 text-sm text-gray-500">
-                    {formatRestaurantDateTime(history.timestamp)}
-                  </div>
-                  <div className="flex-1">
-                    <span className="font-medium capitalize">{history.status}</span>
-                    {history.note && <p className="text-sm text-gray-500">{history.note}</p>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-
-        {/* Actions - Right Column */}
-        <div className="space-y-6">
-          <Card title="Actions">
-            {getStatusActions()}
-          </Card>
-
-          <Card title="Customer Information">
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm text-gray-500">Name</p>
-                <p className="font-medium">{order.customerName}</p>
-              </div>
-              {order.customerPhone && (
-                <div>
-                  <p className="text-sm text-gray-500">Phone</p>
-                  <p className="font-medium">{order.customerPhone}</p>
-                </div>
-              )}
-              {order.customerEmail && (
-                <div>
-                  <p className="text-sm text-gray-500">Email</p>
-                  <p className="font-medium">{order.customerEmail}</p>
-                </div>
-              )}
-              <div>
-                <p className="text-sm text-gray-500">Table Number</p>
-                <p className="font-medium">{order.table?.tableNumber || 'N/A'}</p>
-              </div>
-            </div>
-          </Card>
-
-          {order.paymentStatus && (
-            <Card title="Payment Information">
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm text-gray-500">Payment Status</p>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <h1 className="text-3xl font-bold tracking-tight text-gray-950">#{order.orderNumber}</h1>
+                <OrderStatusBadge status={order.status} />
+                {order.paymentStatus && (
                   <RestaurantStatusPill value={order.paymentStatus} styles={paymentStatusStyles} uppercase />
-                </div>
-                {order.paymentMethod && (
-                  <div>
-                    <p className="text-sm text-gray-500">Payment Method</p>
-                    <p className="font-medium capitalize">{order.paymentMethod}</p>
-                  </div>
                 )}
               </div>
-            </Card>
+              <p className="mt-2 max-w-3xl text-sm text-gray-500">
+                {customerName} - Table {order.table?.tableNumber || 'N/A'} - {formatRestaurantDateTime(order.createdAt)}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/80 bg-white/90 px-5 py-4 shadow-sm xl:text-right">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Grand Total</p>
+              <p className="mt-1 text-3xl font-bold text-primary-700">{formatMoney(grandTotal)}</p>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <InfoTile label="Items ordered" value={itemCount} icon={FiShoppingBag} accent="bg-primary-50 text-primary-700" />
+            <InfoTile label="Estimated wait" value={order.estimatedWaitTime ? `${order.estimatedWaitTime} min` : 'Not set'} icon={FiClock} accent="bg-indigo-50 text-indigo-700" />
+            <InfoTile label="Table" value={order.table?.tableNumber || 'N/A'} icon={FiMapPin} accent="bg-emerald-50 text-emerald-700" />
+            <InfoTile label="Payment" value={order.paymentMethod || 'N/A'} icon={FiCreditCard} accent="bg-amber-50 text-amber-700" />
+          </div>
+        </div>
+      </motion.section>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <SectionCard title="Order Information" icon={FiHash}>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <DetailRow label="Order number" value={`#${order.orderNumber}`} icon={FiHash} />
+              <DetailRow label="Date and time" value={formatRestaurantDateTime(order.createdAt)} icon={FiClock} />
+              <DetailRow label="Estimated wait" value={order.estimatedWaitTime ? `${order.estimatedWaitTime} minutes` : 'Not set'} icon={FiClock} />
+              <div className="flex items-center gap-3 rounded-xl bg-surface-50/70 px-3 py-3">
+                <FiSliders className="h-4 w-4 text-primary-600" />
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Current status</p>
+                  <div className="mt-1"><OrderStatusBadge status={order.status} /></div>
+                </div>
+              </div>
+            </div>
+            {order.specialRequests && (
+              <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Special requests</p>
+                <p className="mt-1 text-sm font-medium text-amber-950">{order.specialRequests}</p>
+              </div>
+            )}
+          </SectionCard>
+
+          <SectionCard title="Order Items" icon={FiShoppingBag}>
+            <div className="overflow-hidden rounded-2xl border border-surface-200">
+              {order.items?.map((item, idx) => (
+                <div key={idx} className="flex flex-col gap-3 border-b border-surface-200 bg-white px-4 py-4 last:border-b-0 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-sm font-bold text-primary-700">
+                      {item.quantity}x
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-950">{item.name}</p>
+                      <p className="text-sm text-gray-500">{formatMoney(item.price)} each</p>
+                      {item.specialInstructions && (
+                        <p className="mt-2 rounded-lg bg-surface-50 px-3 py-2 text-sm text-gray-600">Note: {item.specialInstructions}</p>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-right font-bold text-gray-950">{formatMoney(item.price * item.quantity)}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 rounded-2xl bg-gray-950 p-5 text-white">
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-white/60">Subtotal</span>
+                  <span className="font-semibold">{formatMoney(subtotal)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/60">Tax</span>
+                  <span className="font-semibold">{formatMoney(taxAmount)}</span>
+                </div>
+                <div className="flex justify-between border-t border-white/15 pt-3 text-lg font-bold">
+                  <span>Total</span>
+                  <span className="text-surface-100">{formatMoney(grandTotal)}</span>
+                </div>
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Order Timeline" icon={FiClock}>
+            {order.statusHistory?.length ? (
+              <div className="space-y-0">
+                {order.statusHistory.map((history, idx) => (
+                  <div key={idx} className="relative flex gap-4 pb-6 last:pb-0">
+                    <div className="flex flex-col items-center">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-600 text-white shadow-sm">
+                        <FiCheck className="h-4 w-4" />
+                      </span>
+                      {idx < order.statusHistory.length - 1 && <span className="mt-2 h-full w-px bg-surface-200" />}
+                    </div>
+                    <div className="min-w-0 flex-1 rounded-2xl bg-surface-50/70 px-4 py-3">
+                      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                        <span className="font-bold capitalize text-gray-950">{history.status}</span>
+                        <span className="text-xs font-medium text-gray-500">{formatRestaurantDateTime(history.timestamp)}</span>
+                      </div>
+                      {history.note && <p className="mt-1 text-sm text-gray-500">{history.note}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-surface-200 bg-surface-50/60 px-4 py-8 text-center">
+                <p className="text-sm font-semibold text-gray-900">No timeline updates yet</p>
+                <p className="mt-1 text-sm text-gray-500">Status changes will appear here as the order moves through service.</p>
+              </div>
+            )}
+          </SectionCard>
+        </div>
+
+        <div className="space-y-6">
+          <SectionCard title="Actions" icon={FiSliders} className="lg:sticky lg:top-6">
+            {getStatusActions() || (
+              <div className="rounded-2xl border border-surface-200 bg-surface-50/70 px-4 py-5 text-center">
+                <p className="text-sm font-semibold text-gray-900">No actions available</p>
+                <p className="mt-1 text-xs text-gray-500">This order is already in a final state.</p>
+              </div>
+            )}
+          </SectionCard>
+
+          <SectionCard title="Customer Information" icon={FiUser}>
+            <div className="space-y-3">
+              <DetailRow label="Name" value={customerName} icon={FiUser} />
+              {order.customerPhone && <DetailRow label="Phone" value={order.customerPhone} icon={FiPhone} />}
+              {order.customerEmail && <DetailRow label="Email" value={order.customerEmail} icon={FiMail} />}
+              <DetailRow label="Table number" value={order.table?.tableNumber || 'N/A'} icon={FiMapPin} />
+            </div>
+          </SectionCard>
+
+          {order.paymentStatus && (
+            <SectionCard title="Payment Information" icon={FiCreditCard}>
+              <div className="space-y-3">
+                <div className="rounded-xl bg-surface-50/70 px-3 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Payment status</p>
+                  <div className="mt-2">
+                    <RestaurantStatusPill value={order.paymentStatus} styles={paymentStatusStyles} uppercase />
+                  </div>
+                </div>
+                {order.paymentMethod && <DetailRow label="Payment method" value={order.paymentMethod} icon={FiCreditCard} />}
+                <DetailRow label="Amount due" value={formatMoney(grandTotal)} icon={FiCreditCard} />
+              </div>
+            </SectionCard>
           )}
         </div>
       </div>

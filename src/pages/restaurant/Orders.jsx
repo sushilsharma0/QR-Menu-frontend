@@ -192,7 +192,7 @@ const Orders = () => {
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0, limit: 10 })
-  const [viewMode, setViewMode] = useState('card')
+  const [viewMode, setViewMode] = useState('list')
   const [trackOrderNumber, setTrackOrderNumber] = useState('')
 
   const fetchSummary = useCallback(async () => {

@@ -190,7 +190,7 @@ const Menu = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState("card");
+  const [viewMode, setViewMode] = useState("list");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
 

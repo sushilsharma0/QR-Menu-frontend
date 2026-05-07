@@ -35,6 +35,65 @@ const tableStatusStyles = {
   inactive: "bg-red-100 text-red-800",
 };
 
+const PAGE_SIZE_OPTIONS = [10, 20, 50];
+
+function PaginationBar({ page, pageSize, total, onPageChange, onPageSizeChange }) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, total);
+  const pages = Array.from({ length: totalPages }, (_, index) => index + 1).filter(
+    (number) => number === 1 || number === totalPages || Math.abs(number - page) <= 1,
+  );
+
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border border-surface-200 bg-white px-4 py-3 md:flex-row md:items-center md:justify-between">
+      <p className="text-sm text-gray-500">
+        Showing <span className="font-semibold text-gray-900">{start}-{end}</span> of{" "}
+        <span className="font-semibold text-gray-900">{total}</span> tables
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <select
+          value={pageSize}
+          onChange={(event) => onPageSizeChange(Number(event.target.value))}
+          className="rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-400"
+        >
+          {PAGE_SIZE_OPTIONS.map((size) => (
+            <option key={size} value={size}>{size} / page</option>
+          ))}
+        </select>
+        <Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
+          Prev
+        </Button>
+        <div className="flex items-center gap-1">
+          {pages.map((number, index) => {
+            const previous = pages[index - 1];
+            const showGap = previous && number - previous > 1;
+            return (
+              <React.Fragment key={number}>
+                {showGap && <span className="px-1 text-sm text-gray-400">...</span>}
+                <button
+                  type="button"
+                  onClick={() => onPageChange(number)}
+                  className={`h-9 min-w-9 rounded-lg px-3 text-sm font-semibold transition ${
+                    number === page
+                      ? "bg-primary-600 text-white shadow-sm"
+                      : "border border-surface-200 bg-white text-gray-600 hover:bg-surface-50"
+                  }`}
+                >
+                  {number}
+                </button>
+              </React.Fragment>
+            );
+          })}
+        </div>
+        <Button variant="secondary" size="sm" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
+          Next
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function QRPreview({ table, qrUrl, logo, size = 132, className = "" }) {
   const logoSize = Math.max(34, Math.round(size * 0.22));
 
@@ -147,7 +206,9 @@ const Tables = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [floorFilter, setFloorFilter] = useState("all");
-  const [viewMode, setViewMode] = useState("card");
+  const [viewMode, setViewMode] = useState("list");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     fetchTables();
@@ -241,6 +302,14 @@ const Tables = () => {
       return matchesSearch && matchesStatus && matchesFloor;
     });
   }, [floorFilter, search, statusFilter, tables]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredTables.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paginatedTables = filteredTables.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  useEffect(() => {
+    setPage(1);
+  }, [floorFilter, pageSize, search, statusFilter, viewMode]);
 
   if (loading) {
     return <RestaurantPageLoader />;
@@ -380,7 +449,7 @@ const Tables = () => {
               exit={{ opacity: 0 }}
               className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3"
             >
-              {filteredTables.map((table, index) => (
+              {paginatedTables.map((table, index) => (
                 <motion.article
                   key={table._id}
                   initial={{ opacity: 0, y: 16 }}
@@ -441,7 +510,7 @@ const Tables = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-surface-200 bg-white">
-                  {filteredTables.map((table) => (
+                  {paginatedTables.map((table) => (
                     <tr key={table._id} className="transition hover:bg-surface-50">
                       <td className="px-5 py-4 font-bold text-gray-950">Table {table.tableNumber}</td>
                       <td className="px-5 py-4 text-gray-600">{table.capacity || 4} seats</td>
@@ -470,6 +539,16 @@ const Tables = () => {
           )}
         </AnimatePresence>
       </Card>
+
+      {filteredTables.length > 0 && (
+        <PaginationBar
+          page={currentPage}
+          pageSize={pageSize}
+          total={filteredTables.length}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+      )}
 
       <Modal
         isOpen={qrModal.open}

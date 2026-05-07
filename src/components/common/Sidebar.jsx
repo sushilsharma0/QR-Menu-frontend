@@ -45,7 +45,6 @@ const Sidebar = () => {
       { path: `${restaurantBase}/employees`, icon: FiUsers, label: 'Employees' },
       { path: `${restaurantBase}/kyc`, icon: FiFileText, label: 'KYC' },
       { path: `${restaurantBase}/subscription`, icon: FaRegCreditCard, label: 'Subscription' },
-      { path: `${restaurantBase}/transactions`, icon: FiCreditCard, label: 'Transactions' },
       { path: `${restaurantBase}/profile`, icon: FiUser, label: 'Profile' },
       { path: `${restaurantBase}/settings`, icon: FiSettings, label: 'Settings' },
     ]
