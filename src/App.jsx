@@ -131,6 +131,7 @@ function App() {
         <Route path="/platform/invoices" element={<PlatformInvoices />} />
         <Route path="/platform/invoices/:id" element={<PlatformInvoiceDetail />} />
         <Route path="/platform/subscription-activity" element={<PlatformSubscriptionActivity />} />
+        <Route path="/platform/notifications" element={<NotificationsPage />} />
       </Route>
 
       {/* Restaurant Routes: /restaurant/:slug/:restaurantId/... */}
@@ -163,6 +164,7 @@ function App() {
         <Route path="logs" element={<RestaurantSystemLogs />} />
         <Route path="settings" element={<RestaurantSettings />} />
         <Route path="profile" element={<RestaurantProfile />} />
+        <Route path="notifications" element={<NotificationsPage />} />
       </Route>
 
       {/* Employee: forced password change (no sidebar) */}
@@ -177,11 +179,13 @@ function App() {
         <Route path="/cashier/:slug/:restaurantId/orders/:id" element={<RestaurantOrderDetail />} />
         <Route path="/waiter/:slug/:restaurantId/dashboard" element={<WaiterDashboard />} />
         <Route path="/waiter/:slug/:restaurantId/order" element={<WaiterTakeOrder />} />
+        <Route path="/waiter/:slug/:restaurantId/notifications" element={<NotificationsPage />} />
         <Route path="/employee/:slug/:restaurantId/orders" element={<OrderList />} />
         <Route path="/employee/:slug/:restaurantId/orders/:id" element={<RestaurantOrderDetail />} />
+        <Route path="/employee/:slug/:restaurantId/notifications" element={<NotificationsPage />} />
+        <Route path="/kitchen/:slug/:restaurantId/notifications" element={<NotificationsPage />} />
+        <Route path="/cashier/:slug/:restaurantId/notifications" element={<NotificationsPage />} />
       </Route>
-
-      <Route path="/notifications" element={<NotificationsPage />} />
 
       {/* Customer Routes - Public */}
       {/* IMPORTANT: Add the menu route with slug and token parameters */}

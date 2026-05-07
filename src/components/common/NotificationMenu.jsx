@@ -1,23 +1,52 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   FiBell,
   FiCheckCircle,
   FiClock,
-  FiExternalLink,
   FiShoppingBag,
   FiXCircle,
 } from 'react-icons/fi'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
+import { useAuth } from '../../hooks/useAuth'
+import {
+  cashierPortalBase,
+  employeePortalBase,
+  getTenantSegments,
+  kitchenPortalBase,
+  restaurantPortalBase,
+  waiterPortalBase,
+} from '../../utils/tenantPaths'
 import useNotification from '../../hooks/useNotification'
 
 const NotificationMenu = () => {
   const [isOpen, setIsOpen] = useState(false)
+  const location = useLocation()
+  const { user } = useAuth()
   const {
     notifications,
     unreadCount,
     markAllAsRead,
-    markAsRead,
   } = useNotification()
+  const { slug, restaurantId } = getTenantSegments(user)
+
+  let notificationsPath = '/notifications'
+  if (user?.role === 'super_admin' || user?.role === 'admin') {
+    notificationsPath = '/platform/notifications'
+  } else if (user?.role === 'restaurant') {
+    notificationsPath = `${restaurantPortalBase(slug, restaurantId)}/notifications`
+  } else if (user?.scope === 'employee' && user?.role === 'kitchen') {
+    notificationsPath = `${kitchenPortalBase(slug, restaurantId)}/notifications`
+  } else if (user?.scope === 'employee' && user?.role === 'cashier') {
+    notificationsPath = `${cashierPortalBase(slug, restaurantId)}/notifications`
+  } else if (user?.scope === 'employee' && user?.role === 'waiter') {
+    notificationsPath = `${waiterPortalBase(slug, restaurantId)}/notifications`
+  } else if (user?.scope === 'employee') {
+    notificationsPath = `${employeePortalBase(slug, restaurantId)}/notifications`
+  }
+
+  useEffect(() => {
+    setIsOpen(false)
+  }, [location.pathname])
 
   const handleToggle = () => {
     setIsOpen((prev) => {
@@ -160,7 +189,7 @@ const NotificationMenu = () => {
                           )}
                         </div>
                       </div>
-                      <div className="pt-2 flex items-center justify-between">
+                      {/* <div className="pt-2 flex items-center justify-between">
                         <button
                           type="button"
                           onClick={() => markAsRead(notification._id)}
@@ -177,7 +206,7 @@ const NotificationMenu = () => {
                             Open <FiExternalLink className="h-3 w-3" />
                           </a>
                         ) : null}
-                      </div>
+                      </div> */}
                     </div>
                   )
                 })
@@ -191,7 +220,11 @@ const NotificationMenu = () => {
               >
                 Mark all as read
               </button>
-              <Link to="/notifications" className="text-xs text-primary-700 font-medium">
+              <Link
+                to={notificationsPath}
+                onClick={() => setIsOpen(false)}
+                className="text-xs text-primary-700 font-medium"
+              >
                 View all
               </Link>
             </div>
