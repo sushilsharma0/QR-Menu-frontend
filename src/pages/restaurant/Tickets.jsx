@@ -83,8 +83,8 @@ const RestaurantTickets = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Support Tickets</h1>
-          <p className="text-gray-500 mt-1">Manage your support requests and track resolutions</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Support Tickets</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your support requests and track resolutions</p>
         </div>
         <Button
           onClick={() => navigate('create')}
@@ -98,14 +98,14 @@ const RestaurantTickets = () => {
       <Card title="Filters">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
             <select
               value={filters.status}
               onChange={(e) => {
                 setFilters({ ...filters, status: e.target.value })
                 setPage(1)
               }}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm"
             >
               <option value="">All Statuses</option>
               <option value="open">Open</option>
@@ -115,14 +115,14 @@ const RestaurantTickets = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Priority</label>
             <select
               value={filters.priority}
               onChange={(e) => {
                 setFilters({ ...filters, priority: e.target.value })
                 setPage(1)
               }}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm"
             >
               <option value="">All Priorities</option>
               <option value="low">Low</option>
@@ -141,7 +141,7 @@ const RestaurantTickets = () => {
           </div>
         ) : tickets.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">No tickets found</p>
+            <p className="text-gray-500 dark:text-gray-400">No tickets found</p>
             <Button onClick={() => navigate('create')} className="mt-4">
               Create Your First Ticket
             </Button>
@@ -151,21 +151,21 @@ const RestaurantTickets = () => {
             <Table columns={columns} data={tickets} />
             {pagination.pages > 1 && (
               <div className="flex justify-between items-center mt-4 pt-4 border-t">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
                   Page {pagination.page} of {pagination.pages}
                 </p>
                 <div className="flex gap-2">
                   <button
                     disabled={page === 1}
                     onClick={() => setPage(page - 1)}
-                    className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    className="px-4 py-2 border dark:border-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800"
                   >
                     Previous
                   </button>
                   <button
                     disabled={page === pagination.pages}
                     onClick={() => setPage(page + 1)}
-                    className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    className="px-4 py-2 border dark:border-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800"
                   >
                     Next
                   </button>

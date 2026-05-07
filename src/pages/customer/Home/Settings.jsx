@@ -52,7 +52,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-24 text-gray-900 dark:text-gray-100">
       {/* Header */}
       <div className="bg-orange-500 p-6 text-white text-center">
         <h1 className="text-2xl font-bold">Settings</h1>
@@ -68,26 +68,26 @@ export default function Settings() {
       <div className="p-4 space-y-6">
         {settingsSections.map((section, sectionIndex) => (
           <div key={sectionIndex}>
-            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-1">
+            <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">
               {section.title}
             </h2>
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
               {section.items.map((item, itemIndex) => (
                 <div 
                   key={itemIndex}
                   className={`flex items-center justify-between p-4 ${
                     itemIndex < section.items.length - 1 
-                      ? 'border-b border-gray-50' 
+                      ? 'border-b border-gray-50 dark:border-gray-800' 
                       : ''
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-orange-50 rounded-full flex items-center justify-center">
+                    <div className="w-10 h-10 bg-orange-50 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
                       <item.icon size={18} className="text-orange-500" />
                     </div>
                     <div>
-                      <p className="font-bold text-gray-800 text-sm">{item.label}</p>
-                      <p className="text-xs text-gray-500">{item.description}</p>
+                      <p className="font-bold text-gray-800 dark:text-gray-100 text-sm">{item.label}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{item.description}</p>
                     </div>
                   </div>
                   
@@ -97,7 +97,7 @@ export default function Settings() {
                       className={`w-12 h-6 rounded-full transition-colors ${
                         toggles[item.label.toLowerCase().replace(/[^a-z]/g, '')]
                           ? 'bg-orange-500' 
-                          : 'bg-gray-200'
+                          : 'bg-gray-200 dark:bg-gray-700'
                       }`}
                     >
                       <div 
@@ -109,9 +109,9 @@ export default function Settings() {
                       />
                     </button>
                   ) : item.trailing ? (
-                    <span className="text-xs text-gray-400">{item.trailing}</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">{item.trailing}</span>
                   ) : (
-                    <ChevronRight size={18} className="text-gray-300" />
+                    <ChevronRight size={18} className="text-gray-300 dark:text-gray-600" />
                   )}
                 </div>
               ))}
@@ -120,13 +120,13 @@ export default function Settings() {
         ))}
 
         {/* Logout Button */}
-        <button className="w-full bg-red-50 p-4 rounded-2xl flex items-center justify-center gap-2 text-red-500">
+        <button className="w-full bg-red-50 dark:bg-red-900/20 p-4 rounded-2xl flex items-center justify-center gap-2 text-red-500 dark:text-red-400">
           <LogOut size={18} />
           <span className="font-bold">Log Out</span>
         </button>
 
         {/* Version */}
-        <p className="text-center text-xs text-gray-400">
+        <p className="text-center text-xs text-gray-400 dark:text-gray-500">
           Version 1.0.4 • Made with ❤️
         </p>
       </div>

@@ -157,7 +157,7 @@ const policySections = [
 
 export default function PrivacyPolicy() {
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-24 text-gray-900 dark:text-gray-100">
       {/* Header */}
       <div className="bg-linear-to-r from-blue-600 to-indigo-600 p-6 text-white">
         <div className="flex justify-center items-center gap-3">
@@ -181,12 +181,12 @@ export default function PrivacyPolicy() {
         {policySections.map((section, index) => (
           <div
             key={index}
-            className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
+            className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-800"
           >
-            <h2 className="font-bold text-gray-800 mb-3">{section.title}</h2>
+            <h2 className="font-bold text-gray-800 dark:text-gray-100 mb-3">{section.title}</h2>
 
             {section.content && (
-              <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+              <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
                 {section.content}
               </p>
             )}
@@ -196,15 +196,15 @@ export default function PrivacyPolicy() {
                 {section.items.map((item, itemIndex) => (
                   <div key={itemIndex} className="flex gap-3">
                     {item.icon && (
-                      <div className="w-8 h-8 bg-orange-50 rounded-full flex items-center justify-center flex-0 mt-0.5">
+                      <div className="w-8 h-8 bg-orange-50 dark:bg-orange-900/30 rounded-full flex items-center justify-center flex-0 mt-0.5">
                         <item.icon size={14} className="text-orange-500" />
                       </div>
                     )}
                     <div>
-                      <p className="font-bold text-gray-800 text-sm">
+                      <p className="font-bold text-gray-800 dark:text-gray-100 text-sm">
                         {item.label}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         {item.description}
                       </p>
                     </div>
@@ -217,7 +217,7 @@ export default function PrivacyPolicy() {
 
         {/* Footer */}
         <div className="text-center py-4">
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-400 dark:text-gray-500">
             By using Foodies Cafe, you agree to this Privacy Policy
           </p>
         </div>

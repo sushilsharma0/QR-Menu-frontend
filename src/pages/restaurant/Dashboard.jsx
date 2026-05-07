@@ -242,15 +242,15 @@ const Dashboard = () => {
         {statsCards.map((stat, index) => (
           <div
             key={index}
-            className="relative overflow-hidden bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-lg hover:-translate-y-0.5 transition-all"
+            className="relative overflow-hidden bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-6 border border-gray-100 dark:border-gray-800 hover:shadow-lg hover:-translate-y-0.5 transition-all"
           >
             <div className="absolute -top-10 -right-8 h-24 w-24 rounded-full bg-slate-100/70" />
             <div className="flex items-center justify-between">
               <div className="relative">
-                <p className="text-sm text-gray-500 font-medium uppercase tracking-wide">
+                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
                   {stat.title}
                 </p>
-                <p className="text-3xl font-bold text-gray-900 mt-2 tracking-tight">
+                <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-2 tracking-tight">
                   {stat.value}
                 </p>
               </div>
@@ -270,7 +270,7 @@ const Dashboard = () => {
                 >
                   {stat.trend.text}
                 </span>
-                <span className="text-sm text-gray-500">{stat.trendLabel}</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">{stat.trendLabel}</span>
               </div>
             )}
           </div>
@@ -316,7 +316,7 @@ const Dashboard = () => {
               </div>
             </div>
             {activeOrdersTotal === 0 && (
-              <p className="text-center text-gray-500 py-5 rounded-xl bg-gray-50 mt-4">
+              <p className="text-center text-gray-500 dark:text-gray-400 py-5 rounded-xl bg-gray-50 dark:bg-gray-800 mt-4">
                 No active orders at the moment
               </p>
             )}
@@ -325,32 +325,32 @@ const Dashboard = () => {
 
         <Card title="Quick Stats" icon={FiUsers}>
           <div className="space-y-4">
-            <div className="flex justify-between items-center py-1 border-b border-gray-100">
-              <span className="text-gray-600">Total Orders</span>
+            <div className="flex justify-between items-center py-1 border-b border-gray-100 dark:border-gray-800">
+              <span className="text-gray-600 dark:text-gray-300">Total Orders</span>
               <span className="font-bold text-lg">
                 {stats?.overview?.totalOrders || 0}
               </span>
             </div>
-            <div className="flex justify-between items-center py-1 border-b border-gray-100">
-              <span className="text-gray-600">Total Tables</span>
+            <div className="flex justify-between items-center py-1 border-b border-gray-100 dark:border-gray-800">
+              <span className="text-gray-600 dark:text-gray-300">Total Tables</span>
               <span className="font-bold text-lg">
                 {stats?.resources?.totalTables || 0}
               </span>
             </div>
-            <div className="flex justify-between items-center py-1 border-b border-gray-100">
-              <span className="text-gray-600">Active Tables</span>
+            <div className="flex justify-between items-center py-1 border-b border-gray-100 dark:border-gray-800">
+              <span className="text-gray-600 dark:text-gray-300">Active Tables</span>
               <span className="font-bold text-lg">
                 {stats?.resources?.activeTables || 0}
               </span>
             </div>
-            <div className="flex justify-between items-center py-1 border-b border-gray-100">
-              <span className="text-gray-600">Total Employees</span>
+            <div className="flex justify-between items-center py-1 border-b border-gray-100 dark:border-gray-800">
+              <span className="text-gray-600 dark:text-gray-300">Total Employees</span>
               <span className="font-bold text-lg">
                 {stats?.resources?.totalEmployees || 0}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Low Stock Items</span>
+              <span className="text-gray-600 dark:text-gray-300">Low Stock Items</span>
               <span className="font-bold text-lg text-red-600 bg-red-50 px-2 py-0.5 rounded-lg">
                 {stats?.resources?.lowStockCount || 0}
               </span>
@@ -395,13 +395,13 @@ const Dashboard = () => {
             {popularItems.map((item, idx) => (
               <div
                 key={idx}
-                className="flex justify-between items-center p-3 bg-gradient-to-r from-gray-50 via-gray-50 to-indigo-50/40 rounded-xl border border-gray-100 hover:shadow-sm transition-shadow"
+                className="flex justify-between items-center p-3 bg-gradient-to-r from-gray-50 via-gray-50 to-indigo-50/40 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 hover:shadow-sm transition-shadow"
               >
                 <div>
-                  <span className="font-medium text-gray-900">
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
                     {idx + 1}. {item.name}
                   </span>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     {item.totalQuantity} orders
                   </p>
                 </div>
@@ -411,7 +411,7 @@ const Dashboard = () => {
               </div>
             ))}
             {popularItems.length === 0 && (
-              <p className="text-center text-gray-500 py-6 rounded-xl bg-gray-50">
+              <p className="text-center text-gray-500 dark:text-gray-400 py-6 rounded-xl bg-gray-50 dark:bg-gray-800">
                 No data available
               </p>
             )}
@@ -423,13 +423,13 @@ const Dashboard = () => {
             {stats?.recentOrders?.slice(0, 5).map((order) => (
               <div
                 key={order._id}
-                className="flex justify-between items-center p-3 border border-gray-100 rounded-xl bg-white/80 hover:border-indigo-100 hover:shadow-sm transition-all"
+                className="flex justify-between items-center p-3 border border-gray-100 dark:border-gray-700 rounded-xl bg-white/80 dark:bg-gray-900 hover:border-indigo-100 dark:hover:border-gray-600 hover:shadow-sm transition-all"
               >
                 <div>
-                  <p className="font-medium text-gray-900">
+                  <p className="font-medium text-gray-900 dark:text-gray-100">
                     #{order.orderNumber}
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     {order.customerName} • Table {order.table?.tableNumber}
                   </p>
                 </div>
@@ -454,7 +454,7 @@ const Dashboard = () => {
               </div>
             ))}
             {(!stats?.recentOrders || stats.recentOrders.length === 0) && (
-              <p className="text-center text-gray-500 py-6 rounded-xl bg-gray-50">No recent orders</p>
+              <p className="text-center text-gray-500 dark:text-gray-400 py-6 rounded-xl bg-gray-50 dark:bg-gray-800">No recent orders</p>
             )}
           </div>
         </Card>
@@ -468,11 +468,11 @@ const Dashboard = () => {
                 key={idx}
                 className="bg-gradient-to-br from-red-50 to-orange-50 rounded-xl p-3 border border-red-200 shadow-sm"
               >
-                <p className="font-medium text-gray-900">{item.name}</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{item.name}</p>
                 <p className="text-sm text-red-600">
                   Only {item.currentStock} {item.unit} left
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   Min stock: {item.minStock}
                 </p>
               </div>

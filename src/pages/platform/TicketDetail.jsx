@@ -103,7 +103,7 @@ const PlatformTicketDetail = () => {
   if (!ticket) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">Ticket not found</p>
+        <p className="text-gray-500 dark:text-gray-400">Ticket not found</p>
       </div>
     )
   }
@@ -122,8 +122,8 @@ const PlatformTicketDetail = () => {
         <div className="space-y-4">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-gray-500">Ticket Number</p>
-              <p className="text-lg font-mono font-bold">{ticket.ticketNumber}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Ticket Number</p>
+              <p className="text-lg font-mono font-bold text-gray-900 dark:text-gray-100">{ticket.ticketNumber}</p>
             </div>
             <div className="flex gap-2 flex-wrap justify-end">
               <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[ticket.status]}`}>
@@ -135,37 +135,37 @@ const PlatformTicketDetail = () => {
             </div>
           </div>
 
-          <div className="border-t pt-4">
-            <p className="text-sm text-gray-600">From</p>
+          <div className="border-t dark:border-gray-800 pt-4">
+            <p className="text-sm text-gray-600 dark:text-gray-300">From</p>
             <div className="mt-2">
-              <p className="font-medium text-gray-900">{ticket.restaurant?.name}</p>
-              <p className="text-sm text-gray-500">{ticket.restaurant?.email}</p>
+              <p className="font-medium text-gray-900 dark:text-gray-100">{ticket.restaurant?.name}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{ticket.restaurant?.email}</p>
             </div>
           </div>
 
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">{ticket.subject}</h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{ticket.subject}</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Created on {new Date(ticket.createdAt).toLocaleDateString()}
             </p>
           </div>
 
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="text-gray-700 whitespace-pre-wrap">{ticket.description}</p>
+          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{ticket.description}</p>
           </div>
 
           <div className="grid grid-cols-3 gap-4 text-sm">
             <div>
-              <p className="text-gray-600">Category</p>
-              <p className="font-medium capitalize">{ticket.category.replace('_', ' ')}</p>
+              <p className="text-gray-600 dark:text-gray-300">Category</p>
+              <p className="font-medium text-gray-900 dark:text-gray-100 capitalize">{ticket.category.replace('_', ' ')}</p>
             </div>
             <div>
-              <p className="text-gray-600">Status</p>
-              <p className="font-medium capitalize">{ticket.status.replace('_', ' ')}</p>
+              <p className="text-gray-600 dark:text-gray-300">Status</p>
+              <p className="font-medium text-gray-900 dark:text-gray-100 capitalize">{ticket.status.replace('_', ' ')}</p>
             </div>
             <div>
-              <p className="text-gray-600">Assigned To</p>
-              <p className="font-medium">{ticket.assignedTo?.name || 'Unassigned'}</p>
+              <p className="text-gray-600 dark:text-gray-300">Assigned To</p>
+              <p className="font-medium text-gray-900 dark:text-gray-100">{ticket.assignedTo?.name || 'Unassigned'}</p>
             </div>
           </div>
         </div>
@@ -174,12 +174,12 @@ const PlatformTicketDetail = () => {
       <Card title="Actions">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Change Status</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Change Status</label>
             <select
               value={ticket.status}
               onChange={(e) => handleStatusChange(e.target.value)}
               disabled={statusLoading || ticket.status === 'closed'}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 disabled:opacity-50"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 disabled:opacity-50"
             >
               <option value="open">Open</option>
               <option value="in_progress">In Progress</option>
@@ -203,7 +203,7 @@ const PlatformTicketDetail = () => {
       <Card title="Conversation">
         <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
           {ticket.replies.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">No replies yet</p>
+            <p className="text-center text-gray-500 dark:text-gray-400 py-8">No replies yet</p>
           ) : (
             ticket.replies.map((reply, idx) => (
               <div
@@ -216,26 +216,26 @@ const PlatformTicketDetail = () => {
               >
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <p className="font-semibold text-gray-900">{reply.responder.name}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="font-semibold text-gray-900 dark:text-gray-100">{reply.responder.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       {reply.responder.model === 'Platform' ? 'Admin' : 'Restaurant'}
                     </p>
                   </div>
-                  <p className="text-xs text-gray-500">{new Date(reply.createdAt).toLocaleString()}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{new Date(reply.createdAt).toLocaleString()}</p>
                 </div>
-                <p className="text-gray-700">{reply.message}</p>
+                <p className="text-gray-700 dark:text-gray-300">{reply.message}</p>
               </div>
             ))
           )}
         </div>
 
         {ticket.status !== 'closed' && (
-          <div className="space-y-3 pt-4 border-t">
+          <div className="space-y-3 pt-4 border-t dark:border-gray-800">
             <textarea
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               placeholder="Write your response..."
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 h-24"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 h-24"
             />
             <Button
               onClick={handleAddReply}
@@ -250,8 +250,8 @@ const PlatformTicketDetail = () => {
       </Card>
 
       {ticket.status === 'closed' && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <p className="text-sm text-green-800">
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+          <p className="text-sm text-green-800 dark:text-green-300">
             This ticket has been closed on {new Date(ticket.closedAt).toLocaleDateString()}
           </p>
         </div>

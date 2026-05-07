@@ -26,10 +26,10 @@ const AccountPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white pb-32">
+    <div className="min-h-screen bg-white dark:bg-gray-950 pb-32 text-gray-900 dark:text-gray-100">
       {/* Header */}
-      <header className="px-6 pt-12 pb-6 text-center border-b border-gray-50 sticky top-0 bg-white z-10">
-        <h1 className="text-xl font-black text-gray-800 tracking-tight">More</h1>
+      <header className="px-6 pt-12 pb-6 text-center border-b border-gray-50 dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-950 z-10">
+        <h1 className="text-xl font-black text-gray-800 dark:text-gray-100 tracking-tight">More</h1>
       </header>
 
       {/* Profile Header (Optional addition for MERN) */}
@@ -37,8 +37,8 @@ const AccountPage = () => {
         <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 mb-3 border-4 border-white shadow-sm">
           <User size={40} />
         </div>
-        <h2 className="font-bold text-gray-800">Guest User</h2>
-        <p className="text-[10px] text-gray-400 font-medium">Table 05 • Foodies Cafe</p>
+        <h2 className="font-bold text-gray-800 dark:text-gray-100">Guest User</h2>
+        <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Table 05 • Foodies Cafe</p>
       </div>
 
       {/* Menu List */}
@@ -46,21 +46,21 @@ const AccountPage = () => {
         {menuItems.map((item, index) => (
           <button 
             key={index}
-            className="w-full flex items-center justify-between p-4 bg-white rounded-2xl hover:bg-gray-50 active:scale-[0.98] transition-all group border border-transparent hover:border-gray-100"
+            className="w-full flex items-center justify-between p-4 bg-white dark:bg-gray-900 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-[0.98] transition-all group border border-transparent dark:border-gray-800 hover:border-gray-100 dark:hover:border-gray-700"
           >
             <div className="flex items-center gap-4">
               <div className={`p-2.5 ${item.bg} ${item.color} rounded-xl`}>
                 {item.icon}
               </div>
-              <span className="text-sm font-bold text-gray-700">{item.label}</span>
+              <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{item.label}</span>
             </div>
-            <ChevronRight size={18} className="text-gray-300 group-hover:text-gray-500 transition-colors" />
+            <ChevronRight size={18} className="text-gray-300 dark:text-gray-600 group-hover:text-gray-500 dark:group-hover:text-gray-300 transition-colors" />
           </button>
         ))}
 
         {/* Logout / Exit Session */}
         <button className="w-full flex items-center gap-4 p-4 mt-4 text-red-500 opacity-80 hover:opacity-100">
-           <div className="p-2.5 bg-red-50 rounded-xl">
+           <div className="p-2.5 bg-red-50 dark:bg-red-900/20 rounded-xl">
               <LogOut size={20} />
            </div>
            <span className="text-sm font-bold">Exit Session</span>

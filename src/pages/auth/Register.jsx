@@ -31,14 +31,14 @@ const Register = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-primary-600">QR Menu SaaS</h1>
-          <p className="text-gray-500 mt-2">Register your restaurant</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">Register your restaurant</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-transparent dark:border-gray-800 p-8">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input
               label="Restaurant Name"
@@ -103,7 +103,7 @@ const Register = () => {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               Already have an account?{' '}
               <Link to="/login" className="text-primary-600 hover:text-primary-700 font-medium">
                 Sign In

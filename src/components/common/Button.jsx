@@ -11,15 +11,15 @@ const Button = ({
   type = 'button',
   ...props 
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2'
+  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900'
   
   const variants = {
     primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-sm hover:shadow',
     secondary: 'bg-secondary-100 text-secondary-800 hover:bg-secondary-200 focus:ring-secondary-500',
     danger: 'bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500',
     success: 'bg-accent-600 text-white hover:bg-accent-700 focus:ring-accent-500',
-    outline: 'border border-surface-300 bg-white text-primary-800 hover:bg-surface-50 focus:ring-primary-500',
-    ghost: 'text-primary-700 hover:bg-surface-100 focus:ring-primary-500',
+    outline: 'border border-surface-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-primary-800 dark:text-gray-100 hover:bg-surface-50 dark:hover:bg-gray-800 focus:ring-primary-500',
+    ghost: 'text-primary-700 dark:text-gray-200 hover:bg-surface-100 dark:hover:bg-gray-800 focus:ring-primary-500',
   }
   
   const sizes = {

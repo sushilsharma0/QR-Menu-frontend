@@ -102,7 +102,7 @@ const OrderTracking = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
+      <div className="min-h-screen flex items-center justify-center text-gray-500 dark:text-gray-400">
         Loading tracking...
       </div>
     );
@@ -110,8 +110,8 @@ const OrderTracking = () => {
 
   if (!order) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
-        <p className="text-gray-700 font-semibold">Order not found.</p>
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center dark:bg-gray-950">
+        <p className="text-gray-700 dark:text-gray-300 font-semibold">Order not found.</p>
         <button
           onClick={() => navigate(-1)}
           className="mt-4 px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-semibold"
@@ -123,16 +123,16 @@ const OrderTracking = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-10">
+    <div className="min-h-screen bg-white dark:bg-gray-950 pb-10 text-gray-900 dark:text-gray-100">
       {/* Header */}
-      <header className="px-6 pt-12 pb-6 flex items-center justify-between border-b border-gray-50 sticky top-0 bg-white z-10">
+      <header className="px-6 pt-12 pb-6 flex items-center justify-between border-b border-gray-50 dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-950 z-10">
         <button
-          className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+          className="p-2 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           onClick={() => navigate(-1)}
         >
-          <ArrowLeft size={20} className="text-gray-700" />
+          <ArrowLeft size={20} className="text-gray-700 dark:text-gray-200" />
         </button>
-        <h1 className="text-lg font-bold text-gray-800 tracking-tight">
+        <h1 className="text-lg font-bold text-gray-800 dark:text-gray-100 tracking-tight">
           Order Tracking
         </h1>
         <div className="w-10"></div> {/* Placeholder to center the title */}
@@ -141,10 +141,10 @@ const OrderTracking = () => {
       <div className="p-8 flex flex-col items-center">
         {/* Order Info Card */}
         <div className="text-center mb-10">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+          <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">
             Order #{order.orderNumber}
           </p>
-          <h2 className="text-xl font-bold text-gray-800">Table {order.tableNumber}</h2>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Table {order.tableNumber}</h2>
 
           <div className="mt-4 inline-flex items-center gap-2 bg-orange-50 text-orange-600 px-5 py-2 rounded-full text-xs font-bold border border-orange-100 animate-pulse">
             <ChefHat size={14} /> {statusLabel}
@@ -154,7 +154,7 @@ const OrderTracking = () => {
         {/* Timeline Container */}
         <div className="w-full max-w-xs relative ml-4">
           {/* Main Vertical Track */}
-          <div className="absolute left-4.75 top-2 bottom-2 w-0.5 bg-gray-100"></div>
+          <div className="absolute left-4.75 top-2 bottom-2 w-0.5 bg-gray-100 dark:bg-gray-700"></div>
 
           <div className="space-y-12">
             {steps.map((step) => (
@@ -180,11 +180,11 @@ const OrderTracking = () => {
                 {/* Step Text Content */}
                 <div className="flex-1 pt-1">
                   <h4
-                    className={`text-sm font-bold transition-colors ${step.active ? "text-gray-900" : step.completed ? "text-gray-800" : "text-gray-400"}`}
+                    className={`text-sm font-bold transition-colors ${step.active ? "text-gray-900 dark:text-gray-100" : step.completed ? "text-gray-800 dark:text-gray-200" : "text-gray-400 dark:text-gray-500"}`}
                   >
                     {step.label}
                   </h4>
-                  <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 leading-tight">
                     {step.time}
                   </p>
                 </div>
@@ -199,10 +199,10 @@ const OrderTracking = () => {
             <Bell size={24} className="animate-bounce" />
           </div>
           <div>
-            <p className="text-sm font-bold text-gray-800">
+            <p className="text-sm font-bold text-gray-800 dark:text-gray-100">
               We will notify you
             </p>
-            <p className="text-[11px] text-gray-500 leading-normal">
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-normal">
               Your order is being handled with care and will be ready shortly.
             </p>
           </div>

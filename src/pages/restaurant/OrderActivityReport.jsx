@@ -138,23 +138,23 @@ export default function OrderActivityReport() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Sales activity report</h1>
-        <p className="text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Sales activity report</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">
           Filter orders by date, search by order number, and review daily income with subtotal and tax for accounts.
         </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card title="Orders in range">
-          <p className="text-2xl font-bold text-gray-900">{t.orderCount ?? 0}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t.orderCount ?? 0}</p>
         </Card>
         <Card title="Subtotal (pre-tax)">
-          <p className="text-2xl font-bold text-gray-900">
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             {DEFAULT_CURRENCY_SYMBOL}{Number(t.subtotal || 0).toFixed(2)}
           </p>
         </Card>
         <Card title="Tax collected">
-          <p className="text-2xl font-bold text-gray-900">
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             {DEFAULT_CURRENCY_SYMBOL}{Number(t.tax || 0).toFixed(2)}
           </p>
         </Card>
@@ -168,7 +168,7 @@ export default function OrderActivityReport() {
       <Card title="Filters">
         <div className="flex flex-wrap gap-4 items-end">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">From</label>
             <input
               type="date"
               value={from}
@@ -176,11 +176,11 @@ export default function OrderActivityReport() {
                 setFrom(e.target.value)
                 setPage(1)
               }}
-              className="px-3 py-2 border border-gray-300 rounded-lg"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-lg"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">To</label>
             <input
               type="date"
               value={to}
@@ -188,7 +188,7 @@ export default function OrderActivityReport() {
                 setTo(e.target.value)
                 setPage(1)
               }}
-              className="px-3 py-2 border border-gray-300 rounded-lg"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-lg"
             />
           </div>
           <div className="w-56">
@@ -228,12 +228,12 @@ export default function OrderActivityReport() {
       </Card>
 
       <Card title="Daily income">
-        <p className="text-sm text-gray-600 mb-3">Totals grouped by calendar day (all orders in filter).</p>
+        <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">Totals grouped by calendar day (all orders in filter).</p>
         <Table columns={dailyColumns} data={daily} loading={loading && daily.length === 0} />
       </Card>
 
       <Card title="Orders list">
-        <p className="text-sm text-gray-600 mb-3">
+        <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
           Click an order number to open full order details.
         </p>
         <Table columns={orderColumns} data={rows} loading={loading} />

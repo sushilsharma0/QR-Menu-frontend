@@ -87,7 +87,7 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center dark:bg-gray-950">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
@@ -228,8 +228,8 @@ function App() {
         element={
           <div className="min-h-screen flex items-center justify-center">
             <div className="text-center">
-              <h1 className="text-4xl font-bold text-gray-900">404</h1>
-              <p className="text-gray-500 mt-2">Page not found</p>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">404</h1>
+              <p className="text-gray-500 dark:text-gray-400 mt-2">Page not found</p>
             </div>
           </div>
         }

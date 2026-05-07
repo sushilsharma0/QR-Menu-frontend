@@ -7,6 +7,7 @@ import App from './App'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import { SocketProvider } from './context/SocketContext'
+import { ThemeProvider } from './context/ThemeContext'
 import './index.css'
 
 const queryClient = new QueryClient({
@@ -27,14 +28,16 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       }}
     >
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <SocketProvider>
-            <CartProvider>
-              <App />
-              <Toaster position="top-right" />
-            </CartProvider>
-          </SocketProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <SocketProvider>
+              <CartProvider>
+                <App />
+                <Toaster position="top-right" />
+              </CartProvider>
+            </SocketProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </BrowserRouter>
   

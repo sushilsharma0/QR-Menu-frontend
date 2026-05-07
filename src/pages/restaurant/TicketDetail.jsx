@@ -108,10 +108,10 @@ const TicketDetail = () => {
             />
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
               <select
                 {...register('category')}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2"
               >
                 <option value="other">Other</option>
                 <option value="technical">Technical Issue</option>
@@ -122,10 +122,10 @@ const TicketDetail = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Priority</label>
               <select
                 {...register('priority')}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2"
               >
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
@@ -135,11 +135,11 @@ const TicketDetail = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
               <textarea
                 {...register('description', { required: 'Description is required' })}
                 placeholder="Detailed description of your issue"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 h-32"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 h-32"
               />
               {errors.description && (
                 <p className="text-sm text-red-600 mt-1">{errors.description.message}</p>
@@ -164,7 +164,7 @@ const TicketDetail = () => {
   if (!ticket) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">Ticket not found</p>
+        <p className="text-gray-500 dark:text-gray-400">Ticket not found</p>
       </div>
     )
   }
@@ -183,8 +183,8 @@ const TicketDetail = () => {
         <div className="space-y-4">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-gray-500">Ticket Number</p>
-              <p className="text-lg font-mono font-bold">{ticket.ticketNumber}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Ticket Number</p>
+              <p className="text-lg font-mono font-bold text-gray-900 dark:text-gray-100">{ticket.ticketNumber}</p>
             </div>
             <div className="flex gap-2">
               <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[ticket.status]}`}>
@@ -197,25 +197,25 @@ const TicketDetail = () => {
           </div>
 
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">{ticket.subject}</h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{ticket.subject}</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Created on {new Date(ticket.createdAt).toLocaleDateString()}
             </p>
           </div>
 
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="text-gray-700 whitespace-pre-wrap">{ticket.description}</p>
+          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{ticket.description}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <p className="text-gray-600">Category</p>
-              <p className="font-medium capitalize">{ticket.category.replace('_', ' ')}</p>
+              <p className="text-gray-600 dark:text-gray-300">Category</p>
+              <p className="font-medium text-gray-900 dark:text-gray-100 capitalize">{ticket.category.replace('_', ' ')}</p>
             </div>
             {ticket.assignedTo && (
               <div>
-                <p className="text-gray-600">Assigned To</p>
-                <p className="font-medium">{ticket.assignedTo.name}</p>
+                <p className="text-gray-600 dark:text-gray-300">Assigned To</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{ticket.assignedTo.name}</p>
               </div>
             )}
           </div>
@@ -225,27 +225,27 @@ const TicketDetail = () => {
       <Card title="Conversation">
         <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
           {ticket.replies.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">No replies yet</p>
+            <p className="text-center text-gray-500 dark:text-gray-400 py-8">No replies yet</p>
           ) : (
             ticket.replies.map((reply, idx) => (
               <div key={idx} className={`p-4 rounded-lg ${reply.responder.model === 'Platform' ? 'bg-blue-50 border-l-4 border-blue-500' : 'bg-gray-50'}`}>
                 <div className="flex items-center justify-between mb-2">
-                  <p className="font-semibold text-gray-900">{reply.responder.name}</p>
-                  <p className="text-xs text-gray-500">{new Date(reply.createdAt).toLocaleString()}</p>
+                  <p className="font-semibold text-gray-900 dark:text-gray-100">{reply.responder.name}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{new Date(reply.createdAt).toLocaleString()}</p>
                 </div>
-                <p className="text-gray-700">{reply.message}</p>
+                <p className="text-gray-700 dark:text-gray-300">{reply.message}</p>
               </div>
             ))
           )}
         </div>
 
         {ticket.status !== 'closed' && (
-          <div className="space-y-3 pt-4 border-t">
+          <div className="space-y-3 pt-4 border-t dark:border-gray-800">
             <textarea
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               placeholder="Write your reply..."
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 h-24"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 h-24"
             />
             <Button
               onClick={handleAddReply}

@@ -70,21 +70,21 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         {/* Logo/Brand */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-2xl mb-4">
             <FiHome className="h-8 w-8 text-primary-600" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">QR Menu SaaS</h1>
-          <p className="text-gray-500 mt-2">Login to your account</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">QR Menu SaaS</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">Login to your account</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-transparent dark:border-gray-800 p-8">
           {role === "employee" &&
             (staffPortal === "kitchen" || staffPortal === "cashier" || staffPortal === "waiter") && (
-              <p className="mb-4 text-sm text-gray-600 rounded-lg bg-amber-50 border border-amber-100 px-3 py-2">
+              <p className="mb-4 text-sm text-gray-600 dark:text-gray-300 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-100 dark:border-amber-800 px-3 py-2">
                 {staffPortal === "kitchen"
                   ? "Kitchen staff: sign in with your username, restaurant ID, and password."
                   : staffPortal === "cashier"
@@ -93,14 +93,14 @@ const Login = () => {
               </p>
             )}
           {/* Role Selection Tabs */}
-          <div className="flex gap-2 mb-6 bg-gray-100 rounded-lg p-1">
+          <div className="flex gap-2 mb-6 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
             <button
               type="button"
               onClick={() => setRole("platform")}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all text-sm font-medium ${
                 role === "platform"
                   ? "bg-primary-600 text-white shadow-md"
-                  : "text-gray-600 hover:bg-gray-200"
+                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
               }`}
             >
               <FiUserCheck className="h-4 w-4" />
@@ -112,7 +112,7 @@ const Login = () => {
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all text-sm font-medium ${
                 role === "restaurant"
                   ? "bg-primary-600 text-white shadow-md"
-                  : "text-gray-600 hover:bg-gray-200"
+                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
               }`}
             >
               <FiUsers className="h-4 w-4" />
@@ -124,7 +124,7 @@ const Login = () => {
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all text-sm font-medium ${
                 role === "employee"
                   ? "bg-primary-600 text-white shadow-md"
-                  : "text-gray-600 hover:bg-gray-200"
+                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
               }`}
             >
               <FiUser className="h-4 w-4" />
@@ -196,7 +196,7 @@ const Login = () => {
           {/* Register Link - Only for Restaurant */}
           {role === "restaurant" && (
             <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
                 Don't have an account?{" "}
                 <Link
                   to="/register"
@@ -209,28 +209,28 @@ const Login = () => {
           )}
 
           {/* Demo Credentials */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-xl">
-            <p className="text-xs font-semibold text-gray-700 mb-2">
+          <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+            <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-2">
               📋 Demo Credentials
             </p>
 
             {role === "platform" && (
               <div className="space-y-1 text-xs">
-                <p className="text-gray-600">👑 Super Admin</p>
-                <p className="font-mono text-gray-500">
+                <p className="text-gray-600 dark:text-gray-300">👑 Super Admin</p>
+                <p className="font-mono text-gray-500 dark:text-gray-400">
                   Email: superadmin@qrmenu.com
                 </p>
-                <p className="font-mono text-gray-500">Password: Admin@123</p>
+                <p className="font-mono text-gray-500 dark:text-gray-400">Password: Admin@123</p>
               </div>
             )}
 
             {role === "restaurant" && (
               <div className="space-y-1 text-xs">
-                <p className="text-gray-600">🍽️ Restaurant Owner</p>
-                <p className="font-mono text-gray-500">
+                <p className="text-gray-600 dark:text-gray-300">🍽️ Restaurant Owner</p>
+                <p className="font-mono text-gray-500 dark:text-gray-400">
                   Email: test@restaurant.com
                 </p>
-                <p className="font-mono text-gray-500">Password: Test@123456</p>
+                <p className="font-mono text-gray-500 dark:text-gray-400">Password: Test@123456</p>
                 <p className="text-yellow-600 mt-1">
                   ⚠️ Register first if not exists
                 </p>

@@ -144,14 +144,14 @@ const KitchenDashboard = () => {
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-2xl p-2 shadow-sm">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-2 shadow-sm">
         <div className="flex flex-wrap gap-2">
           {sections.map((section) => (
             <a
               key={section.id}
               href={`#${section.id}`}
               title={`Jump to ${section.title}`}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
               {section.title}
             </a>
@@ -160,10 +160,10 @@ const KitchenDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm" title="Total orders currently active in kitchen workflow">
-          <p className="text-xs uppercase tracking-wide text-gray-500">Total Active</p>
+        <div className="rounded-2xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm" title="Total orders currently active in kitchen workflow">
+          <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Total Active</p>
           <div className="mt-2 flex items-center justify-between">
-            <p className="text-2xl font-bold text-slate-900">{totalOrders}</p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-gray-100">{totalOrders}</p>
             <FiUsers className="text-slate-500" />
           </div>
         </div>
@@ -195,9 +195,9 @@ const KitchenDashboard = () => {
           <Card key={section.title}>
             <div id={section.id} />
             <div className={`mb-4 rounded-xl bg-gradient-to-r ${section.accent} p-[1px]`}>
-              <div className="rounded-[11px] bg-white px-4 py-3">
-                <h2 className="font-bold text-gray-900">{section.title}</h2>
-                <p className="text-xs text-gray-500 mt-0.5">{section.subtitle}</p>
+              <div className="rounded-[11px] bg-white dark:bg-gray-900 px-4 py-3">
+                <h2 className="font-bold text-gray-900 dark:text-gray-100">{section.title}</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{section.subtitle}</p>
               </div>
             </div>
             <div className="space-y-4">
@@ -208,20 +208,20 @@ const KitchenDashboard = () => {
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h3 className="font-bold text-gray-900">#{order.orderNumber}</h3>
-                      <p className="text-sm text-gray-600">Table: {order.table?.tableNumber || 'N/A'}</p>
+                      <h3 className="font-bold text-gray-900 dark:text-gray-100">#{order.orderNumber}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">Table: {order.table?.tableNumber || 'N/A'}</p>
                     </div>
                     <div className="text-right">
                       <span className={`px-2 py-1 text-[11px] rounded-full font-semibold ${getStatusStyle(order.status).badge}`}>
                         {getStatusStyle(order.status).label}
                       </span>
-                      <p className="text-[11px] text-gray-500 mt-1">{new Date(order.createdAt).toLocaleTimeString()}</p>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">{new Date(order.createdAt).toLocaleTimeString()}</p>
                     </div>
                   </div>
                   
                   <div className="mb-3 space-y-1">
                     {order.items.map((item, idx) => (
-                      <div key={idx} className="text-sm text-gray-700">
+                      <div key={idx} className="text-sm text-gray-700 dark:text-gray-300">
                         <span className="font-semibold">{item.quantity}x</span> {item.name}
                       </div>
                     ))}
@@ -278,8 +278,8 @@ const KitchenDashboard = () => {
                 </div>
               ))}
               {orders.filter(o => section.status.includes(o.status)).length === 0 && (
-                <div className="text-center py-8 rounded-xl border border-dashed border-gray-300 bg-gray-50">
-                  <p className="text-sm font-medium text-gray-500">No orders in this lane</p>
+                <div className="text-center py-8 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">No orders in this lane</p>
                 </div>
               )}
             </div>

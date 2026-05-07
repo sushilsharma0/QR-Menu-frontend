@@ -5,7 +5,7 @@ import Header from '../common/Header'
 
 const PlatformLayout = () => {
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
       <PlatformSidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />

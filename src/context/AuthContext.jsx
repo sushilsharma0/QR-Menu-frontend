@@ -13,6 +13,7 @@ import {
 
 /** Log out authenticated dashboard users after this much inactivity (visible tab) or hidden tab time */
 const SESSION_IDLE_MS = 60 * 60 * 1000 // 1 hour
+const THEME_KEY = 'qrmenu_theme'
 
 export const AuthContext = createContext()
 
@@ -152,6 +153,9 @@ export const AuthProvider = ({ children }) => {
       }
       
       setAuthSession(newToken, JSON.stringify(authUser))
+      // Always start authenticated sessions in light mode.
+      localStorage.setItem(THEME_KEY, 'light')
+      document.documentElement.classList.remove('dark')
       
       // Update state
       setToken(newToken)

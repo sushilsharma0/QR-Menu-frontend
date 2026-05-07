@@ -50,15 +50,15 @@ function NavItem({ item, restaurantBase, pendingCount, collapsed, onClick }) {
       className={({ isActive }) =>
         `relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group
         ${isActive
-          ? 'bg-primary-50 text-primary-700 font-semibold'
-          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+          ? 'bg-primary-50 dark:bg-gray-800 text-primary-700 dark:text-gray-100 font-semibold'
+          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100'
         }
         ${collapsed ? 'justify-center' : ''}`
       }
     >
       {({ isActive }) => (
         <>
-          <item.icon className={`h-5 w-5 flex-shrink-0 ${isActive ? 'text-primary-600' : 'text-gray-500 group-hover:text-gray-700'}`} />
+          <item.icon className={`h-5 w-5 flex-shrink-0 ${isActive ? 'text-primary-600' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200'}`} />
 
           {/* Label — hidden when collapsed */}
           {!collapsed && <span className="text-sm truncate">{item.label}</span>}
@@ -100,12 +100,12 @@ function SidebarContent({ collapsed, setCollapsed, pendingCount, restaurantBase,
     <div className="flex flex-col h-full">
 
       {/* Brand header */}
-      <div className={`flex items-center border-b border-gray-100 flex-shrink-0
+      <div className={`flex items-center border-b border-gray-100 dark:border-gray-800 flex-shrink-0
         ${collapsed && !isMobile ? 'justify-center px-3 py-5' : 'justify-between px-5 py-5'}`}>
         {(!collapsed || isMobile) && (
           <div>
             <h1 className="text-base font-bold text-primary-600 leading-none">QR Menu SaaS</h1>
-            <p className="text-xs text-gray-500 mt-0.5">Restaurant Portal</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Restaurant Portal</p>
           </div>
         )}
 
@@ -113,13 +113,13 @@ function SidebarContent({ collapsed, setCollapsed, pendingCount, restaurantBase,
         {!isMobile && (
           <button
             onClick={() => setCollapsed(c => !c)}
-            className={`w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors flex-shrink-0
+            className={`w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center transition-colors flex-shrink-0
               ${collapsed ? '' : ''}`}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed
-              ? <FiChevronRight className="h-4 w-4 text-gray-500" />
-              : <FiChevronLeft  className="h-4 w-4 text-gray-500" />
+              ? <FiChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-300" />
+              : <FiChevronLeft  className="h-4 w-4 text-gray-500 dark:text-gray-300" />
             }
           </button>
         )}
@@ -127,8 +127,8 @@ function SidebarContent({ collapsed, setCollapsed, pendingCount, restaurantBase,
         {/* Mobile close button */}
         {isMobile && (
           <button onClick={onClose}
-            className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center">
-            <FiX className="h-4 w-4 text-gray-600" />
+            className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+            <FiX className="h-4 w-4 text-gray-600 dark:text-gray-300" />
           </button>
         )}
       </div>
@@ -148,8 +148,8 @@ function SidebarContent({ collapsed, setCollapsed, pendingCount, restaurantBase,
 
         {/* Staff login links */}
         {hasTenant && restaurantId != null && (!collapsed || isMobile) && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+            <p className="px-3 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
               Staff Logins
             </p>
             {STAFF_LINKS.map(({ staff, label }) => (
@@ -157,10 +157,10 @@ function SidebarContent({ collapsed, setCollapsed, pendingCount, restaurantBase,
                 to={staffLoginHref(restaurantId, staff)}
                 target="_blank" rel="noopener noreferrer"
                 onClick={isMobile ? onClose : undefined}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-gray-500
-                  hover:bg-gray-100 hover:text-gray-800 transition-colors group"
+                className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-gray-500 dark:text-gray-300
+                  hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-100 transition-colors group"
               >
-                <FiExternalLink className="h-3.5 w-3.5 flex-shrink-0 text-gray-400 group-hover:text-gray-600" />
+                <FiExternalLink className="h-3.5 w-3.5 flex-shrink-0 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300" />
                 {label}
               </Link>
             ))}
@@ -169,14 +169,14 @@ function SidebarContent({ collapsed, setCollapsed, pendingCount, restaurantBase,
 
         {/* Collapsed staff links — just icons with tooltips */}
         {hasTenant && restaurantId != null && collapsed && !isMobile && (
-          <div className="mt-4 pt-4 border-t border-gray-100 space-y-0.5">
+          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-0.5">
             {STAFF_LINKS.map(({ staff, label }) => (
               <Link key={staff}
                 to={staffLoginHref(restaurantId, staff)}
                 target="_blank" rel="noopener noreferrer"
                 title={label}
                 className="relative flex items-center justify-center px-3 py-2.5 rounded-xl
-                  text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-colors group"
+                  text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-100 transition-colors group"
               >
                 <FiExternalLink className="h-4 w-4" />
                 <div className="absolute left-full ml-3 px-2.5 py-1.5 bg-gray-900 text-white text-xs rounded-lg
@@ -231,12 +231,12 @@ const RestaurantSidebar = () => {
   return (
     <>
       {/* ── Mobile top bar (visible on small screens) */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 z-30 flex items-center px-4 gap-3">
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 z-30 flex items-center px-4 gap-3">
         <button
           onClick={() => setMobileOpen(true)}
-          className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0"
+          className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0"
         >
-          <FiMenu className="h-5 w-5 text-gray-700" />
+          <FiMenu className="h-5 w-5 text-gray-700 dark:text-gray-200" />
         </button>
         <h1 className="text-sm font-bold text-primary-600">QR Menu SaaS</h1>
         {/* Pending badge on mobile top bar */}
@@ -257,7 +257,7 @@ const RestaurantSidebar = () => {
 
       {/* ── Mobile drawer */}
       <div className={`
-        lg:hidden fixed top-0 left-0 h-full w-72 bg-white z-50 shadow-2xl
+        lg:hidden fixed top-0 left-0 h-full w-72 bg-white dark:bg-gray-900 z-50 shadow-2xl
         transform transition-transform duration-300 ease-in-out
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
@@ -272,7 +272,7 @@ const RestaurantSidebar = () => {
 
       {/* ── Desktop sidebar */}
       <aside className={`
-        hidden lg:flex flex-col h-screen sticky top-0 bg-white border-r border-gray-100
+        hidden lg:flex flex-col h-screen sticky top-0 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800
         transition-all duration-300 ease-in-out flex-shrink-0
         ${collapsed ? 'w-[68px]' : 'w-64'}
       `}>

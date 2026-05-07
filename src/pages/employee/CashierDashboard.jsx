@@ -91,8 +91,8 @@ const CashierDashboard = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Cashier Dashboard</h1>
-        <p className="text-gray-500 mt-1">Process customer payments</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Cashier Dashboard</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">Process customer payments</p>
       </div>
 
       <Card>
@@ -109,11 +109,11 @@ const CashierDashboard = () => {
         <Card title="Ready to Payment">
           <div className="space-y-4">
             {readyOrders.map((order) => (
-              <div key={order._id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+              <div key={order._id} className="border dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <h3 className="font-bold text-gray-900">#{order.orderNumber}</h3>
-                    <p className="text-sm text-gray-500">Table: {order.table?.tableNumber}</p>
+                    <h3 className="font-bold text-gray-900 dark:text-gray-100">#{order.orderNumber}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Table: {order.table?.tableNumber}</p>
                   </div>
                   <span className="text-lg font-bold text-green-600">
                     {DEFAULT_CURRENCY_SYMBOL}{Number(order.grandTotal ?? order.totalAmount).toFixed(2)}
@@ -137,7 +137,7 @@ const CashierDashboard = () => {
               </div>
             ))}
             {readyOrders.length === 0 && (
-              <p className="text-center text-gray-500 py-8">No served orders waiting for payment</p>
+              <p className="text-center text-gray-500 dark:text-gray-400 py-8">No served orders waiting for payment</p>
             )}
           </div>
         </Card>
@@ -146,13 +146,13 @@ const CashierDashboard = () => {
         <Card title="Completed Payment">
           <div className="space-y-4">
             {servedOrders.map((order) => (
-              <div key={order._id} className="border rounded-lg p-4 opacity-75">
+              <div key={order._id} className="border dark:border-gray-700 rounded-lg p-4 opacity-75">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-bold text-gray-900">#{order.orderNumber}</h3>
-                    <p className="text-sm text-gray-500">Table: {order.table?.tableNumber}</p>
+                    <h3 className="font-bold text-gray-900 dark:text-gray-100">#{order.orderNumber}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Table: {order.table?.tableNumber}</p>
                   </div>
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
                     {new Date(order.updatedAt).toLocaleTimeString()}
                   </span>
                 </div>
@@ -162,7 +162,7 @@ const CashierDashboard = () => {
               </div>
             ))}
             {servedOrders.length === 0 && (
-              <p className="text-center text-gray-500 py-8">No completed orders</p>
+              <p className="text-center text-gray-500 dark:text-gray-400 py-8">No completed orders</p>
             )}
           </div>
         </Card>
@@ -174,7 +174,7 @@ const CashierDashboard = () => {
           {selectedOrder && (
             <>
               <div className="mb-4">
-                <p className="text-gray-600">Order #{selectedOrder.orderNumber}</p>
+                <p className="text-gray-600 dark:text-gray-300">Order #{selectedOrder.orderNumber}</p>
                 <p className="text-2xl font-bold text-primary-600">
                   {DEFAULT_CURRENCY_SYMBOL}{Number(selectedOrder.grandTotal ?? selectedOrder.totalAmount).toFixed(2)}
                 </p>

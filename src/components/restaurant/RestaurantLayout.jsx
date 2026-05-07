@@ -6,7 +6,7 @@ import RestaurantTrialKycBanner from './RestaurantTrialKycBanner'
 
 const RestaurantLayout = () => {
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
       <RestaurantSidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />

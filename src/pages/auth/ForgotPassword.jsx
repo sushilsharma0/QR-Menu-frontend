@@ -27,14 +27,14 @@ const ForgotPassword = () => {
 
   if (sent) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4">
         <div className="max-w-md w-full text-center">
-          <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-transparent dark:border-gray-800 p-8">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <FiMail className="h-8 w-8 text-green-600" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Check Your Email</h2>
-            <p className="text-gray-600 mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Check Your Email</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
               We've sent a password reset OTP to your email address.
             </p>
             <Link to="/reset-password" className="btn-primary inline-block">
@@ -47,15 +47,15 @@ const ForgotPassword = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-primary-600">QR Menu SaaS</h1>
-          <p className="text-gray-500 mt-2">Reset your password</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">Reset your password</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <p className="text-gray-600 text-center mb-6">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-transparent dark:border-gray-800 p-8">
+          <p className="text-gray-600 dark:text-gray-300 text-center mb-6">
             Enter your email address and we'll send you an OTP to reset your password.
           </p>
 

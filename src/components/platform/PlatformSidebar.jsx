@@ -36,10 +36,10 @@ const PlatformSidebar = () => {
   }
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-6 border-b border-gray-200">
+    <aside className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col">
+      <div className="p-6 border-b border-gray-200 dark:border-gray-800">
         <h1 className="text-xl font-bold text-primary-600">QR Menu SaaS</h1>
-        <p className="text-sm text-gray-500 mt-1">Platform Admin</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Platform Admin</p>
       </div>
       
       <nav className="flex-1 px-4 py-6 space-y-1">
@@ -48,10 +48,10 @@ const PlatformSidebar = () => {
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 text-gray-600 rounded-lg transition-all duration-200 ${
+              `flex items-center gap-3 px-4 py-3 text-gray-600 dark:text-gray-300 rounded-lg transition-all duration-200 ${
                 isActive
-                  ? 'bg-primary-50 text-primary-700 font-medium'
-                  : 'hover:bg-gray-100 hover:text-gray-900'
+                  ? 'bg-primary-50 dark:bg-gray-800 text-primary-700 dark:text-gray-100 font-medium'
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100'
               }`
             }
           >
@@ -61,16 +61,16 @@ const PlatformSidebar = () => {
         ))}
       </nav>
 
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gray-200 dark:border-gray-800">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 bg-primary-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
             <span className="text-primary-600 font-medium">
               {user?.name?.charAt(0) || 'A'}
             </span>
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-            <p className="text-xs text-gray-500">{user?.email}</p>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user?.name}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
           </div>
         </div>
       </div>

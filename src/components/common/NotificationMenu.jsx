@@ -101,7 +101,7 @@ const NotificationMenu = () => {
       <button
         type="button"
         onClick={handleToggle}
-        className="p-2.5 text-accent-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-colors relative"
+        className="p-2.5 text-accent-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-gray-100 hover:bg-primary-50 dark:hover:bg-gray-800 rounded-xl transition-colors relative"
         aria-label="Open notifications"
       >
         <FiBell className="h-5 w-5" />
@@ -120,30 +120,30 @@ const NotificationMenu = () => {
             onClick={() => setIsOpen(false)}
             aria-label="Close notifications"
           />
-          <div className="absolute right-[-280%] md:right-0 mt-2 w-[430px] max-w-[95vw] bg-white border border-surface-200 rounded-2xl shadow-[0_20px_50px_-12px_rgba(143,40,0,0.25)] z-20 overflow-hidden">
-            <div className="px-4 py-4 border-b bg-gradient-to-br from-surface-50 via-secondary-50 to-white">
+          <div className="absolute right-[-280%] md:right-0 mt-2 w-[430px] max-w-[95vw] bg-white dark:bg-gray-900 border border-surface-200 dark:border-gray-800 rounded-2xl shadow-[0_20px_50px_-12px_rgba(143,40,0,0.25)] z-20 overflow-hidden">
+            <div className="px-4 py-4 border-b dark:border-gray-800 bg-gradient-to-br from-surface-50 via-secondary-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-primary-900 tracking-tight">Notifications</p>
-                  <p className="text-xs text-accent-700 mt-0.5">
+                  <p className="text-sm font-semibold text-primary-900 dark:text-gray-100 tracking-tight">Notifications</p>
+                  <p className="text-xs text-accent-700 dark:text-gray-400 mt-0.5">
                     {unreadCount} unread • {notifications.length} total
                   </p>
                 </div>
-                <div className="h-9 w-9 rounded-xl bg-white/90 border border-surface-200 text-primary-600 flex items-center justify-center shadow-sm">
+                <div className="h-9 w-9 rounded-xl bg-white/90 dark:bg-gray-800 border border-surface-200 dark:border-gray-700 text-primary-600 dark:text-gray-200 flex items-center justify-center shadow-sm">
                   <FiBell className="h-4 w-4" />
                 </div>
               </div>
-              <div className="mt-3 flex items-center gap-2 text-[11px] text-primary-700">
+              <div className="mt-3 flex items-center gap-2 text-[11px] text-primary-700 dark:text-gray-300">
                 <span className="inline-flex h-2 w-2 rounded-full bg-primary-500" />
                 Notifications are kept permanently
               </div>
             </div>
 
-            <div className="max-h-[450px] overflow-y-auto bg-gradient-to-b from-surface-50/50 to-white p-2.5">
+            <div className="max-h-[450px] overflow-y-auto bg-gradient-to-b from-surface-50/50 to-white dark:from-gray-900 dark:to-gray-900 p-2.5">
               {notifications.length === 0 ? (
-                <div className="m-2 rounded-2xl bg-white border border-dashed border-surface-300 px-4 py-10 text-center">
-                  <FiBell className="h-6 w-6 text-surface-400 mx-auto mb-2" />
-                  <p className="text-sm text-accent-700">No notifications yet</p>
+                <div className="m-2 rounded-2xl bg-white dark:bg-gray-900 border border-dashed border-surface-300 dark:border-gray-700 px-4 py-10 text-center">
+                  <FiBell className="h-6 w-6 text-surface-400 dark:text-gray-500 mx-auto mb-2" />
+                  <p className="text-sm text-accent-700 dark:text-gray-300">No notifications yet</p>
                 </div>
               ) : (
                 notifications.slice(0, 12).map((notification) => {
@@ -155,8 +155,8 @@ const NotificationMenu = () => {
                       key={notification._id}
                       className={`group mb-2.5 rounded-2xl border p-3.5 transition-all ${
                         notification.isRead
-                          ? 'bg-white border-surface-200'
-                          : 'bg-gradient-to-r from-secondary-50/60 to-surface-50 border-secondary-200 shadow-sm'
+                          ? 'bg-white dark:bg-gray-900 border-surface-200 dark:border-gray-800'
+                          : 'bg-gradient-to-r from-secondary-50/60 to-surface-50 dark:from-gray-800 dark:to-gray-900 border-secondary-200 dark:border-gray-700 shadow-sm'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -169,21 +169,21 @@ const NotificationMenu = () => {
                               {!notification.isRead && (
                                 <span className={`w-2 h-2 rounded-full ${typeMeta.dot}`} />
                               )}
-                              <p className="text-sm font-semibold text-primary-900 truncate tracking-tight">
+                              <p className="text-sm font-semibold text-primary-900 dark:text-gray-100 truncate tracking-tight">
                                 {notification.title || 'Notification'}
                               </p>
                             </div>
-                            <p className="text-sm text-accent-800 mt-1.5 break-words line-clamp-2">
+                            <p className="text-sm text-accent-800 dark:text-gray-300 mt-1.5 break-words line-clamp-2">
                               {notification.message}
                             </p>
-                            <p className="text-xs text-accent-500 mt-2.5">
+                            <p className="text-xs text-accent-500 dark:text-gray-500 mt-2.5">
                               {formatTimeAgo(notification.createdAt)}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
                           {!notification.isRead && (
-                            <span className="text-[11px] text-primary-600 font-medium">
+                            <span className="text-[11px] text-primary-600 dark:text-gray-200 font-medium">
                               New
                             </span>
                           )}
@@ -212,18 +212,18 @@ const NotificationMenu = () => {
                 })
               )}
             </div>
-            <div className="border-t px-3 py-2 flex items-center justify-between bg-white">
+            <div className="border-t dark:border-gray-800 px-3 py-2 flex items-center justify-between bg-white dark:bg-gray-900">
               <button
                 type="button"
                 onClick={markAllAsRead}
-                className="text-xs text-primary-700 font-medium"
+                className="text-xs text-primary-700 dark:text-gray-200 font-medium"
               >
                 Mark all as read
               </button>
               <Link
                 to={notificationsPath}
                 onClick={() => setIsOpen(false)}
-                className="text-xs text-primary-700 font-medium"
+                className="text-xs text-primary-700 dark:text-gray-200 font-medium"
               >
                 View all
               </Link>
