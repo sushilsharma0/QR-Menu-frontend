@@ -76,6 +76,7 @@ import RestaurantLayout from "./components/restaurant/RestaurantLayout";
 import EmployeeLayout from "./components/employee/EmployeeLayout";
 import { defaultPortalPathForUser, getTenantSegments } from "./utils/tenantPaths";
 import LandingPage from "./pages/LandingPage";
+import NotificationsPage from "./pages/Notifications";
 
 function App() {
   const { user, isLoading } = useAuth();
@@ -179,6 +180,8 @@ function App() {
         <Route path="/employee/:slug/:restaurantId/orders" element={<OrderList />} />
         <Route path="/employee/:slug/:restaurantId/orders/:id" element={<RestaurantOrderDetail />} />
       </Route>
+
+      <Route path="/notifications" element={<NotificationsPage />} />
 
       {/* Customer Routes - Public */}
       {/* IMPORTANT: Add the menu route with slug and token parameters */}

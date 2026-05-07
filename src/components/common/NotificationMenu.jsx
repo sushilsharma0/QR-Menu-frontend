@@ -3,9 +3,11 @@ import {
   FiBell,
   FiCheckCircle,
   FiClock,
+  FiExternalLink,
   FiShoppingBag,
   FiXCircle,
 } from 'react-icons/fi'
+import { Link } from 'react-router-dom'
 import useNotification from '../../hooks/useNotification'
 
 const NotificationMenu = () => {
@@ -14,13 +16,14 @@ const NotificationMenu = () => {
     notifications,
     unreadCount,
     markAllAsRead,
+    markAsRead,
   } = useNotification()
 
   const handleToggle = () => {
     setIsOpen((prev) => {
       const next = !prev
       if (next && unreadCount > 0) {
-        markAllAsRead()
+        void markAllAsRead()
       }
       return next
     })
@@ -103,7 +106,7 @@ const NotificationMenu = () => {
               </div>
               <div className="mt-3 flex items-center gap-2 text-[11px] text-primary-700">
                 <span className="inline-flex h-2 w-2 rounded-full bg-primary-500" />
-                Auto-marked as read when opened
+                Notifications are kept permanently
               </div>
             </div>
 
@@ -114,15 +117,15 @@ const NotificationMenu = () => {
                   <p className="text-sm text-accent-700">No notifications yet</p>
                 </div>
               ) : (
-                notifications.slice(0, 20).map((notification) => {
+                notifications.slice(0, 12).map((notification) => {
                   const typeMeta = getTypeMeta(notification.type)
                   const TypeIcon = typeMeta.icon
 
                   return (
                     <div
-                      key={notification.id}
+                      key={notification._id}
                       className={`group mb-2.5 rounded-2xl border p-3.5 transition-all ${
-                        notification.read
+                        notification.isRead
                           ? 'bg-white border-surface-200'
                           : 'bg-gradient-to-r from-secondary-50/60 to-surface-50 border-secondary-200 shadow-sm'
                       }`}
@@ -134,7 +137,7 @@ const NotificationMenu = () => {
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              {!notification.read && (
+                              {!notification.isRead && (
                                 <span className={`w-2 h-2 rounded-full ${typeMeta.dot}`} />
                               )}
                               <p className="text-sm font-semibold text-primary-900 truncate tracking-tight">
@@ -145,22 +148,52 @@ const NotificationMenu = () => {
                               {notification.message}
                             </p>
                             <p className="text-xs text-accent-500 mt-2.5">
-                              {formatTimeAgo(notification.timestamp)}
+                              {formatTimeAgo(notification.createdAt)}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
-                          {!notification.read && (
+                          {!notification.isRead && (
                             <span className="text-[11px] text-primary-600 font-medium">
                               New
                             </span>
                           )}
                         </div>
                       </div>
+                      <div className="pt-2 flex items-center justify-between">
+                        <button
+                          type="button"
+                          onClick={() => markAsRead(notification._id)}
+                          disabled={notification.isRead}
+                          className="text-xs px-2 py-1 rounded border border-surface-300 disabled:opacity-50"
+                        >
+                          {notification.isRead ? 'Read' : 'Mark read'}
+                        </button>
+                        {notification.actionUrl ? (
+                          <a
+                            href={notification.actionUrl}
+                            className="text-xs inline-flex items-center gap-1 text-primary-600"
+                          >
+                            Open <FiExternalLink className="h-3 w-3" />
+                          </a>
+                        ) : null}
+                      </div>
                     </div>
                   )
                 })
               )}
+            </div>
+            <div className="border-t px-3 py-2 flex items-center justify-between bg-white">
+              <button
+                type="button"
+                onClick={markAllAsRead}
+                className="text-xs text-primary-700 font-medium"
+              >
+                Mark all as read
+              </button>
+              <Link to="/notifications" className="text-xs text-primary-700 font-medium">
+                View all
+              </Link>
             </div>
           </div>
         </>

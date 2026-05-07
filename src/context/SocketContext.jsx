@@ -56,6 +56,17 @@ export const SocketProvider = ({ children }) => {
       
       // Join appropriate room based on user role
       if (user.id) {
+        const recipientType =
+          user.scope === 'employee'
+            ? 'employee'
+            : user.role === 'restaurant'
+              ? 'restaurant'
+              : user.role === 'super_admin' || user.role === 'admin'
+                ? 'platform'
+                : null
+        if (recipientType) {
+          newSocket.emit('join:user', { recipientType, recipientId: user.id })
+        }
         if (user.role === 'restaurant') {
           newSocket.emit('join:restaurant', user.id)
           console.log('Joined restaurant room:', user.id)
@@ -98,6 +109,17 @@ export const SocketProvider = ({ children }) => {
       
       // Rejoin rooms after reconnect
       if (user.id) {
+        const recipientType =
+          user.scope === 'employee'
+            ? 'employee'
+            : user.role === 'restaurant'
+              ? 'restaurant'
+              : user.role === 'super_admin' || user.role === 'admin'
+                ? 'platform'
+                : null
+        if (recipientType) {
+          newSocket.emit('join:user', { recipientType, recipientId: user.id })
+        }
         if (user.role === 'restaurant') {
           newSocket.emit('join:restaurant', user.id)
         } else if (user.scope === 'employee') {

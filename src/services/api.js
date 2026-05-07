@@ -436,6 +436,19 @@ export const getTransactionById = (id) =>
 export const refundTransaction = (id, reason) => 
   api.post(`/restaurant/cashier/transactions/${id}/refund`, { reason })
 
+// Notifications
+export const getNotifications = (params) =>
+  api.get('/notifications', { params })
+
+export const getUnreadNotificationCount = () =>
+  api.get('/notifications/unread-count')
+
+export const markNotificationRead = (id) =>
+  api.patch(`/notifications/${id}/read`)
+
+export const markAllNotificationsRead = () =>
+  api.patch('/notifications/read-all')
+
 // Restaurant Dashboard
 export const getRestaurantDashboardStats = () => 
   api.get('/restaurant/dashboard/stats')
