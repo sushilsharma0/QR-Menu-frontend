@@ -21,9 +21,8 @@ import Feedback from "../../../components/customer/homepage/Feedback";
 import PromoCodeModal from "../../../components/customer/homepage/PromoCodeModal";
 import PageTransition from '../../../components/customer/PageTransition';
 import api from "../../../services/api";
-import { getRestaurantInfo } from "../../../services/customer";
+import { ensureGuestSession, getRestaurantInfo } from "../../../services/customer";
 import toast from "react-hot-toast";
-import CryptoJS from "crypto-js";
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -55,6 +54,9 @@ export default function Home() {
 
   useEffect(() => {
     if (!slug || !token) return
+    ensureGuestSession(token).catch((err) => {
+      console.error('Failed to initialize guest session', err)
+    })
     fetchTables()
     fetchPromoBanners()
     fetchRestaurantInfo()
@@ -103,15 +105,6 @@ export default function Home() {
       setPromoBanners([]);
     }
   };
-
-
-let userId = localStorage.getItem("customer_guest_id");
-
-if (!userId) {
-  userId = "guest_" + (slug || "unknown") + "_" + CryptoJS.lib.WordArray.random(16).toString();
-  localStorage.setItem("customer_guest_id", userId);
-}
-
 
 
   return (

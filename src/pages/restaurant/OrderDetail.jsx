@@ -49,7 +49,7 @@ const OrderDetail = () => {
       socket.emit('join:order', id)
       socket.on('order_status', handleStatusUpdate)
       return () => {
-        socket.off('order_status')
+        socket.off('order_status', handleStatusUpdate)
       }
     }
   }, [socket, id])

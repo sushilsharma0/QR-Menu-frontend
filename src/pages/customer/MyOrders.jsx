@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Clock, CheckCircle2, ShoppingBag } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import api from "../../services/api";
 import Navigation from "../../components/customer/Navigation";
+import { ensureGuestSession, getGuestOrders } from "../../services/customer";
 
 const MyOrders = () => {
   const { slug, token } = useParams();
@@ -20,8 +20,9 @@ const MyOrders = () => {
 
       try {
         setLoading(true);
-        const res = await api.get(`/customer/orders/${token}`);
-        setOrders(res?.data?.data?.orders || []);
+        const session = await ensureGuestSession(token);
+        const guestOrders = await getGuestOrders({ guestId: session.guestId, qrToken: token });
+        setOrders(guestOrders);
       } catch (err) {
         console.error("Failed to fetch customer orders", err);
         setOrders([]);

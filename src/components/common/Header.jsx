@@ -14,7 +14,7 @@ const Header = () => {
   }
 
   return (
-    <header className="bg-white border-b border-surface-200 px-6 pt-20 md:pt-6 pb-6">
+    <header className="bg-white border-b border-surface-200 px-6 pt-20 md:pt-16 lg:pt-5 pb-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold text-primary-900">

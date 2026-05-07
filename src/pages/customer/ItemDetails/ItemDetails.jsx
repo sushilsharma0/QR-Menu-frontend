@@ -18,17 +18,18 @@ import { useNavigate, useParams } from "react-router-dom";
 import api from "../../../services/api";
 import { useToast } from "../../../hooks/useToast";
 import { ToastContainer } from "../../../components/common/ToastContainer";
+import { addItemToGuestCart, ensureGuestSession } from "../../../services/customer";
 
 const ItemDetails = () => {
   const navigate = useNavigate();
-  const { slug, id } = useParams();
+  const { slug, token, id } = useParams();
 
   const [quantity, setQuantity] = useState(1);
   const [selectedAddons, setSelectedAddons] = useState([]);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showMore, setShowMore] = useState(false);
 
-  const { toasts, removeToast, success, error, warning } = useToast();
+  const { toasts, removeToast, success, error } = useToast();
 
   const [item, setItem] = useState({
     price: 0,
@@ -104,69 +105,14 @@ const ItemDetails = () => {
 
   const handleAddToCart = async () => {
     try {
-      const restaurantRes = await api.get(
-        `/restaurant/menu/public/${slug}`
-      );
-
-      const restaurant = restaurantRes.data.data;
-
-      const cartItem = {
-        _id: item._id,
-        name: item.name,
-        price: item.price,
-        image: item.image,
+      const session = await ensureGuestSession(token);
+      await addItemToGuestCart({
+        guestId: session.guestId,
+        qrToken: token,
+        menuItemId: item._id,
         quantity,
-        restaurantId: restaurant._id,
-        addons: addons
-          .filter((a) => selectedAddons.includes(a.id))
-          .map((addon) => ({
-            name: addon.name,
-            price: addon.price,
-          })),
-        totalPrice: calculateTotal(),
-      };
-
-      let cart = JSON.parse(localStorage.getItem("cart")) || {
-        items: [],
-        total: 0,
-        restaurantId: null,
-      };
-
-      if (
-        cart.restaurantId &&
-        cart.restaurantId !== restaurant._id
-      ) {
-        warning(
-          "Adding from another restaurant cleared previous cart"
-        );
-
-        cart = {
-          items: [],
-          total: 0,
-          restaurantId: null,
-        };
-      }
-
-      const existingItemIndex = cart.items.findIndex(
-        (i) => i._id === item._id
-      );
-
-      if (existingItemIndex > -1) {
-        cart.items[existingItemIndex].quantity += quantity;
-        success(`${item.name} quantity updated`);
-      } else {
-        cart.items.push(cartItem);
-        success(`${item.name} added to cart`);
-      }
-
-      cart.total = cart.items.reduce(
-        (sum, i) => sum + i.price * i.quantity,
-        0
-      );
-
-      cart.restaurantId = restaurant._id;
-
-      localStorage.setItem("cart", JSON.stringify(cart));
+      });
+      success(`${item.name} added to cart`);
     } catch (err) {
       console.error(err);
       error("Failed to add item to cart");

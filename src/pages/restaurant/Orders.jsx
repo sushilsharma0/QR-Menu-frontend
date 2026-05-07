@@ -38,8 +38,8 @@ const Orders = () => {
       socket.on('new_order', handleNewOrder)
       socket.on('order_updated', handleOrderUpdate)
       return () => {
-        socket.off('new_order')
-        socket.off('order_updated')
+        socket.off('new_order', handleNewOrder)
+        socket.off('order_updated', handleOrderUpdate)
       }
     }
   }, [socket])

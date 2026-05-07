@@ -37,7 +37,7 @@ export const SocketProvider = ({ children }) => {
 
     // Create new socket connection
     const newSocket = io(SOCKET_URL, {
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
       autoConnect: true,
       reconnection: true,
       reconnectionAttempts: 5,

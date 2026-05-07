@@ -1,5 +1,8 @@
 import api from './api'
 
+const GUEST_ID_STORAGE_KEY = 'customer_guest_id_v1'
+const CART_COUNT_STORAGE_KEY = 'customer_cart_count_v1'
+
 // Public Menu
 export const getRestaurantMenu = async (restaurantSlug) => {
   const response = await api.get(`/restaurant/menu/public/${restaurantSlug}`)
@@ -26,6 +29,99 @@ export const trackOrder = async (qrToken) => {
 export const getOrderStatus = async (orderId) => {
   const response = await api.get(`/restaurant/customer-orders/${orderId}`)
   return response.data
+}
+
+export const getStoredGuestId = () => localStorage.getItem(GUEST_ID_STORAGE_KEY) || ''
+
+export const setCartItemCount = (count) => {
+  localStorage.setItem(CART_COUNT_STORAGE_KEY, String(Math.max(0, Number(count) || 0)))
+}
+
+export const getCartItemCount = () => Number(localStorage.getItem(CART_COUNT_STORAGE_KEY) || 0)
+
+export const ensureGuestSession = async (qrToken) => {
+  const existingGuestId = getStoredGuestId()
+  const buildPayload = (guestId) => ({
+    qrToken,
+    guestId: guestId || undefined,
+    deviceInfo: {
+      userAgent: navigator.userAgent || '',
+      platform: navigator.platform || '',
+      language: navigator.language || '',
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+    },
+  })
+
+  let response
+  try {
+    response = await api.post('/customer/guest/session', buildPayload(existingGuestId))
+  } catch (err) {
+    // If persisted guest id becomes invalid/stale, retry once with a fresh session.
+    if (existingGuestId) {
+      localStorage.removeItem(GUEST_ID_STORAGE_KEY)
+      response = await api.post('/customer/guest/session', buildPayload(''))
+    } else {
+      throw err
+    }
+  }
+  const data = response?.data?.data || {}
+  if (data.guestId) {
+    localStorage.setItem(GUEST_ID_STORAGE_KEY, data.guestId)
+  }
+  const count = (data?.cart?.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
+  setCartItemCount(count)
+  return data
+}
+
+export const addItemToGuestCart = async ({ guestId, qrToken, menuItemId, quantity = 1, notes = '' }) => {
+  const response = await api.post(`/customer/cart/${guestId}/items`, {
+    qrToken,
+    menuItemId,
+    quantity,
+    notes,
+  })
+  const cart = response?.data?.data || { items: [] }
+  const count = (cart.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
+  setCartItemCount(count)
+  return cart
+}
+
+export const getGuestCart = async ({ guestId, qrToken }) => {
+  const response = await api.get(`/customer/cart/${guestId}`, { params: { qrToken } })
+  const cart = response?.data?.data || { items: [] }
+  const count = (cart.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
+  setCartItemCount(count)
+  return cart
+}
+
+export const updateGuestCartItem = async ({ guestId, qrToken, menuItemId, quantity, notes }) => {
+  const response = await api.patch(`/customer/cart/${guestId}/items/${menuItemId}`, {
+    qrToken,
+    quantity,
+    notes,
+  })
+  const cart = response?.data?.data || { items: [] }
+  const count = (cart.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
+  setCartItemCount(count)
+  return cart
+}
+
+export const removeGuestCartItem = async ({ guestId, qrToken, menuItemId }) => {
+  const response = await api.delete(`/customer/cart/${guestId}/items/${menuItemId}`, { params: { qrToken } })
+  const cart = response?.data?.data || { items: [] }
+  const count = (cart.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
+  setCartItemCount(count)
+  return cart
+}
+
+export const clearGuestCart = async ({ guestId, qrToken }) => {
+  await api.delete(`/customer/cart/${guestId}`, { params: { qrToken } })
+  setCartItemCount(0)
+}
+
+export const getGuestOrders = async ({ guestId, qrToken }) => {
+  const response = await api.get(`/customer/orders/${guestId}`, { params: { qrToken } })
+  return response?.data?.data?.orders || []
 }
 
 // Helper functions for customer flow
@@ -75,6 +171,16 @@ export default {
   placeOrder,
   trackOrder,
   getOrderStatus,
+  getStoredGuestId,
+  ensureGuestSession,
+  addItemToGuestCart,
+  getGuestCart,
+  updateGuestCartItem,
+  removeGuestCartItem,
+  clearGuestCart,
+  getGuestOrders,
+  getCartItemCount,
+  setCartItemCount,
   getRestaurantInfo,
   getCategories,
   getAllItems,

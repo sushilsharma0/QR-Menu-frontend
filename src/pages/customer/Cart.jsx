@@ -12,6 +12,13 @@ import api from "../../services/api";
 import { getParsedAuthUser } from "../../utils/authStorage";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../../components/common/ToastContainer";
+import {
+  clearGuestCart,
+  ensureGuestSession,
+  getGuestCart,
+  removeGuestCartItem,
+  updateGuestCartItem,
+} from "../../services/customer";
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -23,73 +30,115 @@ const Cart = () => {
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [applyingPromo, setApplyingPromo] = useState(false);
+  const [guestId, setGuestId] = useState("");
   const { toasts, removeToast, success, error, warning } = useToast();
 
   useEffect(() => {
-    const item = localStorage.getItem("cart");
-    console.log("Cart item from localStorage:", item);
-    if (item) {
+    const init = async () => {
       try {
-        const parsedItems = JSON.parse(item);
-        setCartItems(parsedItems.items || []);
-      } catch (error) {
-        console.error("Error parsing cart items from localStorage:", error);
+        const session = await ensureGuestSession(token);
+        setGuestId(session.guestId);
+        const cart = await getGuestCart({ guestId: session.guestId, qrToken: token });
+        const normalized = (cart.items || []).map((item) => ({
+          _id: item.menuItem?._id || item.menuItem,
+          name: item.menuItem?.name || "Item",
+          image: item.menuItem?.image || "",
+          price: item.price,
+          quantity: item.quantity,
+          note: item.notes || "",
+        }));
+        setCartItems(normalized);
+      } catch (err) {
+        console.error("Failed to load guest cart", err);
+        error("Failed to load cart");
       }
-    }
-  }, []);
-
-  useEffect(() => {
-    const existing = JSON.parse(localStorage.getItem("cart")) || {};
-
-    const updatedCart = {
-      ...existing,
-      items: cartItems,
-      total: cartItems.reduce(
-        (acc, item) => acc + item.price * item.quantity,
-        0,
-      ),
     };
-
-    localStorage.setItem("cart", JSON.stringify(updatedCart));
-  }, [cartItems]);
+    init();
+  }, [token]);
 
   // Increase quantity
-  const increaseQty = (id) => {
-    setCartItems(prevItems =>
-      prevItems.map(item =>
-        item._id === id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      )
-    );
+  const increaseQty = async (id) => {
+    const current = cartItems.find((item) => item._id === id);
+    if (!current || !guestId) return;
+    try {
+      const cart = await updateGuestCartItem({
+        guestId,
+        qrToken: token,
+        menuItemId: id,
+        quantity: current.quantity + 1,
+      });
+      setCartItems(
+        (cart.items || []).map((item) => ({
+          _id: item.menuItem?._id || item.menuItem,
+          name: item.menuItem?.name || "Item",
+          image: item.menuItem?.image || "",
+          price: item.price,
+          quantity: item.quantity,
+          note: item.notes || "",
+        }))
+      );
+    } catch (err) {
+      error("Failed to update item quantity");
+    }
   };
 
   // Decrease quantity
-  const decreaseQty = (id) => {
-    setCartItems(prevItems =>
-      prevItems.map(item => {
-        if (item._id === id) {
-          if (item.quantity > 1) {
-            return { ...item, quantity: item.quantity - 1 };
-          }
-          return null;
-        }
-        return item;
-      }).filter(item => item !== null)
-    );
+  const decreaseQty = async (id) => {
+    const current = cartItems.find((item) => item._id === id);
+    if (!current || !guestId) return;
+    try {
+      const cart = await updateGuestCartItem({
+        guestId,
+        qrToken: token,
+        menuItemId: id,
+        quantity: current.quantity - 1,
+      });
+      setCartItems(
+        (cart.items || []).map((item) => ({
+          _id: item.menuItem?._id || item.menuItem,
+          name: item.menuItem?.name || "Item",
+          image: item.menuItem?.image || "",
+          price: item.price,
+          quantity: item.quantity,
+          note: item.notes || "",
+        }))
+      );
+    } catch (err) {
+      error("Failed to update item quantity");
+    }
   };
 
   // Remove item from cart
-  const removeItem = (id) => {
-    setCartItems(prevItems => prevItems.filter(item => item._id !== id));
-    success('Item removed from cart');
+  const removeItem = async (id) => {
+    if (!guestId) return;
+    try {
+      const cart = await removeGuestCartItem({ guestId, qrToken: token, menuItemId: id });
+      setCartItems(
+        (cart.items || []).map((item) => ({
+          _id: item.menuItem?._id || item.menuItem,
+          name: item.menuItem?.name || "Item",
+          image: item.menuItem?.image || "",
+          price: item.price,
+          quantity: item.quantity,
+          note: item.notes || "",
+        }))
+      );
+      success('Item removed from cart');
+    } catch (err) {
+      error('Failed to remove cart item');
+    }
   };
 
   // Clear entire cart
-  const clearCart = () => {
-    setCartItems([]);
-    localStorage.removeItem("cart");
-    success('Cart cleared successfully');
+  const clearCart = async () => {
+    if (!guestId) return;
+    try {
+      await clearGuestCart({ guestId, qrToken: token });
+      setCartItems([]);
+      success('Cart cleared successfully');
+    } catch (err) {
+      error('Failed to clear cart');
+    }
   };
 
   const subtotal = cartItems.reduce(
@@ -143,6 +192,7 @@ const Cart = () => {
       const dashUser = getParsedAuthUser();
       const payload = {
         qrToken: token,
+        guestId,
         paymentMethod,
         customerName: dashUser?.name || "Guest",
         customerPhone: dashUser?.phone || "",
@@ -158,7 +208,7 @@ const Cart = () => {
       const res = await api.post("/customer/checkout", payload);
       const order = res?.data?.data;
 
-      localStorage.removeItem("cart");
+      await clearGuestCart({ guestId, qrToken: token });
       setCartItems([]);
       setAppliedPromo(null);
       setPromoDiscount(0);

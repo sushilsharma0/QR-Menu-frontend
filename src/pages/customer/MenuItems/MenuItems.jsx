@@ -16,6 +16,7 @@ import FilterSidebar from "../../../components/customer/menuItem/FilterSidebar";
 import api from "../../../services/api";
 import { useToast } from "../../../hooks/useToast";
 import { ToastContainer } from "../../../components/common/ToastContainer";
+import { addItemToGuestCart, ensureGuestSession } from "../../../services/customer";
 
 
 
@@ -33,7 +34,7 @@ const MenuItems = () => {
     dietary: "",
   });
   const navigate = useNavigate();
-  const { toasts, removeToast, success, error, warning } = useToast();
+  const { toasts, removeToast, success, error } = useToast();
 
   const { slug, token, category: categoryName } = useParams();
   
@@ -123,44 +124,14 @@ const MenuItems = () => {
 
   const handleAddToCart = async (item) => {
     try {
-      const restaurantRes = await api.get(`/restaurant/menu/public/${slug}`);
-      const restaurant = restaurantRes.data.data;
-
-      const cartItem = {
-        _id: item._id,
-        name: item.name,
-        price: item.price,
-        image: item.image,
+      const session = await ensureGuestSession(token);
+      await addItemToGuestCart({
+        guestId: session.guestId,
+        qrToken: token,
+        menuItemId: item._id,
         quantity: 1,
-        restaurantId: restaurant._id,
-        addons: [],
-      };
-
-      let cart = JSON.parse(localStorage.getItem("cart")) || {
-        items: [],
-        total: 0,
-        restaurantId: null,
-      };
-
-      if (cart.restaurantId && cart.restaurantId !== restaurant._id) {
-        warning("Added items from a different restaurant will clear your cart");
-        cart = { items: [], total: 0, restaurantId: null };
-      }
-
-      const existingItemIndex = cart.items.findIndex((i) => i._id === item._id);
-
-      if (existingItemIndex > -1) {
-        cart.items[existingItemIndex].quantity += 1;
-        success(`${item.name} quantity updated!`);
-      } else {
-        cart.items.push(cartItem);
-        success(`${item.name} added to cart!`);
-      }
-
-      cart.total = cart.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-      cart.restaurantId = restaurant._id;
-
-      localStorage.setItem("cart", JSON.stringify(cart));
+      });
+      success(`${item.name} added to cart!`);
     } catch (err) {
       console.error("Error adding to cart:", err);
       error("Failed to add item. Please try again.");

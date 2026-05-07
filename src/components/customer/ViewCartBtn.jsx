@@ -1,15 +1,25 @@
 import { ShoppingBag } from "lucide-react";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { getCartItemCount } from "../../services/customer";
 
 export default function ViewCartBtn() {
   const { slug, token } = useParams();
+  const [totalItems, setTotalItems] = useState(getCartItemCount());
 
-  const cart = JSON.parse(localStorage.getItem("cart")) || { items: [] };
-  const totalItems = (cart.items || []).reduce(
-    (sum, item) => sum + (item.quantity || 0),
-    0,
-  );
+  useEffect(() => {
+    const refreshCount = () => setTotalItems(getCartItemCount());
+    const onFocus = () => refreshCount();
+    refreshCount();
+    window.addEventListener("storage", refreshCount);
+    window.addEventListener("focus", onFocus);
+    const interval = setInterval(refreshCount, 1500);
+    return () => {
+      window.removeEventListener("storage", refreshCount);
+      window.removeEventListener("focus", onFocus);
+      clearInterval(interval);
+    };
+  }, []);
 
   if (totalItems === 0) {
     return null;
