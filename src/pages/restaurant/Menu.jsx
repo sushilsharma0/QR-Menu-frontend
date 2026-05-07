@@ -2,7 +2,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  FiCheckCircle,
   FiClock,
+  FiCoffee,
   FiEdit2,
   FiEye,
   FiEyeOff,
@@ -11,6 +13,7 @@ import {
   FiPlus,
   FiRefreshCw,
   FiSearch,
+  FiTag,
   FiTrash2,
 } from "react-icons/fi";
 import toast from "react-hot-toast";
@@ -100,6 +103,40 @@ function MenuActions({ item, onEdit, onDelete, onToggle }) {
       >
         <FiTrash2 className="h-4 w-4" />
       </button>
+    </div>
+  );
+}
+
+function MenuMetricCard({ label, value, sub, icon: Icon, accent }) {
+  return (
+    <motion.div
+      whileHover={{ y: -3 }}
+      className="rounded-2xl border border-surface-200 bg-white/90 p-4 shadow-sm"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
+          <p className="mt-2 text-2xl font-bold text-gray-950">{value}</p>
+          {sub && <p className="mt-1 text-xs text-gray-500">{sub}</p>}
+        </div>
+        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${accent} text-white shadow-md`}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function CategoryBadge({ active, children }) {
+  return (
+    <div
+      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-sm ${
+        active
+          ? "bg-gradient-to-br from-primary-600 to-secondary-500 text-white"
+          : "bg-gradient-to-br from-surface-100 to-primary-50 text-primary-600"
+      }`}
+    >
+      {children}
     </div>
   );
 }
@@ -334,20 +371,27 @@ const Menu = () => {
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {[
-              { label: "Total items", value: items.length },
-              { label: "Available", value: availableCount },
-              { label: "Categories", value: categories.length },
-            ].map((stat) => (
-              <motion.div
-                key={stat.label}
-                whileHover={{ y: -3 }}
-                className="rounded-2xl border border-surface-200 bg-white/90 p-4 shadow-sm"
-              >
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{stat.label}</p>
-                <p className="mt-1 text-2xl font-bold text-gray-950">{stat.value}</p>
-              </motion.div>
-            ))}
+            <MenuMetricCard
+              label="Total items"
+              value={items.length}
+              sub="All dishes in menu"
+              icon={FiCoffee}
+              accent="from-primary-600 to-secondary-500"
+            />
+            <MenuMetricCard
+              label="Available"
+              value={availableCount}
+              sub={`${items.length - availableCount} unavailable`}
+              icon={FiCheckCircle}
+              accent="from-emerald-500 to-teal-500"
+            />
+            <MenuMetricCard
+              label="Categories"
+              value={categories.length}
+              sub="Menu groups"
+              icon={FiGrid}
+              accent="from-indigo-500 to-violet-500"
+            />
           </div>
         </div>
       </motion.section>
@@ -363,8 +407,15 @@ const Menu = () => {
                 : "border-surface-200 bg-white hover:border-primary-100 hover:bg-surface-50"
             }`}
           >
-            <p className="font-semibold text-gray-950">All Items</p>
-            <p className="mt-1 text-sm text-gray-500">{items.length} items</p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-semibold text-gray-950">All Items</p>
+                <p className="mt-1 text-sm text-gray-500">{items.length} items</p>
+              </div>
+              <CategoryBadge active={selectedCategory === "all"}>
+                <FiCoffee className="h-5 w-5" />
+              </CategoryBadge>
+            </div>
           </button>
 
           {categories.map((category) => (
@@ -380,13 +431,20 @@ const Menu = () => {
               }`}
             >
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-gray-950">{category.name}</p>
+                <div className="min-w-0">
+                  <div className="mb-3 flex items-center gap-3">
+                    <CategoryBadge active={String(selectedCategory) === String(category._id)}>
+                      <FiTag className="h-5 w-5" />
+                    </CategoryBadge>
+                    <div>
+                      <p className="font-semibold text-gray-950">{category.name}</p>
+                      <p className="text-xs font-semibold text-primary-600">
+                        {categoryCounts[String(category._id)] || 0} items
+                      </p>
+                    </div>
+                  </div>
                   <p className="mt-1 line-clamp-2 text-sm text-gray-500">
                     {category.description || "No description"}
-                  </p>
-                  <p className="mt-2 text-xs font-semibold text-primary-600">
-                    {categoryCounts[String(category._id)] || 0} items
                   </p>
                 </div>
                 <div className="flex gap-1">
@@ -526,9 +584,10 @@ const Menu = () => {
                           <p className="font-bold text-gray-950">{item.name}</p>
                           <p className="mt-1 text-sm text-gray-500">{categoryLabel}</p>
                         </div>
-                        <p className="text-lg font-bold text-primary-700">
-                          {formatRestaurantCurrency(item.price)}
-                        </p>
+                        <div className="inline-flex items-center gap-1.5 rounded-xl bg-primary-50 px-3 py-1.5 text-primary-700">
+                          <FiTag className="h-4 w-4" />
+                          <span className="text-lg font-bold">{formatRestaurantCurrency(item.price)}</span>
+                        </div>
                       </div>
                       {item.description && (
                         <p className="mt-3 line-clamp-2 text-sm text-gray-500">{item.description}</p>
