@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
+import { FiEdit2, FiShield, FiUserCheck, FiUserPlus, FiUserX, FiUsers } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
 import Card from '../../components/common/Card'
@@ -7,6 +8,7 @@ import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import Modal from '../../components/common/Modal'
 import Table from '../../components/common/Table'
+import { PlatformMetric, PlatformPageHeader, PlatformPill, platformStatusStyles } from '../../components/platform/PlatformUI'
 
 const Admins = () => {
   const [admins, setAdmins] = useState([])
@@ -67,31 +69,50 @@ const Admins = () => {
   }
 
   const columns = [
-    { header: 'Name', accessor: 'name' },
-    { header: 'Email', accessor: 'email' },
-    { header: 'Role', accessor: 'role' },
-    { header: 'Status', accessor: 'isActive', render: (row) => row.isActive ? 'Active' : 'Inactive' },
+    { header: 'Admin', accessor: 'name', render: (row) => (
+      <div>
+        <p className="font-semibold text-gray-950 dark:text-gray-100">{row.name}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{row.email}</p>
+      </div>
+    ) },
+    { header: 'Role', accessor: 'role', render: (row) => <span className="capitalize">{row.role}</span> },
+    { header: 'Permissions', render: (row) => Object.values(row.permissions || {}).filter(Boolean).length },
+    { header: 'Status', accessor: 'isActive', render: (row) => (
+      <PlatformPill className={row.isActive ? platformStatusStyles.active : platformStatusStyles.inactive}>
+        {row.isActive ? 'Active' : 'Inactive'}
+      </PlatformPill>
+    ) },
     { header: 'Actions', accessor: '_id', render: (row) => (
       <div className="flex gap-2">
-        <button onClick={() => handleEdit(row)} className="text-blue-600 hover:text-blue-800">Edit</button>
-        <button onClick={() => handleToggleStatus(row._id, row.isActive)} className="text-yellow-600 hover:text-yellow-800">
-          {row.isActive ? 'Deactivate' : 'Activate'}
+        <button onClick={() => handleEdit(row)} className="rounded-lg p-2 text-gray-400 transition hover:bg-blue-50 hover:text-blue-600" title="Edit admin">
+          <FiEdit2 className="h-4 w-4" />
+        </button>
+        <button onClick={() => handleToggleStatus(row._id, row.isActive)} className="rounded-lg p-2 text-gray-400 transition hover:bg-yellow-50 hover:text-yellow-600" title={row.isActive ? 'Deactivate' : 'Activate'}>
+          {row.isActive ? <FiUserX className="h-4 w-4" /> : <FiUserCheck className="h-4 w-4" />}
         </button>
       </div>
     ) },
   ]
 
+  const activeAdmins = admins.filter((admin) => admin.isActive).length
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Admin Management</h1>
-          <p className="mt-1 text-gray-500 dark:text-gray-400">Manage platform administrators</p>
-        </div>
-        <Button onClick={() => { setEditing(null); reset(); setModalOpen(true); }}>Add Admin</Button>
+      <PlatformPageHeader
+        badge="Access Control"
+        title="Admin Management"
+        description="Manage platform administrators, permissions, and active access for sensitive platform operations."
+        icon={FiShield}
+        actions={<Button onClick={() => { setEditing(null); reset(); setModalOpen(true); }}><FiUserPlus className="mr-2" /> Add Admin</Button>}
+      />
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <PlatformMetric label="Admins" value={admins.length} sub="Total platform users" icon={FiUsers} accent="from-blue-500 to-indigo-500" />
+        <PlatformMetric label="Active" value={activeAdmins} sub={`${admins.length - activeAdmins} inactive`} icon={FiUserCheck} accent="from-emerald-500 to-teal-500" />
+        <PlatformMetric label="Permission sets" value={admins.reduce((sum, admin) => sum + Object.values(admin.permissions || {}).filter(Boolean).length, 0)} sub="Enabled capabilities" icon={FiShield} accent="from-amber-500 to-orange-500" />
       </div>
 
-      <Card>
+      <Card title="Platform Admins">
         <Table columns={columns} data={admins} loading={loading} />
       </Card>
 
@@ -103,11 +124,11 @@ const Admins = () => {
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Permissions</label>
             <div className="space-y-2">
-              <label className="flex items-center gap-2"><input type="checkbox" {...register('permissions.manageRestaurants')} /> Manage Restaurants</label>
-              <label className="flex items-center gap-2"><input type="checkbox" {...register('permissions.manageSubscriptions')} /> Manage Subscriptions</label>
-              <label className="flex items-center gap-2"><input type="checkbox" {...register('permissions.manageCMS')} /> Manage CMS</label>
-              <label className="flex items-center gap-2"><input type="checkbox" {...register('permissions.verifyKYC')} /> Verify KYC</label>
-              <label className="flex items-center gap-2"><input type="checkbox" {...register('permissions.viewAnalytics')} /> View Analytics</label>
+              <label className="flex items-center gap-2 rounded-xl bg-surface-50 px-3 py-2 dark:bg-gray-800"><input type="checkbox" {...register('permissions.manageRestaurants')} /> Manage Restaurants</label>
+              <label className="flex items-center gap-2 rounded-xl bg-surface-50 px-3 py-2 dark:bg-gray-800"><input type="checkbox" {...register('permissions.manageSubscriptions')} /> Manage Subscriptions</label>
+              <label className="flex items-center gap-2 rounded-xl bg-surface-50 px-3 py-2 dark:bg-gray-800"><input type="checkbox" {...register('permissions.manageCMS')} /> Manage CMS</label>
+              <label className="flex items-center gap-2 rounded-xl bg-surface-50 px-3 py-2 dark:bg-gray-800"><input type="checkbox" {...register('permissions.verifyKYC')} /> Verify KYC</label>
+              <label className="flex items-center gap-2 rounded-xl bg-surface-50 px-3 py-2 dark:bg-gray-800"><input type="checkbox" {...register('permissions.viewAnalytics')} /> View Analytics</label>
             </div>
           </div>
           <div className="flex gap-3">

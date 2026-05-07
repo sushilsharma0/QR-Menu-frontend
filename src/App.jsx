@@ -122,6 +122,10 @@ function App() {
           path="/platform/subscriptions/create"
           element={<PlatformCreatePlan />}
         />
+        <Route
+          path="/platform/subscriptions/edit/:id"
+          element={<PlatformCreatePlan />}
+        />
         <Route path="/platform/cms" element={<PlatformCMS />} />
         <Route path="/platform/admins" element={<PlatformAdmins />} />
         <Route path="/platform/tickets" element={<PlatformTickets />} />

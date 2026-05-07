@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { FiArrowLeft, FiCheckCircle, FiExternalLink, FiFileText, FiShield, FiXCircle } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import Modal from '../../components/common/Modal'
+import { RestaurantPageLoader } from '../../components/restaurant/RestaurantUI'
+import { PlatformMetric, PlatformPageHeader, PlatformPill, platformStatusStyles } from '../../components/platform/PlatformUI'
 
 const KYCDetail = () => {
   const { id } = useParams()
@@ -56,25 +59,29 @@ const KYCDetail = () => {
   }
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    )
+    return <RestaurantPageLoader />
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">KYC Review</h1>
-          <p className="mt-1 text-gray-500 dark:text-gray-400">{kyc?.restaurant?.name}</p>
-        </div>
-        <div className="flex gap-3">
-          <Button variant="success" onClick={handleApprove}>Approve</Button>
-          <Button variant="danger" onClick={() => setRejectModal(true)}>Reject</Button>
-          <Button variant="secondary" onClick={() => navigate('/platform/kyc')}>Back</Button>
-        </div>
+      <PlatformPageHeader
+        badge="KYC Review"
+        title={kyc?.restaurant?.name || 'Restaurant KYC'}
+        description="Validate restaurant, owner, and document details before approving platform access."
+        icon={FiShield}
+        actions={
+          <>
+            <Button variant="success" onClick={handleApprove}><FiCheckCircle className="mr-2" />Approve</Button>
+            <Button variant="danger" onClick={() => setRejectModal(true)}><FiXCircle className="mr-2" />Reject</Button>
+            <Button variant="secondary" onClick={() => navigate('/platform/kyc')}><FiArrowLeft className="mr-2" />Back</Button>
+          </>
+        }
+      />
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <PlatformMetric label="Status" value={kyc?.status || 'Pending'} sub="Current KYC state" icon={FiShield} accent="from-blue-500 to-indigo-500" />
+        <PlatformMetric label="Owner" value={kyc?.ownerName || 'N/A'} sub={kyc?.idType || 'Identity document'} icon={FiFileText} accent="from-emerald-500 to-teal-500" />
+        <PlatformMetric label="Submitted" value={kyc?.createdAt ? new Date(kyc.createdAt).toLocaleDateString() : 'N/A'} sub="Application date" icon={FiCheckCircle} accent="from-amber-500 to-orange-500" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -102,6 +109,12 @@ const KYCDetail = () => {
         <Card title="Owner Information">
           <div className="space-y-4">
             <div>
+              <p className="text-sm text-gray-500">Status</p>
+              <PlatformPill className={platformStatusStyles[kyc?.status] || platformStatusStyles.pending}>
+                {kyc?.status || 'pending'}
+              </PlatformPill>
+            </div>
+            <div>
               <p className="text-sm text-gray-500">Owner Name</p>
               <p className="font-medium">{kyc?.ownerName}</p>
             </div>
@@ -126,7 +139,7 @@ const KYCDetail = () => {
               <div>
                 <p className="text-sm text-gray-500 mb-1">ID Document</p>
                 <a href={kyc.idDocument} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">
-                  View Document
+                  <span className="inline-flex items-center gap-1">View Document <FiExternalLink className="h-3 w-3" /></span>
                 </a>
               </div>
             )}
@@ -134,7 +147,7 @@ const KYCDetail = () => {
               <div>
                 <p className="text-sm text-gray-500 mb-1">PAN Document</p>
                 <a href={kyc.panDocument} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">
-                  View Document
+                  <span className="inline-flex items-center gap-1">View Document <FiExternalLink className="h-3 w-3" /></span>
                 </a>
               </div>
             )}

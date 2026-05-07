@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react'
+import { FiActivity, FiAlertCircle, FiCheckCircle, FiRefreshCw } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
 import Card from '../../components/common/Card'
+import Button from '../../components/common/Button'
+import { PlatformEmptyState, PlatformMetric, PlatformPageHeader } from '../../components/platform/PlatformUI'
 
 const SystemLogs = () => {
   const [logs, setLogs] = useState([])
@@ -28,32 +31,46 @@ const SystemLogs = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">System Logs</h1>
-          <p className="mt-1 text-gray-500 dark:text-gray-400">Track restaurant and employee authentication / validation events</p>
-        </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-        >
-          <option value="">All Events</option>
-          <option value="success">Successful events</option>
-          <option value="failed">Failed / blocked events</option>
-        </select>
+      <PlatformPageHeader
+        badge="Audit Trail"
+        title="System Logs"
+        description="Track restaurant and employee authentication, validation, and blocked access events."
+        icon={FiActivity}
+        actions={
+          <>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+            >
+              <option value="">All Events</option>
+              <option value="success">Successful events</option>
+              <option value="failed">Failed / blocked events</option>
+            </select>
+            <Button type="button" variant="secondary" onClick={fetchLogs} disabled={loading}>
+              <FiRefreshCw className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </>
+        }
+      />
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <PlatformMetric label="Loaded events" value={logs.length} sub="Most recent records" icon={FiActivity} accent="from-blue-500 to-indigo-500" />
+        <PlatformMetric label="Successful" value={logs.filter((log) => log.status === 'success' || log.details?.status === 'success').length} sub="Successful activity" icon={FiCheckCircle} accent="from-emerald-500 to-teal-500" />
+        <PlatformMetric label="Blocked / failed" value={logs.filter((log) => log.status === 'failed' || log.details?.status === 'failed').length} sub="Needs attention" icon={FiAlertCircle} accent="from-rose-500 to-red-500" />
       </div>
 
-      <Card>
+      <Card title="Activity Timeline">
         {loading ? (
           <p className="text-sm text-gray-500 dark:text-gray-400">Loading logs...</p>
         ) : logs.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">No logs found.</p>
+          <PlatformEmptyState title="No logs found" description="Try changing the event filter or refreshing later." icon={FiActivity} />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-800">
-              <thead className="bg-gray-50 dark:bg-gray-800">
-                <tr className="text-left text-gray-500 dark:text-gray-400">
+          <div className="overflow-x-auto rounded-2xl border border-surface-200 dark:border-gray-800">
+            <table className="min-w-full divide-y divide-surface-200 text-sm dark:divide-gray-800">
+              <thead className="bg-surface-50 dark:bg-gray-800/70">
+                <tr className="text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   <th className="px-4 py-3">Time</th>
                   <th className="px-4 py-3">Actor</th>
                   <th className="px-4 py-3">Action</th>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
+import { FiClipboard, FiCreditCard, FiFileText, FiRefreshCw, FiSearch } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import Card from '../../components/common/Card'
 import Table from '../../components/common/Table'
@@ -9,6 +10,7 @@ import Pagination from '../../components/common/Pagination'
 import api from '../../services/api'
 import { formatters } from '../../utils/formatters'
 import { DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
+import { PlatformMetric, PlatformPageHeader } from '../../components/platform/PlatformUI'
 
 export default function PlatformInvoices() {
   const [invoices, setInvoices] = useState([])
@@ -132,13 +134,28 @@ export default function PlatformInvoices() {
     },
   ]
 
+  const totalSummaryInvoices = summary.reduce((sum, row) => sum + Number(row.invoiceCount || 0), 0)
+  const totalRenewals = summary.reduce((sum, row) => sum + Number(row.renewalCount || 0), 0)
+
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Subscription invoices</h1>
-        <p className="mt-1 text-gray-500 dark:text-gray-400">
-          Track billing per restaurant, renewal counts, and open printable tax documents for compliance.
-        </p>
+    <div className="space-y-6">
+      <PlatformPageHeader
+        badge="Billing Documents"
+        title="Subscription Invoices"
+        description="Track billing per restaurant, renewal counts, and printable tax documents for compliance."
+        icon={FiFileText}
+        actions={
+          <Button type="button" variant="secondary" onClick={loadInvoices} disabled={loading}>
+            <FiRefreshCw className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        }
+      />
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <PlatformMetric label="Invoices loaded" value={pagination.total || invoices.length} sub="Matching current filters" icon={FiClipboard} accent="from-blue-500 to-indigo-500" />
+        <PlatformMetric label="Summary invoices" value={totalSummaryInvoices} sub="Across restaurant billing stats" icon={FiFileText} accent="from-emerald-500 to-teal-500" />
+        <PlatformMetric label="Renewals" value={totalRenewals} sub="Renewal invoices tracked" icon={FiCreditCard} accent="from-amber-500 to-orange-500" />
       </div>
 
       <Card title="Renewals & billing volume (by restaurant)">
@@ -150,10 +167,11 @@ export default function PlatformInvoices() {
       </Card>
 
       <Card title="All invoices">
-        <div className="flex flex-wrap gap-3 mb-4 items-end">
+        <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-[260px_auto_auto] md:items-end">
           <div className="w-64">
             <Input
               label="Restaurant ID (optional)"
+              icon={FiSearch}
               value={restaurantFilter}
               onChange={(e) => setRestaurantFilter(e.target.value)}
               placeholder="Mongo ObjectId"

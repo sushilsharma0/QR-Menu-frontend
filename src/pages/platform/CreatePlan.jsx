@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm, useFieldArray } from 'react-hook-form'
+import { FiArrowLeft, FiCheckCircle, FiCreditCard, FiList, FiPlus, FiSliders } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
 import { DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
+import { PlatformMetric, PlatformPageHeader } from '../../components/platform/PlatformUI'
 
 const LIMIT_OPTIONS = [
   { value: '0', label: 'Unlimited' },
@@ -137,13 +139,22 @@ const CreatePlan = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{id ? 'Edit' : 'Create'} Subscription Plan</h1>
-        <p className="mt-1 text-gray-500 dark:text-gray-400">Configure plan details and pricing</p>
+    <div className="mx-auto max-w-5xl space-y-6">
+      <PlatformPageHeader
+        badge={id ? 'Edit Package' : 'New Package'}
+        title={`${id ? 'Edit' : 'Create'} Subscription Plan`}
+        description="Configure plan pricing, VAT preview, restaurant limits, and feature bullets."
+        icon={FiCreditCard}
+        actions={<Button type="button" variant="secondary" onClick={() => navigate('/platform/subscriptions')}><FiArrowLeft className="mr-2" />Back</Button>}
+      />
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <PlatformMetric label="Pricing" value={pricePreview ? `${pricePreview.sym}${pricePreview.total.toFixed(2)}` : 'Set price'} sub="Grand total incl. VAT" icon={FiCreditCard} accent="from-blue-500 to-indigo-500" />
+        <PlatformMetric label="Limits" value={LIMIT_KEYS.length} sub="Restaurant resources" icon={FiSliders} accent="from-emerald-500 to-teal-500" />
+        <PlatformMetric label="Features" value={fields.length} sub="Plan selling points" icon={FiList} accent="from-amber-500 to-orange-500" />
       </div>
 
-      <Card>
+      <Card title="Plan Builder" icon={FiCreditCard}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <Input
             label="Plan Name"
@@ -199,7 +210,7 @@ const CreatePlan = () => {
           )}
 
           <div className="border-t border-gray-200 pt-4 dark:border-gray-800">
-            <h3 className="mb-3 font-semibold text-gray-900 dark:text-gray-100">Plan Limits</h3>
+            <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-900 dark:text-gray-100"><FiSliders /> Plan Limits</h3>
             <div className="grid grid-cols-2 gap-4">
               {LIMIT_KEYS.map((key) => (
                 <div key={key}>
@@ -244,7 +255,7 @@ const CreatePlan = () => {
           </div>
 
           <div className="border-t border-gray-200 pt-4 dark:border-gray-800">
-            <h3 className="mb-3 font-semibold text-gray-900 dark:text-gray-100">Features</h3>
+            <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-900 dark:text-gray-100"><FiCheckCircle /> Features</h3>
             {fields.map((field, index) => (
               <div key={field.id} className="flex gap-2 mb-2">
                 <Input
@@ -255,8 +266,8 @@ const CreatePlan = () => {
                 <button type="button" onClick={() => remove(index)} className="px-3 py-2 text-red-500 hover:text-red-700">Remove</button>
               </div>
             ))}
-            <button type="button" onClick={() => append({ feature: '' })} className="text-primary-600 hover:text-primary-700 text-sm">
-              + Add Feature
+            <button type="button" onClick={() => append({ feature: '' })} className="inline-flex items-center text-sm text-primary-600 hover:text-primary-700">
+              <FiPlus className="mr-1" /> Add Feature
             </button>
           </div>
 

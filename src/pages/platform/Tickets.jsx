@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { FiFilter } from 'react-icons/fi'
+import { FiActivity, FiAlertCircle, FiCheckCircle, FiClock, FiFilter, FiRefreshCw } from 'react-icons/fi'
 import ticketService from '../../services/ticket'
 import Card from '../../components/common/Card'
 import Table from '../../components/common/Table'
+import Button from '../../components/common/Button'
+import { PlatformEmptyState, PlatformMetric, PlatformPageHeader, PlatformPill, platformStatusStyles } from '../../components/platform/PlatformUI'
 
 const PlatformTickets = () => {
   const navigate = useNavigate()
@@ -49,20 +51,6 @@ const PlatformTickets = () => {
     }
   }
 
-  const statusColors = {
-    open: 'bg-blue-100 text-blue-800',
-    in_progress: 'bg-yellow-100 text-yellow-800',
-    resolved: 'bg-green-100 text-green-800',
-    closed: 'bg-gray-100 text-gray-800'
-  }
-
-  const priorityColors = {
-    low: 'bg-green-100 text-green-700',
-    medium: 'bg-yellow-100 text-yellow-700',
-    high: 'bg-orange-100 text-orange-700',
-    urgent: 'bg-red-100 text-red-700'
-  }
-
   const columns = [
     { header: 'Ticket #', accessor: 'ticketNumber', render: (row) => <span className="font-mono text-sm font-semibold">{row.ticketNumber}</span> },
     { header: 'Restaurant', accessor: 'restaurant', render: (row) => (
@@ -73,14 +61,14 @@ const PlatformTickets = () => {
     )},
     { header: 'Subject', accessor: 'subject', render: (row) => <div className="max-w-xs truncate">{row.subject}</div> },
     { header: 'Status', accessor: 'status', render: (row) => (
-      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[row.status]}`}>
+      <PlatformPill className={platformStatusStyles[row.status]}>
         {row.status.replace('_', ' ')}
-      </span>
+      </PlatformPill>
     )},
     { header: 'Priority', accessor: 'priority', render: (row) => (
-      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${priorityColors[row.priority]}`}>
+      <PlatformPill className={platformStatusStyles[row.priority]}>
         {row.priority}
-      </span>
+      </PlatformPill>
     )},
     { header: 'Last Reply', accessor: 'lastReplyAt', render: (row) => (
       row.lastReplyAt ? new Date(row.lastReplyAt).toLocaleDateString() : 'No replies'
@@ -97,43 +85,25 @@ const PlatformTickets = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Support Tickets</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Manage and respond to restaurant support requests</p>
-      </div>
+      <PlatformPageHeader
+        badge="Support Queue"
+        title="Support Tickets"
+        description="Manage and respond to restaurant support requests with priority, status, and category filters."
+        icon={FiActivity}
+        actions={
+          <Button type="button" variant="secondary" onClick={() => { fetchTickets(); fetchStats() }} disabled={loading}>
+            <FiRefreshCw className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        }
+      />
 
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <div className="text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-300">Total Tickets</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.totalTickets?.[0]?.count || 0}</p>
-            </div>
-          </Card>
-          <Card>
-            <div className="text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-300">Open</p>
-              <p className="text-3xl font-bold text-blue-600">
-                {stats.byStatus?.find(s => s._id === 'open')?.count || 0}
-              </p>
-            </div>
-          </Card>
-          <Card>
-            <div className="text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-300">In Progress</p>
-              <p className="text-3xl font-bold text-yellow-600">
-                {stats.byStatus?.find(s => s._id === 'in_progress')?.count || 0}
-              </p>
-            </div>
-          </Card>
-          <Card>
-            <div className="text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-300">Resolved</p>
-              <p className="text-3xl font-bold text-green-600">
-                {stats.byStatus?.find(s => s._id === 'resolved')?.count || 0}
-              </p>
-            </div>
-          </Card>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <PlatformMetric label="Total tickets" value={stats.totalTickets?.[0]?.count || 0} sub="All support requests" icon={FiActivity} accent="from-blue-500 to-indigo-500" />
+          <PlatformMetric label="Open" value={stats.byStatus?.find(s => s._id === 'open')?.count || 0} sub="Needs first response" icon={FiAlertCircle} accent="from-sky-500 to-blue-500" />
+          <PlatformMetric label="In progress" value={stats.byStatus?.find(s => s._id === 'in_progress')?.count || 0} sub="Being handled" icon={FiClock} accent="from-yellow-500 to-amber-500" />
+          <PlatformMetric label="Resolved" value={stats.byStatus?.find(s => s._id === 'resolved')?.count || 0} sub="Completed requests" icon={FiCheckCircle} accent="from-emerald-500 to-teal-500" />
         </div>
       )}
 
@@ -200,9 +170,7 @@ const PlatformTickets = () => {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
           </div>
         ) : tickets.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 dark:text-gray-400">No tickets found</p>
-          </div>
+          <PlatformEmptyState title="No tickets found" description="Try clearing filters or check back when restaurants submit support requests." icon={FiFilter} />
         ) : (
           <>
             <Table columns={columns} data={tickets} />
