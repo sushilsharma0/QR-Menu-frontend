@@ -39,7 +39,7 @@ const CMS = () => {
   const onSubmit = async (data) => {
     try {
       if (editing) {
-        await api.put(`/platform/cms/${editing.key}`, data)
+        await api.put(`/platform/cms/${editing.key}`, { ...data, key: editing.key })
         toast.success('Content updated')
       } else {
         await api.post('/platform/cms', data)
@@ -114,6 +114,31 @@ const CMS = () => {
         <PlatformMetric label="Types" value={new Set(contents.map((item) => item.type)).size} sub="Distinct content formats" icon={FiPlus} accent="from-amber-500 to-orange-500" />
       </div>
 
+      <Card title="Landing Page CMS Map">
+        <div className="grid gap-3 text-sm text-gray-600 dark:text-gray-300 md:grid-cols-2 lg:grid-cols-5">
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900">
+            <p className="font-bold text-gray-900 dark:text-gray-100">Hero banner</p>
+            <p className="mt-1">Create an active Banner. Avoid offer words in the key. Title, summary, and image become the landing hero.</p>
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900">
+            <p className="font-bold text-gray-900 dark:text-gray-100">Offer banner</p>
+            <p className="mt-1">Create an active Banner with key like offer_first_10. Title, summary, and image show as the animated front offer.</p>
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900">
+            <p className="font-bold text-gray-900 dark:text-gray-100">Features</p>
+            <p className="mt-1">Create active Feature entries. Sort order controls the feature card order.</p>
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900">
+            <p className="font-bold text-gray-900 dark:text-gray-100">About</p>
+            <p className="mt-1">Create a Page with key containing "about". Add image for the about photo.</p>
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900">
+            <p className="font-bold text-gray-900 dark:text-gray-100">Blog</p>
+            <p className="mt-1">Create active Blog entries. They appear on the landing page and blog page.</p>
+          </div>
+        </div>
+      </Card>
+
       <Card title={editing ? 'Edit Content' : 'Create New Content'}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input
@@ -121,7 +146,7 @@ const CMS = () => {
             placeholder="unique_key_name"
             {...register('key', { required: 'Key is required' })}
             error={errors.key?.message}
-            disabled={!!editing}
+            readOnly={!!editing}
           />
           <Input label="Title" {...register('title')} />
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

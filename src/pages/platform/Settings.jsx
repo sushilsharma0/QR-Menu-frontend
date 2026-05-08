@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { FiCreditCard, FiLock, FiSettings, FiShield } from 'react-icons/fi'
+import { FiCreditCard, FiLock, FiMessageSquare, FiSettings, FiShield } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
 import { DEFAULT_CURRENCY_CODE, DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
@@ -13,6 +13,10 @@ const Settings = () => {
   const [loading, setLoading] = useState(false)
   const [billingLoading, setBillingLoading] = useState(true)
   const [billingSaving, setBillingSaving] = useState(false)
+  const [siteSaving, setSiteSaving] = useState(false)
+  const [feedbackEnabled, setFeedbackEnabled] = useState(true)
+  const [showFeedbackOnLanding, setShowFeedbackOnLanding] = useState(true)
+  const [feedbackSummary, setFeedbackSummary] = useState(null)
   const { register, handleSubmit, formState: { errors } } = useForm()
   const {
     register: registerBilling,
@@ -49,6 +53,24 @@ const Settings = () => {
     })()
     return () => { cancelled = true }
   }, [resetBilling])
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await api.get('/platform/settings/site')
+        const data = res.data?.data
+        if (!cancelled && data) {
+          setFeedbackEnabled(data.feedbackEnabled !== false)
+          setShowFeedbackOnLanding(data.showFeedbackOnLanding !== false)
+          setFeedbackSummary(data.feedbackSummary || null)
+        }
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to load site settings')
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
 
   const onSubmit = async (data) => {
     try {
@@ -87,6 +109,23 @@ const Settings = () => {
     }
   }
 
+  const saveSiteSettings = async () => {
+    try {
+      setSiteSaving(true)
+      const res = await api.patch('/platform/settings/site', {
+        feedbackEnabled,
+        showFeedbackOnLanding,
+      })
+      setFeedbackEnabled(res.data?.data?.feedbackEnabled !== false)
+      setShowFeedbackOnLanding(res.data?.data?.showFeedbackOnLanding !== false)
+      toast.success('Feedback controls saved')
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to save feedback controls')
+    } finally {
+      setSiteSaving(false)
+    }
+  }
+
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <PlatformPageHeader
@@ -99,8 +138,63 @@ const Settings = () => {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <PlatformMetric label="Security" value="Password" sub="Admin credential updates" icon={FiLock} accent="from-blue-500 to-indigo-500" />
         <PlatformMetric label="Billing issuer" value="VAT" sub="Invoice identity and tax" icon={FiCreditCard} accent="from-emerald-500 to-teal-500" />
-        <PlatformMetric label="Compliance" value="Invoices" sub="Currency and tax settings" icon={FiShield} accent="from-amber-500 to-orange-500" />
+        <PlatformMetric label="Feedback" value={feedbackSummary?.total ?? 0} sub="Customer responses" icon={FiMessageSquare} accent="from-primary-500 to-secondary-500" />
       </div>
+
+      <Card title="Customer Feedback Controls" icon={FiMessageSquare}>
+        <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Feedback</p>
+              <p className="mt-2 text-2xl font-black text-gray-950 dark:text-gray-100">{feedbackSummary?.total ?? 0}</p>
+            </div>
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Public</p>
+              <p className="mt-2 text-2xl font-black text-gray-950 dark:text-gray-100">{feedbackSummary?.publicCount ?? 0}</p>
+            </div>
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-500">System rating</p>
+              <p className="mt-2 text-2xl font-black text-gray-950 dark:text-gray-100">{feedbackSummary?.averageSystemRating || 0}/5</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="rounded-2xl bg-primary-50 p-4 text-primary-800 dark:bg-gray-800 dark:text-primary-200">
+              <p className="text-sm font-semibold">
+                Platform admin controls whether customer portals can ask feedback and whether public positive feedback appears on the QR Restro Nepal landing page.
+              </p>
+            </div>
+            <label className="flex items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+              <div>
+                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">Enable customer feedback</p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Customers can answer feedback questions after paid orders.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFeedbackEnabled((current) => !current)}
+                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${feedbackEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-700'}`}
+              >
+                <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${feedbackEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </label>
+            <label className="flex items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+              <div>
+                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">Show feedback on landing page</p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Landing page can render public, high-rated customer feedback with restaurant logos.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowFeedbackOnLanding((current) => !current)}
+                disabled={!feedbackEnabled}
+                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors disabled:opacity-50 ${showFeedbackOnLanding && feedbackEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-700'}`}
+              >
+                <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${showFeedbackOnLanding && feedbackEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </label>
+            <Button type="button" loading={siteSaving} onClick={saveSiteSettings}>Save feedback controls</Button>
+          </div>
+        </div>
+      </Card>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
       <Card title="Change Password" icon={FiLock}>

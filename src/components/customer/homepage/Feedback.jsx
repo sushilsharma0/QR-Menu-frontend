@@ -1,21 +1,42 @@
 import React, { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X, Star, Send, ThumbsUp, ThumbsDown, Meh, CheckCircle } from 'lucide-react'
+import { useParams } from 'react-router-dom'
+import toast from 'react-hot-toast'
+import api from '../../../services/api'
+import { ensureGuestSession } from '../../../services/customer'
 
 const feedbackOptions = [
-  { id: 1, icon: ThumbsUp,   label: 'Great',   color: 'text-green-500',  bg: 'bg-green-50',  border: 'border-green-400',  activeBg: 'bg-green-500'  },
-  { id: 2, icon: Meh,        label: 'Average', color: 'text-yellow-500', bg: 'bg-yellow-50', border: 'border-yellow-400', activeBg: 'bg-yellow-500' },
-  { id: 3, icon: ThumbsDown, label: 'Poor',    color: 'text-red-500',    bg: 'bg-red-50',    border: 'border-red-400',    activeBg: 'bg-red-500'    },
+  { id: 'great', icon: ThumbsUp,   label: 'Great',   color: 'text-primary-600',  bg: 'bg-primary-50',  border: 'border-primary-400',  activeBg: 'bg-primary-600'  },
+  { id: 'average', icon: Meh,        label: 'Average', color: 'text-accent-600', bg: 'bg-accent-50', border: 'border-accent-400', activeBg: 'bg-accent-600' },
+  { id: 'poor', icon: ThumbsDown, label: 'Poor',    color: 'text-secondary-600',    bg: 'bg-secondary-50',    border: 'border-secondary-400',    activeBg: 'bg-secondary-600'    },
 ]
 
 const starLabels = ['Terrible', 'Bad', 'Okay', 'Good', 'Excellent']
 
-export default function Feedback({ isOpen, onClose }) {
+export default function Feedback({ isOpen, onClose, qrToken }) {
+  const { slug, token, qrToken: routeQrToken } = useParams()
+  const activeQrToken = qrToken || token || routeQrToken
   const [selectedRating, setSelectedRating] = useState(null)
   const [hoveredStar, setHoveredStar]       = useState(0)
   const [starRating, setStarRating]         = useState(0)
   const [comment, setComment]               = useState('')
   const [submitted, setSubmitted]           = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [feedbackEnabled, setFeedbackEnabled] = useState(true)
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      if (!slug) return
+      try {
+        const res = await api.get(`/customer/feedback/settings/${slug}`, { skipErrorToast: true })
+        setFeedbackEnabled(res.data?.data?.feedbackEnabled !== false)
+      } catch (error) {
+        setFeedbackEnabled(true)
+      }
+    }
+    fetchSettings()
+  }, [slug])
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : 'unset'
@@ -35,10 +56,25 @@ export default function Feedback({ isOpen, onClose }) {
     }
   }, [isOpen])
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedRating || !starRating) return
-    setSubmitted(true)
-    setTimeout(() => onClose(), 2500)
+    try {
+      setSubmitting(true)
+      const session = await ensureGuestSession(activeQrToken)
+      await api.post('/customer/feedback', {
+        qrToken: activeQrToken,
+        guestId: session.guestId,
+        systemRating: starRating,
+        serviceRating: selectedRating,
+        comment,
+      })
+      setSubmitted(true)
+      setTimeout(() => onClose(), 2500)
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to submit feedback')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const activeStars = hoveredStar || starRating
@@ -79,7 +115,7 @@ export default function Feedback({ isOpen, onClose }) {
                   <h2 className="text-base font-bold text-gray-800 leading-none">
                     Rate your experience
                   </h2>
-                  <p className="text-[11px] text-gray-400 mt-0.5">Your feedback helps us improve</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">Your feedback helps this restaurant improve</p>
                 </div>
               </div>
               <button
@@ -98,7 +134,21 @@ export default function Feedback({ isOpen, onClose }) {
               <AnimatePresence mode="wait">
 
                 {/* ── Success state */}
-                {submitted ? (
+                {!feedbackEnabled ? (
+                  <motion.div
+                    key="disabled"
+                    initial={{ opacity: 0, scale: 0.96 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="py-10 text-center"
+                  >
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-100 text-primary-600">
+                      <Star size={30} />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-800">Feedback is closed right now</h3>
+                    <p className="mt-1 text-sm text-gray-400">The restaurant has disabled customer feedback for this portal.</p>
+                  </motion.div>
+                ) : submitted ? (
                   <motion.div
                     key="success"
                     initial={{ opacity: 0, scale: 0.92 }}
@@ -132,7 +182,7 @@ export default function Feedback({ isOpen, onClose }) {
                     {/* Star rating */}
                     <div>
                       <p className="text-sm font-semibold text-gray-700 mb-3">
-                        Overall rating
+                        How did this QR ordering system feel?
                       </p>
                       <div className="flex items-center gap-2">
                         {[1, 2, 3, 4, 5].map((star) => (
@@ -147,7 +197,7 @@ export default function Feedback({ isOpen, onClose }) {
                               size={32}
                               className={`transition-colors ${
                                 star <= activeStars
-                                  ? 'text-orange-400 fill-orange-400'
+                                  ? 'text-primary-500 fill-primary-500'
                                   : 'text-gray-200 fill-gray-200'
                               }`}
                             />
@@ -158,7 +208,7 @@ export default function Feedback({ isOpen, onClose }) {
                           <motion.span
                             initial={{ opacity: 0, x: -6 }}
                             animate={{ opacity: 1, x: 0 }}
-                            className="text-sm font-semibold text-orange-500 ml-1"
+                            className="text-sm font-semibold text-primary-600 ml-1"
                           >
                             {starLabels[activeStars - 1]}
                           </motion.span>
@@ -169,7 +219,7 @@ export default function Feedback({ isOpen, onClose }) {
                     {/* Quick feedback chips */}
                     <div>
                       <p className="text-sm font-semibold text-gray-700 mb-3">
-                        How was your experience?
+                        How was the restaurant service?
                       </p>
                       <div className="flex gap-2">
                         {feedbackOptions.map((opt) => {
@@ -217,15 +267,15 @@ export default function Feedback({ isOpen, onClose }) {
                     <motion.button
                       whileTap={{ scale: 0.97 }}
                       onClick={handleSubmit}
-                      disabled={!selectedRating || !starRating}
+                      disabled={!selectedRating || !starRating || submitting}
                       className={`w-full py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
                         selectedRating && starRating
-                          ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-100'
+                          ? 'bg-primary-600 hover:bg-primary-700 text-white shadow-md shadow-primary-100'
                           : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                       }`}
                     >
                       <Send size={15} />
-                      Submit Feedback
+                      {submitting ? 'Submitting...' : 'Submit Feedback'}
                     </motion.button>
 
                   </motion.div>

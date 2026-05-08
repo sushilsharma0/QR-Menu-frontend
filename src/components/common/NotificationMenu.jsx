@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
   FiBell,
   FiCheckCircle,
@@ -112,15 +113,22 @@ const NotificationMenu = () => {
         )}
       </button>
 
-      {isOpen && (
-        <>
+      <AnimatePresence>
+        {isOpen && (
+          <>
           <button
             type="button"
             className="fixed inset-0 z-[100] cursor-default bg-transparent"
             onClick={() => setIsOpen(false)}
             aria-label="Close notifications"
           />
-          <div className="absolute right-[-280%] md:right-0 mt-2 w-[430px] max-w-[95vw] bg-white dark:bg-gray-900 border border-surface-200 dark:border-gray-800 rounded-2xl shadow-[0_20px_50px_-12px_rgba(143,40,0,0.25)] z-[110] overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0, y: -18, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -18, scale: 0.98 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            className="absolute right-[-280%] md:right-0 mt-2 w-[430px] max-w-[95vw] bg-white dark:bg-gray-900 border border-surface-200 dark:border-gray-800 rounded-2xl shadow-[0_20px_50px_-12px_rgba(143,40,0,0.25)] z-[110] overflow-hidden"
+          >
             <div className="px-4 py-4 border-b dark:border-gray-800 bg-gradient-to-br from-surface-50 via-secondary-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
               <div className="flex items-center justify-between">
                 <div>
@@ -139,20 +147,27 @@ const NotificationMenu = () => {
               </div>
             </div>
 
-            <div className="max-h-[450px] overflow-y-auto bg-gradient-to-b from-surface-50/50 to-white dark:from-gray-900 dark:to-gray-900 p-2.5">
+            <motion.div
+              initial="hidden"
+              animate="show"
+              className="max-h-[450px] overflow-y-auto bg-gradient-to-b from-surface-50/50 to-white dark:from-gray-900 dark:to-gray-900 p-2.5"
+            >
               {notifications.length === 0 ? (
                 <div className="m-2 rounded-2xl bg-white dark:bg-gray-900 border border-dashed border-surface-300 dark:border-gray-700 px-4 py-10 text-center">
                   <FiBell className="h-6 w-6 text-surface-400 dark:text-gray-500 mx-auto mb-2" />
                   <p className="text-sm text-accent-700 dark:text-gray-300">No notifications yet</p>
                 </div>
               ) : (
-                notifications.slice(0, 12).map((notification) => {
+                notifications.slice(0, 12).map((notification, index) => {
                   const typeMeta = getTypeMeta(notification.type)
                   const TypeIcon = typeMeta.icon
 
                   return (
-                    <div
+                    <motion.div
                       key={notification._id}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.035, duration: 0.2 }}
                       className={`group mb-2.5 rounded-2xl border p-3.5 transition-all ${
                         notification.isRead
                           ? 'bg-white dark:bg-gray-900 border-surface-200 dark:border-gray-800'
@@ -207,11 +222,11 @@ const NotificationMenu = () => {
                           </a>
                         ) : null}
                       </div> */}
-                    </div>
+                    </motion.div>
                   )
                 })
               )}
-            </div>
+            </motion.div>
             <div className="border-t dark:border-gray-800 px-3 py-2 flex items-center justify-between bg-white dark:bg-gray-900">
               <button
                 type="button"
@@ -228,9 +243,10 @@ const NotificationMenu = () => {
                 View all
               </Link>
             </div>
-          </div>
-        </>
-      )}
+          </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

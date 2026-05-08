@@ -76,6 +76,7 @@ import EmployeeLayout from "./components/employee/EmployeeLayout";
 import { defaultPortalPathForUser, getTenantSegments } from "./utils/tenantPaths";
 import LandingPage from "./pages/LandingPage";
 import Blog from "./pages/Blog";
+import BlogDetail from "./pages/BlogDetail";
 import NotificationsPage from "./pages/Notifications";
 
 function App() {
@@ -98,6 +99,7 @@ function App() {
       {/* Landing Page */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/blog" element={<Blog />} />
+      <Route path="/blog/:key" element={<BlogDetail />} />
       {/* Auth Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/vendor/login" element={<Login />} />

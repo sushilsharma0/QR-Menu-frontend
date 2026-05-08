@@ -6,6 +6,7 @@ import api from '../../services/api'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
+import { useAuth } from '../../hooks/useAuth'
 
 const Settings = () => {
   const [loading, setLoading] = useState(false)
@@ -16,6 +17,7 @@ const Settings = () => {
   const [backgroundFile, setBackgroundFile] = useState(null)
   const [showLogoPreview, setShowLogoPreview] = useState(false)
   const [showBackgroundPreview, setShowBackgroundPreview] = useState(false)
+  const { mergeUser } = useAuth()
   const { register, handleSubmit, setValue, formState: { errors } } = useForm()
 
   useEffect(() => {
@@ -125,9 +127,19 @@ const Settings = () => {
         formData.append('backgroundPhoto', backgroundFile)
       }
       
-      await api.put('/restaurant/auth/profile', formData, {
+      const response = await api.put('/restaurant/auth/profile', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
+      const updatedRestaurant = response.data?.data
+      if (updatedRestaurant) {
+        mergeUser({
+          name: updatedRestaurant.name,
+          phone: updatedRestaurant.phone,
+          logo: updatedRestaurant.logo,
+          slug: updatedRestaurant.slug,
+          currency: updatedRestaurant?.settings?.currency,
+        })
+      }
       
       toast.success('Settings updated successfully')
       setLogoFile(null)
@@ -154,7 +166,7 @@ const Settings = () => {
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Restaurant Settings</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your restaurant information, logo, and branding</p>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your restaurant profile, header photo, and customer-facing branding</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -204,10 +216,10 @@ const Settings = () => {
         </Card>
 
         {/* Logo Upload */}
-        <Card title="Restaurant Logo">
+        <Card title="Profile Photo / Restaurant Logo">
           <div className="space-y-4">
             <p className="text-sm text-gray-600 dark:text-gray-300">
-              Upload your restaurant logo. It will be displayed in the dashboard header and on printed bills.
+              Upload your restaurant profile image. It appears in the dashboard header, profile dropdown, QR printouts, and customer-facing surfaces.
             </p>
             
             {/* Logo Preview */}
