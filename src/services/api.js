@@ -2,7 +2,7 @@ import axios from 'axios'
 import toast from 'react-hot-toast'
 import { getAuthToken, clearAuthSession } from '../utils/authStorage'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 const api = axios.create({
   baseURL: API_URL,
@@ -40,12 +40,15 @@ api.interceptors.response.use(
     const shouldSkipToast = Boolean(error.config?.skipErrorToast)
 
     if (status === 401 && !isLoginRequest) {
-      clearAuthSession()
-
-      if (!shouldSkipToast) {
-        toast.error('Session expired. Please login again.')
-        error.__toastShown = true
+      // Caller can opt out of the global redirect/toast UX (e.g. callback
+      // pages that render their own error state).
+      if (shouldSkipToast) {
+        return Promise.reject(error)
       }
+
+      clearAuthSession()
+      toast.error('Session expired. Please login again.')
+      error.__toastShown = true
 
       if (window.location.pathname !== '/login') {
         const path = window.location.pathname || ''
@@ -419,6 +422,15 @@ export const requestPackage = (packageId) =>
 
 export const toggleAutoRenew = (autoRenew) => 
   api.patch('/restaurant/package/auto-renew', { autoRenew })
+
+export const initiateEsewaSubscriptionPayment = (planId) =>
+  api.post('/restaurant/subscription/pay/esewa', { planId })
+
+export const initiateKhaltiSubscriptionPayment = (planId) =>
+  api.post('/restaurant/subscription/pay/khalti', { planId })
+
+export const getSubscriptionPayments = (params) =>
+  api.get('/restaurant/subscription/payments', { params })
 
 // Cashier
 export const processPayment = (data) => 

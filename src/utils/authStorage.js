@@ -28,10 +28,12 @@ export function readInitialAuthToken() {
 }
 
 export function getAuthToken() {
+  migrateLegacyLocalStorageAuth()
   return sessionStorage.getItem(TOKEN_KEY)
 }
 
 export function getAuthUserRaw() {
+  migrateLegacyLocalStorageAuth()
   return sessionStorage.getItem(USER_KEY)
 }
 

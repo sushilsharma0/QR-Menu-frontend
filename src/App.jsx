@@ -25,6 +25,7 @@ import PlatformSubscriptionActivity from "./pages/platform/SubscriptionActivity"
 import PlatformSystemLogs from "./pages/platform/SystemLogs";
 import PlatformTickets from "./pages/platform/Tickets";
 import PlatformTicketDetail from "./pages/platform/TicketDetail";
+import PlatformSubscriptionPayments from "./pages/platform/SubscriptionPayments";
 
 // Restaurant Pages
 import RestaurantDashboard from "./pages/restaurant/Dashboard";
@@ -41,6 +42,7 @@ import RestaurantEmployees from "./pages/restaurant/Employees";
 import RestaurantEmployeeForm from "./pages/restaurant/EmployeeForm";
 import RestaurantKYC from "./pages/restaurant/KYC";
 import RestaurantSubscription from "./pages/restaurant/Subscription";
+import RestaurantSubscriptionCheckout from "./pages/restaurant/SubscriptionCheckout";
 import RestaurantSubscriptionInvoiceDetail from "./pages/restaurant/SubscriptionInvoiceDetail";
 import RestaurantSettings from "./pages/restaurant/Settings";
 import RestaurantProfile from "./pages/restaurant/Profile";
@@ -78,6 +80,7 @@ import LandingPage from "./pages/LandingPage";
 import Blog from "./pages/Blog";
 import BlogDetail from "./pages/BlogDetail";
 import NotificationsPage from "./pages/Notifications";
+import SubscriptionPaymentCallback from "./pages/restaurant/SubscriptionPaymentCallback";
 
 function App() {
   const { user, isLoading } = useAuth();
@@ -142,6 +145,7 @@ function App() {
         <Route path="/platform/invoices" element={<PlatformInvoices />} />
         <Route path="/platform/invoices/:id" element={<PlatformInvoiceDetail />} />
         <Route path="/platform/subscription-activity" element={<PlatformSubscriptionActivity />} />
+        <Route path="/platform/subscription-payments" element={<PlatformSubscriptionPayments />} />
         <Route path="/platform/notifications" element={<NotificationsPage />} />
       </Route>
 
@@ -166,6 +170,7 @@ function App() {
         <Route path="employees/:id/edit" element={<RestaurantEmployeeForm />} />
         <Route path="kyc" element={<RestaurantKYC />} />
         <Route path="subscription" element={<RestaurantSubscription />} />
+        <Route path="subscription/checkout/:planId" element={<RestaurantSubscriptionCheckout />} />
         <Route path="subscription/invoice/:invoiceId" element={<RestaurantSubscriptionInvoiceDetail />} />
         <Route path="transactions" element={<Navigate to="../orders/activity" replace />} />
         <Route path="promotions" element={<RestaurantPromotions />} />
@@ -208,6 +213,9 @@ function App() {
       <Route path="/orders/:slug/:token" element={<CustomerMyOrders />} />
       <Route path="/order/track/:qrToken" element={<CustomerOrderTracking />} />
       <Route path="/account/:slug/:token" element={<CustomerAccountPage />} />
+      <Route path="/subscription/payment/esewa/success" element={<SubscriptionPaymentCallback gateway="esewa" />} />
+      <Route path="/subscription/payment/esewa/failure" element={<SubscriptionPaymentCallback gateway="esewa" failed />} />
+      <Route path="/subscription/payment/khalti/callback" element={<SubscriptionPaymentCallback gateway="khalti" />} />
       {/* <Route
         path="/order/success/:orderId"
         element={<CustomerOrderSuccess />}

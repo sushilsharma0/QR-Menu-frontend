@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import {
   FiAlertTriangle,
-  FiCalendar,
   FiCheck,
   FiClock,
   FiCreditCard,
@@ -18,6 +18,7 @@ import api from '../../services/api'
 import Button from '../../components/common/Button'
 import SubscriptionBillingPanel from './SubscriptionBillingPanel'
 import { useAuth } from '../../hooks/useAuth'
+import { getTenantSegments, restaurantPortalBase } from '../../utils/tenantPaths'
 import {
   RestaurantPageLoader,
   RestaurantStatusPill,
@@ -36,6 +37,7 @@ const requestStatusStyles = {
 const tabs = [
   { key: 'plans', label: 'Plans', icon: FiCreditCard },
   { key: 'billing', label: 'Invoices & history', icon: FiFileText },
+  { key: 'payments', label: 'Payment history', icon: FiClock },
 ]
 
 function planTotal(plan) {
@@ -150,13 +152,68 @@ function PlanCard({ plan, currentPlan, disabled, requesting, onSelect }) {
         disabled={disabled || isCurrent || isRequested || requesting}
         onClick={() => onSelect(plan._id)}
       >
-        {isCurrent ? 'Current Plan' : isRequested ? 'Already Requested' : 'Select Plan'}
+        {isCurrent ? 'Current Plan' : isRequested ? 'Payment Pending' : 'Choose Plan'}
       </Button>
     </motion.article>
   )
 }
 
+function PaymentHistoryTable({ payments }) {
+  if (!payments.length) {
+    return (
+      <div className="rounded-3xl border border-dashed border-surface-300 bg-white px-4 py-12 text-center">
+        <FiCreditCard className="mx-auto h-8 w-8 text-surface-500" />
+        <p className="mt-3 font-semibold text-gray-900">No subscription payments yet</p>
+        <p className="mt-1 text-sm text-gray-500">Gateway payments will appear here after checkout starts.</p>
+      </div>
+    )
+  }
+
+  const styles = {
+    pending: 'bg-yellow-100 text-yellow-800',
+    paid: 'bg-blue-100 text-blue-800',
+    pending_verification: 'bg-amber-100 text-amber-800',
+    approved: 'bg-green-100 text-green-800',
+    rejected: 'bg-red-100 text-red-800',
+    failed: 'bg-red-100 text-red-800',
+  }
+
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-surface-200 bg-white shadow-sm">
+      <table className="min-w-full divide-y divide-surface-200 text-sm">
+        <thead className="bg-surface-50">
+          <tr className="text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <th className="px-5 py-3">Transaction ID</th>
+            <th className="px-5 py-3">Plan</th>
+            <th className="px-5 py-3">Method</th>
+            <th className="px-5 py-3">Amount</th>
+            <th className="px-5 py-3">Status</th>
+            <th className="px-5 py-3">Date</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-surface-200">
+          {payments.map((payment) => (
+            <tr key={payment._id} className="hover:bg-surface-50/70">
+              <td className="px-5 py-4 font-mono text-xs text-gray-700">{payment.transactionId}</td>
+              <td className="px-5 py-4 font-medium text-gray-900">{payment.planId?.name || 'N/A'}</td>
+              <td className="px-5 py-4 capitalize text-gray-600">{payment.paymentMethod}</td>
+              <td className="px-5 py-4 text-gray-700">{formatRestaurantCurrency(payment.amount)}</td>
+              <td className="px-5 py-4">
+                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${styles[payment.status] || 'bg-gray-100 text-gray-700'}`}>
+                  {payment.status.replace(/_/g, ' ')}
+                </span>
+              </td>
+              <td className="px-5 py-4 text-gray-600">{formatRestaurantDateTime(payment.createdAt)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 const Subscription = () => {
+  const navigate = useNavigate()
   const { mergeUser, user: authUser } = useAuth()
   const [plans, setPlans] = useState([])
   const [currentPlan, setCurrentPlan] = useState(null)
@@ -166,6 +223,7 @@ const Subscription = () => {
   const [proofFile, setProofFile] = useState(null)
   const [uploadingProof, setUploadingProof] = useState(false)
   const [activeTab, setActiveTab] = useState('plans')
+  const [payments, setPayments] = useState([])
 
   useEffect(() => {
     fetchData()
@@ -189,6 +247,9 @@ const Subscription = () => {
           needsPlanUpgrade: !status.canUseFeatures,
         })
       }
+      api.get('/restaurant/subscription/payments', { params: { limit: 20 } })
+        .then((res) => setPayments(res.data.data?.payments || []))
+        .catch(() => undefined)
     } catch {
       toast.error('Failed to fetch subscription data')
     } finally {
@@ -197,21 +258,13 @@ const Subscription = () => {
     }
   }
 
-  const requestPlan = async (planId) => {
+  const choosePlan = (planId) => {
     if (!authUser?.isKYCVerified) {
       toast.error('Complete KYC verification before selecting a subscription plan.')
       return
     }
-    try {
-      setRequesting(true)
-      await api.post('/restaurant/package/request', { packageId: planId })
-      toast.success('Plan selected. Upload payment proof for verification.')
-      fetchData(true)
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Request failed')
-    } finally {
-      setRequesting(false)
-    }
+    const { slug, restaurantId } = getTenantSegments(authUser)
+    navigate(`${restaurantPortalBase(slug, restaurantId)}/subscription/checkout/${planId}`)
   }
 
   const submitPaymentProof = async () => {
@@ -342,6 +395,10 @@ const Subscription = () => {
           <motion.div key="billing" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
             <SubscriptionBillingPanel />
           </motion.div>
+        ) : activeTab === 'payments' ? (
+          <motion.div key="payments" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
+            <PaymentHistoryTable payments={payments} />
+          </motion.div>
         ) : (
           <motion.div key="plans" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="space-y-6">
             {!isKYCVerified && (
@@ -457,7 +514,7 @@ const Subscription = () => {
                   currentPlan={currentPlan}
                   disabled={!isKYCVerified}
                   requesting={requesting}
-                  onSelect={requestPlan}
+                  onSelect={choosePlan}
                 />
               ))}
             </div>

@@ -19,6 +19,7 @@ const menuItems = [
   { path: '/platform/restaurants', icon: FiUsers, label: 'Restaurants' },
   { path: '/platform/kyc', icon: FiFileText, label: 'KYC Verification' },
   { path: '/platform/subscriptions', icon: FiCreditCard, label: 'Subscriptions' },
+  { path: '/platform/subscription-payments', icon: FiCreditCard, label: 'Payments' },
   { path: '/platform/invoices', icon: FiClipboard, label: 'Invoices' },
   { path: '/platform/subscription-activity', icon: FiBarChart2, label: 'Subscription activity' },
   { path: '/platform/cms', icon: FiLayout, label: 'CMS' },
