@@ -25,7 +25,7 @@ const Header = () => {
           : user?.role || 'User'
 
   return (
-    <header className="border-b border-surface-200 bg-white/90 px-4 pb-4 pt-20 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/92 md:px-6 md:pt-16 lg:pt-4">
+    <header className="relative z-30 border-b border-surface-200 bg-white/90 px-4 pb-4 pt-20 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/92 md:px-6 md:pt-16 lg:pt-4">
       <div className="flex flex-col gap-4 rounded-3xl border border-surface-200 bg-gradient-to-r from-white via-surface-50 to-primary-50 px-4 py-4 shadow-sm dark:border-gray-800 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 items-center gap-4">
           <div className="hidden h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-600 to-secondary-500 text-white shadow-md sm:flex">

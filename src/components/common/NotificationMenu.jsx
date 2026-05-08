@@ -97,7 +97,7 @@ const NotificationMenu = () => {
   }
 
   return (
-    <div className="relative">
+    <div className="relative z-50">
       <button
         type="button"
         onClick={handleToggle}
@@ -116,11 +116,11 @@ const NotificationMenu = () => {
         <>
           <button
             type="button"
-            className="fixed inset-0 z-10 cursor-default"
+            className="fixed inset-0 z-[100] cursor-default bg-transparent"
             onClick={() => setIsOpen(false)}
             aria-label="Close notifications"
           />
-          <div className="absolute right-[-280%] md:right-0 mt-2 w-[430px] max-w-[95vw] bg-white dark:bg-gray-900 border border-surface-200 dark:border-gray-800 rounded-2xl shadow-[0_20px_50px_-12px_rgba(143,40,0,0.25)] z-20 overflow-hidden">
+          <div className="absolute right-[-280%] md:right-0 mt-2 w-[430px] max-w-[95vw] bg-white dark:bg-gray-900 border border-surface-200 dark:border-gray-800 rounded-2xl shadow-[0_20px_50px_-12px_rgba(143,40,0,0.25)] z-[110] overflow-hidden">
             <div className="px-4 py-4 border-b dark:border-gray-800 bg-gradient-to-br from-surface-50 via-secondary-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
               <div className="flex items-center justify-between">
                 <div>
