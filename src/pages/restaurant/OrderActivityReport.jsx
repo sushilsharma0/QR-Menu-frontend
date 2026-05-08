@@ -218,7 +218,13 @@ export default function OrderActivityReport() {
     },
     {
       header: 'Customer',
-      render: (row) => row.customerName || 'N/A',
+      render: (row) => {
+        const name = String(row.customerName || '').trim()
+        if (row.guestId && (!name || name.toLowerCase() === 'guest' || name.toLowerCase() === 'qr customer')) {
+          return row.guestId
+        }
+        return name || row.guestId || 'N/A'
+      },
     },
     {
       header: 'Table',
@@ -490,7 +496,13 @@ export default function OrderActivityReport() {
                   <div>
                     <p className="font-semibold text-gray-950">#{row.orderNumber}</p>
                     <p className="mt-1 text-xs text-gray-500">
-                      {row.customerName || 'Guest'} - Table {row.tableNumber || 'N/A'}
+                      {(() => {
+                        const name = String(row.customerName || '').trim()
+                        const label = row.guestId && (!name || name.toLowerCase() === 'guest' || name.toLowerCase() === 'qr customer')
+                          ? row.guestId
+                          : name || row.guestId || 'Guest'
+                        return `${label} - Table ${row.tableNumber || 'N/A'}`
+                      })()}
                     </p>
                   </div>
                   <p className="font-bold text-primary-700">{formatRestaurantCurrency(row.grandTotal)}</p>

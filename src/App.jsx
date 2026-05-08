@@ -68,6 +68,7 @@ import CustomerMenuItemDetail from "./pages/customer/ItemDetails/ItemDetails";
 import CustomerCart from "./pages/customer/Cart";
 import CustomerMyOrders from "./pages/customer/MyOrders";
 import CustomerOrderTracking from "./pages/customer/OrderTracking";
+import CustomerBill from "./pages/customer/CustomerBill";
 import CustomerAccountPage from "./pages/customer/AccountPage";
 
 
@@ -212,6 +213,7 @@ function App() {
       <Route path="/cart/:slug/:token" element={<CustomerCart />} />
       <Route path="/orders/:slug/:token" element={<CustomerMyOrders />} />
       <Route path="/order/track/:qrToken" element={<CustomerOrderTracking />} />
+      <Route path="/order/bill/:qrToken" element={<CustomerBill />} />
       <Route path="/account/:slug/:token" element={<CustomerAccountPage />} />
       <Route path="/subscription/payment/esewa/success" element={<SubscriptionPaymentCallback gateway="esewa" />} />
       <Route path="/subscription/payment/esewa/failure" element={<SubscriptionPaymentCallback gateway="esewa" failed />} />

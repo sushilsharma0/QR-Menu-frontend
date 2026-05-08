@@ -6,13 +6,19 @@ import OrderStatusBadge from './OrderStatusBadge'
 import { DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
 
 const OrderCard = ({ order, onView, onStatusUpdate }) => {
+  const name = String(order?.customerName || '').trim()
+  const customerLabel =
+    order?.guestId && (!name || name.toLowerCase() === 'guest' || name.toLowerCase() === 'qr customer')
+      ? order.guestId
+      : name || order?.guestId || 'Guest'
+
   return (
     <Card className="hover:shadow-lg transition-shadow">
       <div className="flex justify-between items-start mb-3">
         <div>
           <h3 className="font-bold text-gray-900">#{order.orderNumber}</h3>
           <p className="text-sm text-gray-500">Table: {order.table?.tableNumber}</p>
-          <p className="text-sm text-gray-500">{order.customerName}</p>
+          <p className="text-sm text-gray-500">{customerLabel}</p>
         </div>
         <OrderStatusBadge status={order.status} />
       </div>

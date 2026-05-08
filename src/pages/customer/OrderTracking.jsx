@@ -30,6 +30,8 @@ const getStatusText = (status) => {
   return "Tracking your order";
 };
 
+const formatMoney = (value) => `Rs. ${Number(value || 0).toFixed(2)}`;
+
 const normalizeRealtimeOrder = (payload, current) => ({
   ...current,
   ...payload,
@@ -113,7 +115,22 @@ const OrderTracking = () => {
     return () => clearTimeout(timer);
   }, [order?.paymentStatus, qrToken]);
 
+  useEffect(() => {
+    if (order?.status === "served" && qrToken) {
+      navigate(`/order/bill/${qrToken}`, { replace: true });
+    }
+  }, [navigate, order?.status, qrToken]);
+
   const currentStatusIndex = statusOrder.indexOf(order?.status || "pending");
+  const canShowBill = order?.status === "served";
+  const subtotal = Number(
+    order?.subtotal ??
+      order?.totalAmount ??
+      (order?.items || []).reduce((sum, item) => sum + Number(item.subtotal || Number(item.price || 0) * Number(item.quantity || 0)), 0)
+  );
+  const taxAmount = Number(order?.taxAmount || 0);
+  const discountAmount = Number(order?.discountAmount || 0);
+  const grandTotal = Number(order?.grandTotal ?? order?.totalAmount ?? Math.max(0, subtotal + taxAmount - discountAmount));
 
   const steps = useMemo(
     () => [
@@ -201,7 +218,7 @@ const OrderTracking = () => {
 
             <div className="mt-6 flex items-center justify-between rounded-2xl bg-white/10 p-4">
               <span className="text-xs font-bold text-slate-300">Total</span>
-              <span className="text-2xl font-black">Rs. {order.totalAmount}</span>
+              <span className="text-2xl font-black">{formatMoney(grandTotal)}</span>
             </div>
           </div>
         </section>
@@ -265,6 +282,78 @@ const OrderTracking = () => {
             </div>
           </div>
         </section>
+
+        {canShowBill && (
+          <section className="mt-5 overflow-hidden rounded-[2rem] border border-gray-100 bg-white shadow-sm">
+            <div className="bg-gray-950 px-5 py-5 text-white">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Customer Bill</p>
+                  <h3 className="mt-1 text-xl font-black">Order #{order.orderNumber}</h3>
+                </div>
+                <ReceiptText size={28} className="text-surface-100" />
+              </div>
+              <p className="mt-3 text-xs font-semibold text-slate-300">
+                {order.restaurant?.name || "Restaurant"} • Table {order.tableNumber || "N/A"}
+              </p>
+            </div>
+
+            <div className="p-5">
+              <div className="mb-4 grid grid-cols-2 gap-3 text-xs">
+                <div className="rounded-2xl bg-gray-50 p-3">
+                  <p className="font-bold uppercase text-gray-400">Status</p>
+                  <p className="mt-1 font-black capitalize text-green-600">{order.status}</p>
+                </div>
+                <div className="rounded-2xl bg-gray-50 p-3">
+                  <p className="font-bold uppercase text-gray-400">Payment</p>
+                  <p className="mt-1 font-black capitalize text-gray-900">{order.paymentStatus || "pending"}</p>
+                </div>
+              </div>
+
+              <div className="overflow-hidden rounded-2xl border border-gray-100">
+                {(order.items || []).map((item, index) => {
+                  const lineTotal = Number(item.subtotal || Number(item.price || 0) * Number(item.quantity || 0));
+                  return (
+                    <div key={`${item.name}-${index}`} className="flex items-start justify-between gap-3 border-b border-gray-100 px-4 py-3 last:border-b-0">
+                      <div>
+                        <p className="text-sm font-black text-gray-900">{item.name}</p>
+                        <p className="mt-1 text-xs font-semibold text-gray-400">
+                          {item.quantity} x {formatMoney(item.price)}
+                        </p>
+                      </div>
+                      <p className="text-sm font-black text-gray-900">{formatMoney(lineTotal)}</p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 space-y-2 rounded-2xl bg-gray-50 p-4 text-sm">
+                <div className="flex justify-between">
+                  <span className="font-semibold text-gray-500">Subtotal</span>
+                  <span className="font-bold text-gray-900">{formatMoney(subtotal)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-semibold text-gray-500">Tax</span>
+                  <span className="font-bold text-gray-900">{formatMoney(taxAmount)}</span>
+                </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between">
+                    <span className="font-semibold text-gray-500">Discount</span>
+                    <span className="font-bold text-green-600">- {formatMoney(discountAmount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t border-gray-200 pt-3 text-base">
+                  <span className="font-black text-gray-900">Grand Total</span>
+                  <span className="font-black text-orange-500">{formatMoney(grandTotal)}</span>
+                </div>
+              </div>
+
+              <p className="mt-4 text-center text-xs font-semibold text-gray-400">
+                Thank you for dining with us.
+              </p>
+            </div>
+          </section>
+        )}
       </main>
       <Feedback isOpen={showFeedback} onClose={() => setShowFeedback(false)} qrToken={qrToken} />
     </div>

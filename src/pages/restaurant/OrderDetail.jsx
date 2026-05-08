@@ -75,6 +75,14 @@ const DetailRow = ({ label, value, icon: Icon }) => (
   </div>
 )
 
+function getOrderCustomerLabel(order) {
+  const name = String(order?.customerName || '').trim()
+  if (order?.guestId && (!name || name.toLowerCase() === 'guest' || name.toLowerCase() === 'qr customer')) {
+    return order.guestId
+  }
+  return name || order?.guestId || 'Guest'
+}
+
 const OrderDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -93,7 +101,7 @@ const OrderDetail = () => {
   const taxAmount = Number(order?.taxAmount || 0)
   const grandTotal = Number(order?.grandTotal || subtotal + taxAmount)
   const itemCount = order?.items?.reduce((sum, item) => sum + Number(item.quantity || 0), 0) || 0
-  const customerName = order?.customerName || 'Guest'
+  const customerName = getOrderCustomerLabel(order)
   const backPath = isCashierView
     ? `${cashierBase}/dashboard`
     : user?.role === 'kitchen'
@@ -206,7 +214,7 @@ const OrderDetail = () => {
           <div class="row"><span>Bill No:</span><span>${order?.orderNumber}</span></div>
           <div class="row"><span>Date:</span><span>${billDate}</span></div>
           <div class="row"><span>Table:</span><span>${order?.table?.tableNumber || 'N/A'}</span></div>
-          <div class="row"><span>Customer:</span><span>${order?.customerName || 'Guest'}</span></div>
+          <div class="row"><span>Customer:</span><span>${getOrderCustomerLabel(order)}</span></div>
           <div class="row"><span>Payment:</span><span>${paymentMethod}</span></div>
           <div class="divider"></div>
           <div class="row head"><span>Particular</span><span>Amt</span></div>
@@ -522,6 +530,7 @@ const OrderDetail = () => {
           <SectionCard title="Customer Information" icon={FiUser}>
             <div className="space-y-3">
               <DetailRow label="Name" value={customerName} icon={FiUser} />
+              {order.guestId && <DetailRow label="Guest ID" value={order.guestId} icon={FiHash} />}
               {order.customerPhone && <DetailRow label="Phone" value={order.customerPhone} icon={FiPhone} />}
               {order.customerEmail && <DetailRow label="Email" value={order.customerEmail} icon={FiMail} />}
               <DetailRow label="Table number" value={order.table?.tableNumber || 'N/A'} icon={FiMapPin} />

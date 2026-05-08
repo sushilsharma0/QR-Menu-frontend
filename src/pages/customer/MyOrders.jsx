@@ -168,10 +168,18 @@ const MyOrders = () => {
 
               {isCurrentOrder(order.status) && (
                 <button
-                  onClick={() => navigate(`/order/track/${order.qrToken}`)}
+                  onClick={() => navigate(`/order/bill/${order.qrToken}`)}
                   className="w-full mt-4 py-3 bg-primary-600 text-white rounded-2xl text-xs font-black hover:bg-primary-700 transition-all"
                 >
                   Open Live Tracking
+                </button>
+              )}
+              {order.status === "served" && (
+                <button
+                  onClick={() => navigate(`/order/track/${order.qrToken}`)}
+                  className="w-full mt-4 py-3 bg-gray-950 text-white rounded-2xl text-xs font-black hover:bg-gray-800 transition-all"
+                >
+                  View Bill
                 </button>
               )}
             </motion.div>

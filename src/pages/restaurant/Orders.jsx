@@ -56,6 +56,14 @@ const STATUS_ACTIONS = {
   ready: [{ label: 'Serve', next: 'served', variant: 'success' }],
 }
 
+function getOrderCustomerLabel(order) {
+  const name = String(order?.customerName || '').trim()
+  if (order?.guestId && (!name || name.toLowerCase() === 'guest' || name.toLowerCase() === 'qr customer')) {
+    return order.guestId
+  }
+  return name || order?.guestId || 'Guest'
+}
+
 function defaultToday() {
   return new Date().toISOString().slice(0, 10)
 }
@@ -602,7 +610,7 @@ const Orders = () => {
                       <RestaurantStatusPill value={order.paymentStatus || 'pending'} styles={paymentStatusStyles} uppercase />
                     </div>
                     <p className="mt-2 text-sm text-gray-500">
-                      {order.customerName || 'Guest'} - Table {order.table?.tableNumber || 'N/A'}
+                      {getOrderCustomerLabel(order)} - Table {order.table?.tableNumber || 'N/A'}
                     </p>
                     <p className="mt-1 text-xs text-gray-400">{formatRestaurantDateTime(order.createdAt)}</p>
                   </div>
@@ -665,7 +673,7 @@ const Orders = () => {
                 {orders.map((order) => (
                   <tr key={order._id} className="transition hover:bg-surface-50">
                     <td className="px-5 py-4 font-bold text-gray-950">#{order.orderNumber}</td>
-                    <td className="px-5 py-4 text-gray-600">{order.customerName || 'Guest'}</td>
+                    <td className="px-5 py-4 text-gray-600">{getOrderCustomerLabel(order)}</td>
                     <td className="px-5 py-4 text-gray-600">{order.table?.tableNumber || 'N/A'}</td>
                     <td className="px-5 py-4"><OrderStatusBadge status={order.status} /></td>
                     <td className="px-5 py-4">

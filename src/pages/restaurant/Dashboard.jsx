@@ -57,6 +57,14 @@ const formatPctTrend = (pct) => {
   };
 };
 
+function getOrderCustomerLabel(order) {
+  const name = String(order?.customerName || "").trim();
+  if (order?.guestId && (!name || name.toLowerCase() === "guest" || name.toLowerCase() === "qr customer")) {
+    return order.guestId;
+  }
+  return name || order?.guestId || "Guest";
+}
+
 function SalesTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
 
@@ -628,7 +636,7 @@ const Dashboard = () => {
                 <div>
                   <p className="font-bold text-gray-950">#{order.orderNumber}</p>
                   <p className="mt-1 text-sm text-gray-500">
-                    {order.customerName || "Guest"} - Table {order.table?.tableNumber || "N/A"}
+                    {getOrderCustomerLabel(order)} - Table {order.table?.tableNumber || "N/A"}
                   </p>
                 </div>
                 <div className="text-right">

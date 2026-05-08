@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from '../../hooks/useAuth'
@@ -155,7 +156,10 @@ const Header = () => {
                     )}
                     <button
                       type="button"
-                      onClick={() => setConfirmLogout(true)}
+                      onClick={() => {
+                        setProfileOpen(false)
+                        setConfirmLogout(true)
+                      }}
                       className="flex items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-bold text-red-600 transition hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950/30"
                     >
                       <FiLogOut className="h-4 w-4" />
@@ -169,51 +173,54 @@ const Header = () => {
         </div>
       </div>
 
-      <AnimatePresence>
-        {confirmLogout && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.96 }}
-              className="w-full max-w-md rounded-3xl border border-white/80 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900"
-            >
-              <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300">
-                  <FiLogOut className="h-6 w-6" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-gray-950 dark:text-gray-100">Are you sure you want to logout?</h3>
-                  <p className="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <AnimatePresence>
+            {confirmLogout && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[9999] grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm"
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 20, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 20, scale: 0.96 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  className="w-full max-w-[420px] rounded-3xl border border-white/80 bg-white p-6 text-center shadow-2xl shadow-slate-950/25 dark:border-gray-800 dark:bg-gray-900"
+                >
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-red-50 text-red-600 ring-8 ring-red-50/70 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-950/20">
+                    <FiLogOut className="h-7 w-7" />
+                  </div>
+                  <h3 className="mt-6 text-2xl font-black tracking-tight text-gray-950 dark:text-gray-100">
+                    Logout?
+                  </h3>
+                  <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-gray-500 dark:text-gray-400">
                     Your current session will end and you will return to the login screen.
                   </p>
-                </div>
-              </div>
-              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  onClick={() => setConfirmLogout(false)}
-                  className="rounded-2xl border border-surface-200 bg-white px-5 py-3 text-sm font-black text-gray-700 transition hover:bg-surface-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="rounded-2xl bg-red-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-red-900/20 transition hover:bg-red-700"
-                >
-                  Yes, logout
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
+                  <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmLogout(false)}
+                      className="rounded-2xl border border-surface-200 bg-white px-5 py-3 text-sm font-black text-gray-700 transition hover:bg-surface-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+                    >
+                      Stay logged in
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="rounded-2xl bg-red-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-red-900/20 transition hover:bg-red-700"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body,
         )}
-      </AnimatePresence>
     </header>
   )
 }
