@@ -9,6 +9,10 @@ import LandingBackground from '../components/landing/LandingBackground'
 import LandingFooter from '../components/landing/LandingFooter'
 import LandingNavbar from '../components/landing/LandingNavbar'
 import OfferBanner from '../components/landing/OfferBanner'
+import QrOrderingFlowSection from '../components/landing/QrOrderingFlowSection'
+import RestaurantProofSection from '../components/landing/RestaurantProofSection'
+import ContactSection from '../components/landing/ContactSection'
+import WhatsAppFloatButton from '../components/landing/WhatsAppFloatButton'
 import { useLandingContent } from '../hooks/landing/useLandingContent'
 
 const LandingPage = () => {
@@ -20,14 +24,18 @@ const LandingPage = () => {
       <LandingNavbar />
       <main>
         <HeroSection hero={hero} />
+        <QrOrderingFlowSection />
         {offerBanner && <OfferBanner offer={offerBanner} />}
+        <RestaurantProofSection />
         <BestThingsSection items={bestThings} />
         <FeaturesSection features={features} />
         <AboutSection about={about} />
         <CustomerFeedbackSection />
         <BlogPreviewSection blogs={blogs} />
+        <ContactSection />
       </main>
       <LandingFooter />
+      <WhatsAppFloatButton />
     </div>
   )
 }

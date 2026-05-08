@@ -15,22 +15,35 @@ const OfferBanner = ({ offer }) => {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-80px' }}
         transition={{ duration: 0.7 }}
-        className="mx-auto grid max-w-7xl overflow-hidden rounded-[2rem] border border-white/80 bg-slate-950 shadow-2xl shadow-slate-900/20 lg:grid-cols-[1.02fr_0.98fr]"
+        className="mx-auto grid max-w-7xl overflow-hidden rounded-[2rem] border border-primary-200/30 bg-gradient-to-br from-primary-900 via-secondary-700 to-slate-950 shadow-2xl shadow-primary-900/25 lg:grid-cols-[1.02fr_0.98fr]"
       >
         <div className="relative z-10 flex flex-col justify-center p-6 text-white sm:p-10 lg:p-12">
-          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-emerald-200 backdrop-blur">
+          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-attention-200 backdrop-blur">
             <BadgePercent className="h-4 w-4" />
             {offer.eyebrow}
           </div>
           <h2 className="mt-5 text-3xl font-black leading-tight tracking-tight sm:text-5xl">{offer.title}</h2>
           <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">{offer.description}</p>
+          <div className="mt-5 grid gap-2 text-sm font-semibold text-slate-200 sm:grid-cols-2">
+            {[
+              'Free restaurant onboarding',
+              'QR menu setup included',
+              'Dashboard access included',
+              'No hidden setup charges',
+            ].map((item) => (
+              <p key={item} className="inline-flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-attention-300" />
+                {item}
+              </p>
+            ))}
+          </div>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link to="/vendor/register" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-6 py-4 text-sm font-black text-slate-950 shadow-lg shadow-emerald-950/20 transition hover:-translate-y-0.5">
+            <Link to="/vendor/register" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-accent-500 px-6 py-4 text-sm font-black text-white shadow-lg shadow-accent-900/20 transition hover:-translate-y-0.5 hover:bg-accent-600">
               {offer.ctaLabel}
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link to="/vendor/login" className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/10 px-6 py-4 text-sm font-black text-white backdrop-blur transition hover:-translate-y-0.5">
-              Already registered
+              Already Registered? Login
             </Link>
           </div>
         </div>
@@ -44,7 +57,7 @@ const OfferBanner = ({ offer }) => {
             className="absolute bottom-6 left-6 right-6 rounded-2xl border border-white/20 bg-white/90 p-5 shadow-2xl backdrop-blur sm:left-auto sm:w-72"
           >
             <div className="flex items-center gap-3">
-              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary-100 text-secondary-700">
                 <Gift className="h-6 w-6" />
               </span>
               <div>

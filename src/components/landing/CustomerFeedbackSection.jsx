@@ -4,24 +4,32 @@ import { MessageSquareQuote, Star } from 'lucide-react'
 import api from '../../services/api'
 import SectionHeader from './SectionHeader'
 
-const feedbackTags = ['Great service', 'Best for Restaurant', 'Easy to order']
+const feedbackTags = ['Ordering experience', 'Service quality', 'Guest satisfaction']
 
 const fallbackFeedback = [
   {
     _id: 'fallback-1',
-    customerName: 'Restaurant guest',
+    customerName: 'Guest Customer',
     systemRating: 5,
     serviceRating: 'great',
-    comment: 'The QR menu was easy to use and tracking the kitchen status made ordering feel simple.',
-    restaurant: { name: 'QR Restro Nepal partner', logo: '' },
+    comment: 'The QR ordering experience was smooth and very easy to use. Food arrived quickly and the menu looked modern.',
+    restaurant: { name: 'The Chiya Hub', logo: '' },
   },
   {
     _id: 'fallback-2',
-    customerName: 'Table customer',
+    customerName: 'Restaurant Owner',
     systemRating: 5,
     serviceRating: 'great',
-    comment: 'I liked that I could send the order directly and see the progress without calling staff again.',
-    restaurant: { name: 'Local restaurant', logo: '' },
+    comment: 'Ordering became faster for our customers and our kitchen workflow is now much more organized.',
+    restaurant: { name: 'Local Restaurant', logo: '' },
+  },
+  {
+    _id: 'fallback-3',
+    customerName: 'Cafe Manager',
+    systemRating: 5,
+    serviceRating: 'great',
+    comment: 'Very practical system for restaurants in Nepal. Easy setup and clean dashboard.',
+    restaurant: { name: 'Cafe Partner', logo: '' },
   },
 ]
 
@@ -45,8 +53,8 @@ const CustomerFeedbackSection = () => {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader
           eyebrow="Customer Reviews"
-          title="Paid orders can turn into useful public trust."
-          description="Platform admin controls feedback collection and landing visibility. Customer reviews include restaurant identity, service rating, and ordering experience."
+          title="Real Restaurant Feedback Builds Trust"
+          description="Customer reviews help restaurants build credibility and improve service quality. Reviews include ordering experience, service quality, and overall satisfaction."
         />
 
         <div className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-3">

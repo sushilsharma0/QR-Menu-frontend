@@ -3,13 +3,17 @@ import {
   BellRing,
   ChefHat,
   ClipboardList,
+  CookingPot,
   CreditCard,
   LayoutDashboard,
+  MessageSquareHeart,
+  ReceiptIndianRupee,
   QrCode,
   ShieldCheck,
   Sparkles,
   Store,
   TabletSmartphone,
+  Timer,
   Users,
 } from 'lucide-react'
 
@@ -21,78 +25,97 @@ export const navItems = [
   { label: 'Features', href: '#features' },
   { label: 'About', href: '#about' },
   { label: 'Blog', href: '#blog' },
+  { label: 'Contact', href: '#contact' },
 ]
 
 export const fallbackHero = {
-  eyebrow: 'Digital dining platform for Nepal',
-  title: 'Turn every table into a smart ordering point.',
+  eyebrow: 'Digital Dining Platform Built for Restaurants in Nepal',
+  title: 'Turn every table into a smart ordering experience.',
   description:
-    'QR Restro Nepal helps restaurants publish mobile menus, accept QR table orders, sync kitchen and cashier teams, and update website content from one admin panel.',
+    'Turn every table into a smart ordering experience with QR menus, live kitchen updates, cashier billing, and restaurant management - all from one modern platform.',
   image: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=1400',
+  typewriterPhrases: ['QR scanning live', 'Kitchen synced', 'Cashier ready'],
 }
 
 export const fallbackOfferBanner = {
-  eyebrow: 'Launch offer',
-  title: 'First 10 restaurants get 1 month free.',
+  eyebrow: 'Limited Launch Offer for Restaurants in Nepal',
+  title: 'First 10 Restaurants Get 1 Month Free',
   description:
-    'Register your restaurant early and start using QR menus, live orders, CMS content, and team dashboards without paying for the first month.',
+    'Start using QR Restro Nepal with zero platform cost for the first month. Early restaurants receive priority onboarding support and setup assistance.',
   image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200',
-  ctaLabel: 'Claim free month',
+  ctaLabel: 'Claim Free Month',
 }
 
 export const fallbackFeatures = [
   {
-    icon: Store,
-    title: 'Vendor portal',
-    text: 'Restaurant profile, KYC, subscription, billing, support tickets, and settings in one workflow.',
+    icon: QrCode,
+    title: 'QR Menu for Every Table',
+    text: 'Customers scan and order instantly using a modern digital menu experience.',
   },
   {
     icon: ClipboardList,
-    title: 'Menu builder',
-    text: 'Categories, items, photos, pricing, availability, taxes, and promotions managed by the restaurant team.',
+    title: 'Easy Menu Management',
+    text: 'Update categories, pricing, availability, food photos, and offers anytime from your dashboard.',
   },
   {
-    icon: QrCode,
-    title: 'QR table ordering',
-    text: 'Create tables, print QR codes, and let guests order directly from their seats.',
+    icon: CookingPot,
+    title: 'Live Kitchen Workflow',
+    text: 'Orders move clearly from Pending -> Preparing -> Ready -> Served with real-time updates.',
   },
   {
-    icon: Users,
-    title: 'Staff roles',
-    text: 'Kitchen, cashier, waiter, manager, vendor, and platform admin access stay cleanly separated.',
+    icon: ReceiptIndianRupee,
+    title: 'Fast Billing & Cashier',
+    text: 'Manage payments, generate bills, and close tables quickly during peak hours.',
   },
   {
-    icon: BellRing,
-    title: 'Live order flow',
-    text: 'Real-time order updates keep kitchen, cashier, and service teams moving together.',
+    icon: Timer,
+    title: 'Wait-Time Visibility',
+    text: 'Show estimated preparation time so customers know when their food will arrive.',
   },
   {
-    icon: BarChart3,
-    title: 'Reports and billing',
-    text: 'Track order activity, subscriptions, invoices, restaurants, and platform operations.',
+    icon: MessageSquareHeart,
+    title: 'Better Guest Experience',
+    text: 'Cleaner ordering and faster service help improve repeat visits and customer satisfaction.',
   },
 ]
 
 export const fallbackBestThings = [
-  { icon: Sparkles, value: 'Scan to order', label: 'Guests open the menu instantly from table QR codes and place orders without waiting.' },
-  { icon: TabletSmartphone, value: 'Phone perfect', label: 'The public menu is designed for quick browsing, item details, cart flow, and order tracking.' },
-  { icon: ShieldCheck, value: 'Team control', label: 'Separate vendor, waiter, kitchen, cashier, and platform access keeps work organized.' },
-  { icon: CreditCard, value: 'SaaS billing', label: 'Plans, invoices, subscription requests, KYC, and CMS content are handled from platform admin.' },
+  { icon: Sparkles, value: 'Faster Table Turnover', label: 'Guests order instantly from their phones so your staff can serve more tables during busy hours.' },
+  { icon: TabletSmartphone, value: 'Mobile-First Ordering', label: 'Menus, cart, and live order tracking work smoothly on every smartphone without app installation.' },
+  { icon: ShieldCheck, value: 'Organized Team Workflow', label: 'Kitchen, cashier, waiter, and manager each get clear actions with less confusion and faster communication.' },
+  { icon: CreditCard, value: 'Better Revenue Visibility', label: 'Track orders, sales, and restaurant performance from one centralized dashboard.' },
 ]
 
 export const fallbackAbout = {
-  title: 'Built for restaurants that want faster service and cleaner operations.',
+  title: 'Built for Restaurants That Want Modern Operations',
   description:
-    'From a small cafe to a busy multi-table restaurant, QR Restro Nepal connects guests, staff, managers, and platform admins through one practical workflow.',
+    'QR Restro Nepal is designed for restaurants, cafes, hotels, and food businesses that want to simplify daily operations and improve guest experience.',
   image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=1200',
 }
 
+export const landingStats = [
+  { label: 'Restaurants Onboarded', value: 100, suffix: '+' },
+  { label: 'Orders Processed', value: 5000, suffix: '+' },
+  { label: 'Active Guests This Month', value: 500, suffix: '' },
+]
+
+export const featuredRestaurants = [
+  { name: 'Himalayan Bites', code: 'HB' },
+  { name: 'Momo Hub', code: 'MH' },
+  { name: 'Newari Ghar', code: 'NG' },
+  { name: 'Kathmandu Kitchen', code: 'KK' },
+  { name: 'Thakali House', code: 'TH' },
+  { name: 'Spice Courtyard', code: 'SC' },
+  { name: 'Sunrise Cafe', code: 'SF' },
+  { name: 'Everest BBQ', code: 'EB' },
+]
+
 export const fallbackBlogs = [
   {
-    key: 'cms-powered-website',
-    title: 'How to manage a restaurant website from the admin CMS',
-    metaDescription: 'Learn how banner, feature, about, and blog CMS entries keep the public website fresh without code changes.',
-    content: 'A CMS-driven restaurant website lets your platform team update the landing page, publish new announcements, and improve SEO content without waiting for a developer. Start with a strong banner, add feature entries for the product benefits, create an about page entry for brand trust, and publish blog posts for guides and restaurant updates.',
+    key: 'what-is-qr-restro-nepal',
+    title: 'What is QR Restro Nepal?',
+    metaDescription: 'Learn how QR Restro Nepal helps restaurants digitize menus, manage live orders, and improve customer experience with one connected platform.',
+    content: 'Learn how modern restaurants improve operations, reduce waiting time, and increase repeat customers using QR ordering systems.',
     image: 'https://images.unsplash.com/photo-1556740758-90de374c12ad?auto=format&fit=crop&q=80&w=900',
     updatedAt: new Date().toISOString(),
   },
@@ -114,4 +137,4 @@ export const fallbackBlogs = [
   },
 ]
 
-export const featureIcons = [Store, ClipboardList, QrCode, Users, BellRing, BarChart3, ChefHat, LayoutDashboard]
+export const featureIcons = [QrCode, ClipboardList, CookingPot, ReceiptIndianRupee, Timer, MessageSquareHeart, ChefHat, BarChart3, BellRing, Store, LayoutDashboard, Users]
