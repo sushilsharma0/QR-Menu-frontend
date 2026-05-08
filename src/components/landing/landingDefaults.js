@@ -31,6 +31,15 @@ export const fallbackHero = {
   image: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=1400',
 }
 
+export const fallbackOfferBanner = {
+  eyebrow: 'Launch offer',
+  title: 'First 10 restaurants get 1 month free.',
+  description:
+    'Register your restaurant early and start using QR menus, live orders, CMS content, and team dashboards without paying for the first month.',
+  image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200',
+  ctaLabel: 'Claim free month',
+}
+
 export const fallbackFeatures = [
   {
     icon: Store,

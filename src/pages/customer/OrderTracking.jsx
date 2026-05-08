@@ -1,85 +1,129 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
-  Check,
-  Clock,
-  ChefHat,
   Bell,
+  Check,
+  ChefHat,
+  Clock,
   PackageCheck,
+  Radio,
+  ReceiptText,
   Utensils,
 } from "lucide-react";
+import { motion } from "framer-motion";
+import { io } from "socket.io-client";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../services/api";
+import Feedback from "../../components/customer/homepage/Feedback";
+
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
+
+const statusOrder = ["pending", "confirmed", "preparing", "ready", "served"];
+
+const getStatusText = (status) => {
+  if (status === "pending") return "Order sent to kitchen";
+  if (status === "confirmed") return "Restaurant confirmed your order";
+  if (status === "preparing") return "Chefs are preparing your food";
+  if (status === "ready") return "Your order is ready";
+  if (status === "served") return "Order completed";
+  if (status === "cancelled") return "Order cancelled";
+  return "Tracking your order";
+};
+
+const normalizeRealtimeOrder = (payload, current) => ({
+  ...current,
+  ...payload,
+  orderId: payload?._id || payload?.orderId || current?.orderId,
+  tableNumber: payload?.table?.tableNumber || payload?.tableNumber || current?.tableNumber,
+  totalAmount: payload?.grandTotal || payload?.totalAmount || current?.totalAmount,
+  orderTime: payload?.createdAt || payload?.orderTime || current?.orderTime,
+});
 
 const OrderTracking = () => {
   const { qrToken } = useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
+  const [isLive, setIsLive] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+
+  const fetchOrder = async () => {
+    if (!qrToken) {
+      setLoading(false);
+      return null;
+    }
+
+    try {
+      const res = await api.get(`/customer/order/${qrToken}`, { skipErrorToast: true });
+      const nextOrder = res?.data?.data || null;
+      setOrder(nextOrder);
+      setLastUpdatedAt(new Date());
+      return nextOrder;
+    } catch (err) {
+      console.error("Failed to fetch order tracking", err);
+      setOrder(null);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchOrder = async () => {
-      if (!qrToken) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const res = await api.get(`/customer/order/${qrToken}`);
-        setOrder(res?.data?.data || null);
-      } catch (err) {
-        console.error("Failed to fetch order tracking", err);
-        setOrder(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchOrder();
-    const intervalId = setInterval(fetchOrder, 10000);
+    const intervalId = setInterval(fetchOrder, 15000);
     return () => clearInterval(intervalId);
   }, [qrToken]);
 
-  const statusOrder = ["pending", "confirmed", "preparing", "ready", "served"];
+  useEffect(() => {
+    if (!order?.orderId) return undefined;
+
+    const socket = io(SOCKET_URL, {
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: 5,
+    });
+
+    socket.on("connect", () => {
+      setIsLive(true);
+      socket.emit("join:order", order.orderId);
+    });
+
+    socket.on("disconnect", () => setIsLive(false));
+
+    socket.on("order_status", (payload) => {
+      setOrder((current) => normalizeRealtimeOrder(payload, current));
+      setLastUpdatedAt(new Date());
+    });
+
+    return () => {
+      socket.disconnect();
+      setIsLive(false);
+    };
+  }, [order?.orderId]);
+
+  useEffect(() => {
+    if (!qrToken || order?.paymentStatus !== "paid") return;
+    const storageKey = `feedback_prompt_shown_${qrToken}`;
+    if (localStorage.getItem(storageKey)) return;
+    const timer = setTimeout(() => {
+      setShowFeedback(true);
+      localStorage.setItem(storageKey, "true");
+    }, 900);
+    return () => clearTimeout(timer);
+  }, [order?.paymentStatus, qrToken]);
+
   const currentStatusIndex = statusOrder.indexOf(order?.status || "pending");
 
   const steps = useMemo(
     () => [
-      {
-        id: 1,
-        status: "pending",
-        label: "Order Placed",
-        icon: <Clock size={16} />,
-      },
-      {
-        id: 2,
-        status: "confirmed",
-        label: "Confirmed",
-        icon: <Check size={16} />,
-      },
-      {
-        id: 3,
-        status: "preparing",
-        label: "Preparing",
-        icon: <ChefHat size={16} />,
-      },
-      {
-        id: 4,
-        status: "ready",
-        label: "Ready",
-        icon: <Utensils size={16} />,
-      },
-      {
-        id: 5,
-        status: "served",
-        label: "Completed",
-        icon: <PackageCheck size={16} />,
-      },
+      { status: "pending", label: "Sent", icon: Clock },
+      { status: "confirmed", label: "Confirmed", icon: Check },
+      { status: "preparing", label: "Preparing", icon: ChefHat },
+      { status: "ready", label: "Ready", icon: Utensils },
+      { status: "served", label: "Served", icon: PackageCheck },
     ].map((step, idx) => {
-      const historyEntry = (order?.statusHistory || []).find(
-        (entry) => entry.status === step.status
-      );
+      const historyEntry = (order?.statusHistory || []).find((entry) => entry.status === step.status);
       const isCompleted = idx <= currentStatusIndex;
       const isActive = idx === currentStatusIndex && order?.status !== "served";
       return {
@@ -87,35 +131,28 @@ const OrderTracking = () => {
         completed: isCompleted,
         active: isActive,
         time: historyEntry?.timestamp
-          ? new Date(historyEntry.timestamp).toLocaleString()
+          ? new Date(historyEntry.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
           : isCompleted
-            ? "Completed"
-            : "Waiting...",
+            ? "Done"
+            : "Waiting",
       };
     }),
     [currentStatusIndex, order]
   );
 
-  const statusLabel = order?.status
-    ? order.status.charAt(0).toUpperCase() + order.status.slice(1)
-    : "Pending";
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500 dark:text-gray-400">
-        Loading tracking...
+      <div className="min-h-screen flex items-center justify-center bg-[#fafaf7] text-gray-500">
+        Loading live tracking...
       </div>
     );
   }
 
   if (!order) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center dark:bg-gray-950">
-        <p className="text-gray-700 dark:text-gray-300 font-semibold">Order not found.</p>
-        <button
-          onClick={() => navigate(-1)}
-          className="mt-4 px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-semibold"
-        >
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#fafaf7] px-6 text-center">
+        <p className="text-gray-700 font-semibold">Order not found.</p>
+        <button onClick={() => navigate(-1)} className="mt-4 px-4 py-2 rounded-xl bg-slate-950 text-white text-sm font-semibold">
           Go Back
         </button>
       </div>
@@ -123,91 +160,113 @@ const OrderTracking = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 pb-10 text-gray-900 dark:text-gray-100">
-      {/* Header */}
-      <header className="px-6 pt-12 pb-6 flex items-center justify-between border-b border-gray-50 dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-950 z-10">
-        <button
-          className="p-2 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft size={20} className="text-gray-700 dark:text-gray-200" />
+    <div className="min-h-screen bg-[#fafaf7] pb-10 text-gray-950">
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white/95 px-5 pb-5 pt-12 backdrop-blur">
+        <button className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors" onClick={() => navigate(-1)}>
+          <ArrowLeft size={20} className="text-gray-700" />
         </button>
-        <h1 className="text-lg font-bold text-gray-800 dark:text-gray-100 tracking-tight">
-          Order Tracking
-        </h1>
-        <div className="w-10"></div> {/* Placeholder to center the title */}
+        <div className="text-center">
+          <h1 className="text-lg font-black tracking-tight">Live Order Track</h1>
+          <p className="text-[11px] font-semibold text-gray-400">Updates as kitchen moves</p>
+        </div>
+        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${isLive ? "bg-emerald-50 text-emerald-600" : "bg-gray-50 text-gray-400"}`}>
+          <Radio size={18} className={isLive ? "animate-pulse" : ""} />
+        </div>
       </header>
 
-      <div className="p-8 flex flex-col items-center">
-        {/* Order Info Card */}
-        <div className="text-center mb-10">
-          <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">
-            Order #{order.orderNumber}
-          </p>
-          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Table {order.tableNumber}</h2>
+      <main className="px-5 pt-5">
+        <section className="overflow-hidden rounded-[2rem] bg-primary-900 text-white shadow-xl shadow-primary-900/15">
+          <div className="p-6">
+            <div className="flex items-center gap-3">
+              {order.restaurant?.logo ? (
+                <img src={order.restaurant.logo} alt={order.restaurant.name} className="h-14 w-14 rounded-2xl object-cover" />
+              ) : (
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10">
+                  <ReceiptText size={24} />
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="truncate text-sm font-black">{order.restaurant?.name || "Restaurant"}</p>
+                <p className="text-xs font-semibold text-slate-300">Table {order.tableNumber} • Order #{order.orderNumber}</p>
+              </div>
+            </div>
 
-          <div className="mt-4 inline-flex items-center gap-2 bg-orange-50 text-orange-600 px-5 py-2 rounded-full text-xs font-bold border border-orange-100 animate-pulse">
-            <ChefHat size={14} /> {statusLabel}
+            <div className="mt-8">
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-surface-100">Current Status</p>
+              <h2 className="mt-2 text-3xl font-black leading-tight">{getStatusText(order.status)}</h2>
+              <p className="mt-3 text-sm leading-6 text-slate-300">
+                {order.estimatedWaitTime ? `Estimated wait time is ${order.estimatedWaitTime} minutes.` : "The restaurant team will update each stage from their dashboard."}
+              </p>
+            </div>
+
+            <div className="mt-6 flex items-center justify-between rounded-2xl bg-white/10 p-4">
+              <span className="text-xs font-bold text-slate-300">Total</span>
+              <span className="text-2xl font-black">Rs. {order.totalAmount}</span>
+            </div>
           </div>
-        </div>
+        </section>
 
-        {/* Timeline Container */}
-        <div className="w-full max-w-xs relative ml-4">
-          {/* Main Vertical Track */}
-          <div className="absolute left-4.75 top-2 bottom-2 w-0.5 bg-gray-100 dark:bg-gray-700"></div>
+        <section className="mt-5 rounded-[2rem] border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="mb-5 flex items-center justify-between">
+            <div>
+              <h3 className="text-base font-black">Kitchen Progress</h3>
+              <p className="text-xs font-semibold text-gray-400">
+                {lastUpdatedAt ? `Last update ${lastUpdatedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Waiting for update"}
+              </p>
+            </div>
+              <span className={`rounded-full px-3 py-1 text-[11px] font-black ${isLive ? "bg-primary-50 text-primary-700" : "bg-amber-50 text-amber-700"}`}>
+              {isLive ? "Live" : "Polling"}
+            </span>
+          </div>
 
-          <div className="space-y-12">
-            {steps.map((step) => (
-              <div key={step.id} className="relative flex items-start gap-6">
-                {/* Step Circle */}
-                <div
-                  className={`z-10 w-10 h-10 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-all duration-500
-                  ${
-                    step.completed
-                      ? "bg-green-500 text-white"
-                      : step.active
-                        ? "bg-orange-500 text-white scale-110 ring-4 ring-orange-100"
-                        : "bg-gray-100 text-gray-400"
+          <div className="space-y-4">
+            {steps.map((step, index) => {
+              const Icon = step.icon;
+              return (
+                <motion.div
+                  key={step.status}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className={`flex items-center gap-4 rounded-2xl border p-4 ${
+                    step.active
+                      ? "border-orange-200 bg-orange-50"
+                      : step.completed
+                        ? "border-primary-100 bg-primary-50/60"
+                        : "border-gray-100 bg-gray-50"
                   }`}
                 >
-                  {step.completed ? (
-                    <Check size={18} strokeWidth={3} />
-                  ) : (
-                    step.icon
-                  )}
-                </div>
-
-                {/* Step Text Content */}
-                <div className="flex-1 pt-1">
-                  <h4
-                    className={`text-sm font-bold transition-colors ${step.active ? "text-gray-900 dark:text-gray-100" : step.completed ? "text-gray-800 dark:text-gray-200" : "text-gray-400 dark:text-gray-500"}`}
+                  <div
+                    className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
+                      step.completed ? "bg-primary-600 text-white" : step.active ? "bg-secondary-500 text-white" : "bg-white text-gray-400"
+                    }`}
                   >
-                    {step.label}
-                  </h4>
-                  <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 leading-tight">
-                    {step.time}
-                  </p>
-                </div>
-              </div>
-            ))}
+                    {step.completed ? <Check size={18} strokeWidth={3} /> : <Icon size={18} />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-sm font-black ${step.completed || step.active ? "text-gray-900" : "text-gray-400"}`}>{step.label}</p>
+                    <p className="text-xs font-semibold text-gray-400">{step.time}</p>
+                  </div>
+                  {step.active && <span className="h-2.5 w-2.5 rounded-full bg-orange-500 animate-ping" />}
+                </motion.div>
+              );
+            })}
           </div>
-        </div>
+        </section>
 
-        {/* Notification Alert Box */}
-        <div className="mt-16 w-full max-w-sm bg-orange-50 p-6 rounded-4xl flex items-center gap-5 border border-orange-100 shadow-sm shadow-orange-50">
-          <div className="p-4 bg-white rounded-2xl shadow-sm text-orange-500">
-            <Bell size={24} className="animate-bounce" />
+        <section className="mt-5 rounded-[2rem] border border-orange-100 bg-orange-50 p-5">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-orange-500 shadow-sm">
+              <Bell size={22} className="animate-bounce" />
+            </div>
+            <div>
+              <p className="text-sm font-black text-gray-900">No need to ask again</p>
+              <p className="text-xs leading-5 text-gray-500">Keep this screen open. It updates when the restaurant confirms, prepares, and serves your order.</p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-bold text-gray-800 dark:text-gray-100">
-              We will notify you
-            </p>
-            <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-normal">
-              Your order is being handled with care and will be ready shortly.
-            </p>
-          </div>
-        </div>
-      </div>
+        </section>
+      </main>
+      <Feedback isOpen={showFeedback} onClose={() => setShowFeedback(false)} qrToken={qrToken} />
     </div>
   );
 };

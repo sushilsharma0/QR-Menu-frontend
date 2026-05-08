@@ -6,7 +6,11 @@ import {
   Minus,
   CreditCard,
   Landmark,
+  ChefHat,
+  Send,
+  ShieldCheck,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../services/api";
 import { getParsedAuthUser } from "../../utils/authStorage";
@@ -214,19 +218,11 @@ const Cart = () => {
       setPromoDiscount(0);
       setPromoCode("");
 
-      if (paymentMethod === "cash") {
-        success(
-          `Order ${order?.orderNumber || ""} placed. Please pay at counter.`,
-        );
-      } else {
-        success(
-          `Payment successful. Order ${order?.orderNumber || ""} confirmed.`,
-        );
-      }
+      success(`Order ${order?.orderNumber || ""} sent to kitchen.`);
 
       setTimeout(() => {
-        navigate(`/orders/${slug}/${token}`);
-      }, 2000);
+        navigate(order?.trackToken ? `/order/track/${order.trackToken}` : `/orders/${slug}/${token}`);
+      }, 900);
     } catch (err) {
       const message =
         err?.response?.data?.message || "Failed to place order. Try again.";
@@ -237,16 +233,19 @@ const Cart = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white pb-40">
+    <div className="min-h-screen bg-[#fafaf7] pb-44 text-gray-950">
       {/* Header */}
-      <header className="px-6 pt-12 pb-6 flex items-center justify-between sticky top-0 bg-white z-10 border-b border-gray-50">
+      <header className="px-5 pt-12 pb-5 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur z-10 border-b border-gray-100">
         <button
           className="p-2 bg-gray-50 rounded-xl hover:bg-red-300 transition-colors"
           onClick={() => navigate(-1) || navigate("/")}
         >
           <ArrowLeft size={20} className="text-gray-700" />
         </button>
-        <h1 className="text-lg font-bold text-gray-800">Your Cart</h1>
+        <div className="text-center">
+          <h1 className="text-lg font-black text-gray-900">Review Order</h1>
+          <p className="text-[11px] font-semibold text-gray-400">Confirm before kitchen receives it</p>
+        </div>
         <button 
           className="p-2 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors"
           onClick={clearCart}
@@ -256,9 +255,28 @@ const Cart = () => {
       </header>
 
       {/* Cart Items */}
-      <div className="px-6 py-4 space-y-6">
+      <div className="px-5 pt-5">
+        <div className="rounded-3xl bg-primary-900 p-5 text-white shadow-xl shadow-primary-900/10">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-100 text-primary-800">
+              <ChefHat size={24} />
+            </div>
+            <div>
+              <p className="text-sm font-black">Send order to kitchen</p>
+              <p className="text-xs font-semibold text-slate-300">Kitchen, cashier, and waiter dashboards update instantly.</p>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[11px] font-bold text-slate-300">
+            <span className="rounded-xl bg-white/10 px-2 py-2">1. Review</span>
+            <span className="rounded-xl bg-white/10 px-2 py-2">2. Send</span>
+            <span className="rounded-xl bg-white/10 px-2 py-2">3. Track</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-5 py-5 space-y-4">
         {cartItems.map((item) => (
-          <div key={item._id} className="flex items-center gap-4">
+          <motion.div layout key={item._id} className="flex items-center gap-4 rounded-3xl border border-gray-100 bg-white p-3 shadow-sm">
             <img
               src={item.image}
               alt={item.name}
@@ -296,12 +314,12 @@ const Cart = () => {
             >
               <Trash2 size={18} />
             </button>
-          </div>
+          </motion.div>
         ))}
       </div>
 
       {/* Bill Details */}
-      <div className="px-6 mt-8 space-y-3">
+      <div className="mx-5 mt-3 space-y-3 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
         <div className="flex gap-2">
           <input
             type="text"
@@ -341,7 +359,7 @@ const Cart = () => {
       </div>
 
       {/* Payment Selection */}
-      <div className="px-6 mt-8">
+      <div className="mx-5 mt-6 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
           Select Payment
         </h3>
@@ -404,15 +422,38 @@ const Cart = () => {
       </div>
 
       {/* Checkout Button */}
-      <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-50 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
+      <div className="fixed bottom-0 left-0 right-0 p-5 bg-white/95 border-t border-gray-100 shadow-[0_-10px_24px_rgba(15,23,42,0.08)] backdrop-blur">
+        <div className="mb-3 flex items-center justify-center gap-2 text-[11px] font-bold text-gray-500">
+          <ShieldCheck size={14} className="text-emerald-600" />
+          You can track every kitchen status after sending.
+        </div>
         <button
           onClick={handleProceedToCheckout}
           disabled={isPlacingOrder || cartItems.length === 0}
-          className="w-full bg-orange-500 hover:bg-orange-600 py-4 rounded-2xl text-white font-bold text-lg shadow-xl shadow-orange-200 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full bg-primary-600 hover:bg-primary-700 py-4 rounded-2xl text-white font-black text-base shadow-xl shadow-primary-900/20 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {isPlacingOrder ? "Processing..." : "Proceed to Checkout"}
+          {isPlacingOrder ? "Sending to kitchen..." : <>Send Order to Kitchen <Send size={18} /></>}
         </button>
       </div>
+
+      <AnimatePresence>
+        {isPlacingOrder && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-6 backdrop-blur-sm"
+          >
+            <motion.div initial={{ y: 20, scale: 0.96 }} animate={{ y: 0, scale: 1 }} exit={{ y: 20, scale: 0.96 }} className="w-full max-w-xs rounded-3xl bg-white p-6 text-center shadow-2xl">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-100 text-emerald-700">
+                <ChefHat size={30} className="animate-pulse" />
+              </div>
+              <h2 className="mt-4 text-xl font-black text-gray-950">Sending to kitchen</h2>
+              <p className="mt-2 text-sm leading-6 text-gray-500">Please wait while your order reaches the restaurant dashboard.</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>

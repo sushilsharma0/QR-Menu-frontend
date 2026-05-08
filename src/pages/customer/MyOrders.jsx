@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Clock, CheckCircle2, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Clock, CheckCircle2, ShoppingBag, Radio, ChefHat } from "lucide-react";
+import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import Navigation from "../../components/customer/Navigation";
 import { ensureGuestSession, getGuestOrders } from "../../services/customer";
@@ -32,6 +33,8 @@ const MyOrders = () => {
     };
 
     fetchOrders();
+    const intervalId = setInterval(fetchOrders, 12000);
+    return () => clearInterval(intervalId);
   }, [token]);
 
   const isCurrentOrder = (status) =>
@@ -63,20 +66,40 @@ const MyOrders = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white pb-24">
+    <div className="min-h-screen bg-[#fafaf7] pb-28 text-gray-950">
       {/* List Header */}
-      <header className="px-6 pt-12 pb-4 flex items-center gap-4">
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white/95 px-5 pb-5 pt-12 backdrop-blur">
         <button
-          className="p-2 bg-gray-50 rounded-xl hover:bg-red-300 transition-colors"
+          className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
           onClick={() => navigate(`/menu/${slug}/${token}`)}
         >
           <ArrowLeft size={20} />
         </button>
-        <h1 className="text-lg font-bold text-gray-800">My Orders</h1>
+        <div className="text-center">
+          <h1 className="text-lg font-black text-gray-900">My Orders</h1>
+          <p className="text-[11px] font-semibold text-gray-400">Live kitchen progress</p>
+        </div>
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+          <Radio size={18} className="animate-pulse" />
+        </div>
       </header>
 
+      <section className="px-5 pt-5">
+        <div className="rounded-[2rem] bg-primary-900 p-5 text-white shadow-xl shadow-primary-900/10">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-100 text-primary-800">
+              <ChefHat size={24} />
+            </div>
+            <div>
+              <p className="text-sm font-black">Track without asking</p>
+              <p className="text-xs font-semibold text-slate-300">When restaurant updates status, your order card refreshes automatically.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Tabs */}
-      <div className="px-6 py-4 flex gap-2">
+      <div className="px-5 py-4 flex gap-2">
         {["Current", "Past"].map((tab) => (
           <button
             key={tab}
@@ -93,7 +116,7 @@ const MyOrders = () => {
       </div>
 
       {/* Order Cards */}
-      <div className="px-6 mt-4 space-y-6">
+      <div className="px-5 mt-2 space-y-4">
         {loading ? (
           <div className="text-center py-16 text-sm text-gray-400">Loading orders...</div>
         ) : filteredOrders.length === 0 ? (
@@ -103,8 +126,14 @@ const MyOrders = () => {
             <p className="text-xs text-gray-400 mt-1">Your orders will appear here.</p>
           </div>
         ) : (
-          filteredOrders.map((order) => (
-            <div key={order._id} className="border border-gray-100 rounded-3xl p-5 shadow-sm">
+          filteredOrders.map((order, index) => (
+            <motion.div
+              key={order._id}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.04 }}
+              className="border border-gray-100 bg-white rounded-3xl p-5 shadow-sm"
+            >
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="font-bold text-gray-900 text-sm">
@@ -140,12 +169,12 @@ const MyOrders = () => {
               {isCurrentOrder(order.status) && (
                 <button
                   onClick={() => navigate(`/order/track/${order.qrToken}`)}
-                  className="w-full mt-4 py-2.5 bg-gray-50 text-gray-700 rounded-xl text-xs font-bold hover:bg-orange-50 hover:text-orange-600 transition-all"
+                  className="w-full mt-4 py-3 bg-primary-600 text-white rounded-2xl text-xs font-black hover:bg-primary-700 transition-all"
                 >
-                  Track Order
+                  Open Live Tracking
                 </button>
               )}
-            </div>
+            </motion.div>
           ))
         )}
       </div>

@@ -6,6 +6,7 @@ import {
   ShoppingBag,
   Menu as MenuIcon,
   X,
+  ChefHat,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import Navigation from "../../../components/customer/Navigation";
@@ -13,6 +14,7 @@ import PageTransition from "../../../components/customer/PageTransition";
 import Sidebar from "../../../components/customer/homepage/SideBar";
 import ViewCartBtn from "../../../components/customer/ViewCartBtn";
 import api from "../../../services/api";
+import { getRestaurantInfo } from "../../../services/customer";
 
 // const categories = [
 //   {
@@ -59,12 +61,14 @@ const MenuCategories = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
+  const [restaurantInfo, setRestaurantInfo] = useState(null);
 
   const { slug, token } = useParams();
 
   useEffect(() => {
     if (slug) {
       fetchMenuData();
+      fetchRestaurantBrand();
     }
   }, [slug]);
 
@@ -85,6 +89,15 @@ const MenuCategories = () => {
     }
   };
 
+  const fetchRestaurantBrand = async () => {
+    try {
+      const info = await getRestaurantInfo(slug);
+      setRestaurantInfo(info);
+    } catch (error) {
+      setRestaurantInfo(null);
+    }
+  };
+
   const filteredCategories = categories.filter((cat) =>
     cat.name
       .toLowerCase()
@@ -101,9 +114,9 @@ const MenuCategories = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-white pb-32">
+      <div className="min-h-screen bg-[#fafaf7] pb-32 text-gray-950">
         {/* Header */}
-        <header className="px-4 pt-12 pb-4 h-22.5 flex items-center justify-between sticky top-0 bg-white">
+        <header className="px-4 pt-12 pb-4 h-22.5 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur z-20 border-b border-gray-100">
           {/* LEFT */}
           {!showSearch ? (
             <button
@@ -186,8 +199,33 @@ const MenuCategories = () => {
           </button>
         </header>
 
+        <section className="px-4 pt-4">
+          <div
+            className="relative overflow-hidden rounded-[2rem] bg-primary-900 p-5 text-white shadow-xl shadow-primary-900/10"
+            style={restaurantInfo?.backgroundPhoto ? {
+              backgroundImage: `linear-gradient(135deg, rgba(57,16,0,0.9), rgba(143,40,0,0.48)), url('${restaurantInfo.backgroundPhoto}')`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            } : undefined}
+          >
+            <div className="relative z-10 flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white/15 backdrop-blur">
+                {restaurantInfo?.logo ? (
+                  <img src={restaurantInfo.logo} alt={restaurantInfo?.name || "Restaurant"} className="h-full w-full object-cover" />
+                ) : (
+                  <ChefHat size={26} />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-lg font-black">{restaurantInfo?.name || "Restaurant menu"}</p>
+                <p className="mt-1 text-xs font-semibold text-white/75">Choose a category and send your order directly to kitchen.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Category list */}
-        <div className="px-4 pt-2.5 space-y-3 pb-16">
+        <div className="px-4 pt-4 space-y-3 pb-16">
           {filteredCategories.length === 0 ? (
             // Empty state when search returns nothing
             <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -212,7 +250,7 @@ const MenuCategories = () => {
               <Link
                 to={`/item/${slug}/${token}/${cat.name}`}
                 key={cat._id}
-                className="group flex items-center p-3 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-all cursor-pointer hover:border-orange-200"
+                className="group flex items-center p-3 bg-white rounded-3xl border border-gray-100 shadow-sm active:scale-95 transition-all cursor-pointer hover:border-orange-200"
               >
                 <div className="w-14 h-14 rounded-xl overflow-hidden mr-3 shrink-0">
                   <img
