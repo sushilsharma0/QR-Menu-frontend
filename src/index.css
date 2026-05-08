@@ -219,6 +219,38 @@ html {
   scroll-behavior: smooth;
 }
 
+.landing-grid {
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.08) 1px, transparent 1px);
+  background-size: 44px 44px;
+  animation: landing-grid-drift 18s linear infinite;
+  mask-image: radial-gradient(circle at 50% 18%, black 0%, rgba(0, 0, 0, 0.82) 34%, transparent 76%);
+}
+
+.landing-curve {
+  animation: landing-curve-float 9s ease-in-out infinite;
+}
+
+@keyframes landing-grid-drift {
+  from {
+    background-position: 0 0, 0 0;
+  }
+  to {
+    background-position: 44px 44px, 44px 44px;
+  }
+}
+
+@keyframes landing-curve-float {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(22px);
+  }
+}
+
 /* Apply ONLY when class is present */
 ::-webkit-scrollbar {
   width: 4px;

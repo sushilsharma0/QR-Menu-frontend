@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, CalendarDays, FileText, QrCode, Search } from 'lucide-react'
+import { ArrowLeft, FileText, QrCode, Search } from 'lucide-react'
+import BlogCard from '../components/landing/BlogCard'
+import { fallbackBlogs } from '../components/landing/landingDefaults'
 import api from '../services/api'
-
-const fallbackImage = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=1200'
 
 const Blog = () => {
   const [posts, setPosts] = useState([])
@@ -13,10 +13,10 @@ const Blog = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const res = await api.get('/platform/cms', { params: { type: 'blog', isActive: true } })
-        setPosts(res.data?.data || [])
+        const res = await api.get('/platform/cms', { params: { type: 'blog', isActive: true }, skipErrorToast: true })
+        setPosts(res.data?.data?.length ? res.data.data : fallbackBlogs)
       } catch (error) {
-        setPosts([])
+        setPosts(fallbackBlogs)
       } finally {
         setLoading(false)
       }
@@ -42,7 +42,7 @@ const Blog = () => {
             <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-white">
               <QrCode className="h-5 w-5" />
             </span>
-            <span className="text-lg font-black">QR Menu</span>
+            <span className="text-lg font-black">QR Restro Nepal</span>
           </Link>
           <Link to="/" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
             <ArrowLeft className="h-4 w-4" />
@@ -56,23 +56,23 @@ const Blog = () => {
           <div className="mx-auto max-w-3xl text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-2 text-sm font-black text-emerald-700 shadow-sm">
               <FileText className="h-4 w-4" />
-              Platform Blog
+              Restaurant Learning Center
             </div>
             <h1 className="mt-6 text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">
-              Restaurant tech insights, updates, and guides.
+              QR menu, restaurant SaaS, and digital ordering guides.
             </h1>
             <p className="mt-5 text-base leading-8 text-slate-600 sm:text-lg">
-              Articles are published from the platform admin CMS, so your team can manage announcements without code changes.
+              Explore practical articles with clear headings, reading time, and CMS-managed content for better learning and better SEO.
             </p>
           </div>
 
           <div className="mx-auto mt-10 max-w-xl">
-            <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
               <Search className="h-5 w-5 text-slate-400" />
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search blog posts"
+                placeholder="Search QR menu, CMS, SaaS, ordering..."
                 className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-slate-400"
               />
             </div>
@@ -82,34 +82,17 @@ const Blog = () => {
             {loading ? (
               <div className="grid gap-5 md:grid-cols-3">
                 {[1, 2, 3].map((item) => (
-                  <div key={item} className="h-80 animate-pulse rounded-lg bg-white" />
+                  <div key={item} className="h-96 animate-pulse rounded-2xl bg-white" />
                 ))}
               </div>
             ) : filteredPosts.length > 0 ? (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {filteredPosts.map((post) => (
-                  <article key={post._id || post.key} className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-                    <img src={post.image || fallbackImage} alt={post.title || 'Blog post'} className="h-52 w-full object-cover" />
-                    <div className="p-5">
-                      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500">
-                        <CalendarDays className="h-4 w-4 text-emerald-600" />
-                        {post.updatedAt ? new Date(post.updatedAt).toLocaleDateString() : 'Platform update'}
-                      </div>
-                      <h2 className="mt-3 text-xl font-black leading-tight text-slate-950">{post.title || post.key}</h2>
-                      <p className="mt-3 line-clamp-4 text-sm leading-7 text-slate-600">
-                        {post.metaDescription || post.content || 'No article summary added yet.'}
-                      </p>
-                      <div className="mt-5 border-t border-slate-100 pt-4 text-sm leading-7 text-slate-700">
-                        {post.content}
-                      </div>
-                    </div>
-                  </article>
-                ))}
+                {filteredPosts.map((post, index) => <BlogCard key={post._id || post.key} post={post} index={index} />)}
               </div>
             ) : (
-              <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center">
-                <p className="text-lg font-black text-slate-950">No blog posts published yet.</p>
-                <p className="mt-2 text-sm text-slate-500">Create active CMS entries with type `Blog` from the platform admin panel.</p>
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+                <p className="text-lg font-black text-slate-950">No matching blog posts found.</p>
+                <p className="mt-2 text-sm text-slate-500">Try a different search or publish more active Blog entries from the CMS.</p>
               </div>
             )}
           </div>
