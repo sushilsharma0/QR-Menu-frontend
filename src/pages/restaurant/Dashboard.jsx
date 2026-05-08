@@ -240,14 +240,26 @@ const Dashboard = () => {
       toast.success(`Payment updated for order #${payment.orderNumber}`);
       fetchDashboardData(true);
     };
+    const handleGuestTableRequest = (payload) => {
+      const labels = {
+        call_waiter: "Call waiter",
+        need_water: "Water",
+        need_tissue: "Tissue",
+        need_bill: "Bill",
+      };
+      const label = labels[payload?.requestType] || "Guest request";
+      toast(`${label} · Table ${payload?.tableNumber ?? "?"}`, { duration: 6000 });
+    };
 
     socket.on("new_order", handleNewOrder);
     socket.on("order_updated", handleOrderUpdate);
     socket.on("payment_updated", handlePaymentUpdate);
+    socket.on("guest_table_request", handleGuestTableRequest);
     return () => {
       socket.off("new_order", handleNewOrder);
       socket.off("order_updated", handleOrderUpdate);
       socket.off("payment_updated", handlePaymentUpdate);
+      socket.off("guest_table_request", handleGuestTableRequest);
     };
   }, [socket]);
 

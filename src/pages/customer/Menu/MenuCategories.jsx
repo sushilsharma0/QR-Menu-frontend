@@ -14,7 +14,8 @@ import PageTransition from "../../../components/customer/PageTransition";
 import Sidebar from "../../../components/customer/homepage/SideBar";
 import ViewCartBtn from "../../../components/customer/ViewCartBtn";
 import api from "../../../services/api";
-import { getRestaurantInfo } from "../../../services/customer";
+import { ensureGuestSession, getDiningInsights, getRestaurantInfo } from "../../../services/customer";
+import VoiceOrderFAB from "../../../components/customer/VoiceOrderFAB";
 
 // const categories = [
 //   {
@@ -62,6 +63,7 @@ const MenuCategories = () => {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
   const [restaurantInfo, setRestaurantInfo] = useState(null);
+  const [insights, setInsights] = useState(null);
 
   const { slug, token } = useParams();
 
@@ -71,6 +73,24 @@ const MenuCategories = () => {
       fetchRestaurantBrand();
     }
   }, [slug]);
+
+  useEffect(() => {
+    const run = async () => {
+      if (!slug || !token) return;
+      try {
+        const s = await ensureGuestSession(token);
+        const data = await getDiningInsights({
+          restaurantSlug: slug,
+          guestId: s.guestId,
+          qrToken: token,
+        });
+        setInsights(data);
+      } catch {
+        setInsights(null);
+      }
+    };
+    run();
+  }, [slug, token]);
 
   const fetchMenuData = async () => {
     try {
@@ -224,6 +244,56 @@ const MenuCategories = () => {
           </div>
         </section>
 
+        {insights?.pairs?.length > 0 && (
+          <section className="px-4 pt-4">
+            <p className="text-[11px] font-black uppercase tracking-wide text-gray-500">You may also like</p>
+            <div className="mt-2 space-y-2 rounded-2xl border border-gray-100 bg-white p-3 text-xs text-gray-700 shadow-sm">
+              {insights.pairs.slice(0, 2).map((p, i) => (
+                <p key={i} className="font-semibold leading-snug">
+                  {p.caption}
+                </p>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {insights?.trending?.length > 0 && (
+          <section className="px-4 pt-4">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-black uppercase tracking-wide text-gray-500">Trending · social proof</p>
+              {insights.daypart && (
+                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-600">
+                  {insights.daypart}
+                </span>
+              )}
+            </div>
+            <div className="mt-2 flex gap-3 overflow-x-auto pb-1">
+              {insights.trending.slice(0, 10).map((item) => (
+                <Link
+                  key={item._id}
+                  to={`/item-detail/${slug}/${token}/${item._id}`}
+                  className="w-28 shrink-0 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+                >
+                  <img
+                    src={
+                      item.image ||
+                      "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=200&q=60"
+                    }
+                    alt=""
+                    className="h-20 w-full object-cover"
+                  />
+                  <div className="p-2">
+                    <p className="line-clamp-2 text-[10px] font-bold text-gray-900">{item.name}</p>
+                    <p className="mt-0.5 text-[9px] font-semibold text-primary-600">
+                      {item.orderCountToday || 0} today
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Category list */}
         <div className="px-4 pt-4 space-y-3 pb-16">
           {filteredCategories.length === 0 ? (
@@ -273,6 +343,13 @@ const MenuCategories = () => {
 
         {/* Floating View Cart button */}
         <ViewCartBtn />
+
+        <VoiceOrderFAB
+          onTranscript={(text) => {
+            setShowSearch(true);
+            setSearchQuery(text.trim());
+          }}
+        />
 
         <Navigation />
         <Sidebar

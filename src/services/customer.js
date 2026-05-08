@@ -73,12 +73,24 @@ export const ensureGuestSession = async (qrToken) => {
   return data
 }
 
-export const addItemToGuestCart = async ({ guestId, qrToken, menuItemId, quantity = 1, notes = '' }) => {
+export const addItemToGuestCart = async ({
+  guestId,
+  qrToken,
+  menuItemId,
+  quantity = 1,
+  notes = '',
+  cookingInstructions = '',
+  customizations = [],
+  addOns = [],
+}) => {
   const response = await api.post(`/customer/cart/${guestId}/items`, {
     qrToken,
     menuItemId,
     quantity,
     notes,
+    cookingInstructions,
+    customizations,
+    addOns,
   })
   const cart = response?.data?.data || { items: [] }
   const count = (cart.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
@@ -94,11 +106,12 @@ export const getGuestCart = async ({ guestId, qrToken }) => {
   return cart
 }
 
-export const updateGuestCartItem = async ({ guestId, qrToken, menuItemId, quantity, notes }) => {
+export const updateGuestCartItem = async ({ guestId, qrToken, menuItemId, quantity, notes, lineId }) => {
   const response = await api.patch(`/customer/cart/${guestId}/items/${menuItemId}`, {
     qrToken,
     quantity,
     notes,
+    lineId,
   })
   const cart = response?.data?.data || { items: [] }
   const count = (cart.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
@@ -106,8 +119,10 @@ export const updateGuestCartItem = async ({ guestId, qrToken, menuItemId, quanti
   return cart
 }
 
-export const removeGuestCartItem = async ({ guestId, qrToken, menuItemId }) => {
-  const response = await api.delete(`/customer/cart/${guestId}/items/${menuItemId}`, { params: { qrToken } })
+export const removeGuestCartItem = async ({ guestId, qrToken, menuItemId, lineId }) => {
+  const params = { qrToken }
+  if (lineId) params.lineId = lineId
+  const response = await api.delete(`/customer/cart/${guestId}/items/${menuItemId}`, { params })
   const cart = response?.data?.data || { items: [] }
   const count = (cart.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
   setCartItemCount(count)
@@ -122,6 +137,28 @@ export const clearGuestCart = async ({ guestId, qrToken }) => {
 export const getGuestOrders = async ({ guestId, qrToken }) => {
   const response = await api.get(`/customer/orders/${guestId}`, { params: { qrToken } })
   return response?.data?.data?.orders || []
+}
+
+export const postGuestTableRequest = async ({ qrToken, guestId, requestType, message = '' }) => {
+  const response = await api.post('/customer/table-request', {
+    qrToken,
+    guestId,
+    requestType,
+    message,
+  })
+  return response?.data
+}
+
+export const getDiningInsights = async ({ restaurantSlug, guestId, qrToken }) => {
+  const response = await api.get(`/customer/dining-insights/${restaurantSlug}`, {
+    params: { guestId, qrToken },
+  })
+  return response?.data?.data || null
+}
+
+export const getGuestLoyalty = async ({ guestId, qrToken }) => {
+  const response = await api.get(`/customer/loyalty/${guestId}`, { params: { qrToken } })
+  return response?.data?.data || { points: 0, lifetimePoints: 0 }
 }
 
 // Helper functions for customer flow

@@ -21,7 +21,12 @@ import Feedback from "../../../components/customer/homepage/Feedback";
 import PromoCodeModal from "../../../components/customer/homepage/PromoCodeModal";
 import PageTransition from "../../../components/customer/PageTransition";
 import api from "../../../services/api";
-import { ensureGuestSession, getRestaurantInfo } from "../../../services/customer";
+import {
+  ensureGuestSession,
+  getRestaurantInfo,
+  getGuestLoyalty,
+  postGuestTableRequest,
+} from "../../../services/customer";
 import toast from "react-hot-toast";
 
 export default function Home() {
@@ -37,6 +42,10 @@ export default function Home() {
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [tableNumber, setTableNumber] = useState("");
   const [restaurantInfo, setRestaurantInfo] = useState(null);
+  const [guestIdLocal, setGuestIdLocal] = useState("");
+  const [loyaltyPoints, setLoyaltyPoints] = useState(null);
+  const [showGuestAssist, setShowGuestAssist] = useState(false);
+  const [assistSending, setAssistSending] = useState(false);
   const { slug, token } = useParams();
 
   const restaurantDisplayName = slug
@@ -45,9 +54,19 @@ export default function Home() {
 
   useEffect(() => {
     if (!slug || !token) return;
-    ensureGuestSession(token).catch((err) => {
-      console.error("Failed to initialize guest session", err);
-    });
+    ensureGuestSession(token)
+      .then(async (session) => {
+        setGuestIdLocal(session.guestId || "");
+        try {
+          const bal = await getGuestLoyalty({ guestId: session.guestId, qrToken: token });
+          setLoyaltyPoints(bal.points ?? 0);
+        } catch {
+          setLoyaltyPoints(0);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to initialize guest session", err);
+      });
     fetchTables();
     fetchPromoBanners();
     fetchRestaurantInfo();
@@ -94,6 +113,42 @@ export default function Home() {
 
   const handleScanSuccess = (data) => {
     toast.success(`QR scanned: ${data}`);
+  };
+
+  const shareMenuLink = async () => {
+    const path = `/menu/${slug}/${token}`;
+    const url = `${window.location.origin}${path}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: restaurantInfo?.name || "Menu",
+          text: "Order from our table menu",
+          url,
+        });
+      } else {
+        window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, "_blank");
+      }
+    } catch {
+      await navigator.clipboard?.writeText?.(url);
+      toast.success("Menu link copied");
+    }
+  };
+
+  const sendGuestRequest = async (requestType) => {
+    if (!guestIdLocal) {
+      toast.error("Session not ready — try again.");
+      return;
+    }
+    try {
+      setAssistSending(true);
+      await postGuestTableRequest({ qrToken: token, guestId: guestIdLocal, requestType });
+      toast.success("Staff notified on their dashboards.");
+      setShowGuestAssist(false);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Could not send request");
+    } finally {
+      setAssistSending(false);
+    }
   };
 
   const heroImage =
@@ -162,12 +217,27 @@ export default function Home() {
           >
             <QrCode size={14} /> Scan another QR code
           </button>
+          {loyaltyPoints != null && (
+            <p className="mt-3 text-sm font-bold text-primary-700">
+              Your reward points: {loyaltyPoints} pts
+            </p>
+          )}
           <Link
             to={`/menu/${slug}/${token}`}
             className="mt-6 w-full rounded-2xl bg-primary-600 py-4 font-black text-white shadow-lg shadow-primary-900/20 transition-all active:scale-95"
           >
             View Menu
           </Link>
+          <button
+            type="button"
+            onClick={shareMenuLink}
+            className="mt-3 w-full rounded-2xl border border-gray-200 py-3 text-sm font-black text-gray-800 transition-all active:scale-95"
+          >
+            Share menu (WhatsApp / apps)
+          </button>
+          <p className="mt-2 text-[10px] font-semibold text-gray-400">
+            Install this menu like an app: use your browser &quot;Add to Home Screen&quot; for quick reopen and offline-friendly caching (PWA).
+          </p>
         </div>
 
         <div className="mt-6 grid w-[90%] max-w-md grid-cols-3 gap-3">
@@ -190,11 +260,15 @@ export default function Home() {
         </div>
 
         <div className="mt-6 grid w-[90%] max-w-md grid-cols-3 gap-4">
-          <button onClick={() => setShowWaiters(true)} className="flex flex-col items-center justify-center rounded-2xl border border-gray-100 bg-white p-4 shadow-sm active:bg-gray-100">
+          <button
+            type="button"
+            onClick={() => setShowGuestAssist(true)}
+            className="flex flex-col items-center justify-center rounded-2xl border border-gray-100 bg-white p-4 shadow-sm active:bg-gray-100"
+          >
             <div className="mb-2 rounded-full bg-orange-50 p-3 text-orange-500">
               <Phone size={20} />
             </div>
-            <span className="text-xs font-semibold text-gray-700">Call Waiter</span>
+            <span className="text-xs font-semibold text-gray-700">Call / assist</span>
           </button>
 
           <button onClick={() => setShowOffers(true)} className="relative flex flex-col items-center justify-center rounded-2xl border border-gray-100 bg-white p-4 shadow-sm active:bg-gray-100">
@@ -243,6 +317,41 @@ export default function Home() {
         <SideBar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
         <UserProfile isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
         <Waiters isOpen={showWaiters} onClose={() => setShowWaiters(false)} />
+        {showGuestAssist && (
+          <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 px-4 pb-8 pt-12">
+            <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
+              <p className="text-center text-lg font-black text-gray-950">Need something?</p>
+              <p className="mt-1 text-center text-xs text-gray-500">
+                We alert the restaurant and waiter dashboards in real time.
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {[
+                  { type: "call_waiter", label: "Call waiter" },
+                  { type: "need_water", label: "Water" },
+                  { type: "need_tissue", label: "Tissue" },
+                  { type: "need_bill", label: "Bill" },
+                ].map((btn) => (
+                  <button
+                    key={btn.type}
+                    type="button"
+                    disabled={assistSending}
+                    onClick={() => sendGuestRequest(btn.type)}
+                    className="rounded-2xl border border-gray-200 py-3 text-sm font-bold text-gray-800 disabled:opacity-50"
+                  >
+                    {btn.label}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="mt-3 w-full rounded-2xl py-3 text-sm font-semibold text-gray-500"
+                onClick={() => setShowGuestAssist(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
         <Offers isOpen={showOffers} onClose={() => setShowOffers(false)} slug={slug} />
         <Feedback isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
         <QRScannerModal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} onScanSuccess={handleScanSuccess} />

@@ -21,6 +21,7 @@ export default function Feedback({ isOpen, onClose, qrToken }) {
   const [hoveredStar, setHoveredStar]       = useState(0)
   const [starRating, setStarRating]         = useState(0)
   const [comment, setComment]               = useState('')
+  const [reviewPhotoUrl, setReviewPhotoUrl] = useState('')
   const [submitted, setSubmitted]           = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [feedbackEnabled, setFeedbackEnabled] = useState(true)
@@ -52,6 +53,7 @@ export default function Feedback({ isOpen, onClose, qrToken }) {
         setStarRating(0)
         setHoveredStar(0)
         setComment('')
+        setReviewPhotoUrl('')
       }, 300)
     }
   }, [isOpen])
@@ -67,6 +69,7 @@ export default function Feedback({ isOpen, onClose, qrToken }) {
         systemRating: starRating,
         serviceRating: selectedRating,
         comment,
+        reviewImages: reviewPhotoUrl.trim() ? [reviewPhotoUrl.trim()] : [],
       })
       setSubmitted(true)
       setTimeout(() => onClose(), 2500)
@@ -260,6 +263,16 @@ export default function Feedback({ isOpen, onClose, qrToken }) {
                         placeholder="What did you love or what can we improve?"
                         className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm resize-none focus:outline-none focus:border-orange-400 transition-colors placeholder:text-gray-300 text-gray-700"
                         rows={3}
+                      />
+                      <p className="mt-3 text-sm font-semibold text-gray-700 mb-2">
+                        Review photo URL <span className="text-gray-400 font-normal">(optional)</span>
+                      </p>
+                      <input
+                        type="url"
+                        value={reviewPhotoUrl}
+                        onChange={(e) => setReviewPhotoUrl(e.target.value)}
+                        placeholder="Link to a photo (e.g. Cloudinary or image URL)"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:border-orange-400 text-gray-700"
                       />
                     </div>
 

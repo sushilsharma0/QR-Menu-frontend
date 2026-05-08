@@ -20,8 +20,10 @@ import {
   clearGuestCart,
   ensureGuestSession,
   getGuestCart,
+  getDiningInsights,
   removeGuestCartItem,
   updateGuestCartItem,
+  addItemToGuestCart,
 } from "../../services/customer";
 
 const Cart = () => {
@@ -35,6 +37,8 @@ const Cart = () => {
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [applyingPromo, setApplyingPromo] = useState(false);
   const [guestId, setGuestId] = useState("");
+  const [orderAgainLines, setOrderAgainLines] = useState([]);
+  const [reorderBusy, setReorderBusy] = useState(false);
   const { toasts, removeToast, success, error, warning } = useToast();
 
   useEffect(() => {
@@ -44,92 +48,130 @@ const Cart = () => {
         setGuestId(session.guestId);
         const cart = await getGuestCart({ guestId: session.guestId, qrToken: token });
         const normalized = (cart.items || []).map((item) => ({
-          _id: item.menuItem?._id || item.menuItem,
+          lineId: item._id ? String(item._id) : null,
+          menuItemId: item.menuItem?._id || item.menuItem,
           name: item.menuItem?.name || "Item",
           image: item.menuItem?.image || "",
           price: item.price,
           quantity: item.quantity,
           note: item.notes || "",
+          cookingInstructions: item.cookingInstructions || "",
+          customizations: item.customizations || [],
+          addOns: item.addOns || [],
         }));
         setCartItems(normalized);
+
+        if (slug) {
+          const insights = await getDiningInsights({
+            restaurantSlug: slug,
+            guestId: session.guestId,
+            qrToken: token,
+          });
+          setOrderAgainLines(insights?.orderAgain || []);
+        }
       } catch (err) {
         console.error("Failed to load guest cart", err);
         error("Failed to load cart");
       }
     };
     init();
-  }, [token]);
+  }, [token, slug]);
 
   // Increase quantity
-  const increaseQty = async (id) => {
-    const current = cartItems.find((item) => item._id === id);
+  const mapCartRows = (cart) =>
+    (cart.items || []).map((item) => ({
+      lineId: item._id ? String(item._id) : null,
+      menuItemId: item.menuItem?._id || item.menuItem,
+      name: item.menuItem?.name || "Item",
+      image: item.menuItem?.image || "",
+      price: item.price,
+      quantity: item.quantity,
+      note: item.notes || "",
+      cookingInstructions: item.cookingInstructions || "",
+      customizations: item.customizations || [],
+      addOns: item.addOns || [],
+    }));
+
+  const increaseQty = async (menuItemId, lineId) => {
+    const current = lineId
+      ? cartItems.find((item) => item.menuItemId === menuItemId && item.lineId === lineId)
+      : cartItems.find((item) => item.menuItemId === menuItemId);
     if (!current || !guestId) return;
     try {
       const cart = await updateGuestCartItem({
         guestId,
         qrToken: token,
-        menuItemId: id,
+        menuItemId,
+        lineId: current.lineId || undefined,
         quantity: current.quantity + 1,
       });
-      setCartItems(
-        (cart.items || []).map((item) => ({
-          _id: item.menuItem?._id || item.menuItem,
-          name: item.menuItem?.name || "Item",
-          image: item.menuItem?.image || "",
-          price: item.price,
-          quantity: item.quantity,
-          note: item.notes || "",
-        }))
-      );
+      setCartItems(mapCartRows(cart));
     } catch (err) {
       error("Failed to update item quantity");
     }
   };
 
   // Decrease quantity
-  const decreaseQty = async (id) => {
-    const current = cartItems.find((item) => item._id === id);
+  const decreaseQty = async (menuItemId, lineId) => {
+    const current = lineId
+      ? cartItems.find((item) => item.menuItemId === menuItemId && item.lineId === lineId)
+      : cartItems.find((item) => item.menuItemId === menuItemId);
     if (!current || !guestId) return;
     try {
       const cart = await updateGuestCartItem({
         guestId,
         qrToken: token,
-        menuItemId: id,
+        menuItemId,
+        lineId: current.lineId || undefined,
         quantity: current.quantity - 1,
       });
-      setCartItems(
-        (cart.items || []).map((item) => ({
-          _id: item.menuItem?._id || item.menuItem,
-          name: item.menuItem?.name || "Item",
-          image: item.menuItem?.image || "",
-          price: item.price,
-          quantity: item.quantity,
-          note: item.notes || "",
-        }))
-      );
+      setCartItems(mapCartRows(cart));
     } catch (err) {
       error("Failed to update item quantity");
     }
   };
 
   // Remove item from cart
-  const removeItem = async (id) => {
+  const removeItem = async (menuItemId, lineId) => {
     if (!guestId) return;
     try {
-      const cart = await removeGuestCartItem({ guestId, qrToken: token, menuItemId: id });
-      setCartItems(
-        (cart.items || []).map((item) => ({
-          _id: item.menuItem?._id || item.menuItem,
-          name: item.menuItem?.name || "Item",
-          image: item.menuItem?.image || "",
-          price: item.price,
-          quantity: item.quantity,
-          note: item.notes || "",
-        }))
-      );
-      success('Item removed from cart');
+      const cart = await removeGuestCartItem({
+        guestId,
+        qrToken: token,
+        menuItemId,
+        lineId: lineId || undefined,
+      });
+      setCartItems(mapCartRows(cart));
+      success("Item removed from cart");
     } catch (err) {
-      error('Failed to remove cart item');
+      error("Failed to remove cart item");
+    }
+  };
+
+  const handleOrderAgain = async () => {
+    if (!guestId || !orderAgainLines.length) return;
+    try {
+      setReorderBusy(true);
+      for (const line of orderAgainLines) {
+        const mid = line.menuItemId || line.menuItem;
+        if (!mid) continue;
+        await addItemToGuestCart({
+          guestId,
+          qrToken: token,
+          menuItemId: mid,
+          quantity: line.quantity || 1,
+          cookingInstructions: line.cookingInstructions || "",
+          customizations: line.customizations || [],
+          addOns: line.addOns || [],
+        });
+      }
+      const cart = await getGuestCart({ guestId, qrToken: token });
+      setCartItems(mapCartRows(cart));
+      success("Previous order added to cart");
+    } catch (err) {
+      error(err?.response?.data?.message || "Could not reorder");
+    } finally {
+      setReorderBusy(false);
     }
   };
 
@@ -167,7 +209,7 @@ const Cart = () => {
         qrToken: token,
         code: promoCode.trim(),
         items: cartItems.map((item) => ({
-          menuItemId: item._id,
+          menuItemId: item.menuItemId,
           quantity: item.quantity,
         })),
       });
@@ -203,9 +245,12 @@ const Cart = () => {
         customerEmail: dashUser?.email || "",
         promoCode: appliedPromo?.code || "",
         items: cartItems.map((item) => ({
-          menuItemId: item._id,
+          menuItemId: item.menuItemId,
           quantity: item.quantity,
           note: item.note || "",
+          cookingInstructions: item.cookingInstructions || "",
+          customizations: item.customizations || [],
+          addOns: item.addOns || [],
         })),
       };
 
@@ -275,24 +320,56 @@ const Cart = () => {
       </div>
 
       <div className="px-5 py-5 space-y-4">
+        {orderAgainLines.length > 0 && (
+          <div className="rounded-3xl border border-secondary-200 bg-secondary-50/80 p-4">
+            <p className="text-sm font-black text-gray-900">Order again</p>
+            <p className="text-xs text-gray-600 mt-1">
+              One tap adds your last order from this table with the same customizations.
+            </p>
+            <button
+              type="button"
+              disabled={reorderBusy}
+              onClick={handleOrderAgain}
+              className="mt-3 w-full rounded-2xl bg-secondary-600 py-3 text-sm font-black text-white disabled:opacity-50"
+            >
+              {reorderBusy ? "Adding…" : "Add last order to cart"}
+            </button>
+          </div>
+        )}
         {cartItems.map((item) => (
-          <motion.div layout key={item._id} className="flex items-center gap-4 rounded-3xl border border-gray-100 bg-white p-3 shadow-sm">
+          <motion.div
+            layout
+            key={item.lineId || item.menuItemId}
+            className="flex items-center gap-4 rounded-3xl border border-gray-100 bg-white p-3 shadow-sm"
+          >
             <img
               src={item.image}
               alt={item.name}
               className="w-20 h-20 object-cover rounded-2xl"
             />
 
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <h3 className="font-bold text-gray-800 text-sm">{item.name}</h3>
               <p className="text-orange-500 font-bold text-sm mt-1">
                 Rs. {item.price}
               </p>
+              {(item.customizations || []).length > 0 && (
+                <p className="text-[11px] text-gray-500 mt-1">
+                  {(item.customizations || [])
+                    .map((c) => `${c.name || c.group}: ${c.value}`)
+                    .join(" · ")}
+                </p>
+              )}
+              {item.cookingInstructions ? (
+                <p className="text-[11px] text-amber-700 mt-0.5">
+                  Note: {item.cookingInstructions}
+                </p>
+              ) : null}
             </div>
 
             <div className="flex items-center gap-3 bg-gray-50 p-1 rounded-xl border border-gray-100">
               <button
-                onClick={() => decreaseQty(item._id)}
+                onClick={() => decreaseQty(item.menuItemId, item.lineId)}
                 className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-gray-400 active:scale-90"
               >
                 <Minus size={14} />
@@ -301,7 +378,7 @@ const Cart = () => {
                 {item.quantity}
               </span>
               <button
-                onClick={() => increaseQty(item._id)}
+                onClick={() => increaseQty(item.menuItemId, item.lineId)}
                 className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-gray-700 active:scale-90"
               >
                 <Plus size={14} />
@@ -309,7 +386,7 @@ const Cart = () => {
             </div>
             
             <button
-              onClick={() => removeItem(item._id)}
+              onClick={() => removeItem(item.menuItemId, item.lineId)}
               className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
               <Trash2 size={18} />

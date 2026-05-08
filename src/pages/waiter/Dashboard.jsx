@@ -6,7 +6,7 @@ import api from '../../services/api'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { useSocket } from '../../hooks/useSocket'
 
-const ACTIVE_STATUSES = ['pending', 'confirmed', 'preparing', 'ready']
+const ACTIVE_STATUSES = ['pending', 'confirmed', 'preparing', 'cooking', 'ready']
 
 const WaiterDashboard = () => {
   const navigate = useNavigate()
@@ -44,11 +44,24 @@ const WaiterDashboard = () => {
   useEffect(() => {
     if (!socket) return undefined
     const onRealtime = () => fetchData()
+    const onGuestRequest = (payload) => {
+      const labels = {
+        call_waiter: 'Call waiter',
+        need_water: 'Need water',
+        need_tissue: 'Need tissue',
+        need_bill: 'Request bill',
+      }
+      const label = labels[payload?.requestType] || 'Guest request'
+      const table = payload?.tableNumber != null ? `Table ${payload.tableNumber}` : 'A table'
+      toast(`${label} — ${table}`, { duration: 6500 })
+    }
     socket.on('new_order', onRealtime)
     socket.on('order_updated', onRealtime)
+    socket.on('guest_table_request', onGuestRequest)
     return () => {
       socket.off('new_order', onRealtime)
       socket.off('order_updated', onRealtime)
+      socket.off('guest_table_request', onGuestRequest)
     }
   }, [socket])
 

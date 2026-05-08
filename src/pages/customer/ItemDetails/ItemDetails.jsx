@@ -25,7 +25,8 @@ const ItemDetails = () => {
   const { slug, token, id } = useParams();
 
   const [quantity, setQuantity] = useState(1);
-  const [selectedAddons, setSelectedAddons] = useState([]);
+  const [selections, setSelections] = useState({});
+  const [cookingInstructions, setCookingInstructions] = useState("");
   const [isFavorite, setIsFavorite] = useState(false);
   const [showMore, setShowMore] = useState(false);
 
@@ -40,6 +41,21 @@ const ItemDetails = () => {
     fetchItemDetails();
   }, [id]);
 
+  useEffect(() => {
+    const groups = item?.customizations;
+    if (!groups?.length) {
+      setSelections({});
+      return;
+    }
+    const init = {};
+    groups.forEach((c) => {
+      if (c?.name && c?.options?.length) {
+        init[c.name] = c.options[0];
+      }
+    });
+    setSelections(init);
+  }, [item._id]);
+
   const fetchItemDetails = async () => {
     try {
       const res = await api.get(
@@ -53,33 +69,6 @@ const ItemDetails = () => {
     }
   };
 
-  const addons = [
-    {
-      id: "a1",
-      name: "Grilled Chicken",
-      price: 120,
-      description: "Tender grilled chicken pieces",
-    },
-    {
-      id: "a2",
-      name: "Extra Cheese",
-      price: 80,
-      description: "Loaded with mozzarella",
-    },
-    {
-      id: "a3",
-      name: "Mushrooms",
-      price: 90,
-      description: "Fresh button mushrooms",
-    },
-    {
-      id: "a4",
-      name: "Olives",
-      price: 70,
-      description: "Black olives",
-    },
-  ];
-
   const nutritionalInfo = [
     { label: "Protein", value: "18g" },
     { label: "Carbs", value: "52g" },
@@ -87,30 +76,50 @@ const ItemDetails = () => {
     { label: "Fiber", value: "3g" },
   ];
 
-  const toggleAddon = (id) => {
-    setSelectedAddons((prev) =>
-      prev.includes(id)
-        ? prev.filter((i) => i !== id)
-        : [...prev, id]
-    );
-  };
+  const lineTotal = () => Number(item.price || 0) * quantity;
 
-  const calculateTotal = () => {
-    const addonsTotal = addons
-      .filter((a) => selectedAddons.includes(a.id))
-      .reduce((sum, a) => sum + a.price, 0);
-
-    return (item.price + addonsTotal) * quantity;
+  const handleShare = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const title = item?.name || "Menu item";
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title,
+          text: `Check out ${title} on the menu`,
+          url,
+        });
+      } else {
+        window.open(
+          `https://wa.me/?text=${encodeURIComponent(`${title} — ${url}`)}`,
+          "_blank",
+        );
+      }
+    } catch (err) {
+      if (url) {
+        await navigator.clipboard?.writeText?.(url);
+        success("Link copied");
+      }
+    }
   };
 
   const handleAddToCart = async () => {
     try {
       const session = await ensureGuestSession(token);
+      const customizations = Object.entries(selections).map(([name, value]) => ({
+        name,
+        value,
+      }));
+      const addOnLabels = customizations
+        .filter((c) => /add|extra|topping/i.test(c.name))
+        .map((c) => c.value);
       await addItemToGuestCart({
         guestId: session.guestId,
         qrToken: token,
         menuItemId: item._id,
         quantity,
+        cookingInstructions: cookingInstructions.slice(0, 500),
+        customizations,
+        addOns: addOnLabels,
       });
       success(`${item.name} added to cart`);
     } catch (err) {
@@ -151,6 +160,7 @@ const ItemDetails = () => {
 
           <div className="flex gap-2">
             <FramerMotion.motion.button
+              type="button"
               whileTap={{ scale: 0.9 }}
               onClick={() => setIsFavorite(!isFavorite)}
               className={`p-3 rounded-2xl shadow-lg ${
@@ -166,7 +176,9 @@ const ItemDetails = () => {
             </FramerMotion.motion.button>
 
             <FramerMotion.motion.button
+              type="button"
               whileTap={{ scale: 0.9 }}
+              onClick={handleShare}
               className="p-3 bg-white/90 rounded-2xl shadow-lg"
             >
               <Share2 size={22} />
@@ -175,9 +187,14 @@ const ItemDetails = () => {
         </div>
 
         {/* Bestseller */}
-        {item.isBestseller && (
+        {(item.isBestseller || item.highlightTag === "trending") && (
           <div className="absolute bottom-12 left-6 bg-orange-500 text-white px-4 py-1.5 rounded-full text-xs font-semibold">
-            Bestseller
+            {item.highlightTag === "trending" ? "Trending" : "Bestseller"}
+          </div>
+        )}
+        {item.highlightTag === "chef_special" && (
+          <div className="absolute bottom-12 right-6 bg-emerald-600 text-white px-4 py-1.5 rounded-full text-xs font-semibold">
+            Chef special
           </div>
         )}
       </div>
@@ -307,58 +324,44 @@ const ItemDetails = () => {
           </div>
         </div>
 
-        {/* Addons */}
-        <div className="mt-8">
-          <h3 className="font-bold text-gray-800 mb-4">
-            Add-ons
-          </h3>
-
-          <div className="space-y-3">
-            {addons.map((addon) => (
-              <label
-                key={addon.id}
-                className={`flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                  selectedAddons.includes(addon.id)
-                    ? "border-orange-500 bg-orange-50"
-                    : "border-gray-100"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      selectedAddons.includes(addon.id)
-                        ? "bg-orange-500 border-orange-500"
-                        : "border-gray-300"
-                    }`}
-                  >
-                    {selectedAddons.includes(addon.id) && (
-                      <Check size={12} className="text-white" />
-                    )}
-                  </div>
-
-                  <div>
-                    <span className="block text-sm font-semibold">
-                      {addon.name}
-                    </span>
-
-                    <span className="text-xs text-gray-400">
-                      {addon.description}
-                    </span>
-                  </div>
+        {(item.customizations || []).length > 0 && (
+          <div className="mt-8 space-y-5">
+            <h3 className="font-bold text-gray-800">Customize</h3>
+            {(item.customizations || []).map((group) => (
+              <div key={group.name}>
+                <p className="text-sm font-semibold text-gray-700 mb-2">{group.name}</p>
+                <div className="flex flex-wrap gap-2">
+                  {(group.options || []).map((opt) => (
+                    <button
+                      type="button"
+                      key={`${group.name}-${opt}`}
+                      onClick={() =>
+                        setSelections((prev) => ({ ...prev, [group.name]: opt }))
+                      }
+                      className={`rounded-xl border px-3 py-2 text-xs font-bold transition ${
+                        selections[group.name] === opt
+                          ? "border-orange-500 bg-orange-50 text-orange-700"
+                          : "border-gray-200 bg-white text-gray-700"
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
                 </div>
-
-                <span className="text-orange-600 text-sm font-semibold">
-                  + Rs. {addon.price}
-                </span>
-
-                <input
-                  type="checkbox"
-                  className="hidden"
-                  onChange={() => toggleAddon(addon.id)}
-                />
-              </label>
+              </div>
             ))}
           </div>
+        )}
+
+        <div className="mt-8">
+          <h3 className="font-bold text-gray-800 mb-2">Cooking instructions</h3>
+          <textarea
+            value={cookingInstructions}
+            onChange={(e) => setCookingInstructions(e.target.value)}
+            placeholder="e.g. No onion, less oil, allergy note…"
+            className="w-full rounded-2xl border border-gray-200 p-3 text-sm min-h-[88px] outline-none focus:ring-2 focus:ring-orange-400"
+            maxLength={500}
+          />
         </div>
 
         {/* Quantity */}
@@ -398,7 +401,7 @@ const ItemDetails = () => {
             </span>
 
             <span className="font-bold text-orange-600">
-              Rs. {calculateTotal()}
+              Rs. {lineTotal()}
             </span>
           </div>
         </div>
@@ -428,7 +431,7 @@ const ItemDetails = () => {
           </div>
 
           <span className="text-white font-bold text-lg">
-            Rs. {calculateTotal()}
+            Rs. {lineTotal()}
           </span>
         </button>
       </div>

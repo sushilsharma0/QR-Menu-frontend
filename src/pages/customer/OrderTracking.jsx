@@ -5,6 +5,7 @@ import {
   Check,
   ChefHat,
   Clock,
+  Flame,
   PackageCheck,
   Radio,
   ReceiptText,
@@ -18,15 +19,27 @@ import Feedback from "../../components/customer/homepage/Feedback";
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
 
-const statusOrder = ["pending", "confirmed", "preparing", "ready", "served"];
+const getActiveStepIndex = (status, paymentStatus) => {
+  if (status === "cancelled") return -1;
+  if (status === "completed") return 5;
+  if (status === "served" && paymentStatus === "paid") return 5;
+  if (status === "pending" || status === "confirmed") return 0;
+  if (status === "preparing") return 1;
+  if (status === "cooking") return 2;
+  if (status === "ready") return 3;
+  if (status === "served") return 4;
+  return 0;
+};
 
-const getStatusText = (status) => {
-  if (status === "pending") return "Order sent to kitchen";
-  if (status === "confirmed") return "Restaurant confirmed your order";
-  if (status === "preparing") return "Chefs are preparing your food";
-  if (status === "ready") return "Your order is ready";
-  if (status === "served") return "Order completed";
+const getStatusText = (status, paymentStatus) => {
   if (status === "cancelled") return "Order cancelled";
+  if (status === "completed" || (status === "served" && paymentStatus === "paid")) return "Order completed — thank you!";
+  if (status === "pending") return "Order received by the restaurant";
+  if (status === "confirmed") return "Restaurant confirmed your order";
+  if (status === "preparing") return "Kitchen is preparing your order";
+  if (status === "cooking") return "Your food is cooking now";
+  if (status === "ready") return "Your order is ready for pickup";
+  if (status === "served") return "Served at your table";
   return "Tracking your order";
 };
 
@@ -39,6 +52,10 @@ const normalizeRealtimeOrder = (payload, current) => ({
   tableNumber: payload?.table?.tableNumber || payload?.tableNumber || current?.tableNumber,
   totalAmount: payload?.grandTotal || payload?.totalAmount || current?.totalAmount,
   orderTime: payload?.createdAt || payload?.orderTime || current?.orderTime,
+  kitchenDelayMinutes: payload?.kitchenDelayMinutes ?? current?.kitchenDelayMinutes,
+  kitchenDelayMessage: payload?.kitchenDelayMessage ?? current?.kitchenDelayMessage,
+  kitchenDelayUpdatedAt: payload?.kitchenDelayUpdatedAt ?? current?.kitchenDelayUpdatedAt,
+  estimatedWaitTime: payload?.estimatedWaitTime ?? current?.estimatedWaitTime,
 });
 
 const OrderTracking = () => {
@@ -121,8 +138,10 @@ const OrderTracking = () => {
     }
   }, [navigate, order?.status, qrToken]);
 
-  const currentStatusIndex = statusOrder.indexOf(order?.status || "pending");
-  const canShowBill = order?.status === "served";
+  const currentStatusIndex = getActiveStepIndex(order?.status, order?.paymentStatus);
+  const progressPct =
+    currentStatusIndex < 0 ? 0 : Math.min(100, Math.round(((currentStatusIndex + 1) / 6) * 100));
+  const canShowBill = order?.status === "served" || order?.status === "completed";
   const subtotal = Number(
     order?.subtotal ??
       order?.totalAmount ??
@@ -132,30 +151,54 @@ const OrderTracking = () => {
   const discountAmount = Number(order?.discountAmount || 0);
   const grandTotal = Number(order?.grandTotal ?? order?.totalAmount ?? Math.max(0, subtotal + taxAmount - discountAmount));
 
-  const steps = useMemo(
-    () => [
-      { status: "pending", label: "Sent", icon: Clock },
-      { status: "confirmed", label: "Confirmed", icon: Check },
-      { status: "preparing", label: "Preparing", icon: ChefHat },
-      { status: "ready", label: "Ready", icon: Utensils },
-      { status: "served", label: "Served", icon: PackageCheck },
-    ].map((step, idx) => {
-      const historyEntry = (order?.statusHistory || []).find((entry) => entry.status === step.status);
-      const isCompleted = idx <= currentStatusIndex;
-      const isActive = idx === currentStatusIndex && order?.status !== "served";
+  const steps = useMemo(() => {
+    const defs = [
+      { stepIndex: 0, statuses: ["pending", "confirmed"], label: "Order received", icon: Radio },
+      { stepIndex: 1, statuses: ["preparing"], label: "Preparing", icon: ChefHat },
+      { stepIndex: 2, statuses: ["cooking"], label: "Cooking", icon: Flame },
+      { stepIndex: 3, statuses: ["ready"], label: "Ready", icon: Utensils },
+      { stepIndex: 4, statuses: ["served"], label: "Served", icon: PackageCheck },
+      {
+        stepIndex: 5,
+        statuses: ["completed"],
+        label: "Completed",
+        icon: Check,
+        paymentComplete: true,
+      },
+    ];
+
+    return defs.map((step, idx) => {
+      const historyEntry = (order?.statusHistory || []).find((entry) =>
+        step.statuses.includes(entry.status),
+      );
+      const isCancelled = order?.status === "cancelled";
+      const isCompleted =
+        !isCancelled &&
+        currentStatusIndex >= 0 &&
+        (idx < currentStatusIndex || (currentStatusIndex === 5 && idx === 5));
+      const isActive =
+        !isCancelled && idx === currentStatusIndex && currentStatusIndex < 5;
+
+      let time = "Waiting";
+      if (historyEntry?.timestamp) {
+        time = new Date(historyEntry.timestamp).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      } else if (idx === 5 && order?.paymentStatus === "paid") {
+        time = "Paid";
+      } else if (isCompleted) {
+        time = "Done";
+      }
+
       return {
         ...step,
         completed: isCompleted,
         active: isActive,
-        time: historyEntry?.timestamp
-          ? new Date(historyEntry.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-          : isCompleted
-            ? "Done"
-            : "Waiting",
+        time,
       };
-    }),
-    [currentStatusIndex, order]
-  );
+    });
+  }, [currentStatusIndex, order]);
 
   if (loading) {
     return (
@@ -210,10 +253,21 @@ const OrderTracking = () => {
 
             <div className="mt-8">
               <p className="text-xs font-black uppercase tracking-[0.22em] text-surface-100">Current Status</p>
-              <h2 className="mt-2 text-3xl font-black leading-tight">{getStatusText(order.status)}</h2>
+              <h2 className="mt-2 text-3xl font-black leading-tight">
+                {getStatusText(order.status, order.paymentStatus)}
+              </h2>
               <p className="mt-3 text-sm leading-6 text-slate-300">
-                {order.estimatedWaitTime ? `Estimated wait time is ${order.estimatedWaitTime} minutes.` : "The restaurant team will update each stage from their dashboard."}
+                {order.estimatedCompletionTime
+                  ? `Estimated ready around ${new Date(order.estimatedCompletionTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`
+                  : order.estimatedWaitTime
+                    ? `Typical prep window: about ${order.estimatedWaitTime} minutes after confirmation.`
+                    : "The restaurant updates each stage live — stay on this screen for Socket.IO updates."}
               </p>
+              {order.kitchenDelayMessage ? (
+                <div className="mt-4 rounded-2xl border border-amber-300/40 bg-amber-500/15 px-4 py-3 text-sm font-semibold text-amber-100">
+                  {order.kitchenDelayMessage}
+                </div>
+              ) : null}
             </div>
 
             <div className="mt-6 flex items-center justify-between rounded-2xl bg-white/10 p-4">
@@ -236,12 +290,25 @@ const OrderTracking = () => {
             </span>
           </div>
 
+          <div className="mb-6">
+            <div className="flex justify-between text-[11px] font-bold text-gray-500">
+              <span>Progress</span>
+              <span>{progressPct}%</span>
+            </div>
+            <div className="mt-2 h-3 w-full overflow-hidden rounded-full bg-gray-100">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-primary-600 to-secondary-500 transition-all duration-500"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
+
           <div className="space-y-4">
             {steps.map((step, index) => {
               const Icon = step.icon;
               return (
                 <motion.div
-                  key={step.status}
+                  key={step.label}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
@@ -264,7 +331,9 @@ const OrderTracking = () => {
                     <p className={`text-sm font-black ${step.completed || step.active ? "text-gray-900" : "text-gray-400"}`}>{step.label}</p>
                     <p className="text-xs font-semibold text-gray-400">{step.time}</p>
                   </div>
-                  {step.active && <span className="h-2.5 w-2.5 rounded-full bg-orange-500 animate-ping" />}
+                  {step.active && (
+                    <span className="h-2.5 w-2.5 rounded-full bg-orange-500 animate-ping" />
+                  )}
                 </motion.div>
               );
             })}
@@ -320,6 +389,9 @@ const OrderTracking = () => {
                         <p className="mt-1 text-xs font-semibold text-gray-400">
                           {item.quantity} x {formatMoney(item.price)}
                         </p>
+                        {item.specialInstructions ? (
+                          <p className="mt-1 text-[11px] text-gray-500">{item.specialInstructions}</p>
+                        ) : null}
                       </div>
                       <p className="text-sm font-black text-gray-900">{formatMoney(lineTotal)}</p>
                     </div>

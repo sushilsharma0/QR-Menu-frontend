@@ -34,7 +34,7 @@ const KitchenDashboard = () => {
     try {
       setLoading(true)
       const res = await api.get('/restaurant/customer-orders', {
-        params: { status: 'pending,confirmed,preparing,ready' },
+        params: { status: 'pending,confirmed,preparing,cooking,ready' },
       })
       setOrders(res.data.data.orders)
     } catch (error) {
@@ -65,6 +65,18 @@ const KitchenDashboard = () => {
     }
   }
 
+  const notifyDelay = async (orderId, minutes) => {
+    try {
+      await api.patch(`/restaurant/customer-orders/${orderId}/status`, {
+        kitchenDelayMinutes: minutes,
+      })
+      toast.success(`Guests notified: +${minutes} min`)
+      fetchOrders()
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Could not send delay notice')
+    }
+  }
+
   const getStatusStyle = (status) => {
     const styles = {
       pending: {
@@ -81,6 +93,11 @@ const KitchenDashboard = () => {
         card: 'border-violet-200 bg-violet-50/60',
         badge: 'bg-violet-100 text-violet-700',
         label: 'Preparing',
+      },
+      cooking: {
+        card: 'border-fuchsia-200 bg-fuchsia-50/60',
+        badge: 'bg-fuchsia-100 text-fuchsia-800',
+        label: 'Cooking',
       },
       ready: {
         card: 'border-emerald-200 bg-emerald-50/60',
@@ -101,11 +118,18 @@ const KitchenDashboard = () => {
       accent: 'from-sky-500 to-indigo-500',
     },
     {
-      id: 'progress-lane',
-      title: 'In Progress',
-      subtitle: 'Currently in preparation',
+      id: 'prep-lane',
+      title: 'Preparing',
+      subtitle: 'Prep and mise en place',
       status: ['preparing'],
       accent: 'from-violet-500 to-fuchsia-500',
+    },
+    {
+      id: 'cook-lane',
+      title: 'Cooking',
+      subtitle: 'On the line / grill',
+      status: ['cooking'],
+      accent: 'from-orange-500 to-rose-500',
     },
     {
       id: 'ready-lane',
@@ -118,7 +142,7 @@ const KitchenDashboard = () => {
 
   const totalOrders = orders.length
   const pendingCount = orders.filter((o) => ['pending', 'confirmed'].includes(o.status)).length
-  const preparingCount = orders.filter((o) => o.status === 'preparing').length
+  const preparingCount = orders.filter((o) => ['preparing', 'cooking'].includes(o.status)).length
   const readyCount = orders.filter((o) => o.status === 'ready').length
 
   if (loading) {
@@ -159,7 +183,7 @@ const KitchenDashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-lg:grid-cols-2">
         <div className="rounded-2xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm" title="Total orders currently active in kitchen workflow">
           <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Total Active</p>
           <div className="mt-2 flex items-center justify-between">
@@ -174,8 +198,8 @@ const KitchenDashboard = () => {
             <FiClock className="text-amber-600" />
           </div>
         </div>
-        <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4 shadow-sm" title="Orders currently being prepared">
-          <p className="text-xs uppercase tracking-wide text-violet-700">Cooking</p>
+        <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4 shadow-sm" title="Orders in prep or on the line">
+          <p className="text-xs uppercase tracking-wide text-violet-700">Prep / cooking</p>
           <div className="mt-2 flex items-center justify-between">
             <p className="text-2xl font-bold text-violet-900">{preparingCount}</p>
             <FiZap className="text-violet-600" />
@@ -190,7 +214,7 @@ const KitchenDashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {sections.map((section) => (
           <Card key={section.title}>
             <div id={section.id} />
@@ -247,14 +271,44 @@ const KitchenDashboard = () => {
                       </Button>
                     )}
                     {order.status === 'preparing' && (
-                      <Button
-                        size="sm"
-                        variant="success"
-                        onClick={() => updateStatus(order._id, 'ready')}
-                        title="Mark this order ready for serving"
-                      >
-                        <FiCheck className="mr-1" /> Mark Ready
-                      </Button>
+                      <>
+                        <Button
+                          size="sm"
+                          variant="success"
+                          onClick={() => updateStatus(order._id, 'cooking')}
+                          title="Move to active cooking"
+                        >
+                          <FiZap className="mr-1" /> Start cooking
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => notifyDelay(order._id, 10)}
+                          title="Notify guests of about 10 extra minutes"
+                        >
+                          +10 min delay
+                        </Button>
+                      </>
+                    )}
+                    {order.status === 'cooking' && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="success"
+                          onClick={() => updateStatus(order._id, 'ready')}
+                          title="Mark this order ready for serving"
+                        >
+                          <FiCheck className="mr-1" /> Mark ready
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => notifyDelay(order._id, 10)}
+                          title="Notify guests of about 10 extra minutes"
+                        >
+                          +10 min delay
+                        </Button>
+                      </>
                     )}
                     {order.status === 'ready' && (
                       <Button
