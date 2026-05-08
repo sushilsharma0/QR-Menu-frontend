@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
@@ -90,6 +90,7 @@ const RestaurantTickets = () => {
   const [filters, setFilters] = useState({ status: '', priority: '', search: '' })
   const [page, setPage] = useState(1)
   const [viewMode, setViewMode] = useState('table')
+  const hasLoadedTicketsRef = useRef(false)
 
   useEffect(() => {
     fetchTickets()
@@ -97,7 +98,7 @@ const RestaurantTickets = () => {
 
   const fetchTickets = async (quiet = false) => {
     try {
-      if (quiet) setRefreshing(true)
+      if (quiet || hasLoadedTicketsRef.current) setRefreshing(true)
       else setLoading(true)
 
       const params = {
@@ -113,6 +114,7 @@ const RestaurantTickets = () => {
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to load tickets')
     } finally {
+      hasLoadedTicketsRef.current = true
       setLoading(false)
       setRefreshing(false)
     }

@@ -16,8 +16,7 @@ import { io } from "socket.io-client";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../services/api";
 import Feedback from "../../components/customer/homepage/Feedback";
-
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
+import { getSocketOrigin } from "../../utils/runtimeConfig";
 
 const getActiveStepIndex = (status, paymentStatus) => {
   if (status === "cancelled") return -1;
@@ -97,7 +96,7 @@ const OrderTracking = () => {
   useEffect(() => {
     if (!order?.orderId) return undefined;
 
-    const socket = io(SOCKET_URL, {
+    const socket = io(getSocketOrigin(), {
       transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionAttempts: 5,

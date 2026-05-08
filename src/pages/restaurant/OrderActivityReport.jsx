@@ -42,14 +42,20 @@ import { formatters } from '../../utils/formatters'
 import { DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
 
 function defaultToDate() {
-  const d = new Date()
-  return d.toISOString().slice(0, 10)
+  return formatDateInputValue(new Date())
 }
 
 function defaultFromDate() {
   const d = new Date()
   d.setDate(d.getDate() - 30)
-  return d.toISOString().slice(0, 10)
+  return formatDateInputValue(d)
+}
+
+function formatDateInputValue(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 function SalesTooltip({ active, payload, label }) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import {
   FiRefreshCw, FiDownload, FiTrendingUp, FiTrendingDown,
   FiCreditCard, FiActivity, FiCalendar, FiX, FiClock, FiInfo
@@ -184,7 +184,7 @@ function exportCSV(transactions) {
 }
 
 // ── Transaction Detail Modal
-function TransactionDetail({ transaction, onClose }) {
+function TransactionDetail({ transaction, onClose, onRefunded }) {
   if (!transaction) return null
   
   const [refundReason, setRefundReason] = useState('')
@@ -203,8 +203,7 @@ function TransactionDetail({ transaction, onClose }) {
       })
       toast.success('Transaction refunded successfully')
       onClose()
-      // Trigger a refresh of transactions
-      window.location.reload()
+      onRefunded?.()
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to refund transaction')
     } finally {
@@ -408,10 +407,15 @@ const Transactions = () => {
   const [selectedTransaction, setSelectedTransaction] = useState(null)
   const PER_PAGE                        = 10
   const { socket }                      = useSocket()
+  const hasLoadedTransactionsRef        = useRef(false)
 
-  const fetchTransactions = useCallback(async () => {
+  const fetchTransactions = useCallback(async (quiet = false) => {
     try {
-      setLoading(true)
+      if (quiet || hasLoadedTransactionsRef.current) {
+        setLoading(false)
+      } else {
+        setLoading(true)
+      }
       const params = {}
       if (filters.method)    params.method    = filters.method
       if (filters.status)    params.status    = filters.status
@@ -424,6 +428,7 @@ const Transactions = () => {
     } catch {
       toast.error('Failed to fetch transactions')
     } finally {
+      hasLoadedTransactionsRef.current = true
       setLoading(false)
     }
   }, [filters])
@@ -449,7 +454,7 @@ const Transactions = () => {
     }
 
     const handleOrderUpdated = () => {
-      fetchTransactions()
+      fetchTransactions(true)
     }
 
     socket.on('payment_updated', handlePaymentUpdated)
@@ -512,7 +517,7 @@ const Transactions = () => {
           <Button variant="secondary" onClick={() => exportCSV(searched)}>
             <FiDownload className="mr-2" /> Export CSV
           </Button>
-          <Button variant="secondary" onClick={fetchTransactions}>
+          <Button variant="secondary" onClick={() => fetchTransactions(true)}>
             <FiRefreshCw className="mr-2" /> Refresh
           </Button>
         </div>
@@ -621,6 +626,7 @@ const Transactions = () => {
               {activeFilters} filter{activeFilters > 1 ? 's' : ''} active
             </span>
             <button
+              type="button"
               onClick={clearFilters}
               className="text-xs text-red-500 font-semibold hover:underline"
             >
@@ -687,6 +693,7 @@ const Transactions = () => {
                       <p className="font-medium">No transactions found</p>
                       {(activeFilters > 0 || search) && (
                         <button
+                          type="button"
                           onClick={clearFilters}
                           className="text-sm text-primary-600 hover:underline"
                         >
@@ -709,6 +716,7 @@ const Transactions = () => {
             </p>
             <div className="flex gap-1">
               <button
+                type="button"
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
                 className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50"
@@ -727,6 +735,7 @@ const Transactions = () => {
                     <span key={`ellipsis-${i}`} className="px-2 py-1.5 text-sm text-gray-400">…</span>
                   ) : (
                     <button
+                      type="button"
                       key={n}
                       onClick={() => setPage(n)}
                       className={`px-3 py-1.5 text-sm border rounded-lg ${
@@ -741,6 +750,7 @@ const Transactions = () => {
                 )
               }
               <button
+                type="button"
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
                 className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50"
@@ -757,6 +767,7 @@ const Transactions = () => {
         <TransactionDetail 
           transaction={selectedTransaction} 
           onClose={() => setSelectedTransaction(null)} 
+          onRefunded={() => fetchTransactions(true)}
         />
       )}
     </div>

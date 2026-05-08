@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -49,6 +49,13 @@ const PAYMENT_FILTERS = [
   { value: 'pending', label: 'Unpaid' },
 ]
 
+const filterButtonClass = (active) =>
+  `inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-full border px-4 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+    active
+      ? 'border-primary-600 bg-primary-600 text-white shadow-sm'
+      : 'border-surface-200 bg-surface-100 text-gray-600 hover:border-surface-300 hover:bg-surface-200'
+  }`
+
 const STATUS_ACTIONS = {
   pending: [{ label: 'Confirm', next: 'confirmed', variant: 'success', wait: 15 }],
   confirmed: [{ label: 'Start Preparing', next: 'preparing', variant: 'primary' }],
@@ -64,14 +71,21 @@ function getOrderCustomerLabel(order) {
   return name || order?.guestId || 'Guest'
 }
 
+function formatDateInputValue(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 function defaultToday() {
-  return new Date().toISOString().slice(0, 10)
+  return formatDateInputValue(new Date())
 }
 
 function defaultWeekStart() {
   const d = new Date()
   d.setDate(d.getDate() - 7)
-  return d.toISOString().slice(0, 10)
+  return formatDateInputValue(d)
 }
 
 function MetricTile({ label, value, sub, icon: Icon, accent }) {
@@ -202,6 +216,7 @@ const Orders = () => {
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0, limit: 10 })
   const [viewMode, setViewMode] = useState('list')
   const [trackOrderNumber, setTrackOrderNumber] = useState('')
+  const hasLoadedOrdersRef = useRef(false)
 
   const fetchSummary = useCallback(async () => {
     try {
@@ -214,7 +229,7 @@ const Orders = () => {
 
   const fetchOrders = useCallback(async (quiet = false) => {
     try {
-      if (quiet) setRefreshing(true)
+      if (quiet || hasLoadedOrdersRef.current) setRefreshing(true)
       else setLoading(true)
 
       const res = await api.get('/restaurant/customer-orders', {
@@ -233,6 +248,7 @@ const Orders = () => {
     } catch (error) {
       toast.error('Failed to fetch orders')
     } finally {
+      hasLoadedOrdersRef.current = true
       setLoading(false)
       setRefreshing(false)
     }
@@ -337,6 +353,9 @@ const Orders = () => {
   )
 
   const activeFilterCount = [filter !== 'all', paymentFilter !== 'all', search, dateFrom, dateTo].filter(Boolean).length
+  const todayDate = defaultToday()
+  const weekStartDate = defaultWeekStart()
+  const quickRange = !dateFrom && !dateTo ? 'all' : dateFrom === todayDate && dateTo === todayDate ? 'today' : dateFrom === weekStartDate && dateTo === todayDate ? 'week' : ''
 
   if (loading) {
     return <RestaurantPageLoader />
@@ -470,16 +489,16 @@ const Orders = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-end gap-2">
-            <Button type="button" variant="secondary" onClick={() => applyQuickRange('today')}>
+          <div className="flex flex-wrap items-end gap-2 xl:justify-end">
+            <button type="button" onClick={() => applyQuickRange('today')} className={filterButtonClass(quickRange === 'today')}>
               Today
-            </Button>
-            <Button type="button" variant="secondary" onClick={() => applyQuickRange('week')}>
+            </button>
+            <button type="button" onClick={() => applyQuickRange('week')} className={filterButtonClass(quickRange === 'week')}>
               Last 7 days
-            </Button>
-            <Button type="button" variant="secondary" onClick={() => applyQuickRange('all')}>
+            </button>
+            <button type="button" onClick={() => applyQuickRange('all')} className={filterButtonClass(quickRange === 'all')}>
               All time
-            </Button>
+            </button>
           </div>
         </div>
 
@@ -493,11 +512,7 @@ const Orders = () => {
                   setFilter(item.value)
                   setPage(1)
                 }}
-                className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  filter === item.value
-                    ? 'bg-primary-600 text-white shadow-sm'
-                    : 'bg-surface-100 text-gray-600 hover:bg-surface-200'
-                }`}
+                className={filterButtonClass(filter === item.value)}
               >
                 <item.icon className="h-4 w-4" />
                 {item.label}
@@ -514,11 +529,7 @@ const Orders = () => {
                   setPaymentFilter(item.value)
                   setPage(1)
                 }}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  paymentFilter === item.value
-                    ? 'bg-primary-600 text-white shadow-sm'
-                    : 'bg-surface-100 text-gray-600 hover:bg-surface-200'
-                }`}
+                className={filterButtonClass(paymentFilter === item.value)}
               >
                 {item.label}
               </button>
@@ -526,8 +537,8 @@ const Orders = () => {
           </div>
         </div>
 
-        <div className="mt-5 flex flex-col gap-3 border-t border-surface-200 pt-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="w-full lg:max-w-md">
+        <div className="mt-5 grid grid-cols-1 gap-3 border-t border-surface-200 pt-4 lg:grid-cols-[minmax(280px,420px)_auto_1fr] lg:items-end">
+          <div className="w-full">
             <Input
               label="Jump to order"
               placeholder="Exact order number"
@@ -538,15 +549,17 @@ const Orders = () => {
               }}
             />
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" onClick={handleTrackByOrderNumber}>
+          <div className="flex items-end">
+            <Button type="button" onClick={handleTrackByOrderNumber} className="h-10 w-full px-5 lg:w-auto">
               Track Order
             </Button>
-            <div className="flex overflow-hidden rounded-xl border border-surface-200 bg-white">
+          </div>
+          <div className="flex items-end justify-start lg:justify-end">
+            <div className="flex h-10 overflow-hidden rounded-xl border border-surface-200 bg-white">
               <button
                 type="button"
                 onClick={() => setViewMode('card')}
-                className={`flex items-center gap-1 px-3 py-2 text-sm font-semibold transition ${
+                className={`flex items-center gap-1 px-3 text-sm font-semibold transition ${
                   viewMode === 'card' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-surface-50'
                 }`}
               >
@@ -556,7 +569,7 @@ const Orders = () => {
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
-                className={`flex items-center gap-1 px-3 py-2 text-sm font-semibold transition ${
+                className={`flex items-center gap-1 px-3 text-sm font-semibold transition ${
                   viewMode === 'list' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-surface-50'
                 }`}
               >

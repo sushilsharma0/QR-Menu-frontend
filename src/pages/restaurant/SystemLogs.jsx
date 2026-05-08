@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import {
@@ -184,10 +184,11 @@ const SystemLogs = () => {
   const [viewMode, setViewMode] = useState('table')
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0, limit: 20 })
+  const hasLoadedLogsRef = useRef(false)
 
   const fetchLogs = async (quiet = false) => {
     try {
-      if (quiet) setRefreshing(true)
+      if (quiet || hasLoadedLogsRef.current) setRefreshing(true)
       else setLoading(true)
 
       const res = await api.get('/restaurant/logs/employee-activities', {
@@ -203,6 +204,7 @@ const SystemLogs = () => {
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to fetch employee logs')
     } finally {
+      hasLoadedLogsRef.current = true
       setLoading(false)
       setRefreshing(false)
     }

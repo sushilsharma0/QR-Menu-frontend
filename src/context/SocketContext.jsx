@@ -1,6 +1,7 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react'
+import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react'
 import { io } from 'socket.io-client'
 import { useAuth } from '../hooks/useAuth'
+import { getSocketOrigin } from '../utils/runtimeConfig'
 
 export const SocketContext = createContext()
 
@@ -10,7 +11,7 @@ export const SocketProvider = ({ children }) => {
   const [isConnected, setIsConnected] = useState(false)
   const [connectionError, setConnectionError] = useState(null)
 
-  const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000'
+  const socketOrigin = useMemo(() => getSocketOrigin(), [])
   const parseJwtPayload = (jwtToken) => {
     try {
       const payload = jwtToken?.split('.')?.[1]
@@ -36,7 +37,7 @@ export const SocketProvider = ({ children }) => {
     }
 
     // Create new socket connection
-    const newSocket = io(SOCKET_URL, {
+    const newSocket = io(socketOrigin, {
       transports: ['websocket', 'polling'],
       autoConnect: true,
       reconnection: true,
@@ -165,7 +166,7 @@ export const SocketProvider = ({ children }) => {
         newSocket.disconnect()
       }
     }
-  }, [user, token, isAuthenticated, SOCKET_URL, resolvedRestaurantId])
+  }, [user, token, isAuthenticated, socketOrigin, resolvedRestaurantId])
 
   // Join a specific room
   const joinRoom = useCallback((roomName, roomId) => {

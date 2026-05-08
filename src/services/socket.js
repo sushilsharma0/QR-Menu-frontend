@@ -1,12 +1,11 @@
 import { io } from 'socket.io-client'
-
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000'
+import { getSocketOrigin } from '../utils/runtimeConfig'
 
 let socket = null
 
 export const initSocket = () => {
   if (!socket) {
-    socket = io(SOCKET_URL, {
+    socket = io(getSocketOrigin(), {
       transports: ['websocket'],
       autoConnect: true,
       reconnection: true,

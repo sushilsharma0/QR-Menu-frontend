@@ -1,5 +1,7 @@
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
-export const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000'
+import { getApiBaseUrl, getSocketOrigin } from './runtimeConfig'
+
+export const API_URL = getApiBaseUrl()
+export const SOCKET_URL = getSocketOrigin()
 export const APP_NAME = import.meta.env.VITE_APP_NAME || 'QR Menu SaaS'
 
 export const ORDER_STATUS = {

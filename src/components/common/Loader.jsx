@@ -15,8 +15,11 @@ const Loader = ({ size = 'md', fullScreen = false }) => {
 
   if (fullScreen) {
     return (
-      <div className="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
-        {spinner}
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm dark:bg-gray-950/80">
+        <div className="rounded-3xl border border-surface-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
+          {spinner}
+          <p className="mt-4 text-sm font-semibold text-gray-600 dark:text-gray-300">Loading...</p>
+        </div>
       </div>
     )
   }
