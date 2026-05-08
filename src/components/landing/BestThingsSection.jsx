@@ -3,12 +3,12 @@ import { motion } from 'framer-motion'
 import SectionHeader from './SectionHeader'
 
 const BestThingsSection = ({ items }) => (
-  <section id="best" className="bg-white/80 py-16 backdrop-blur sm:py-24">
+  <section id="best" className="py-16 sm:py-24">
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <SectionHeader
-        eyebrow="Best Things"
-        title="A platform that feels ready before the rush starts."
-        description="The landing page, public content, restaurant operations, and platform control panel now work as one product story."
+        eyebrow="Benefits Section"
+        title="Built for Faster Service and Better Restaurant Operations"
+        description="Every feature is designed to help restaurant teams work faster while giving guests a smoother dining experience."
       />
       <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {items.map((item, index) => {
@@ -20,9 +20,9 @@ const BestThingsSection = ({ items }) => (
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-60px' }}
               transition={{ delay: index * 0.07, duration: 0.5 }}
-              className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+              className="group rounded-2xl border border-surface-200 bg-gradient-to-br from-white via-surface-50/60 to-secondary-50/50 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
             >
-              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-950 text-white">
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-600 text-white shadow-lg shadow-primary-900/20 transition group-hover:bg-secondary-600">
                 <Icon className="h-6 w-6" />
               </span>
               <h3 className="mt-5 text-2xl font-black text-slate-950">{item.value}</h3>

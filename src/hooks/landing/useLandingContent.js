@@ -13,6 +13,11 @@ const matchesKey = (entry, needle) => String(entry?.key || '').toLowerCase().inc
 const matchesAnyKey = (entry, needles) => needles.some((needle) => matchesKey(entry, needle))
 
 const firstParagraph = (value) => String(value || '').split('\n').filter(Boolean)[0]
+const splitPhrases = (value) =>
+  String(value || '')
+    .split(/[|\n,]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
 
 const mapFeature = (entry, index) => {
   const Icon = featureIcons[index % featureIcons.length]
@@ -53,6 +58,16 @@ export const useLandingContent = () => {
     const blogEntries = activeEntries.filter((entry) => entry.type === 'blog')
     const aboutEntry = activeEntries.find((entry) => entry.type === 'page' && matchesKey(entry, 'about'))
     const bestEntry = activeEntries.find((entry) => entry.type === 'page' && matchesKey(entry, 'best'))
+    const heroTypewriterEntry = activeEntries.find((entry) =>
+      entry.type === 'page' && matchesAnyKey(entry, ['hero-typewriter', 'hero_typewriter', 'hero-phrases', 'hero_phrases']),
+    )
+    const heroTypewriterPhrases = splitPhrases(heroTypewriterEntry?.content || heroTypewriterEntry?.metaDescription)
+    const bannerPhrases = splitPhrases(banner?.content)
+    const typewriterPhrases = heroTypewriterPhrases.length
+      ? heroTypewriterPhrases
+      : bannerPhrases.length > 1
+        ? bannerPhrases
+        : fallbackHero.typewriterPhrases
 
     return {
       loading,
@@ -62,8 +77,12 @@ export const useLandingContent = () => {
             title: banner.title || fallbackHero.title,
             description: banner.metaDescription || firstParagraph(banner.content) || fallbackHero.description,
             image: banner.image || fallbackHero.image,
+            typewriterPhrases,
           }
-        : fallbackHero,
+        : {
+            ...fallbackHero,
+            typewriterPhrases,
+          },
       offerBanner: offerBanner
         ? {
             eyebrow: offerBanner.metaTitle || 'Launch offer',

@@ -221,8 +221,8 @@ html {
 
 .landing-grid {
   background-image:
-    linear-gradient(rgba(15, 23, 42, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(15, 23, 42, 0.08) 1px, transparent 1px);
+    linear-gradient(rgba(143, 40, 0, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(182, 74, 38, 0.1) 1px, transparent 1px);
   background-size: 44px 44px;
   animation: landing-grid-drift 18s linear infinite;
   mask-image: radial-gradient(circle at 50% 18%, black 0%, rgba(0, 0, 0, 0.82) 34%, transparent 76%);
@@ -248,6 +248,24 @@ html {
   }
   50% {
     transform: translateX(-50%) translateY(22px);
+  }
+}
+
+.landing-logo-marquee {
+  width: max-content;
+  animation: landing-logo-marquee 28s linear infinite;
+}
+
+.landing-logo-marquee-track:hover .landing-logo-marquee {
+  animation-play-state: paused;
+}
+
+@keyframes landing-logo-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
   }
 }
 
