@@ -79,7 +79,7 @@ const SubscriptionPayments = () => {
       <PlatformPageHeader
         badge="Gateway Verification"
         title="Subscription Payments"
-        description="Review eSewa and Khalti subscription payments before activating restaurant plans."
+        description="Review gateway and manual subscription payments before activating restaurant plans."
         icon={FiCreditCard}
         actions={
           <Button variant="secondary" onClick={fetchPayments}>
@@ -112,6 +112,7 @@ const SubscriptionPayments = () => {
               <option value="all">All methods</option>
               <option value="esewa">eSewa</option>
               <option value="khalti">Khalti</option>
+              <option value="manual">Manual</option>
             </select>
           </div>
         }

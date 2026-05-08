@@ -429,6 +429,9 @@ export const initiateEsewaSubscriptionPayment = (planId) =>
 export const initiateKhaltiSubscriptionPayment = (planId) =>
   api.post('/restaurant/subscription/pay/khalti', { planId })
 
+export const initiateManualSubscriptionPayment = (formData) =>
+  api.post('/restaurant/subscription/pay/manual', formData)
+
 export const getSubscriptionPayments = (params) =>
   api.get('/restaurant/subscription/payments', { params })
 

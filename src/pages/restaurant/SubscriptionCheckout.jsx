@@ -6,6 +6,7 @@ import {
   FiCheck,
   FiClock,
   FiCreditCard,
+  FiFileText,
   FiShield,
   FiZap,
 } from 'react-icons/fi'
@@ -56,6 +57,10 @@ const SubscriptionCheckout = () => {
   const [status, setStatus] = useState(null)
   const [payments, setPayments] = useState([])
   const [loading, setLoading] = useState(true)
+  const [manualReferenceId, setManualReferenceId] = useState('')
+  const [manualNote, setManualNote] = useState('')
+  const [manualProof, setManualProof] = useState(null)
+  const [manualSubmitting, setManualSubmitting] = useState(false)
 
   const { slug, restaurantId } = getTenantSegments(user)
   const subscriptionPath = `${restaurantPortalBase(slug, restaurantId)}/subscription`
@@ -101,6 +106,37 @@ const SubscriptionCheckout = () => {
   const handlePaymentStarted = (payment) => {
     setPayments((prev) => [payment, ...prev])
     toast.success('Payment started. Complete checkout in the gateway page.')
+  }
+
+  const handleManualSubmit = async () => {
+    if (manualSubmitting || isLocked) return
+    if (!manualProof) {
+      toast.error('Please upload payment proof before submitting.')
+      return
+    }
+
+    try {
+      setManualSubmitting(true)
+      const formData = new FormData()
+      formData.append('planId', planId)
+      formData.append('paymentProof', manualProof)
+      if (manualReferenceId.trim()) formData.append('referenceId', manualReferenceId.trim())
+      if (manualNote.trim()) formData.append('note', manualNote.trim())
+
+      const res = await api.post('/restaurant/subscription/pay/manual', formData)
+      const payment = res.data?.data?.payment
+      if (payment) {
+        setPayments((prev) => [payment, ...prev])
+      }
+      setManualProof(null)
+      setManualReferenceId('')
+      setManualNote('')
+      toast.success('Manual payment submitted for platform review.')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not submit manual payment')
+    } finally {
+      setManualSubmitting(false)
+    }
   }
 
   if (loading) return <RestaurantPageLoader />
@@ -213,8 +249,52 @@ const SubscriptionCheckout = () => {
               <KhaltiButton planId={plan._id} disabled={isLocked} onStarted={handlePaymentStarted} />
             </div>
 
+            <div className="mt-5 rounded-2xl border border-surface-200 bg-surface-50 p-4">
+              <div className="flex items-center gap-2">
+                <FiFileText className="h-4 w-4 text-gray-600" />
+                <p className="text-sm font-semibold text-gray-800">Manual payment submission</p>
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Paid via bank transfer or cash deposit? Upload your receipt so the admin can verify it.
+              </p>
+              <div className="mt-3 space-y-3">
+                <input
+                  type="text"
+                  value={manualReferenceId}
+                  onChange={(e) => setManualReferenceId(e.target.value)}
+                  placeholder="Reference ID (optional)"
+                  className="w-full rounded-xl border border-surface-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500"
+                  disabled={isLocked || manualSubmitting}
+                />
+                <textarea
+                  value={manualNote}
+                  onChange={(e) => setManualNote(e.target.value)}
+                  placeholder="Note for admin (optional)"
+                  className="min-h-20 w-full rounded-xl border border-surface-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500"
+                  disabled={isLocked || manualSubmitting}
+                />
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp,.gif,.pdf"
+                  onChange={(e) => setManualProof(e.target.files?.[0] || null)}
+                  className="w-full rounded-xl border border-surface-300 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary-100 file:px-3 file:py-1.5 file:font-semibold file:text-primary-700"
+                  disabled={isLocked || manualSubmitting}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full"
+                  disabled={isLocked || manualSubmitting}
+                  loading={manualSubmitting}
+                  onClick={handleManualSubmit}
+                >
+                  Submit Manual Payment
+                </Button>
+              </div>
+            </div>
+
             <p className="mt-4 text-xs leading-5 text-gray-500">
-              Gateway success is verified by the backend first. The platform admin then approves the payment and activates the plan.
+              Gateway or manual payment submissions are reviewed by platform admins before plan activation.
             </p>
           </aside>
         </div>

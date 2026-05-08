@@ -164,7 +164,7 @@ function PaymentHistoryTable({ payments }) {
       <div className="rounded-3xl border border-dashed border-surface-300 bg-white px-4 py-12 text-center">
         <FiCreditCard className="mx-auto h-8 w-8 text-surface-500" />
         <p className="mt-3 font-semibold text-gray-900">No subscription payments yet</p>
-        <p className="mt-1 text-sm text-gray-500">Gateway payments will appear here after checkout starts.</p>
+        <p className="mt-1 text-sm text-gray-500">Gateway and manual payment submissions will appear here after checkout starts.</p>
       </div>
     )
   }
