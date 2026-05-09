@@ -31,6 +31,15 @@ const EmployeeForm = () => {
       setValue('username', emp.username)
       setValue('role', emp.role)
       setValue('isActive', emp.isActive)
+      setValue('department', emp.department || '')
+      setValue('designation', emp.designation || '')
+      setValue('joiningDate', emp.joiningDate ? emp.joiningDate.slice(0, 10) : '')
+      setValue('panNumber', emp.panNumber || '')
+      setValue('bankName', emp.bankName || '')
+      setValue('bankAccountNumber', emp.bankAccountNumber || '')
+      setValue('bankBranch', emp.bankBranch || '')
+      setValue('salary', emp.salary ?? '')
+      setValue('customTdsPercent', emp.customTdsPercent ?? '')
       setPhotoPreview(emp.profileImage || '')
     } catch (error) {
       toast.error('Failed to fetch employee')
@@ -144,8 +153,29 @@ const EmployeeForm = () => {
               <option value="kitchen">Kitchen Staff</option>
               <option value="cashier">Cashier</option>
               <option value="waiter">Waiter</option>
+              <option value="accountant">Accountant</option>
             </select>
             {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>}
+          </div>
+
+          <div className="rounded-2xl border border-surface-200 bg-surface-50 p-4 dark:border-gray-700 dark:bg-gray-900/40">
+            <p className="mb-3 text-sm font-semibold text-gray-800 dark:text-gray-200">Payroll & Nepal TDS</p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Input label="Department" {...register('department')} />
+              <Input label="Designation" {...register('designation')} />
+              <Input label="Joining date" type="date" {...register('joiningDate')} />
+              <Input label="PAN number" {...register('panNumber')} />
+              <Input label="Bank name" {...register('bankName')} />
+              <Input label="Bank account no." {...register('bankAccountNumber')} />
+              <Input label="Bank branch" {...register('bankBranch')} />
+              <Input label="Monthly salary template" type="number" step="0.01" {...register('salary')} />
+              <Input
+                label="Custom TDS % (optional)"
+                type="number"
+                step="0.01"
+                {...register('customTdsPercent')}
+              />
+            </div>
           </div>
 
           <label className="flex items-center gap-2">

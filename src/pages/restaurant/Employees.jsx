@@ -34,6 +34,7 @@ const roleStyles = {
   kitchen: 'bg-yellow-100 text-yellow-800',
   cashier: 'bg-green-100 text-green-800',
   waiter: 'bg-indigo-100 text-indigo-800',
+  accountant: 'bg-teal-100 text-teal-800',
 }
 
 const statusStyles = {
@@ -341,6 +342,7 @@ const Employees = () => {
               <option value="kitchen">Kitchen</option>
               <option value="cashier">Cashier</option>
               <option value="waiter">Waiter</option>
+              <option value="accountant">Accountant</option>
             </select>
           </div>
           <div>

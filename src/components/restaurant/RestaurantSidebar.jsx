@@ -11,12 +11,14 @@ import {
   FiCoffee,
   FiCreditCard,
   FiExternalLink,
+  FiFileText,
   FiHelpCircle,
   FiHome,
   FiLock,
   FiMapPin,
   FiMenu,
   FiPercent,
+  FiPieChart,
   FiSettings,
   FiShield,
   FiShoppingBag,
@@ -68,6 +70,18 @@ const NAV_GROUPS = [
       { segment: 'settings', icon: FiSettings, label: 'Settings' },
     ],
   },
+  {
+    label: 'Accounting',
+    items: [
+      { segment: 'finance/dashboard', icon: FiBarChart2, label: 'Finance Dashboard' },
+      { segment: 'finance/expenses', icon: FiCreditCard, label: 'Expenses' },
+      { segment: 'finance/budget', icon: FiPieChart, label: 'Budget' },
+      { segment: 'finance/profit-loss', icon: FiPercent, label: 'Profit & Loss' },
+      { segment: 'finance/inventory', icon: FiBookOpen, label: 'Inventory' },
+      { segment: 'finance/payroll', icon: FiUsers, label: 'Payroll' },
+      { segment: 'finance/invoices', icon: FiFileText, label: 'Invoices' },
+    ],
+  },
 ]
 
 const STAFF_LINKS = [
@@ -89,6 +103,7 @@ function featureKeyForSegment(segment) {
   if (root === 'tickets') return 'supportTickets'
   if (root === 'logs') return 'activityLogs'
   if (root === 'settings') return 'accountSettings'
+  if (root === 'finance') return 'analytics'
   return null
 }
 

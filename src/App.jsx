@@ -50,6 +50,13 @@ import RestaurantPromotions from "./pages/restaurant/Promotions";
 import RestaurantSystemLogs from "./pages/restaurant/SystemLogs";
 import RestaurantTickets from "./pages/restaurant/Tickets";
 import RestaurantTicketDetail from "./pages/restaurant/TicketDetail";
+import FinanceDashboard from "./pages/restaurant/finance/Dashboard";
+import FinanceExpenses from "./pages/restaurant/finance/Expenses";
+import FinanceProfitLoss from "./pages/restaurant/finance/ProfitLoss";
+import FinancePayroll from "./pages/restaurant/finance/Payroll";
+import FinanceInvoices from "./pages/restaurant/finance/Invoices";
+import FinanceInventory from "./pages/restaurant/finance/Inventory";
+import FinanceBudget from "./pages/restaurant/finance/Budget";
 
 // Employee Pages
 import KitchenDashboard from "./pages/employee/KitchenDashboard";
@@ -179,6 +186,13 @@ function App() {
         <Route path="tickets/create" element={<RestaurantTicketDetail />} />
         <Route path="tickets/:id" element={<RestaurantTicketDetail />} />
         <Route path="logs" element={<RestaurantSystemLogs />} />
+        <Route path="finance/dashboard" element={<FinanceDashboard />} />
+        <Route path="finance/expenses" element={<FinanceExpenses />} />
+        <Route path="finance/profit-loss" element={<FinanceProfitLoss />} />
+        <Route path="finance/payroll" element={<FinancePayroll />} />
+        <Route path="finance/invoices" element={<FinanceInvoices />} />
+        <Route path="finance/inventory" element={<FinanceInventory />} />
+        <Route path="finance/budget" element={<FinanceBudget />} />
         <Route path="settings" element={<RestaurantSettings />} />
         <Route path="profile" element={<RestaurantProfile />} />
         <Route path="notifications" element={<NotificationsPage />} />
