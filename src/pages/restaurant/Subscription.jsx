@@ -221,6 +221,7 @@ const Subscription = () => {
   const [refreshing, setRefreshing] = useState(false)
   const [requesting, setRequesting] = useState(false)
   const [proofFile, setProofFile] = useState(null)
+  const [statementReferenceId, setStatementReferenceId] = useState('')
   const [uploadingProof, setUploadingProof] = useState(false)
   const [activeTab, setActiveTab] = useState('plans')
   const [payments, setPayments] = useState([])
@@ -245,6 +246,13 @@ const Subscription = () => {
           trialEndsAt: status.trialEndsAt,
           hasPaidPlanActive: status.hasPaidPlanActive,
           needsPlanUpgrade: !status.canUseFeatures,
+          planAssignmentSource: status.planAssignmentSource,
+          customPlanLabel: status.customPlanLabel,
+          planFeatureFlags: status.planFeatureFlags || {},
+          assignedPlanName:
+            status.planAssignmentSource === 'custom'
+              ? status.customPlanLabel || 'Custom plan'
+              : undefined,
         })
       }
       api.get('/restaurant/subscription/payments', { params: { limit: 20 } })
@@ -272,13 +280,19 @@ const Subscription = () => {
       toast.error('Choose a file (image or PDF)')
       return
     }
+    if (!statementReferenceId.trim()) {
+      toast.error('Enter statement reference ID')
+      return
+    }
     try {
       setUploadingProof(true)
       const fd = new FormData()
       fd.append('paymentProof', proofFile)
+      fd.append('statementReferenceId', statementReferenceId.trim())
       await api.post('/restaurant/package/payment-proof', fd)
       toast.success('Payment proof submitted for platform verification.')
       setProofFile(null)
+      setStatementReferenceId('')
       fetchData(true)
     } catch (error) {
       toast.error(error.response?.data?.message || 'Upload failed')
@@ -344,8 +358,20 @@ const Subscription = () => {
           <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <MetricTile
               label="Current plan"
-              value={currentPlan?.currentPlan?.name || (currentPlan?.isTrialActive ? 'Free trial' : 'No plan')}
-              sub={currentPlan?.planEndDate ? `Ends ${formatRestaurantDateTime(currentPlan.planEndDate)}` : 'Select a plan to activate'}
+              value={
+                currentPlan?.planAssignmentSource === 'custom'
+                  ? currentPlan?.customPlanLabel || 'Custom plan'
+                  : currentPlan?.currentPlan?.name || (currentPlan?.isTrialActive ? 'Free trial' : 'No plan')
+              }
+              sub={
+                currentPlan?.planAssignmentSource === 'custom'
+                  ? `Assigned manually by super admin • Ends ${
+                      currentPlan?.planEndDate ? formatRestaurantDateTime(currentPlan.planEndDate) : 'N/A'
+                    }`
+                  : currentPlan?.planEndDate
+                    ? `Ends ${formatRestaurantDateTime(currentPlan.planEndDate)}`
+                    : 'Select a plan to activate'
+              }
               icon={FiShield}
               accent="from-primary-600 to-secondary-500"
             />
@@ -451,17 +477,46 @@ const Subscription = () => {
                         including VAT.
                       </p>
                     )}
+                    {!!currentPlan?.manualPaymentDetails?.accountNumber && (
+                      <div className="mt-4 rounded-2xl border border-amber-200 bg-white p-4 text-sm text-gray-700">
+                        <p className="font-semibold text-gray-900">Manual payment account details</p>
+                        <p className="mt-2"><strong>Account name:</strong> {currentPlan.manualPaymentDetails.accountName || '-'}</p>
+                        <p><strong>Account number:</strong> {currentPlan.manualPaymentDetails.accountNumber || '-'}</p>
+                        <p><strong>Branch:</strong> {currentPlan.manualPaymentDetails.branch || '-'}</p>
+                        {currentPlan.manualPaymentDetails.notes ? (
+                          <p className="mt-1 text-xs text-gray-500">{currentPlan.manualPaymentDetails.notes}</p>
+                        ) : null}
+                        {currentPlan.manualPaymentDetails.qrCodeImage ? (
+                          <a
+                            href={currentPlan.manualPaymentDetails.qrCodeImage}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 inline-block text-primary-700 underline"
+                          >
+                            View payment QR code
+                          </a>
+                        ) : null}
+                      </div>
+                    )}
                   </div>
                   {!pendingReview && (
                     <div className="rounded-2xl border border-amber-200 bg-white p-4">
-                      <label className="block text-sm font-semibold text-gray-700">Payment proof</label>
+                      <label className="block text-sm font-semibold text-gray-700">Statement reference ID</label>
+                      <input
+                        type="text"
+                        value={statementReferenceId}
+                        onChange={(e) => setStatementReferenceId(e.target.value)}
+                        placeholder="Enter bank/app statement reference"
+                        className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                      />
+                      <label className="mt-3 block text-sm font-semibold text-gray-700">Statement screenshot / proof</label>
                       <input
                         type="file"
                         accept="image/*,.pdf"
                         className="mt-2 text-sm"
                         onChange={(e) => setProofFile(e.target.files?.[0] || null)}
                       />
-                      <Button className="mt-3 w-full" onClick={submitPaymentProof} loading={uploadingProof} disabled={!proofFile}>
+                      <Button className="mt-3 w-full" onClick={submitPaymentProof} loading={uploadingProof} disabled={!proofFile || !statementReferenceId.trim()}>
                         <FiUpload className="mr-2" />
                         Submit for verification
                       </Button>
@@ -476,10 +531,15 @@ const Subscription = () => {
                     </a>
                   </p>
                 )}
+                {currentPlan?.planPaymentReferenceId && (
+                  <p className="mt-2 text-xs text-gray-500">
+                    Statement reference: <span className="font-semibold text-gray-700">{currentPlan.planPaymentReferenceId}</span>
+                  </p>
+                )}
               </motion.section>
             )}
 
-            {currentPlan?.currentPlan && (
+            {(currentPlan?.currentPlan || currentPlan?.planAssignmentSource === 'custom') && (
               <motion.section
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -488,12 +548,21 @@ const Subscription = () => {
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Current plan</p>
-                    <h2 className="mt-1 text-2xl font-black text-primary-700">{currentPlan.currentPlan.name}</h2>
+                    <h2 className="mt-1 text-2xl font-black text-primary-700">
+                      {currentPlan?.planAssignmentSource === 'custom'
+                        ? currentPlan?.customPlanLabel || 'Custom plan'
+                        : currentPlan?.currentPlan?.name}
+                    </h2>
                     <p className="mt-2 text-sm text-gray-500">
                       Expires {currentPlan.planEndDate ? formatRestaurantDateTime(currentPlan.planEndDate) : 'N/A'} - {daysLeft} days left
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
+                    {currentPlan?.planAssignmentSource === 'custom' && (
+                      <RestaurantStatusPill value="manual custom" styles={{
+                        'manual custom': 'bg-amber-100 text-amber-800',
+                      }} />
+                    )}
                     <RestaurantStatusPill value={currentPlan.autoRenew ? 'auto-renew on' : 'auto-renew off'} styles={{
                       'auto-renew on': 'bg-green-100 text-green-800',
                       'auto-renew off': 'bg-gray-100 text-gray-700',

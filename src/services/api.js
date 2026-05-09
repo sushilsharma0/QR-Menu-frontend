@@ -78,23 +78,9 @@ api.interceptors.response.use(
       window.location.href = '/employee/change-password'
       return Promise.reject(error)
     }
-    if (
-      status === 403 &&
-      errorCode === 'TRIAL_OR_PLAN_EXPIRED'
-    ) {
-      const path = window.location.pathname || ''
-      if (!shouldSkipToast) {
-        toast.error(message || 'Trial ended or plan inactive.')
-        error.__toastShown = true
-      }
-      if (
-        path.startsWith('/restaurant') &&
-        !path.startsWith('/restaurant/subscription') &&
-        !path.startsWith('/restaurant/kyc') &&
-        !path.startsWith('/restaurant/profile')
-      ) {
-        window.location.href = '/restaurant/subscription'
-      }
+    if (status === 403 && errorCode === 'TRIAL_OR_PLAN_EXPIRED') {
+      // Routing UX is handled in RestaurantLayout (correct /restaurant/:slug/:id/... paths).
+      // Avoid redirecting to invalid /restaurant/subscription and avoid toast spam on data fetches.
       return Promise.reject(error)
     }
     if (status === 403 && errorCode === 'KYC_REQUIRED') {

@@ -5,6 +5,8 @@ import { getSocketOrigin } from '../utils/runtimeConfig'
 
 export const SocketContext = createContext()
 
+let lastSocketConnectErrorLogMs = 0
+
 export const SocketProvider = ({ children }) => {
   const { user, token, isAuthenticated } = useAuth()
   const [socket, setSocket] = useState(null)
@@ -23,10 +25,14 @@ export const SocketProvider = ({ children }) => {
   }
   const resolvedRestaurantId = user?.restaurantId || parseJwtPayload(token)?.restaurantId
 
-  // Initialize socket connection
+  const userId = user?.id
+  const userRole = user?.role
+  const userScope = user?.scope
+
+  // Initialize socket connection (depend on stable ids — avoid reconnecting when mergeUser replaces `user`)
   useEffect(() => {
-    const canConnect = isAuthenticated || Boolean(token && user)
-    if (!canConnect || !user) {
+    const canConnect = isAuthenticated || Boolean(token && userId)
+    if (!canConnect || !userId) {
       // Disconnect if no user
       if (socket) {
         socket.disconnect()
@@ -56,33 +62,33 @@ export const SocketProvider = ({ children }) => {
       setConnectionError(null)
       
       // Join appropriate room based on user role
-      if (user.id) {
+      if (userId) {
         const recipientType =
-          user.scope === 'employee'
+          userScope === 'employee'
             ? 'employee'
-            : user.role === 'restaurant'
+            : userRole === 'restaurant'
               ? 'restaurant'
-              : user.role === 'super_admin' || user.role === 'admin'
+              : userRole === 'super_admin' || userRole === 'admin'
                 ? 'platform'
                 : null
         if (recipientType) {
-          newSocket.emit('join:user', { recipientType, recipientId: user.id })
+          newSocket.emit('join:user', { recipientType, recipientId: userId })
         }
-        if (user.role === 'restaurant') {
-          newSocket.emit('join:restaurant', user.id)
-          console.log('Joined restaurant room:', user.id)
-        } else if (user.scope === 'employee') {
+        if (userRole === 'restaurant') {
+          newSocket.emit('join:restaurant', userId)
+          console.log('Joined restaurant room:', userId)
+        } else if (userScope === 'employee') {
           // Employees should also join restaurant room to receive
           // order/payment broadcasts emitted at restaurant level.
           if (resolvedRestaurantId) {
             newSocket.emit('join:restaurant', resolvedRestaurantId)
             console.log('Joined restaurant room:', resolvedRestaurantId)
           }
-          newSocket.emit('join:employee', user.id)
-          console.log('Joined employee room:', user.id)
-        } else if (user.role === 'super_admin' || user.role === 'admin') {
-          newSocket.emit('join:platform', user.id)
-          console.log('Joined platform room:', user.id)
+          newSocket.emit('join:employee', userId)
+          console.log('Joined employee room:', userId)
+        } else if (userRole === 'super_admin' || userRole === 'admin') {
+          newSocket.emit('join:platform', userId)
+          console.log('Joined platform room:', userId)
         }
       }
     })
@@ -98,9 +104,20 @@ export const SocketProvider = ({ children }) => {
     })
 
     newSocket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error)
       setConnectionError(error.message)
       setIsConnected(false)
+      const now = Date.now()
+      if (import.meta.env.DEV) {
+        if (now - lastSocketConnectErrorLogMs > 15000) {
+          lastSocketConnectErrorLogMs = now
+          console.warn(
+            '[Socket] Realtime server unreachable (is the API running on port 5000?).',
+            error?.message || error,
+          )
+        }
+      } else {
+        console.error('Socket connection error:', error)
+      }
     })
 
     newSocket.on('reconnect', (attemptNumber) => {
@@ -109,27 +126,27 @@ export const SocketProvider = ({ children }) => {
       setConnectionError(null)
       
       // Rejoin rooms after reconnect
-      if (user.id) {
+      if (userId) {
         const recipientType =
-          user.scope === 'employee'
+          userScope === 'employee'
             ? 'employee'
-            : user.role === 'restaurant'
+            : userRole === 'restaurant'
               ? 'restaurant'
-              : user.role === 'super_admin' || user.role === 'admin'
+              : userRole === 'super_admin' || userRole === 'admin'
                 ? 'platform'
                 : null
         if (recipientType) {
-          newSocket.emit('join:user', { recipientType, recipientId: user.id })
+          newSocket.emit('join:user', { recipientType, recipientId: userId })
         }
-        if (user.role === 'restaurant') {
-          newSocket.emit('join:restaurant', user.id)
-        } else if (user.scope === 'employee') {
+        if (userRole === 'restaurant') {
+          newSocket.emit('join:restaurant', userId)
+        } else if (userScope === 'employee') {
           if (resolvedRestaurantId) {
             newSocket.emit('join:restaurant', resolvedRestaurantId)
           }
-          newSocket.emit('join:employee', user.id)
-        } else if (user.role === 'super_admin' || user.role === 'admin') {
-          newSocket.emit('join:platform', user.id)
+          newSocket.emit('join:employee', userId)
+        } else if (userRole === 'super_admin' || userRole === 'admin') {
+          newSocket.emit('join:platform', userId)
         }
       }
     })
@@ -151,22 +168,22 @@ export const SocketProvider = ({ children }) => {
     return () => {
       if (newSocket) {
         // Leave rooms before disconnecting
-        if (user?.id) {
-          if (user.role === 'restaurant') {
-            newSocket.emit('leave:restaurant', user.id)
-          } else if (user.scope === 'employee') {
+        if (userId) {
+          if (userRole === 'restaurant') {
+            newSocket.emit('leave:restaurant', userId)
+          } else if (userScope === 'employee') {
             if (resolvedRestaurantId) {
               newSocket.emit('leave:restaurant', resolvedRestaurantId)
             }
-            newSocket.emit('leave:employee', user.id)
-          } else if (user.role === 'super_admin' || user.role === 'admin') {
-            newSocket.emit('leave:platform', user.id)
+            newSocket.emit('leave:employee', userId)
+          } else if (userRole === 'super_admin' || userRole === 'admin') {
+            newSocket.emit('leave:platform', userId)
           }
         }
         newSocket.disconnect()
       }
     }
-  }, [user, token, isAuthenticated, socketOrigin, resolvedRestaurantId])
+  }, [userId, userRole, userScope, token, isAuthenticated, socketOrigin, resolvedRestaurantId])
 
   // Join a specific room
   const joinRoom = useCallback((roomName, roomId) => {

@@ -7,7 +7,7 @@ const floatingFeatures = [
   { icon: QrCode, title: 'Scan QR', text: 'Open menu' },
   { icon: UtensilsCrossed, title: 'Choose food', text: 'Add to cart' },
   { icon: BellRing, title: 'Live order', text: 'Kitchen alert' },
-  { icon: ReceiptText, title: 'Bill ready', text: 'Cashier sync' },
+  // { icon: ReceiptText, title: 'Bill ready', text: 'Cashier sync' },
 ]
 
 const qrBlocks = Array.from({ length: 49 }, (_, index) => index)
@@ -157,7 +157,7 @@ const HeroSection = ({ hero }) => {
               'left-0 top-7',
               'right-0 top-20',
               'left-3 bottom-24',
-              'right-1 bottom-8',
+              // 'right-1 bottom-8',
             ]
             return (
               <motion.div

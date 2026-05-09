@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import {
   FiAward,
   FiBarChart2,
@@ -12,6 +13,7 @@ import {
   FiExternalLink,
   FiHelpCircle,
   FiHome,
+  FiLock,
   FiMapPin,
   FiMenu,
   FiPercent,
@@ -74,7 +76,39 @@ const STAFF_LINKS = [
   { staff: 'waiter', label: 'Waiter Staff Login', icon: FiUserCheck },
 ]
 
-function NavItem({ item, restaurantBase, pendingCount, collapsed, onClick, onTooltip, onTooltipLeave }) {
+const SUBSCRIPTION_REQUIRED_TOAST =
+  'Your trial or plan has ended. Open Subscription to choose a plan and restore access.'
+
+function featureKeyForSegment(segment) {
+  const root = segment.split('/')[0]
+  if (root === 'menu') return 'menu'
+  if (root === 'orders') return segment === 'orders/activity' ? 'analytics' : 'orders'
+  if (root === 'tables') return 'tables'
+  if (root === 'promotions') return 'promotions'
+  if (root === 'employees') return 'employees'
+  if (root === 'tickets') return 'supportTickets'
+  if (root === 'logs') return 'activityLogs'
+  if (root === 'settings') return 'accountSettings'
+  return null
+}
+
+function isNavUnlockedWhenBillingLocked(segment) {
+  const root = segment.split('/')[0]
+  return root === 'subscription' || root === 'kyc'
+}
+
+function NavItem({
+  item,
+  restaurantBase,
+  pendingCount,
+  collapsed,
+  onClick,
+  onTooltip,
+  onTooltipLeave,
+  locked,
+  lockMessage,
+  onLockedClick,
+}) {
   const showTooltip = (event) => {
     if (!collapsed) return
     const rect = event.currentTarget.getBoundingClientRect()
@@ -84,6 +118,41 @@ function NavItem({ item, restaurantBase, pendingCount, collapsed, onClick, onToo
       top: rect.top + rect.height / 2,
       left: rect.right + 12,
     })
+  }
+
+  const inactiveRow =
+    'text-gray-600 hover:bg-surface-50 hover:text-gray-950 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100'
+
+  if (locked) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          onLockedClick?.()
+          onClick?.()
+        }}
+        onMouseEnter={showTooltip}
+        onMouseLeave={onTooltipLeave}
+        onFocus={showTooltip}
+        onBlur={onTooltipLeave}
+        className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-200 ${inactiveRow} cursor-not-allowed opacity-80 ${
+          collapsed ? 'justify-center' : ''
+        }`}
+      >
+        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-gray-400 dark:text-gray-500">
+          <item.icon className="h-5 w-5" />
+        </span>
+        {!collapsed && (
+          <>
+            <span className="truncate text-sm">{item.label}</span>
+            <FiLock className="ml-auto h-4 w-4 flex-shrink-0 text-amber-600 dark:text-amber-400" title={lockMessage || 'Locked'} />
+          </>
+        )}
+        {collapsed && (
+          <FiLock className="pointer-events-none absolute -right-0.5 -top-0.5 h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+        )}
+      </button>
+    )
   }
 
   return (
@@ -99,7 +168,7 @@ function NavItem({ item, restaurantBase, pendingCount, collapsed, onClick, onToo
         `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 ${
           isActive
             ? 'bg-primary-50 font-semibold text-primary-800 shadow-sm ring-1 ring-primary-100 dark:bg-gray-800 dark:text-gray-100 dark:ring-gray-700'
-            : 'text-gray-600 hover:bg-surface-50 hover:text-gray-950 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100'
+            : inactiveRow
         } ${collapsed ? 'justify-center' : ''}`
       }
     >
@@ -169,6 +238,11 @@ function SidebarContent({
   isMobile,
   onTooltip,
   onTooltipLeave,
+  billingLocked,
+  isFeatureLocked,
+  featureLockedToast,
+  user,
+  featureFlags,
 }) {
   const hideLabels = collapsed && !isMobile
 
@@ -225,6 +299,15 @@ function SidebarContent({
                     onClick={isMobile ? onClose : undefined}
                     onTooltip={onTooltip}
                     onTooltipLeave={onTooltipLeave}
+                    locked={isFeatureLocked(item.segment)}
+                    lockMessage={
+                      user?.planAssignmentSource === 'custom' &&
+                      featureKeyForSegment(item.segment) &&
+                      featureFlags[featureKeyForSegment(item.segment)] === false
+                        ? `Locked by assigned plan: ${user?.assignedPlanName || user?.customPlanLabel || 'Custom plan'}`
+                        : undefined
+                    }
+                    onLockedClick={() => featureLockedToast(item.segment)}
                   />
                 ))}
               </div>
@@ -244,7 +327,14 @@ function SidebarContent({
                   to={staffLoginHref(restaurantId, staff)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={isMobile ? onClose : undefined}
+                  onClick={(e) => {
+                    if (isFeatureLocked('employees')) {
+                      e.preventDefault()
+                      featureLockedToast('employees')
+                      return
+                    }
+                    if (isMobile) onClose?.()
+                  }}
                   className="group flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-xs font-semibold text-gray-500 transition-colors hover:bg-surface-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100"
                 >
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-gray-500 shadow-sm dark:bg-gray-950 dark:text-gray-400">
@@ -266,6 +356,12 @@ function SidebarContent({
                 to={staffLoginHref(restaurantId, staff)}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(e) => {
+                  if (isFeatureLocked('employees')) {
+                    e.preventDefault()
+                    featureLockedToast('employees')
+                  }
+                }}
                 onMouseEnter={(event) => {
                   const rect = event.currentTarget.getBoundingClientRect()
                   onTooltip?.({
@@ -305,6 +401,27 @@ const RestaurantSidebar = () => {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [tooltip, setTooltip] = useState(null)
 
+  const billingLocked =
+    user?.role === 'restaurant' && user?.scope !== 'employee' && user?.needsPlanUpgrade === true
+  const featureFlags = user?.planFeatureFlags || {}
+
+  const isFeatureLocked = (segment) => {
+    if (billingLocked && !isNavUnlockedWhenBillingLocked(segment)) return true
+    const key = featureKeyForSegment(segment)
+    if (!key) return false
+    return user?.planAssignmentSource === 'custom' && featureFlags[key] === false
+  }
+
+  const featureLockedToast = (segment) => {
+    const assignedName = user?.assignedPlanName || user?.customPlanLabel || 'Custom plan'
+    const key = featureKeyForSegment(segment)
+    if (key && user?.planAssignmentSource === 'custom' && featureFlags[key] === false) {
+      toast.error(`Locked by assigned plan: ${assignedName}. Contact super admin to enable this feature.`)
+      return
+    }
+    toast.error(SUBSCRIPTION_REQUIRED_TOAST)
+  }
+
   const fetchPendingCount = async () => {
     try {
       const res = await api.get('/restaurant/customer-orders', { params: { status: 'pending', page: 1, limit: 1 } })
@@ -315,18 +432,22 @@ const RestaurantSidebar = () => {
   }
 
   useEffect(() => {
+    if (billingLocked) {
+      setPendingCount(0)
+      return
+    }
     fetchPendingCount()
-  }, [])
+  }, [billingLocked])
 
   useEffect(() => {
-    if (!socket) return undefined
+    if (billingLocked || !socket) return undefined
     socket.on('new_order', fetchPendingCount)
     socket.on('order_updated', fetchPendingCount)
     return () => {
       socket.off('new_order', fetchPendingCount)
       socket.off('order_updated', fetchPendingCount)
     }
-  }, [socket])
+  }, [socket, billingLocked])
 
   useEffect(() => {
     setMobileOpen(false)
@@ -334,7 +455,17 @@ const RestaurantSidebar = () => {
 
   if (!user || !hasTenant) return null
 
-  const sharedProps = { pendingCount, restaurantBase, restaurantId, hasTenant }
+  const sharedProps = {
+    pendingCount,
+    restaurantBase,
+    restaurantId,
+    hasTenant,
+    billingLocked,
+    isFeatureLocked,
+    featureLockedToast,
+    user,
+    featureFlags,
+  }
 
   return (
     <>

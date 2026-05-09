@@ -24,6 +24,7 @@ import {
   YAxis,
 } from 'recharts'
 import api from '../../services/api'
+import { useAuth } from '../../hooks/useAuth'
 import Button from '../../components/common/Button'
 import Card from '../../components/common/Card'
 import Tabs from '../../components/common/Tabs'
@@ -107,10 +108,24 @@ function SalesTooltip({ active, payload, label }) {
 const RestaurantDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [restaurant, setRestaurant] = useState(null)
   const [operations, setOperations] = useState(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [planFeatureDefs, setPlanFeatureDefs] = useState([])
+  const [customSubmitting, setCustomSubmitting] = useState(false)
+  const [customForm, setCustomForm] = useState({
+    planLabel: '',
+    durationDays: 30,
+    limits: {
+      maxTables: 10,
+      maxEmployees: 5,
+      maxCategories: 20,
+      maxMenuItems: 100,
+    },
+    features: {},
+  })
 
   const loadRestaurant = async (quiet = false) => {
     try {
@@ -136,6 +151,54 @@ const RestaurantDetail = () => {
   useEffect(() => {
     loadRestaurant(false)
   }, [id])
+
+  useEffect(() => {
+    const loadFeatureOptions = async () => {
+      if (user?.role !== 'super_admin') return
+      try {
+        const res = await api.get('/platform/subscriptions/plan-feature-options')
+        const features = res.data?.data?.features || []
+        setPlanFeatureDefs(features)
+        const initialFlags = {}
+        features.forEach((f) => {
+          initialFlags[f.key] = true
+        })
+        setCustomForm((prev) => ({
+          ...prev,
+          features: { ...initialFlags, ...prev.features },
+        }))
+      } catch {
+        toast.error('Could not load plan feature options')
+      }
+    }
+    loadFeatureOptions()
+  }, [user?.role])
+
+  const submitCustomPlan = async (e) => {
+    e.preventDefault()
+    if (!id) return
+    setCustomSubmitting(true)
+    try {
+      await api.post('/platform/subscriptions/assign-custom', {
+        restaurantId: id,
+        planLabel: customForm.planLabel || undefined,
+        durationDays: Number(customForm.durationDays),
+        limits: {
+          maxTables: Number(customForm.limits.maxTables),
+          maxEmployees: Number(customForm.limits.maxEmployees),
+          maxCategories: Number(customForm.limits.maxCategories),
+          maxMenuItems: Number(customForm.limits.maxMenuItems),
+        },
+        features: customForm.features,
+      })
+      toast.success('Custom plan assigned')
+      loadRestaurant(true)
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Assignment failed')
+    } finally {
+      setCustomSubmitting(false)
+    }
+  }
 
   const toggleStatus = async () => {
     try {
@@ -391,7 +454,16 @@ const RestaurantDetail = () => {
             <div className="space-y-4">
               <div className="rounded-2xl bg-surface-50 p-4 dark:bg-gray-800/60">
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Current Plan</p>
-                <p className="mt-1 text-xl font-bold text-gray-950 dark:text-gray-100">{restaurant?.currentPlan?.name || 'Trial / No Plan'}</p>
+                <p className="mt-1 text-xl font-bold text-gray-950 dark:text-gray-100">
+                  {restaurant?.planAssignmentSource === 'custom'
+                    ? restaurant?.customPlanLabel || 'Custom plan'
+                    : restaurant?.currentPlan?.name || 'Trial / No Plan'}
+                </p>
+                {restaurant?.planAssignmentSource === 'custom' && (
+                  <p className="mt-1 text-xs font-medium uppercase tracking-wide text-primary-600 dark:text-primary-400">
+                    Custom assignment (super admin)
+                  </p>
+                )}
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   Ends {formatDate(restaurant?.planEndDate || restaurant?.trialEndsAt)}
                 </p>
@@ -414,8 +486,130 @@ const RestaurantDetail = () => {
                   Requested plan: <strong>{restaurant.requestedPlan.name}</strong>
                 </div>
               )}
+              {restaurant?.planAssignmentSource === 'custom' && restaurant?.planFeatureFlags && (
+                <div className="rounded-2xl border border-surface-200 p-4 text-sm dark:border-gray-700">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Feature access
+                  </p>
+                  <ul className="mt-2 grid gap-1 text-gray-700 dark:text-gray-300 sm:grid-cols-2">
+                    {planFeatureDefs.map((def) => (
+                      <li key={def.key} className="flex items-center gap-2">
+                        <span
+                          className={
+                            restaurant.planFeatureFlags[def.key] === false
+                              ? 'text-red-600 dark:text-red-400'
+                              : 'text-emerald-600 dark:text-emerald-400'
+                          }
+                        >
+                          {restaurant.planFeatureFlags[def.key] === false ? '✗' : '✓'}
+                        </span>
+                        {def.label}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </Card>
+
+          {user?.role === 'super_admin' && (
+            <Card title="Assign custom plan" icon={FiCreditCard} className="xl:col-span-2">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Set how many days the access lasts, numeric caps (tables, employees, categories, menu items), and
+                which product areas this restaurant may use. This replaces catalog plans for the restaurant until you
+                assign a standard plan again.
+              </p>
+              <form onSubmit={submitCustomPlan} className="mt-4 space-y-5">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Plan label
+                    <input
+                      type="text"
+                      placeholder="e.g. Partner pilot"
+                      className="mt-1 w-full rounded-xl border border-surface-200 bg-white px-3 py-2 text-gray-950 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                      value={customForm.planLabel}
+                      onChange={(ev) => setCustomForm((p) => ({ ...p, planLabel: ev.target.value }))}
+                    />
+                  </label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Duration (days)
+                    <input
+                      type="number"
+                      min={1}
+                      max={3650}
+                      required
+                      className="mt-1 w-full rounded-xl border border-surface-200 bg-white px-3 py-2 text-gray-950 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                      value={customForm.durationDays}
+                      onChange={(ev) => setCustomForm((p) => ({ ...p, durationDays: ev.target.value }))}
+                    />
+                  </label>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Limits
+                  </p>
+                  <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    {[
+                      ['maxTables', 'Max tables'],
+                      ['maxEmployees', 'Max employees'],
+                      ['maxCategories', 'Max categories'],
+                      ['maxMenuItems', 'Max menu items'],
+                    ].map(([key, label]) => (
+                      <label key={key} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {label}
+                        <input
+                          type="number"
+                          min={0}
+                          max={999999}
+                          required
+                          className="mt-1 w-full rounded-xl border border-surface-200 bg-white px-3 py-2 text-gray-950 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                          value={customForm.limits[key]}
+                          onChange={(ev) =>
+                            setCustomForm((p) => ({
+                              ...p,
+                              limits: { ...p.limits, [key]: ev.target.value },
+                            }))
+                          }
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Features
+                  </p>
+                  <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {planFeatureDefs.map((def) => (
+                      <label
+                        key={def.key}
+                        className="flex cursor-pointer items-start gap-3 rounded-2xl border border-surface-200 p-3 dark:border-gray-700"
+                      >
+                        <input
+                          type="checkbox"
+                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-600"
+                          checked={customForm.features[def.key] !== false}
+                          onChange={(ev) =>
+                            setCustomForm((p) => ({
+                              ...p,
+                              features: { ...p.features, [def.key]: ev.target.checked },
+                            }))
+                          }
+                        />
+                        <span>
+                          <span className="font-medium text-gray-950 dark:text-gray-100">{def.label}</span>
+                          <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">{def.description}</span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <Button type="submit" disabled={customSubmitting || planFeatureDefs.length === 0}>
+                  {customSubmitting ? 'Assigning…' : 'Assign custom plan to this restaurant'}
+                </Button>
+              </form>
+            </Card>
+          )}
         </div>
       ),
     },

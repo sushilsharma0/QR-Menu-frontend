@@ -27,6 +27,7 @@ import toast from "react-hot-toast";
 import api from "../../services/api";
 import Button from "../../components/common/Button";
 import { useSocket } from "../../hooks/useSocket";
+import { useAuth } from "../../hooks/useAuth";
 import {
   RestaurantPageLoader,
   RestaurantStatusPill,
@@ -173,6 +174,9 @@ function SectionShell({ title, eyebrow, icon: Icon, children, actions, className
 }
 
 const Dashboard = () => {
+  const { user } = useAuth();
+  const billingLocked =
+    user?.role === "restaurant" && user?.scope !== "employee" && user?.needsPlanUpgrade === true;
   const [stats, setStats] = useState(null);
   const [salesData, setSalesData] = useState([]);
   const [popularItems, setPopularItems] = useState([]);
@@ -221,12 +225,16 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
+    if (billingLocked) {
+      setLoading(false);
+      return;
+    }
     fetchRestaurantProfile();
     fetchDashboardData();
-  }, []);
+  }, [billingLocked]);
 
   useEffect(() => {
-    if (!socket) return undefined;
+    if (billingLocked || !socket) return undefined;
 
     const handleNewOrder = (order) => {
       toast.success(`New order #${order.orderNumber} received`, { duration: 5000 });
@@ -261,7 +269,7 @@ const Dashboard = () => {
       socket.off("payment_updated", handlePaymentUpdate);
       socket.off("guest_table_request", handleGuestTableRequest);
     };
-  }, [socket]);
+  }, [socket, billingLocked]);
 
   const dashboardModel = useMemo(() => {
     const activeOrders = stats?.activeOrders || {};
@@ -289,6 +297,8 @@ const Dashboard = () => {
       weekTrend: formatPctTrend(stats?.overview?.weekVsPrevWeekPercent),
     };
   }, [salesData, stats]);
+
+  if (billingLocked) return null;
 
   if (loading) return <RestaurantPageLoader />;
 

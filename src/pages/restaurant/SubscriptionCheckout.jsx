@@ -102,6 +102,13 @@ const SubscriptionCheckout = () => {
   const isLocked = !user?.isKYCVerified || isCurrent || Boolean(relatedPayment)
   const total = planTotal(plan)
   const symbol = planSymbol(plan)
+  const manualPaymentDetails = status?.manualPaymentDetails || {}
+  const hasManualAccountDetails = Boolean(
+    manualPaymentDetails.accountName ||
+      manualPaymentDetails.accountNumber ||
+      manualPaymentDetails.branch ||
+      manualPaymentDetails.qrCodeImage,
+  )
 
   const handlePaymentStarted = (payment) => {
     setPayments((prev) => [payment, ...prev])
@@ -114,13 +121,17 @@ const SubscriptionCheckout = () => {
       toast.error('Please upload payment proof before submitting.')
       return
     }
+    if (!manualReferenceId.trim()) {
+      toast.error('Please enter statement reference ID.')
+      return
+    }
 
     try {
       setManualSubmitting(true)
       const formData = new FormData()
       formData.append('planId', planId)
       formData.append('paymentProof', manualProof)
-      if (manualReferenceId.trim()) formData.append('referenceId', manualReferenceId.trim())
+      formData.append('referenceId', manualReferenceId.trim())
       if (manualNote.trim()) formData.append('note', manualNote.trim())
 
       const res = await api.post('/restaurant/subscription/pay/manual', formData)
@@ -257,12 +268,49 @@ const SubscriptionCheckout = () => {
               <p className="mt-1 text-xs text-gray-500">
                 Paid via bank transfer or cash deposit? Upload your receipt so the admin can verify it.
               </p>
+              {hasManualAccountDetails && (
+                <div className="mt-3 rounded-xl border border-amber-200 bg-white p-3 text-sm text-gray-700">
+                  <p className="font-semibold text-gray-900">Account details</p>
+                  <p className="mt-2"><strong>Account name:</strong> {manualPaymentDetails.accountName || '-'}</p>
+                  <p><strong>Account number:</strong> {manualPaymentDetails.accountNumber || '-'}</p>
+                  <p><strong>Branch:</strong> {manualPaymentDetails.branch || '-'}</p>
+                  {manualPaymentDetails.notes ? (
+                    <p className="mt-1 text-xs text-gray-500">{manualPaymentDetails.notes}</p>
+                  ) : null}
+                  {manualPaymentDetails.qrCodeImage ? (
+                    <div className="mt-3 rounded-xl border border-surface-200 bg-surface-50 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">QR payment code</p>
+                      <a
+                        href={manualPaymentDetails.qrCodeImage}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 block"
+                        title="Open QR image in new tab"
+                      >
+                        <img
+                          src={manualPaymentDetails.qrCodeImage}
+                          alt="Manual payment QR code"
+                          className="h-80 w-80 rounded-lg border border-surface-200 object-contain bg-white"
+                        />
+                      </a>
+                      <a
+                        href={manualPaymentDetails.qrCodeImage}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 inline-block text-xs font-semibold text-primary-700 underline"
+                      >
+                        Open full-size QR
+                      </a>
+                    </div>
+                  ) : null}
+                </div>
+              )}
               <div className="mt-3 space-y-3">
                 <input
                   type="text"
                   value={manualReferenceId}
                   onChange={(e) => setManualReferenceId(e.target.value)}
-                  placeholder="Reference ID (optional)"
+                  placeholder="Statement Reference ID (required)"
                   className="w-full rounded-xl border border-surface-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500"
                   disabled={isLocked || manualSubmitting}
                 />

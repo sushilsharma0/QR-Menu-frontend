@@ -13,6 +13,10 @@ const Settings = () => {
   const [loading, setLoading] = useState(false)
   const [billingLoading, setBillingLoading] = useState(true)
   const [billingSaving, setBillingSaving] = useState(false)
+  const [manualPaymentLoading, setManualPaymentLoading] = useState(true)
+  const [manualPaymentSaving, setManualPaymentSaving] = useState(false)
+  const [manualQrFile, setManualQrFile] = useState(null)
+  const [manualQrPreview, setManualQrPreview] = useState('')
   const [siteSaving, setSiteSaving] = useState(false)
   const [feedbackEnabled, setFeedbackEnabled] = useState(true)
   const [showFeedbackOnLanding, setShowFeedbackOnLanding] = useState(true)
@@ -23,6 +27,12 @@ const Settings = () => {
     handleSubmit: handleBillingSubmit,
     reset: resetBilling,
     formState: { errors: billingErrors },
+  } = useForm()
+  const {
+    register: registerManual,
+    handleSubmit: handleManualSubmit,
+    reset: resetManual,
+    formState: { errors: manualErrors },
   } = useForm()
 
   useEffect(() => {
@@ -71,6 +81,31 @@ const Settings = () => {
     })()
     return () => { cancelled = true }
   }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        setManualPaymentLoading(true)
+        const res = await api.get('/platform/settings/manual-payment')
+        const data = res.data?.data
+        if (!cancelled && data) {
+          resetManual({
+            accountName: data.accountName || '',
+            accountNumber: data.accountNumber || '',
+            branch: data.branch || '',
+            notes: data.notes || '',
+          })
+          setManualQrPreview(data.qrCodeImage || '')
+        }
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to load manual payment settings')
+      } finally {
+        if (!cancelled) setManualPaymentLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [resetManual])
 
   const onSubmit = async (data) => {
     try {
@@ -123,6 +158,28 @@ const Settings = () => {
       toast.error(error.response?.data?.message || 'Failed to save feedback controls')
     } finally {
       setSiteSaving(false)
+    }
+  }
+
+  const onManualPaymentSave = async (data) => {
+    try {
+      setManualPaymentSaving(true)
+      const fd = new FormData()
+      fd.append('accountName', data.accountName || '')
+      fd.append('accountNumber', data.accountNumber || '')
+      fd.append('branch', data.branch || '')
+      fd.append('notes', data.notes || '')
+      if (manualQrFile) fd.append('qrCodeImage', manualQrFile)
+
+      const res = await api.patch('/platform/settings/manual-payment', fd)
+      const saved = res.data?.data
+      setManualQrPreview(saved?.qrCodeImage || '')
+      setManualQrFile(null)
+      toast.success('Manual payment settings saved')
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to save manual payment settings')
+    } finally {
+      setManualPaymentSaving(false)
     }
   }
 
@@ -194,6 +251,61 @@ const Settings = () => {
             <Button type="button" loading={siteSaving} onClick={saveSiteSettings}>Save feedback controls</Button>
           </div>
         </div>
+      </Card>
+
+      <Card title="Manual Subscription Payment Account" icon={FiCreditCard}>
+        <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">
+          Super admin can configure account details used for manual subscription payments. Restaurants will see these details,
+          scan the QR, and submit statement screenshot with statement reference ID.
+        </p>
+        {manualPaymentLoading ? (
+          <div className="flex justify-center py-10">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600" />
+          </div>
+        ) : (
+          <form onSubmit={handleManualSubmit(onManualPaymentSave)} className="space-y-4">
+            <Input
+              label="Account Name"
+              {...registerManual('accountName', { required: 'Account name is required' })}
+              error={manualErrors.accountName?.message}
+            />
+            <Input
+              label="Account Number"
+              {...registerManual('accountNumber', { required: 'Account number is required' })}
+              error={manualErrors.accountNumber?.message}
+            />
+            <Input
+              label="Branch"
+              {...registerManual('branch', { required: 'Branch is required' })}
+              error={manualErrors.branch?.message}
+            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes (optional)</label>
+              <textarea
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                {...registerManual('notes')}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">QR Code Image</label>
+              <input
+                type="file"
+                accept="image/*"
+                className="text-sm"
+                onChange={(e) => setManualQrFile(e.target.files?.[0] || null)}
+              />
+              {manualQrPreview ? (
+                <a href={manualQrPreview} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm text-primary-700 underline">
+                  View current QR code
+                </a>
+              ) : (
+                <p className="mt-2 text-xs text-gray-500">No QR uploaded yet.</p>
+              )}
+            </div>
+            <Button type="submit" loading={manualPaymentSaving}>Save account details</Button>
+          </form>
+        )}
       </Card>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">

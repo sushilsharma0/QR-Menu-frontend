@@ -47,6 +47,8 @@ const portalMeta = {
 
 const GoogleSignIn = ({ onSuccess, disabled }) => {
   const buttonRef = useRef(null)
+  const onSuccessRef = useRef(onSuccess)
+  onSuccessRef.current = onSuccess
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -56,7 +58,7 @@ const GoogleSignIn = ({ onSuccess, disabled }) => {
       if (!window.google?.accounts?.id || !buttonRef.current) return
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
-        callback: (response) => onSuccess(response.credential),
+        callback: (response) => onSuccessRef.current?.(response.credential),
       })
       buttonRef.current.innerHTML = ''
       window.google.accounts.id.renderButton(buttonRef.current, {
@@ -85,7 +87,7 @@ const GoogleSignIn = ({ onSuccess, disabled }) => {
     return () => {
       script.onload = null
     }
-  }, [disabled, onSuccess])
+  }, [disabled])
 
   if (!GOOGLE_CLIENT_ID) {
     return (

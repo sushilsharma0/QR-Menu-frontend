@@ -138,7 +138,7 @@ const FilePicker = ({ label, hint, accept, onChange }) => (
 const KYC = () => {
   const navigate = useNavigate()
   const { restaurantBase } = useTenantRoutes()
-  const { mergeUser } = useAuth()
+  const { mergeUser, user: authUser } = useAuth()
   const [loading, setLoading] = useState(false)
   const [statusLoading, setStatusLoading] = useState(true)
   const [kycStatus, setKycStatus] = useState({ status: 'not_submitted' })
@@ -190,9 +190,8 @@ const KYC = () => {
         if (file) formData.append(key, file)
       })
 
-      await api.post('/restaurant/kyc/submit', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      // Let the browser set multipart boundary — a manual Content-Type breaks field parsing on the server.
+      await api.post('/restaurant/kyc/submit', formData)
       toast.success('KYC submitted successfully')
       fetchKYCStatus()
     } catch (error) {
@@ -387,8 +386,17 @@ const KYC = () => {
             )}
 
             {status === 'approved' && (
-              <Button onClick={() => navigate(`${restaurantBase}/dashboard`)} className="mt-5 w-full">
-                Go to Dashboard
+              <Button
+                onClick={() =>
+                  navigate(
+                    authUser?.needsPlanUpgrade
+                      ? `${restaurantBase}/subscription`
+                      : `${restaurantBase}/dashboard`,
+                  )
+                }
+                className="mt-5 w-full"
+              >
+                {authUser?.needsPlanUpgrade ? 'Go to Subscription' : 'Go to Dashboard'}
               </Button>
             )}
           </Card>

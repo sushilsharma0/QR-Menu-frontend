@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import toast from 'react-hot-toast'
 import { useAuth } from '../../hooks/useAuth'
 import { FiChevronDown, FiLogOut, FiMail, FiMoon, FiSettings, FiSun, FiUser, FiZap } from 'react-icons/fi'
 import NotificationMenu from './NotificationMenu'
@@ -17,6 +18,22 @@ const Header = () => {
   const { slug, restaurantId } = getTenantSegments(user)
   const restaurantBase = restaurantPortalBase(slug, restaurantId)
   const profileImage = user?.logo || user?.profilePhoto
+  const restaurantBillingLocked =
+    user?.role === 'restaurant' && user?.scope !== 'employee' && user?.needsPlanUpgrade === true
+  const accountSettingsLocked =
+    user?.role === 'restaurant' &&
+    user?.planAssignmentSource === 'custom' &&
+    user?.planFeatureFlags?.accountSettings === false
+
+  const subscriptionToast = () => {
+    toast.error(
+      'Your trial or plan has ended. Open Subscription to choose a plan and restore access.',
+    )
+  }
+  const accountSettingsToast = () => {
+    const assignedName = user?.assignedPlanName || user?.customPlanLabel || 'Custom plan'
+    toast.error(`Locked by assigned plan: ${assignedName}. Contact super admin to enable this feature.`)
+  }
 
   const loginRoleAfterLogout = () => {
     if (user?.role === 'super_admin' || user?.role === 'admin') return 'platform'
@@ -138,7 +155,19 @@ const Header = () => {
                       <>
                         <Link
                           to={`${restaurantBase}/settings`}
-                          onClick={() => setProfileOpen(false)}
+                          onClick={(e) => {
+                            if (restaurantBillingLocked) {
+                              e.preventDefault()
+                              subscriptionToast()
+                              return
+                            }
+                            if (accountSettingsLocked) {
+                              e.preventDefault()
+                              accountSettingsToast()
+                              return
+                            }
+                            setProfileOpen(false)
+                          }}
                           className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold text-gray-700 transition hover:bg-surface-50 dark:text-gray-200 dark:hover:bg-gray-800"
                         >
                           <FiSettings className="h-4 w-4 text-primary-600 dark:text-primary-300" />
@@ -146,7 +175,19 @@ const Header = () => {
                         </Link>
                         <Link
                           to={`${restaurantBase}/profile`}
-                          onClick={() => setProfileOpen(false)}
+                          onClick={(e) => {
+                            if (restaurantBillingLocked) {
+                              e.preventDefault()
+                              subscriptionToast()
+                              return
+                            }
+                            if (accountSettingsLocked) {
+                              e.preventDefault()
+                              accountSettingsToast()
+                              return
+                            }
+                            setProfileOpen(false)
+                          }}
                           className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold text-gray-700 transition hover:bg-surface-50 dark:text-gray-200 dark:hover:bg-gray-800"
                         >
                           <FiUser className="h-4 w-4 text-primary-600 dark:text-primary-300" />
