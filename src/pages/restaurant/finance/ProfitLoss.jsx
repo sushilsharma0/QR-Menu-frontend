@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { FiActivity, FiCreditCard, FiDollarSign } from 'react-icons/fi'
+import { Bar, CartesianGrid, ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import toast from 'react-hot-toast'
 import api from '../../../services/api'
-import Card from '../../../components/common/Card'
 import Button from '../../../components/common/Button'
 import Input from '../../../components/common/Input'
+import { FinanceChartBox, FinanceMetric, FinancePageHeader, FinancePanel, FinanceTooltip, money } from './FinanceUI'
 
 const ProfitLoss = () => {
   const [from, setFrom] = useState(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10))
@@ -28,39 +29,56 @@ const ProfitLoss = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-black">Profit & Loss</h1>
-      <Card title="Generate P&L report">
+      <FinancePageHeader title="Profit & Loss" subtitle="Generate period reports and compare revenue, expenses and net margin." />
+
+      <FinancePanel title="Generate P&L report">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
           <Input label="From" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
           <Input label="To" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-          <div className="md:col-span-2 flex items-end">
+          <div className="flex items-end md:col-span-2">
             <Button type="button" loading={loading} onClick={load}>Generate</Button>
           </div>
         </div>
-      </Card>
+      </FinancePanel>
 
       {report && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <Card title="Revenue"><p className="text-2xl font-black">Rs. {Number(report.revenue || 0).toLocaleString()}</p></Card>
-          <Card title="Expenses"><p className="text-2xl font-black">Rs. {Number(report.expenses || 0).toLocaleString()}</p></Card>
-          <Card title="Net Profit"><p className="text-2xl font-black text-primary-700">Rs. {Number(report.netProfit || 0).toLocaleString()}</p></Card>
+          <FinanceMetric label="Revenue" value={money(report.revenue)} icon={FiDollarSign} />
+          <FinanceMetric label="Expenses" value={money(report.expenses)} icon={FiCreditCard} tone="warning" />
+          <FinanceMetric label="Net profit" value={money(report.netProfit)} icon={FiActivity} tone={Number(report.netProfit || 0) >= 0 ? 'success' : 'danger'} />
         </div>
       )}
 
-      <Card title="Profit trend">
-        <div className="h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={trends}>
-              <XAxis dataKey="createdAt" tickFormatter={(v) => new Date(v).toLocaleDateString()} />
-              <YAxis />
-              <Tooltip />
-              <Line type="monotone" dataKey="netProfit" stroke="#8f2800" />
-              <Line type="monotone" dataKey="revenue" stroke="#b64a26" />
-              <Line type="monotone" dataKey="expenses" stroke="#756a03" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </Card>
+      <FinancePanel title="Profit trend">
+        <FinanceChartBox empty={trends.length === 0} emptyTitle="No P&L reports yet" emptyText="Generate a report to see revenue, expenses and profit trend lines.">
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={trends} margin={{ top: 14, right: 12, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="profitRevenueGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#8f2800" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#b64a26" stopOpacity={0.18} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" vertical={false} />
+                <XAxis
+                  dataKey="createdAt"
+                  tickFormatter={(v) => new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  dy={8}
+                />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} tickFormatter={(v) => `Rs.${Math.round(Number(v || 0) / 1000)}k`} width={58} />
+                <Tooltip content={<FinanceTooltip labelFormatter={(v) => new Date(v).toLocaleDateString()} />} cursor={{ fill: '#fffcf1' }} />
+                <Bar dataKey="revenue" name="Revenue" fill="url(#profitRevenueGradient)" radius={[12, 12, 4, 4]} barSize={34} />
+                <Line type="monotone" dataKey="expenses" name="Expenses" stroke="#d97706" strokeWidth={3} dot={{ r: 4, strokeWidth: 2, fill: '#fff' }} />
+                <Line type="monotone" dataKey="netProfit" name="Net Profit" stroke="#059669" strokeWidth={3} dot={{ r: 4, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 7, strokeWidth: 0, fill: '#059669' }} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </FinanceChartBox>
+      </FinancePanel>
     </div>
   )
 }

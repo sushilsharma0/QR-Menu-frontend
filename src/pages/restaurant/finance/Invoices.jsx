@@ -1,12 +1,11 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import api from '../../../services/api'
-import Card from '../../../components/common/Card'
 import Button from '../../../components/common/Button'
 import Input from '../../../components/common/Input'
 import { AuthContext } from '../../../context/AuthContext'
+import { FinancePageHeader, FinancePanel, money } from './FinanceUI'
 
-const fmtMoney = (value) => Number(value || 0).toLocaleString()
 const fmtDate = (value) => (value ? new Date(value).toLocaleDateString() : '-')
 
 const emptyRows = (count) =>
@@ -209,7 +208,7 @@ const PrintableInvoice = ({ invoice, company }) => {
             <tbody>
               <tr>
                 <td className="py-1 text-right font-bold">SUBTOTAL</td>
-                <td className="w-24 border border-gray-400 px-2 text-right">{fmtMoney(invoice.subtotal)}</td>
+                <td className="w-24 border border-gray-400 px-2 text-right">{Number(invoice.subtotal || 0).toLocaleString()}</td>
               </tr>
               <tr>
                 <td className="py-1 text-right font-bold">TAX RATE</td>
@@ -217,11 +216,11 @@ const PrintableInvoice = ({ invoice, company }) => {
               </tr>
               <tr>
                 <td className="py-1 text-right font-bold">TAX</td>
-                <td className="border border-gray-400 px-2 text-right">{fmtMoney(invoice.tax)}</td>
+                <td className="border border-gray-400 px-2 text-right">{Number(invoice.tax || 0).toLocaleString()}</td>
               </tr>
               <tr>
                 <td className="py-1 text-right font-bold">S & H</td>
-                <td className="border border-gray-400 px-2 text-right">{fmtMoney(invoice.serviceCharge)}</td>
+                <td className="border border-gray-400 px-2 text-right">{Number(invoice.serviceCharge || 0).toLocaleString()}</td>
               </tr>
               <tr>
                 <td className="py-1 text-right font-bold">OTHER</td>
@@ -229,7 +228,7 @@ const PrintableInvoice = ({ invoice, company }) => {
               </tr>
               <tr className="bg-[#3f4f86] text-white">
                 <td className="py-1 text-right font-bold">TOTAL</td>
-                <td className="border border-[#3f4f86] px-2 text-right font-bold">Rs. {fmtMoney(invoice.total)}</td>
+                <td className="border border-[#3f4f86] px-2 text-right font-bold">{money(invoice.total)}</td>
               </tr>
             </tbody>
           </table>
@@ -318,29 +317,32 @@ const Invoices = () => {
 
   return (
     <div className="space-y-6">
-      <div className="no-print flex items-center justify-between">
-        <h1 className="text-2xl font-black">Invoices & Receipts</h1>
-        {selectedInvoice && (
-          <div className="flex gap-2">
+      <div className="no-print">
+        <FinancePageHeader
+          title="Invoices & Receipts"
+          subtitle="Generate restaurant invoices from orders, preview the formatted bill and print it on one A4 page."
+          actions={selectedInvoice && (
+          <>
             <Button type="button" variant="secondary" onClick={() => setSelectedInvoice(null)}>Close Preview</Button>
             <Button type="button" onClick={printInvoice}>Print Invoice</Button>
-          </div>
-        )}
+          </>
+          )}
+        />
       </div>
 
       <div className="no-print">
-        <Card title="Generate invoice from order">
+        <FinancePanel title="Generate invoice from order">
           <form onSubmit={generate} className="flex flex-wrap items-end gap-3">
             <Input label="Order ID or Order #" value={orderId} onChange={(e) => setOrderId(e.target.value)} />
             <Button type="submit" loading={generating}>Generate Invoice</Button>
           </form>
-        </Card>
+        </FinancePanel>
       </div>
 
       {selectedInvoice && <PrintableInvoice invoice={selectedInvoice} company={company} />}
 
       <div className="no-print">
-        <Card title="Invoice history">
+        <FinancePanel title="Invoice history">
           <div className="space-y-2">
             {rows.map((row) => (
               <div key={row._id} className="flex items-center justify-between rounded-xl border p-3">
@@ -351,7 +353,7 @@ const Invoices = () => {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-primary-700">Rs. {fmtMoney(row.total)}</span>
+                  <span className="font-bold text-primary-700">{money(row.total)}</span>
                   <Button
                     type="button"
                     variant="secondary"
@@ -365,7 +367,7 @@ const Invoices = () => {
             ))}
             {rows.length === 0 && <p className="text-sm text-gray-500">No invoices yet.</p>}
           </div>
-        </Card>
+        </FinancePanel>
       </div>
     </div>
   )

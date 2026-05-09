@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react'
+import { FiAlertTriangle, FiArchive, FiBox, FiDollarSign } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import api from '../../../services/api'
-import Card from '../../../components/common/Card'
 import Button from '../../../components/common/Button'
 import Input from '../../../components/common/Input'
+import { EmptyState, FinanceMetric, FinancePageHeader, FinancePanel, FinanceRow, money } from './FinanceUI'
+
+const UNITS = ['kg', 'gram', 'liter', 'piece', 'packet', 'bottle', 'other']
 
 const Inventory = () => {
   const [items, setItems] = useState([])
   const [valuation, setValuation] = useState(0)
   const [lowStock, setLowStock] = useState(0)
   const [deadStock, setDeadStock] = useState(0)
-  const UNITS = ['kg', 'gram', 'liter', 'piece', 'packet', 'bottle', 'other']
   const [form, setForm] = useState({ name: '', unit: 'piece', quantity: 0, minimumStock: 0, costPerUnit: 0, supplier: '', category: 'general' })
 
   const load = async () => {
@@ -24,6 +26,7 @@ const Inventory = () => {
       toast.error(e.response?.data?.message || 'Failed to load inventory')
     }
   }
+
   useEffect(() => { load() }, [])
 
   const addItem = async (e) => {
@@ -40,27 +43,22 @@ const Inventory = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-black">Inventory Accounting</h1>
+      <FinancePageHeader title="Inventory Accounting" subtitle="Track stock value, low stock risk and ingredient cost baselines." />
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Card title="Inventory valuation"><p className="text-2xl font-black">Rs. {Number(valuation).toLocaleString()}</p></Card>
-        <Card title="Low stock alerts"><p className="text-2xl font-black text-red-600">{lowStock}</p></Card>
-        <Card title="Dead stock (qty = 0)"><p className="text-2xl font-black text-amber-700">{deadStock}</p></Card>
-        <Card title="Total items"><p className="text-2xl font-black">{items.length}</p></Card>
+        <FinanceMetric label="Inventory valuation" value={money(valuation)} icon={FiDollarSign} />
+        <FinanceMetric label="Low stock alerts" value={lowStock} icon={FiAlertTriangle} tone="danger" />
+        <FinanceMetric label="Dead stock" value={deadStock} icon={FiArchive} tone="warning" />
+        <FinanceMetric label="Total items" value={items.length} icon={FiBox} tone="neutral" />
       </div>
 
-      <Card title="Add inventory item">
+      <FinancePanel title="Add inventory item">
         <form onSubmit={addItem} className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <Input label="Name" value={form.name} onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))} required />
           <div>
             <label className="mb-1 block text-sm font-medium">Unit</label>
-            <select
-              className="w-full rounded-lg border px-3 py-2"
-              value={form.unit}
-              onChange={(e) => setForm((s) => ({ ...s, unit: e.target.value }))}
-            >
-              {UNITS.map((u) => (
-                <option key={u} value={u}>{u}</option>
-              ))}
+            <select className="w-full rounded-lg border border-surface-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-900" value={form.unit} onChange={(e) => setForm((s) => ({ ...s, unit: e.target.value }))}>
+              {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
             </select>
           </div>
           <Input label="Quantity" type="number" value={form.quantity} onChange={(e) => setForm((s) => ({ ...s, quantity: Number(e.target.value) }))} />
@@ -70,24 +68,26 @@ const Inventory = () => {
           <Input label="Category" value={form.category} onChange={(e) => setForm((s) => ({ ...s, category: e.target.value }))} />
           <div className="md:col-span-3"><Button type="submit">Save Item</Button></div>
         </form>
-      </Card>
+      </FinancePanel>
 
-      <Card title="Inventory list">
+      <FinancePanel title="Inventory list">
         <div className="space-y-2">
-          {items.map((x) => (
-            <div key={x._id} className="flex items-center justify-between rounded-xl border p-3">
-              <div>
-                <p className="font-semibold">{x.name}</p>
-                <p className="text-xs text-gray-500">{x.category} • {x.quantity} {x.unit}</p>
-              </div>
-              <p className={`text-sm font-semibold ${Number(x.quantity) <= Number(x.minimumStock) ? 'text-red-600' : 'text-gray-700'}`}>
-                Min {x.minimumStock} • Rs. {Number(x.costPerUnit).toLocaleString()}/unit
-              </p>
-            </div>
-          ))}
-          {items.length === 0 && <p className="text-sm text-gray-500">No inventory items found.</p>}
+          {items.map((x) => {
+            const low = Number(x.quantity) <= Number(x.minimumStock)
+            return (
+              <FinanceRow
+                key={x._id}
+                title={x.name}
+                meta={`${x.category} | ${x.quantity} ${x.unit} | Min ${x.minimumStock}`}
+                amount={`${money(x.costPerUnit)}/unit`}
+                status={low ? 'Low stock' : 'In stock'}
+                danger={low}
+              />
+            )
+          })}
+          {items.length === 0 && <EmptyState>No inventory items found.</EmptyState>}
         </div>
-      </Card>
+      </FinancePanel>
     </div>
   )
 }
