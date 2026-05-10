@@ -48,6 +48,7 @@ const NAV_GROUPS = [
   {
     label: 'Service',
     items: [
+      { segment: 'pos', icon: FiCoffee, label: 'POS' },
       { segment: 'orders', icon: FiShoppingBag, label: 'Orders' },
       { segment: 'menu', icon: FiBookOpen, label: 'Menu' },
       { segment: 'tables', icon: FiMapPin, label: 'Tables & QR' },
@@ -95,6 +96,7 @@ const SUBSCRIPTION_REQUIRED_TOAST =
 
 function featureKeyForSegment(segment) {
   const root = segment.split('/')[0]
+  if (root === 'pos') return 'orders'
   if (root === 'menu') return 'menu'
   if (root === 'orders') return segment === 'orders/activity' ? 'analytics' : 'orders'
   if (root === 'tables') return 'tables'

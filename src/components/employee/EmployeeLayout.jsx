@@ -29,6 +29,7 @@ const EmployeeLayout = () => {
   const location = useLocation()
   const { socket } = useSocket()
   const [pendingCount, setPendingCount] = useState(0)
+  const isPosRoute = /\/pos(\/|$)/.test(location.pathname || '')
 
   if (user?.scope === 'employee' && user?.mustChangePassword) {
     return <Navigate to="/employee/change-password" replace state={{ from: location }} />
@@ -61,12 +62,16 @@ const EmployeeLayout = () => {
   const kitchenDashboardPath = kb ? `${kb}/dashboard` : ''
   const kitchenOrdersPath = kb ? `${kb}/orders` : ''
   const cashierDashboardPath = cb ? `${cb}/dashboard` : ''
+  const cashierPosPath = cb ? `${cb}/pos` : ''
   const cashierFinanceBase = cb ? `${cb}/finance` : ''
   const waiterDashboardPath = wb ? `${wb}/dashboard` : ''
   const waiterOrderPath = wb ? `${wb}/order` : ''
+  const waiterPosPath = wb ? `${wb}/pos` : ''
 
   const navItems = [
     { path: kitchenOrdersPath, label: 'Order History', icon: FiClock, role: 'kitchen', showPending: true },
+    { path: cashierPosPath, label: 'POS', icon: FiGrid, role: 'cashier' },
+    { path: cashierPosPath, label: 'POS', icon: FiGrid, role: 'manager' },
     { path: cashierDashboardPath, label: 'Orders', icon: TbCurrencyRupee, role: 'cashier' },
     { path: cashierFinanceBase ? `${cashierFinanceBase}/dashboard` : '', label: 'Finance', icon: FiBarChart2, role: 'cashier' },
     { path: cashierFinanceBase ? `${cashierFinanceBase}/expenses` : '', label: 'Expenses', icon: FiCreditCard, role: 'cashier' },
@@ -76,6 +81,7 @@ const EmployeeLayout = () => {
     { path: cashierFinanceBase ? `${cashierFinanceBase}/payroll` : '', label: 'Payroll', icon: FiUsers, role: 'cashier' },
     { path: cashierFinanceBase ? `${cashierFinanceBase}/invoices` : '', label: 'Invoices', icon: FiFileText, role: 'cashier' },
     { path: waiterDashboardPath, label: 'Dashboard', icon: FiGrid, role: 'waiter' },
+    { path: waiterPosPath, label: 'POS', icon: FiGrid, role: 'waiter' },
     { path: waiterOrderPath, label: 'Take Order', icon: FiPlusCircle, role: 'waiter' },
   ]
 
@@ -117,7 +123,7 @@ const EmployeeLayout = () => {
   }, [socket, user?.role])
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
       {/* Header */}
       <header className="bg-white dark:bg-gray-900 shadow-sm sticky top-0 z-30 border-b border-transparent dark:border-gray-800">
         <div className="mx-auto px-4 sm:px-6 lg:px-20">
@@ -179,7 +185,7 @@ const EmployeeLayout = () => {
       </header>
 
       {/* Navigation Tabs */}
-      {currentNavItems.length > 0 && (
+      {!isPosRoute && currentNavItems.length > 0 && (
         <div className="border-b border-amber-100 bg-gradient-to-r from-white via-[#fffaf3] to-emerald-50/60 dark:border-gray-800 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950">
           <div className="mx-auto px-4 py-3 sm:px-6 lg:px-8">
             <nav className="flex justify-center gap-11 overflow-x-auto rounded-2xl border border-amber-100 bg-white/85 p-2 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/85">
@@ -222,18 +228,26 @@ const EmployeeLayout = () => {
       )}
 
       {/* Main Content */}
-      <main className="mx-auto px-4 sm:px-6 lg:px-20 py-8 dark:text-gray-100">
+      <main
+        className={
+          isPosRoute
+            ? 'min-h-0 flex-1 overflow-hidden p-0 dark:text-gray-100'
+            : 'mx-auto px-4 sm:px-6 lg:px-20 py-8 dark:text-gray-100'
+        }
+      >
         <Outlet />
       </main>
 
       {/* Footer */}
-      <footer className="bg-white dark:bg-gray-900 sticky bottom-0 w-full border-t dark:border-gray-800 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-            &copy; {new Date().getFullYear()} QR Menu SaaS. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      {!isPosRoute && (
+        <footer className="bg-white dark:bg-gray-900 sticky bottom-0 w-full border-t dark:border-gray-800 mt-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+              &copy; {new Date().getFullYear()} QR Menu SaaS. All rights reserved.
+            </p>
+          </div>
+        </footer>
+      )}
     </div>
   )
 }

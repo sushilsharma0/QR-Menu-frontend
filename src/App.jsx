@@ -57,6 +57,14 @@ import FinancePayroll from "./pages/restaurant/finance/Payroll";
 import FinanceInvoices from "./pages/restaurant/finance/Invoices";
 import FinanceInventory from "./pages/restaurant/finance/Inventory";
 import FinanceBudget from "./pages/restaurant/finance/Budget";
+import PosLayout from "./pages/restaurant/pos/PosLayout";
+import PosMain from "./pages/restaurant/pos/PosMain";
+import PosOrdersList from "./pages/restaurant/pos/PosOrdersList";
+import PosBilling from "./pages/restaurant/pos/PosBilling";
+import PosHistory from "./pages/restaurant/pos/PosHistory";
+import PosReturns from "./pages/restaurant/pos/PosReturns";
+import PosShift from "./pages/restaurant/pos/PosShift";
+import PosReports from "./pages/restaurant/pos/PosReports";
 
 // Employee Pages
 import KitchenDashboard from "./pages/employee/KitchenDashboard";
@@ -196,6 +204,15 @@ function App() {
         <Route path="settings" element={<RestaurantSettings />} />
         <Route path="profile" element={<RestaurantProfile />} />
         <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="pos" element={<PosLayout />}>
+          <Route index element={<PosMain />} />
+          <Route path="orders" element={<PosOrdersList />} />
+          <Route path="billing" element={<PosBilling />} />
+          <Route path="history" element={<PosHistory />} />
+          <Route path="returns" element={<PosReturns />} />
+          <Route path="shift" element={<PosShift />} />
+          <Route path="reports" element={<PosReports />} />
+        </Route>
       </Route>
 
       {/* Employee: forced password change (no sidebar) */}
@@ -223,6 +240,24 @@ function App() {
         <Route path="/employee/:slug/:restaurantId/notifications" element={<NotificationsPage />} />
         <Route path="/kitchen/:slug/:restaurantId/notifications" element={<NotificationsPage />} />
         <Route path="/cashier/:slug/:restaurantId/notifications" element={<NotificationsPage />} />
+        <Route path="/cashier/:slug/:restaurantId/pos" element={<PosLayout />}>
+          <Route index element={<PosMain />} />
+          <Route path="orders" element={<PosOrdersList />} />
+          <Route path="billing" element={<PosBilling />} />
+          <Route path="history" element={<PosHistory />} />
+          <Route path="returns" element={<PosReturns />} />
+          <Route path="shift" element={<PosShift />} />
+          <Route path="reports" element={<PosReports />} />
+        </Route>
+        <Route path="/waiter/:slug/:restaurantId/pos" element={<PosLayout />}>
+          <Route index element={<PosMain />} />
+          <Route path="orders" element={<PosOrdersList />} />
+          <Route path="billing" element={<PosBilling />} />
+          <Route path="history" element={<PosHistory />} />
+          <Route path="returns" element={<PosReturns />} />
+          <Route path="shift" element={<PosShift />} />
+          <Route path="reports" element={<PosReports />} />
+        </Route>
       </Route>
 
       {/* Customer Routes - Public */}

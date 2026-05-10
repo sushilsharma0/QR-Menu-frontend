@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
+const apiTarget = 'http://127.0.0.1:5000'
+
 export default defineConfig({
   plugins: [
     react(),
@@ -60,11 +62,11 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: apiTarget,
         changeOrigin: true,
       },
       '/socket.io': {
-        target: 'http://localhost:5000',
+        target: apiTarget,
         ws: true,
       },
     },
@@ -74,11 +76,11 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: apiTarget,
         changeOrigin: true,
       },
       '/socket.io': {
-        target: 'http://localhost:5000',
+        target: apiTarget,
         ws: true,
       },
     },

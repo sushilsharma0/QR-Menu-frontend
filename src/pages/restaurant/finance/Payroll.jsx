@@ -198,14 +198,14 @@ const FinancePayroll = () => {
   const slipRef = useRef(null)
   const [month, setMonth] = useState(now.getMonth() + 1)
   const [year, setYear] = useState(now.getFullYear())
-  /** Generate payroll for this many consecutive months starting at month/year (1–3). */
+  /** Generate payroll for this many consecutive months starting at month/year (1-3). */
   const [monthCount, setMonthCount] = useState(1)
   const [data, setData] = useState({ items: [], summary: null })
   const [history, setHistory] = useState([])
   const [generating, setGenerating] = useState(false)
   const [savingModal, setSavingModal] = useState(false)
   const [selectedPayroll, setSelectedPayroll] = useState(null)
-  /** { employeeId, row } — row may be null when opening from staff picker */
+  /** { employeeId, row } - row may be null when opening from staff picker */
   const [payrollModal, setPayrollModal] = useState(null)
   const [modalForm, setModalForm] = useState(null)
   const [modalProfile, setModalProfile] = useState(null)
@@ -352,9 +352,6 @@ const FinancePayroll = () => {
     }
   }
 
-<<<<<<< HEAD
-  const startEdit = (row) => {
-=======
   const openPayrollModalForRow = (row) => {
     const id = row.employeeId?._id || row.employeeId
     if (!id) return
@@ -368,7 +365,6 @@ const FinancePayroll = () => {
       return
     }
     const row = (data?.items || []).find((x) => String(x.employeeId?._id || x.employeeId) === String(staffPickId)) || null
->>>>>>> 19d089e511166164d2ace7d7d48a204d01d4d4a5
     setSelectedPayroll(null)
     setPayrollModal({ employeeId: String(staffPickId), row })
   }
@@ -395,7 +391,7 @@ const FinancePayroll = () => {
       setPayrollModal(null)
       setStaffPickId('')
       loadHistory()
-      toast.success('Payroll calculated — salary slip opened below')
+      toast.success('Payroll calculated - salary slip opened below')
       if (found) setSelectedPayroll(found)
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to save payroll')
@@ -460,32 +456,21 @@ const FinancePayroll = () => {
             <p className="mt-1 text-xl font-black text-amber-900">{defaults.overtimeHours || 0} hrs x {money(defaults.overtimeRate)} = {money(overtimePreview)}</p>
           </div>
           <div className="flex items-end md:col-span-2">
-<<<<<<< HEAD
-            <Button type="button" loading={generating} onClick={generate}>Generate Monthly Payroll</Button>
-=======
             <Button type="button" loading={generating} onClick={generate}>
               {monthCount > 1 ? `Generate payroll (${monthCount} months)` : 'Generate monthly payroll'}
             </Button>
->>>>>>> 19d089e511166164d2ace7d7d48a204d01d4d4a5
           </div>
         </div>
       </FinancePanel>
 
-<<<<<<< HEAD
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
-=======
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
->>>>>>> 19d089e511166164d2ace7d7d48a204d01d4d4a5
         <FinanceMetric label="Total payroll cost" value={money(data?.summary?.totalPayrollCost)} icon={FiUsers} />
         <FinanceMetric label="Paid salaries" value={data?.summary?.paidSalaries || 0} icon={FiCheckCircle} tone="success" />
         <FinanceMetric label="Pending salaries" value={data?.summary?.pendingSalaries || 0} icon={FiClock} tone="warning" />
         <FinanceMetric label="Overtime pay" value={money(data?.summary?.totalOvertimePay)} icon={FiClock} tone="neutral" />
         <FinanceMetric label="Bonuses" value={money(data?.summary?.totalBonus)} icon={FiFileText} tone="success" />
-<<<<<<< HEAD
-=======
         <FinanceMetric label="TDS withheld" value={money(data?.summary?.totalTds)} icon={FiPercent} tone="neutral" />
         <FinanceMetric label="EPF" value={money(data?.summary?.totalEpf)} icon={FiPercent} tone="neutral" />
->>>>>>> 19d089e511166164d2ace7d7d48a204d01d4d4a5
       </div>
 
       <FinancePanel title="Payroll rows">
