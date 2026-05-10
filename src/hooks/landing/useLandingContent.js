@@ -19,6 +19,13 @@ const splitPhrases = (value) =>
     .map((item) => item.trim())
     .filter(Boolean)
 
+const defaultHeroBullets = [
+  'QR Menu Ordering',
+  'Live Kitchen Workflow',
+  'Fast Cashier Billing',
+  'Restaurant Admin Dashboard',
+]
+
 const mapFeature = (entry, index) => {
   const Icon = featureIcons[index % featureIcons.length]
   return {
@@ -30,24 +37,28 @@ const mapFeature = (entry, index) => {
 
 export const useLandingContent = () => {
   const [entries, setEntries] = useState([])
+  const [siteConfig, setSiteConfig] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchContent = async () => {
+    let cancelled = false
+    const run = async () => {
       try {
-        const response = await api.get('/platform/cms', {
-          params: { isActive: true },
-          skipErrorToast: true,
-        })
-        setEntries(response.data?.data || [])
-      } catch (error) {
-        setEntries([])
+        const [cmsRes, cfgRes] = await Promise.all([
+          api.get('/platform/cms', { params: { isActive: true }, skipErrorToast: true }).catch(() => ({ data: { data: [] } })),
+          api.get('/customer/landing/site-config', { skipErrorToast: true }).catch(() => ({ data: { data: null } })),
+        ])
+        if (cancelled) return
+        setEntries(cmsRes.data?.data || [])
+        setSiteConfig(cfgRes.data?.data || null)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
-
-    fetchContent()
+    run()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   return useMemo(() => {
@@ -63,32 +74,103 @@ export const useLandingContent = () => {
     )
     const heroTypewriterPhrases = splitPhrases(heroTypewriterEntry?.content || heroTypewriterEntry?.metaDescription)
     const bannerPhrases = splitPhrases(banner?.content)
-    const typewriterPhrases = heroTypewriterPhrases.length
-      ? heroTypewriterPhrases
-      : bannerPhrases.length > 1
-        ? bannerPhrases
-        : fallbackHero.typewriterPhrases
+
+    const cmsHero = banner
+      ? {
+          eyebrow: banner.metaTitle || fallbackHero.eyebrow,
+          title: banner.title || fallbackHero.title,
+          description: banner.metaDescription || firstParagraph(banner.content) || fallbackHero.description,
+          image: banner.image || fallbackHero.image,
+          typewriterPhrases: heroTypewriterPhrases.length
+            ? heroTypewriterPhrases
+            : bannerPhrases.length > 1
+              ? bannerPhrases
+              : fallbackHero.typewriterPhrases,
+        }
+      : {
+          ...fallbackHero,
+          typewriterPhrases: heroTypewriterPhrases.length
+            ? heroTypewriterPhrases
+            : bannerPhrases.length > 1
+              ? bannerPhrases
+              : fallbackHero.typewriterPhrases,
+        }
+
+    const ah = siteConfig?.hero || {}
+    const softwareName = siteConfig?.softwareName || 'QR Restro Nepal'
+    const adminPhrases = splitPhrases(ah.typewriterPhrases)
+    const typewriterPhrases = adminPhrases.length ? adminPhrases : cmsHero.typewriterPhrases
+
+    const defaultSub = `${softwareName} helps restaurants serve faster, reduce staff confusion, and deliver a cleaner guest experience without extra apps or complicated systems.`
+
+    const bulletLines = String(ah.bulletPoints || '')
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    const bullets = bulletLines.length ? bulletLines.slice(0, 4) : defaultHeroBullets
+
+    const hero = {
+      eyebrow: ah.eyebrow?.trim() || cmsHero.eyebrow,
+      title: ah.title?.trim() || cmsHero.title,
+      description: ah.description?.trim() || cmsHero.description,
+      subDescription: ah.subDescription?.trim() || defaultSub,
+      image: ah.image?.trim() || cmsHero.image,
+      typewriterPhrases,
+      primaryCta: {
+        text: ah.primaryCtaText?.trim() || 'Start Free Restaurant Setup',
+        href: ah.primaryCtaHref?.trim() || '/vendor/register',
+      },
+      secondaryCta: {
+        text: ah.secondaryCtaText?.trim() || 'Explore Features',
+        href: ah.secondaryCtaHref?.trim() || '#features',
+      },
+      bullets,
+    }
+
+    const branding = {
+      softwareName,
+      brandSubtitle: siteConfig?.brandSubtitle ?? 'Nepal',
+      publicSiteUrl: siteConfig?.publicSiteUrl || '',
+      supportEmail: siteConfig?.supportEmail || '',
+      contactPhone: siteConfig?.contactPhone || '',
+      landingTheme: siteConfig?.landingTheme || 'default',
+    }
+
+    const footer = {
+      tagline:
+        siteConfig?.footer?.tagline?.trim() ||
+        'Modern QR menu and restaurant management platform for restaurants, cafes, hotels, and food businesses across Nepal.',
+      ctaTitle: siteConfig?.footer?.ctaTitle?.trim() || 'Ready to Modernize Your Restaurant?',
+      ctaSubtitle:
+        siteConfig?.footer?.ctaSubtitle?.trim() ||
+        'Launch your restaurant with QR menus, live kitchen sync, digital billing, and a complete restaurant dashboard in minutes.',
+    }
+
+    const chat = siteConfig?.chat || {
+      enabled: true,
+      mode: 'whatsapp',
+      whatsappNumber: '9779800000000',
+      whatsappMessage: 'Hi, I want to know more about the platform.',
+      displayPhone: '',
+    }
 
     return {
       loading,
-      hero: banner
-        ? {
-            eyebrow: banner.metaTitle || fallbackHero.eyebrow,
-            title: banner.title || fallbackHero.title,
-            description: banner.metaDescription || firstParagraph(banner.content) || fallbackHero.description,
-            image: banner.image || fallbackHero.image,
-            typewriterPhrases,
-          }
-        : {
-            ...fallbackHero,
-            typewriterPhrases,
-          },
+      branding,
+      footer,
+      chat,
+      hero,
       offerBanner: offerBanner
         ? {
             eyebrow: offerBanner.metaTitle || 'Launch offer',
             title: offerBanner.title || 'First 10 restaurants get 1 month free.',
-            description: offerBanner.metaDescription || firstParagraph(offerBanner.content) || 'Register early and start QR Restro Nepal free for the first month.',
-            image: offerBanner.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200',
+            description:
+              offerBanner.metaDescription ||
+              firstParagraph(offerBanner.content) ||
+              'Register early and start QR Restro Nepal free for the first month.',
+            image:
+              offerBanner.image ||
+              'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200',
             ctaLabel: offerBanner.content?.includes('|') ? offerBanner.content.split('|')[0].trim() : 'Claim free month',
           }
         : null,
@@ -112,5 +194,5 @@ export const useLandingContent = () => {
         : fallbackAbout,
       blogs: blogEntries.length ? blogEntries.slice(0, 3) : fallbackBlogs,
     }
-  }, [entries, loading])
+  }, [entries, siteConfig, loading])
 }

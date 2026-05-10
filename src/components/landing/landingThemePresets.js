@@ -1,0 +1,73 @@
+/** Landing-only accent colors (hex) — paired with Tailwind layout classes */
+export const LANDING_THEMES = {
+  default: {
+    id: 'default',
+    label: 'Classic',
+    curve: 'text-primary-500/25',
+    blobA: 'bg-secondary-200/40',
+    blobB: 'bg-attention-200/35',
+    primaryButton: 'bg-primary-600 hover:bg-primary-700 shadow-primary-900/20',
+    accentText: 'text-primary-700',
+    ringAccent: 'text-primary-600',
+    summaryBar: 'bg-accent-500',
+  },
+  ocean: {
+    id: 'ocean',
+    label: 'Ocean',
+    curve: 'text-sky-500/30',
+    blobA: 'bg-cyan-200/45',
+    blobB: 'bg-blue-200/40',
+    primaryButton: 'bg-sky-600 hover:bg-sky-700 shadow-sky-900/25',
+    accentText: 'text-sky-700',
+    ringAccent: 'text-sky-600',
+    summaryBar: 'bg-cyan-600',
+  },
+  sunset: {
+    id: 'sunset',
+    label: 'Sunset',
+    curve: 'text-orange-400/35',
+    blobA: 'bg-rose-200/40',
+    blobB: 'bg-amber-200/45',
+    primaryButton: 'bg-orange-600 hover:bg-orange-700 shadow-orange-900/25',
+    accentText: 'text-orange-700',
+    ringAccent: 'text-orange-600',
+    summaryBar: 'bg-rose-500',
+  },
+  forest: {
+    id: 'forest',
+    label: 'Forest',
+    curve: 'text-emerald-500/30',
+    blobA: 'bg-emerald-200/40',
+    blobB: 'bg-lime-200/35',
+    primaryButton: 'bg-emerald-700 hover:bg-emerald-800 shadow-emerald-900/25',
+    accentText: 'text-emerald-800',
+    ringAccent: 'text-emerald-600',
+    summaryBar: 'bg-emerald-600',
+  },
+  midnight: {
+    id: 'midnight',
+    label: 'Midnight',
+    curve: 'text-indigo-400/35',
+    blobA: 'bg-violet-200/35',
+    blobB: 'bg-indigo-200/40',
+    primaryButton: 'bg-indigo-700 hover:bg-indigo-800 shadow-indigo-900/30',
+    accentText: 'text-indigo-800',
+    ringAccent: 'text-indigo-600',
+    summaryBar: 'bg-violet-600',
+  },
+  rose: {
+    id: 'rose',
+    label: 'Rose',
+    curve: 'text-pink-400/35',
+    blobA: 'bg-pink-200/40',
+    blobB: 'bg-fuchsia-200/35',
+    primaryButton: 'bg-pink-600 hover:bg-pink-700 shadow-pink-900/25',
+    accentText: 'text-pink-800',
+    ringAccent: 'text-pink-600',
+    summaryBar: 'bg-fuchsia-600',
+  },
+}
+
+export function getLandingTheme(themeId) {
+  return LANDING_THEMES[themeId] || LANDING_THEMES.default
+}

@@ -5,6 +5,7 @@ import { FiFacebook, FiInstagram, FiLinkedin, FiTwitter } from 'react-icons/fi'
 import { ArrowRight, BookOpenText, ChefHat, QrCode, TabletSmartphone } from 'lucide-react'
 import BrandLogo from './BrandLogo'
 import { navItems } from './landingDefaults'
+import { useLandingBranding } from '../../context/LandingBrandingContext'
 
 const socials = [
   { label: 'Facebook', icon: FiFacebook, href: 'https://facebook.com' },
@@ -13,14 +14,19 @@ const socials = [
   { label: 'LinkedIn', icon: FiLinkedin, href: 'https://linkedin.com' },
 ]
 
-const LandingFooter = () => (
+const LandingFooter = () => {
+  const { softwareName, publicSiteUrl, footer: footerCopy } = useLandingBranding()
+  const displayName = softwareName || 'QR Restro Nepal'
+  const siteUrl = (publicSiteUrl || '').trim()
+
+  return (
   <footer className="border-t border-surface-200 bg-surface-50/60 py-12">
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <div className="mb-10 rounded-2xl border border-surface-200 bg-white p-6 shadow-sm sm:p-7 lg:flex lg:items-center lg:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.24em] text-primary-700">Final CTA Section</p>
-          <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Ready to Modernize Your Restaurant?</h3>
-          <p className="mt-2 max-w-2xl text-sm text-slate-600 sm:text-base">Launch your restaurant with QR menus, live kitchen sync, digital billing, and a complete restaurant dashboard in minutes.</p>
+          <p className="text-xs font-black uppercase tracking-[0.24em] text-primary-700">Get started</p>
+          <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">{footerCopy?.ctaTitle || 'Ready to Modernize Your Restaurant?'}</h3>
+          <p className="mt-2 max-w-2xl text-sm text-slate-600 sm:text-base">{footerCopy?.ctaSubtitle || 'Launch your restaurant with QR menus, live kitchen sync, digital billing, and a complete restaurant dashboard in minutes.'}</p>
         </div>
         <div className="mt-4 flex gap-3 lg:mt-0">
           <Link to="/vendor/register" className="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-primary-900/20 transition hover:-translate-y-0.5 hover:bg-primary-700">
@@ -37,8 +43,16 @@ const LandingFooter = () => (
       <div>
         <BrandLogo />
         <p className="mt-5 max-w-md text-sm leading-7 text-slate-600">
-          Modern QR menu and restaurant management platform for restaurants, cafes, hotels, and food businesses across Nepal.
+          {footerCopy?.tagline ||
+            'Modern QR menu and restaurant management platform for restaurants, cafes, hotels, and food businesses across Nepal.'}
         </p>
+        {siteUrl ? (
+          <p className="mt-3 text-xs font-bold text-primary-700">
+            <a href={siteUrl.startsWith('http') ? siteUrl : `https://${siteUrl}`} className="hover:underline" target="_blank" rel="noreferrer">
+              {siteUrl.replace(/^https?:\/\//i, '')}
+            </a>
+          </p>
+        ) : null}
         <div className="mt-6 flex flex-wrap gap-2 text-xs font-black text-slate-600">
           <span className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2"><QrCode className="h-4 w-4 text-primary-600" />QR Ordering</span>
           <span className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2"><TabletSmartphone className="h-4 w-4 text-primary-600" />Digital Menu</span>
@@ -87,15 +101,16 @@ const LandingFooter = () => (
             )
           })}
         </div>
-        <p className="mt-6 text-xs font-semibold text-slate-500">© {new Date().getFullYear()} QR Restro Nepal. Built for modern restaurants.</p>
+        <p className="mt-6 text-xs font-semibold text-slate-500">© {new Date().getFullYear()} {displayName}. Built for modern restaurants.</p>
       </div>
       </div>
 
       <div className="mt-10 border-t border-surface-200 pt-5 text-center text-xs font-semibold text-slate-500">
-        <p>© {new Date().getFullYear()} QR Restro Nepal</p>
+        <p>© {new Date().getFullYear()} {displayName}</p>
       </div>
     </div>
   </footer>
-)
+  )
+}
 
 export default LandingFooter

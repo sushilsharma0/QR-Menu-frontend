@@ -1,7 +1,24 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { ArrowRight, BellRing, BookOpenText, CheckCircle2, Clock3, QrCode, ReceiptText, Sparkles, UtensilsCrossed } from 'lucide-react'
+import { ArrowRight, BellRing, BookOpenText, CheckCircle2, Clock3, QrCode, Sparkles, UtensilsCrossed } from 'lucide-react'
+import { useLandingBranding } from '../../context/LandingBrandingContext'
+
+function HeroCta({ href, className, children }) {
+  const h = href || '#'
+  if (h.startsWith('http') || h.startsWith('mailto:') || h.startsWith('tel:') || h.startsWith('#')) {
+    return (
+      <a href={h} className={className}>
+        {children}
+      </a>
+    )
+  }
+  return (
+    <Link to={h} className={className}>
+      {children}
+    </Link>
+  )
+}
 
 const floatingFeatures = [
   { icon: QrCode, title: 'Scan QR', text: 'Open menu' },
@@ -13,6 +30,7 @@ const floatingFeatures = [
 const qrBlocks = Array.from({ length: 49 }, (_, index) => index)
 
 const HeroSection = ({ hero }) => {
+  const { themeTokens } = useLandingBranding()
   const { scrollYProgress } = useScroll()
   const phoneScale = useTransform(scrollYProgress, [0, 0.18, 0.36], [1, 1.08, 0.96])
   const cardScale = useTransform(scrollYProgress, [0, 0.22, 0.42], [0.96, 1.04, 0.98])
@@ -51,7 +69,9 @@ const HeroSection = ({ hero }) => {
     <section id="home" className="relative px-4 pb-16 pt-28 sm:px-6 lg:px-8">
       <div className="mx-auto grid min-h-[calc(100vh-7rem)] max-w-7xl items-center gap-12 py-12 lg:grid-cols-[1.02fr_0.98fr]">
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="text-center lg:text-left">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary-200 bg-white/90 px-4 py-2 text-sm font-black text-primary-700 shadow-sm backdrop-blur">
+          <div
+            className={`inline-flex items-center gap-2 rounded-full border border-primary-200 bg-white/90 px-4 py-2 text-sm font-black shadow-sm backdrop-blur ${themeTokens.accentText}`}
+          >
             <Sparkles className="h-4 w-4" />
             {hero.eyebrow}
           </div>
@@ -62,22 +82,28 @@ const HeroSection = ({ hero }) => {
             {hero.description}
           </p>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-slate-500 sm:text-base lg:mx-0">
-            QR Restro Nepal helps restaurants serve faster, reduce staff confusion, and deliver a cleaner guest experience without extra apps or complicated systems.
+            {hero.subDescription}
           </p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
-            <Link to="/vendor/register" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary-600 px-7 py-4 text-sm font-black text-white shadow-2xl shadow-primary-900/20 transition hover:-translate-y-0.5 hover:bg-primary-700">
-              Start Free Restaurant Setup
+            <HeroCta
+              href={hero.primaryCta?.href}
+              className={`inline-flex items-center justify-center gap-2 rounded-2xl px-7 py-4 text-sm font-black text-white shadow-2xl transition hover:-translate-y-0.5 ${themeTokens.primaryButton}`}
+            >
+              {hero.primaryCta?.text}
               <ArrowRight className="h-4 w-4" />
-            </Link>
-            <a href="#features" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-7 py-4 text-sm font-black text-slate-800 shadow-sm transition hover:-translate-y-0.5">
-              Explore Features
+            </HeroCta>
+            <HeroCta
+              href={hero.secondaryCta?.href}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-7 py-4 text-sm font-black text-slate-800 shadow-sm transition hover:-translate-y-0.5"
+            >
+              {hero.secondaryCta?.text}
               <BookOpenText className="h-4 w-4" />
-            </a>
+            </HeroCta>
           </div>
           <div className="mt-8 grid gap-3 text-left sm:grid-cols-2 lg:grid-cols-4">
-            {['QR Menu Ordering', 'Live Kitchen Workflow', 'Fast Cashier Billing', 'Restaurant Admin Dashboard'].map((item) => (
+            {(hero.bullets || []).map((item) => (
               <div key={item} className="flex items-center gap-2 rounded-xl border border-white/80 bg-white/75 px-3 py-3 text-sm font-black text-slate-700 shadow-sm backdrop-blur">
-                <CheckCircle2 className="h-4 w-4 text-primary-600" />
+                <CheckCircle2 className={`h-4 w-4 ${themeTokens.ringAccent}`} />
                 {item}
               </div>
             ))}
@@ -97,7 +123,7 @@ const HeroSection = ({ hero }) => {
                 <div className="p-4">
                   <div className="rounded-2xl bg-white p-3 shadow-sm">
                     <img src={hero.image} alt="Restaurant menu preview" className="h-40 w-full rounded-xl object-cover sm:h-28" />
-                    <p className="mt-3 text-xs font-black uppercase tracking-[0.2em] text-primary-700">Table 07</p>
+                    <p className={`mt-3 text-xs font-black uppercase tracking-[0.2em] ${themeTokens.accentText}`}>Table 07</p>
                     <h2 className="mt-1 text-xl font-black text-slate-950">Today's Popular Items</h2>
                   </div>
                   <div className="mt-4 grid gap-3">
@@ -119,7 +145,7 @@ const HeroSection = ({ hero }) => {
                       <span className="text-xs font-bold text-slate-300">Total:</span>
                       <span className="text-sm font-black">Rs. 1,240</span>
                     </div>
-                    <div className="mt-3 rounded-xl bg-accent-500 py-2 text-center text-xs font-black text-white">Send Order to Kitchen</div>
+                    <div className={`mt-3 rounded-xl py-2 text-center text-xs font-black text-white ${themeTokens.summaryBar}`}>Send Order to Kitchen</div>
                   </div>
                 </div>
               </div>
@@ -139,7 +165,7 @@ const HeroSection = ({ hero }) => {
               <motion.span
                 animate={{ y: [0, 88, 0] }}
                 transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute left-2 right-2 top-2 h-1 rounded-full bg-primary-400 shadow-lg shadow-primary-500/50"
+                className={`absolute left-2 right-2 top-2 h-1 rounded-full opacity-90 shadow-lg ${themeTokens.ringAccent.replace('text-', 'bg-')}`}
               />
             </div>
             <div className="mt-3 flex items-center justify-center gap-2 text-xs font-black text-slate-700">
