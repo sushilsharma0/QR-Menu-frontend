@@ -64,14 +64,6 @@ const NAV_GROUPS = [
     ],
   },
   {
-    label: 'Support',
-    items: [
-      { segment: 'tickets', icon: FiHelpCircle, label: 'Support Tickets' },
-      { segment: 'logs', icon: FiTerminal, label: 'Audit Logs' },
-      { segment: 'settings', icon: FiSettings, label: 'Settings' },
-    ],
-  },
-  {
     label: 'Accounting',
     items: [
       { segment: 'finance/dashboard', icon: FiBarChart2, label: 'Finance Dashboard' },
@@ -81,6 +73,14 @@ const NAV_GROUPS = [
       { segment: 'finance/inventory', icon: FiBookOpen, label: 'Inventory' },
       { segment: 'finance/payroll', icon: FiUsers, label: 'Payroll' },
       { segment: 'finance/invoices', icon: FiFileText, label: 'Invoices' },
+    ],
+  },
+  {
+    label: 'Support',
+    items: [
+      { segment: 'tickets', icon: FiHelpCircle, label: 'Support Tickets' },
+      { segment: 'logs', icon: FiTerminal, label: 'Audit Logs' },
+      { segment: 'settings', icon: FiSettings, label: 'Settings' },
     ],
   },
 ]
