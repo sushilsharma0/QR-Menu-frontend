@@ -31,7 +31,7 @@ const ProfitLoss = () => {
     <div className="space-y-6">
       <FinancePageHeader
         title="Profit & Loss"
-        subtitle="Revenue from sales reports minus all expenses (including staff_salary from paid payroll). Pick a date range that includes payroll payment dates."
+        subtitle="Revenue from sales reports minus all expenses. Paid payroll posts staff_salary for net pay plus employee and employer EPF. Pick a range that includes payroll payment dates."
       />
 
       <FinancePanel title="Generate P&L report">

@@ -33,6 +33,7 @@ import {
 import api from '../../../services/api'
 import Button from '../../../components/common/Button'
 import Input from '../../../components/common/Input'
+import Select from '../../../components/common/Select'
 import {
   EmptyState,
   FinanceChartBox,
@@ -410,8 +411,18 @@ const Inventory = () => {
             <form onSubmit={saveItem} className="space-y-3">
               <Input label="Item name" value={itemForm.name} onChange={(e) => setItemForm((s) => ({ ...s, name: e.target.value }))} required />
               <div className="grid grid-cols-2 gap-3">
-                <Select label="Category" value={itemForm.category} onChange={(value) => setItemForm((s) => ({ ...s, category: value }))} options={CATEGORIES} />
-                <Select label="Base unit" value={itemForm.unit} onChange={(value) => setItemForm((s) => ({ ...s, unit: value }))} options={UNITS} />
+                <Select
+                  label="Category"
+                  value={itemForm.category}
+                  onValueChange={(value) => setItemForm((s) => ({ ...s, category: value }))}
+                  options={CATEGORIES.map((c) => ({ value: c, label: c }))}
+                />
+                <Select
+                  label="Base unit"
+                  value={itemForm.unit}
+                  onValueChange={(value) => setItemForm((s) => ({ ...s, unit: value }))}
+                  options={UNITS.map((u) => ({ value: u, label: u }))}
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Input label="Quantity" type="number" value={itemForm.quantity} onChange={(e) => setItemForm((s) => ({ ...s, quantity: Number(e.target.value) }))} />
@@ -426,7 +437,13 @@ const Inventory = () => {
                 <Input label="MFG date" type="date" value={itemForm.manufacturingDate} onChange={(e) => setItemForm((s) => ({ ...s, manufacturingDate: e.target.value }))} />
                 <Input label="Expiry date" type="date" value={itemForm.expiryDate} onChange={(e) => setItemForm((s) => ({ ...s, expiryDate: e.target.value }))} />
               </div>
-              <Select label="Supplier" value={itemForm.supplierId} onChange={(value) => setItemForm((s) => ({ ...s, supplierId: value }))} options={['', ...suppliers.map((s) => ({ label: s.name, value: s._id }))]} />
+              <Select
+                label="Supplier"
+                placeholder="Optional"
+                value={itemForm.supplierId || ''}
+                onValueChange={(value) => setItemForm((s) => ({ ...s, supplierId: value }))}
+                options={suppliers.map((s) => ({ label: s.name, value: String(s._id) }))}
+              />
               <Input label="Notes" value={itemForm.notes} onChange={(e) => setItemForm((s) => ({ ...s, notes: e.target.value }))} />
               <Button type="submit" loading={loading}><FiPlus className="mr-1" /> Save Item</Button>
             </form>
@@ -491,12 +508,29 @@ const Inventory = () => {
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <FinancePanel title="Stock in purchase">
             <form onSubmit={savePurchase} className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              <Select label="Item" value={purchaseForm.inventoryItemId} onChange={(value) => setPurchaseForm((s) => ({ ...s, inventoryItemId: value }))} options={['', ...items.map((i) => ({ label: i.name, value: i._id }))]} />
-              <Select label="Supplier" value={purchaseForm.supplierId} onChange={(value) => setPurchaseForm((s) => ({ ...s, supplierId: value }))} options={['', ...suppliers.map((s) => ({ label: s.name, value: s._id }))]} />
+              <Select
+                label="Item"
+                placeholder="Select item"
+                value={purchaseForm.inventoryItemId || ''}
+                onValueChange={(value) => setPurchaseForm((s) => ({ ...s, inventoryItemId: value }))}
+                options={items.map((i) => ({ label: i.name, value: String(i._id) }))}
+              />
+              <Select
+                label="Supplier"
+                placeholder="Select supplier"
+                value={purchaseForm.supplierId || ''}
+                onValueChange={(value) => setPurchaseForm((s) => ({ ...s, supplierId: value }))}
+                options={suppliers.map((s) => ({ label: s.name, value: String(s._id) }))}
+              />
               <Input label="Quantity" type="number" value={purchaseForm.quantity} onChange={(e) => setPurchaseForm((s) => ({ ...s, quantity: Number(e.target.value) }))} />
               <Input label="Unit cost" type="number" value={purchaseForm.unitCost} onChange={(e) => setPurchaseForm((s) => ({ ...s, unitCost: Number(e.target.value) }))} />
               <Input label="Supplier bill no." value={purchaseForm.supplierBillNumber} onChange={(e) => setPurchaseForm((s) => ({ ...s, supplierBillNumber: e.target.value }))} />
-              <Select label="Payment" value={purchaseForm.paymentStatus} onChange={(value) => setPurchaseForm((s) => ({ ...s, paymentStatus: value }))} options={['paid', 'pending', 'partial']} />
+              <Select
+                label="Payment"
+                value={purchaseForm.paymentStatus}
+                onValueChange={(value) => setPurchaseForm((s) => ({ ...s, paymentStatus: value }))}
+                options={['paid', 'pending', 'partial'].map((x) => ({ value: x, label: x }))}
+              />
               <div className="md:col-span-2"><Input label="Notes" value={purchaseForm.notes} onChange={(e) => setPurchaseForm((s) => ({ ...s, notes: e.target.value }))} /></div>
               <div className="md:col-span-2"><Button type="submit"><FiShoppingCart className="mr-1" /> Record Purchase</Button></div>
             </form>
@@ -504,8 +538,20 @@ const Inventory = () => {
 
           <FinancePanel title="Purchase orders">
             <form onSubmit={savePurchaseOrder} className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              <Select label="Supplier" value={poForm.supplierId} onChange={(value) => setPoForm((s) => ({ ...s, supplierId: value }))} options={['', ...suppliers.map((s) => ({ label: s.name, value: s._id }))]} />
-              <Select label="Item" value={poForm.inventoryItemId} onChange={(value) => setPoForm((s) => ({ ...s, inventoryItemId: value }))} options={['', ...items.map((i) => ({ label: i.name, value: i._id }))]} />
+              <Select
+                label="Supplier"
+                placeholder="Select supplier"
+                value={poForm.supplierId || ''}
+                onValueChange={(value) => setPoForm((s) => ({ ...s, supplierId: value }))}
+                options={suppliers.map((s) => ({ label: s.name, value: String(s._id) }))}
+              />
+              <Select
+                label="Item"
+                placeholder="Select item"
+                value={poForm.inventoryItemId || ''}
+                onValueChange={(value) => setPoForm((s) => ({ ...s, inventoryItemId: value }))}
+                options={items.map((i) => ({ label: i.name, value: String(i._id) }))}
+              />
               <Input label="Quantity" type="number" value={poForm.quantity} onChange={(e) => setPoForm((s) => ({ ...s, quantity: Number(e.target.value) }))} />
               <Input label="Unit cost" type="number" value={poForm.unitCost} onChange={(e) => setPoForm((s) => ({ ...s, unitCost: Number(e.target.value) }))} />
               <Input label="Expected date" type="date" value={poForm.expectedDate} onChange={(e) => setPoForm((s) => ({ ...s, expectedDate: e.target.value }))} />
@@ -541,13 +587,24 @@ const Inventory = () => {
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <FinancePanel title="Add / remove stock">
             <form onSubmit={postMovement} className="space-y-3">
-              <Select label="Item" value={movementForm.inventoryItemId} onChange={(value) => setMovementForm((s) => ({ ...s, inventoryItemId: value }))} options={['', ...items.map((i) => ({ label: i.name, value: i._id }))]} />
-              <Select label="Action" value={movementForm.type} onChange={(value) => setMovementForm((s) => ({ ...s, type: value }))} options={[
-                { label: 'Add Stock', value: 'stock_in' },
-                { label: 'Remove Stock', value: 'stock_out' },
-                { label: 'Kitchen Usage', value: 'usage' },
-                { label: 'Wastage / Damage', value: 'wastage' },
-              ]} />
+              <Select
+                label="Item"
+                placeholder="Select item"
+                value={movementForm.inventoryItemId || ''}
+                onValueChange={(value) => setMovementForm((s) => ({ ...s, inventoryItemId: value }))}
+                options={items.map((i) => ({ label: i.name, value: String(i._id) }))}
+              />
+              <Select
+                label="Action"
+                value={movementForm.type}
+                onValueChange={(value) => setMovementForm((s) => ({ ...s, type: value }))}
+                options={[
+                  { label: 'Add Stock', value: 'stock_in' },
+                  { label: 'Remove Stock', value: 'stock_out' },
+                  { label: 'Kitchen Usage', value: 'usage' },
+                  { label: 'Wastage / Damage', value: 'wastage' },
+                ]}
+              />
               <Input label="Quantity" type="number" value={movementForm.quantity} onChange={(e) => setMovementForm((s) => ({ ...s, quantity: Number(e.target.value) }))} />
               <Input label="Reference" value={movementForm.referenceNumber} onChange={(e) => setMovementForm((s) => ({ ...s, referenceNumber: e.target.value }))} />
               <Input label="Reason / notes" value={movementForm.reason} onChange={(e) => setMovementForm((s) => ({ ...s, reason: e.target.value }))} />
@@ -623,18 +680,6 @@ const Inventory = () => {
           </ChartPanel>
         </div>
       )}
-    </div>
-  )
-}
-
-function Select({ label, value, onChange, options }) {
-  const normalized = options.map((option) => (typeof option === 'string' ? { label: option || 'Select', value: option } : option))
-  return (
-    <div>
-      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
-      <select className="w-full rounded-lg border border-surface-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-900" value={value} onChange={(e) => onChange(e.target.value)}>
-        {normalized.map((option) => <option key={option.value || 'blank'} value={option.value}>{option.label}</option>)}
-      </select>
     </div>
   )
 }

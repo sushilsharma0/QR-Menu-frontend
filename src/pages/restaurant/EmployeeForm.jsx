@@ -42,6 +42,7 @@ const EmployeeForm = () => {
       setValue('allowance', emp.allowance ?? '')
       setValue('customTdsPercent', emp.customTdsPercent ?? '')
       setValue('customEpfPercent', emp.customEpfPercent ?? '')
+      setValue('customEmployerEpfPercent', emp.customEmployerEpfPercent ?? '')
       setPhotoPreview(emp.profileImage || '')
     } catch (error) {
       toast.error('Failed to fetch employee')
@@ -163,7 +164,7 @@ const EmployeeForm = () => {
           <div className="rounded-2xl border border-surface-200 bg-surface-50 p-4 dark:border-gray-700 dark:bg-gray-900/40">
             <p className="mb-3 text-sm font-semibold text-gray-800 dark:text-gray-200">Payroll, TDS & EPF</p>
             <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
-              Monthly salary and allowance are used on each payroll run. TDS and EPF percentages apply to the full monthly basic. You can override TDS/EPF % per employee or use restaurant defaults.
+              Monthly salary and allowance are used on each payroll run. TDS and employee EPF are deducted from pay. Employer EPF is an extra company cost on the same basic. Leave custom % blank to use the restaurant defaults on the Payroll page.
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Input label="Department" {...register('department')} />
@@ -182,10 +183,16 @@ const EmployeeForm = () => {
                 {...register('customTdsPercent')}
               />
               <Input
-                label="Custom EPF % on monthly basic (optional)"
+                label="Employee EPF % on monthly basic (optional)"
                 type="number"
                 step="0.01"
                 {...register('customEpfPercent')}
+              />
+              <Input
+                label="Employer EPF % on monthly basic (optional)"
+                type="number"
+                step="0.01"
+                {...register('customEmployerEpfPercent')}
               />
             </div>
           </div>

@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import api from '../../../services/api'
 import Button from '../../../components/common/Button'
 import Input from '../../../components/common/Input'
+import Select from '../../../components/common/Select'
 import { EmptyState, FinanceMetric, FinancePageHeader, FinancePanel, FinanceRow, money } from './FinanceUI'
 
 const EXPENSE_CATEGORIES = ['rent', 'electricity', 'gas', 'staff_salary', 'ingredients', 'marketing', 'maintenance', 'tax', 'internet', 'water', 'fuel', 'transportation', 'equipment', 'miscellaneous']
@@ -66,20 +67,29 @@ const Budget = () => {
         <form onSubmit={saveBudget} className="space-y-4">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <Input label="Year" type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} />
-            <div>
-              <label className="mb-1 block text-sm font-medium">Month</label>
-              <select className="w-full rounded-lg border border-surface-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-900" value={month} onChange={(e) => setMonth(Number(e.target.value))}>
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
+            <Select
+              label="Month"
+              value={month}
+              onValueChange={(v) => setMonth(Number(v))}
+              options={Array.from({ length: 12 }, (_, i) => {
+                const m = i + 1
+                return {
+                  value: m,
+                  label: new Date(2026, m - 1, 1).toLocaleString('en-US', { month: 'long' }),
+                }
+              })}
+            />
           </div>
 
           <div className="space-y-2">
             {lines.map((line, idx) => (
               <div key={idx} className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                <select className="rounded-lg border border-surface-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-900" value={line.category} onChange={(e) => setLines((s) => s.map((x, i) => (i === idx ? { ...x, category: e.target.value } : x)))}>
-                  {EXPENSE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
+                <Select
+                  label={idx === 0 ? 'Category' : undefined}
+                  value={line.category}
+                  onValueChange={(v) => setLines((s) => s.map((x, i) => (i === idx ? { ...x, category: v } : x)))}
+                  options={EXPENSE_CATEGORIES.map((c) => ({ value: c, label: c.replace(/_/g, ' ') }))}
+                />
                 <Input type="number" placeholder="Budget amount" value={line.amount} onChange={(e) => setLines((s) => s.map((x, i) => (i === idx ? { ...x, amount: e.target.value } : x)))} />
               </div>
             ))}

@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import api from '../../../services/api'
 import Button from '../../../components/common/Button'
 import Input from '../../../components/common/Input'
+import Select from '../../../components/common/Select'
 import { EmptyState, FinanceMetric, FinancePageHeader, FinancePanel, FinanceRow, money } from './FinanceUI'
 
 const categories = ['rent', 'electricity', 'gas', 'staff_salary', 'ingredients', 'marketing', 'maintenance', 'tax', 'internet', 'water', 'fuel', 'transportation', 'equipment', 'miscellaneous']
@@ -67,7 +68,7 @@ const Expenses = () => {
     <div className="space-y-6">
       <FinancePageHeader
         title="Expense Management"
-        subtitle="Operating costs and receipts. When you mark payroll as paid, a staff_salary expense is created automatically so Profit & Loss includes wages."
+        subtitle="Operating costs and receipts. When you mark payroll as paid, a staff_salary expense is created for net pay plus employee and employer EPF (see description on each payroll line). Profit & Loss picks that up as total wages-related outflow."
       />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -80,12 +81,12 @@ const Expenses = () => {
         <form onSubmit={submit} className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <Input label="Title" value={form.title} onChange={(e) => setForm((s) => ({ ...s, title: e.target.value }))} required />
           <Input label="Amount" type="number" value={form.amount} onChange={(e) => setForm((s) => ({ ...s, amount: e.target.value }))} required />
-          <div>
-            <label className="mb-1 block text-sm font-medium">Category</label>
-            <select className="w-full rounded-lg border border-surface-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-900" value={form.category} onChange={(e) => setForm((s) => ({ ...s, category: e.target.value }))}>
-              {categories.map((x) => <option key={x} value={x}>{x}</option>)}
-            </select>
-          </div>
+          <Select
+            label="Category"
+            value={form.category}
+            onValueChange={(v) => setForm((s) => ({ ...s, category: v }))}
+            options={categories.map((x) => ({ value: x, label: x.replace(/_/g, ' ') }))}
+          />
           <Input label="Payment Method" value={form.paymentMethod} onChange={(e) => setForm((s) => ({ ...s, paymentMethod: e.target.value }))} />
           <Input label="Expense Date" type="date" value={form.expenseDate} onChange={(e) => setForm((s) => ({ ...s, expenseDate: e.target.value }))} required />
           <Input label="Description" value={form.description} onChange={(e) => setForm((s) => ({ ...s, description: e.target.value }))} />
