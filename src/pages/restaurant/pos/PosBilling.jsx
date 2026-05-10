@@ -1,12 +1,13 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { FiCreditCard, FiPlus, FiPrinter } from 'react-icons/fi'
+import { FiCalendar, FiCreditCard, FiFilter, FiGrid, FiList, FiPlus, FiPrinter, FiSearch } from 'react-icons/fi'
 import api from '../../../services/api'
 import { postPosPayment } from '../../../services/posApi'
 import { usePosAccess } from '../../../hooks/usePosAccess'
 import { useSocket } from '../../../hooks/useSocket'
 import { posSounds } from '../../../utils/posSounds'
+import PosOrderCard, { getCustomerDisplayName } from './PosOrderCard'
 
 const METHODS = [
   { value: 'cash', label: 'Cash' },
@@ -26,6 +27,13 @@ export default function PosBilling() {
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
   const [lines, setLines] = useState([{ method: 'cash', amount: '' }])
+  const [search, setSearch] = useState('')
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
+  const [quickRange, setQuickRange] = useState('all')
+  const [pageSize, setPageSize] = useState(10)
+  const [viewMode, setViewMode] = useState('card')
+  const [filterOpen, setFilterOpen] = useState(false)
   const refreshTimerRef = useRef(null)
 
   const balance = (o) => {
@@ -90,6 +98,52 @@ export default function PosBilling() {
     }
   }, [load, socket])
 
+  const filteredOrders = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    const from = fromDate ? new Date(`${fromDate}T00:00:00`) : null
+    const to = toDate ? new Date(`${toDate}T23:59:59.999`) : null
+    return orders.filter((o) => {
+      const created = o.createdAt ? new Date(o.createdAt) : null
+      if (from && created && created < from) return false
+      if (to && created && created > to) return false
+      if (!q) return true
+      const haystack = [
+        o.orderNumber,
+        getCustomerDisplayName(o),
+        o.customerPhone,
+        o.customerEmail,
+        o.guestId,
+        o.table?.tableNumber,
+        o.orderChannel,
+        ...(Array.isArray(o.items) ? o.items.map((item) => item.name) : []),
+      ].filter(Boolean).join(' ').toLowerCase()
+      return haystack.includes(q)
+    })
+  }, [fromDate, orders, search, toDate])
+
+  const visibleOrders = filteredOrders.slice(0, pageSize)
+
+  const setRange = (range) => {
+    setQuickRange(range)
+    const today = new Date()
+    const iso = (date) => date.toISOString().slice(0, 10)
+    if (range === 'today') {
+      const value = iso(today)
+      setFromDate(value)
+      setToDate(value)
+      return
+    }
+    if (range === '7d') {
+      const start = new Date(today)
+      start.setDate(today.getDate() - 6)
+      setFromDate(iso(start))
+      setToDate(iso(today))
+      return
+    }
+    setFromDate('')
+    setToDate('')
+  }
+
   if (!canBilling) return <Navigate to=".." replace />
 
   const submitPay = async () => {
@@ -119,41 +173,51 @@ export default function PosBilling() {
 
   return (
     <div className="h-full overflow-y-auto p-4">
-      <div className="mx-auto grid max-w-6xl gap-4 lg:grid-cols-[1fr_420px]">
+      <div className="mx-auto grid max-w-7xl gap-4 lg:grid-cols-[1fr_420px]">
         <section className="space-y-3">
           <div className="rounded-3xl border border-surface-200 bg-white p-5 shadow-sm">
-            <span className="inline-flex items-center gap-2 rounded-full bg-primary-50 px-3 py-1 text-xs font-black uppercase tracking-wide text-primary-700">
-              <FiCreditCard className="h-4 w-4" />
-              Billing
-            </span>
-            <h1 className="mt-3 text-3xl font-black text-gray-950">Open bills</h1>
-            <p className="mt-1 text-sm text-gray-500">Select an unpaid order, split tender, then print the receipt.</p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <span className="inline-flex items-center gap-2 rounded-full bg-primary-50 px-3 py-1 text-xs font-black uppercase tracking-wide text-primary-700">
+                  <FiCreditCard className="h-4 w-4" />
+                  Billing
+                </span>
+                <h1 className="mt-3 text-3xl font-black text-gray-950">Open bills</h1>
+                <p className="mt-1 text-sm text-gray-500">Select an unpaid order, split tender, then print the receipt.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFilterOpen(true)}
+                className="inline-flex items-center gap-2 rounded-xl bg-primary-700 px-4 py-2 text-sm font-bold text-white hover:bg-primary-800"
+              >
+                <FiFilter className="h-4 w-4" />
+                Filters
+              </button>
+            </div>
           </div>
 
-          {orders.map((o) => (
-            <button
-              key={o._id}
-              type="button"
-              onClick={() => {
-                setSelected(o)
-                setLines([{ method: 'cash', amount: String(balance(o)) }])
-              }}
-              className={`flex w-full items-center justify-between gap-3 rounded-3xl border p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${
-                selected?._id === o._id
-                  ? 'border-primary-500 bg-primary-50'
-                  : 'border-surface-200 bg-white dark:border-gray-700 dark:bg-gray-900'
-              }`}
-            >
-              <div>
-                <p className="text-lg font-black text-gray-950 dark:text-gray-100">#{o.orderNumber}</p>
-                <p className="text-sm text-gray-500">Payment: {o.paymentStatus}</p>
-              </div>
-              <p className="text-xl font-black text-primary-700">Rs. {balance(o)}</p>
-            </button>
-          ))}
-          {!orders.length && (
+          <div className={viewMode === 'card' ? 'grid grid-cols-1 gap-3 xl:grid-cols-2' : 'grid grid-cols-1 gap-3'}>
+            {visibleOrders.map((o) => (
+              <PosOrderCard
+                key={o._id}
+                order={o}
+                selected={selected?._id === o._id}
+                onSelect={(order) => {
+                  setSelected(order)
+                  setLines([{ method: 'cash', amount: String(balance(order)) }])
+                }}
+                action={
+                  <span className="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2 text-sm font-bold text-white">
+                    <FiCreditCard className="h-4 w-4" />
+                    Due Rs. {balance(o)}
+                  </span>
+                }
+              />
+            ))}
+          </div>
+          {!visibleOrders.length && (
             <div className="rounded-3xl border border-dashed border-surface-300 bg-white p-10 text-center text-sm text-gray-500">
-              No pending payments.
+              No matching pending payments.
             </div>
           )}
         </section>
@@ -219,6 +283,136 @@ export default function PosBilling() {
           )}
         </section>
       </div>
+
+      {filterOpen && (
+        <button
+          type="button"
+          className="fixed inset-0 z-[70] bg-slate-950/45 backdrop-blur-sm"
+          onClick={() => setFilterOpen(false)}
+          aria-label="Close filters"
+        />
+      )}
+      <section
+        className={`fixed inset-y-0 right-0 z-[80] w-full max-w-[430px] overflow-y-auto border-l border-surface-200 bg-white shadow-2xl shadow-slate-950/25 transition-transform duration-300 ${
+          filterOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+        aria-hidden={!filterOpen}
+      >
+        <div className="flex items-center justify-between border-b border-surface-100 px-5 py-4">
+          <div className="flex items-center gap-2">
+            <FiFilter className="h-5 w-5 text-primary-700" />
+            <h2 className="text-xl font-black text-gray-950">Billing filters</h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFilterOpen(false)}
+            className="rounded-xl border border-surface-200 px-3 py-2 text-sm font-black text-gray-700 hover:bg-surface-50"
+          >
+            Close
+          </button>
+        </div>
+        <div className="space-y-5 p-5">
+          <label className="block">
+            <span className="text-sm font-semibold text-gray-700">Search bills</span>
+            <div className="relative mt-1">
+              <FiSearch className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Order no, customer, phone, item"
+                className="w-full rounded-xl border border-surface-200 bg-white py-2.5 pl-10 pr-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+              />
+            </div>
+          </label>
+          <div className="grid grid-cols-1 gap-3">
+            <label className="block">
+              <span className="text-sm font-semibold text-gray-700">From date</span>
+              <div className="mt-1 flex gap-2">
+                <span className="inline-flex items-center gap-2 rounded-xl border border-surface-200 px-3 text-sm font-bold text-gray-700">
+                  <FiCalendar className="h-4 w-4 text-primary-700" /> BS
+                </span>
+                <input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => {
+                    setFromDate(e.target.value)
+                    setQuickRange('custom')
+                  }}
+                  className="min-w-0 flex-1 rounded-xl border border-surface-200 px-3 py-2.5 text-sm"
+                />
+              </div>
+            </label>
+            <label className="block">
+              <span className="text-sm font-semibold text-gray-700">To date</span>
+              <div className="mt-1 flex gap-2">
+                <span className="inline-flex items-center gap-2 rounded-xl border border-surface-200 px-3 text-sm font-bold text-gray-700">
+                  <FiCalendar className="h-4 w-4 text-primary-700" /> BS
+                </span>
+                <input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => {
+                    setToDate(e.target.value)
+                    setQuickRange('custom')
+                  }}
+                  className="min-w-0 flex-1 rounded-xl border border-surface-200 px-3 py-2.5 text-sm"
+                />
+              </div>
+            </label>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {[
+              ['today', 'Today'],
+              ['7d', 'Last 7 days'],
+              ['all', 'All time'],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setRange(value)}
+                className={`rounded-2xl px-4 py-2 text-sm font-black ${quickRange === value ? 'bg-primary-700 text-white' : 'bg-amber-100 text-gray-700 hover:bg-amber-200'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <label className="block">
+            <span className="text-sm font-semibold text-gray-700">Page size</span>
+            <select
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+              className="mt-1 w-full rounded-xl border border-surface-200 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+            >
+              {[10, 20, 50, 100].map((size) => <option key={size} value={size}>{size} bills</option>)}
+            </select>
+          </label>
+          <div className="inline-flex overflow-hidden rounded-xl border border-amber-200 bg-white">
+            <button type="button" onClick={() => setViewMode('card')} className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-black ${viewMode === 'card' ? 'bg-primary-700 text-white' : 'text-gray-700 hover:bg-amber-50'}`}>
+              <FiGrid className="h-4 w-4" /> Card
+            </button>
+            <button type="button" onClick={() => setViewMode('list')} className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-black ${viewMode === 'list' ? 'bg-primary-700 text-white' : 'text-gray-700 hover:bg-amber-50'}`}>
+              <FiList className="h-4 w-4" /> List
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setSearch('')
+              setFromDate('')
+              setToDate('')
+              setQuickRange('all')
+              setPageSize(10)
+              setViewMode('card')
+            }}
+            className="w-full rounded-xl border border-primary-200 px-4 py-2 text-sm font-black text-primary-700 hover:bg-primary-50"
+          >
+            Reset filters
+          </button>
+          <p className="text-sm font-semibold text-gray-500">
+            Showing {visibleOrders.length} of {filteredOrders.length} payable orders
+          </p>
+        </div>
+      </section>
     </div>
   )
 }

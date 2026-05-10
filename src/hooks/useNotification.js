@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { useSocket } from './useSocket'
 import {
@@ -10,6 +10,7 @@ import {
 const useNotification = () => {
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
+  const seenRealtimeIdsRef = useRef(new Set())
   const { socket } = useSocket()
 
   const fetchNotifications = useCallback(async () => {
@@ -27,9 +28,17 @@ const useNotification = () => {
     if (!socket) return
 
     const handleNewNotification = (data) => {
+      const id = data?._id || data?.id
+      if (id && seenRealtimeIdsRef.current.has(String(id))) return
+      if (id) {
+        seenRealtimeIdsRef.current.add(String(id))
+        window.setTimeout(() => seenRealtimeIdsRef.current.delete(String(id)), 30000)
+      }
       setNotifications((prev) => [data, ...prev])
       setUnreadCount((prev) => prev + 1)
-      toast(data?.message || data?.title || 'New notification')
+      if (data?.type !== 'NEW_ORDER') {
+        toast(data?.message || data?.title || 'New notification')
+      }
     }
 
     const handleRead = ({ notificationId }) => {
@@ -51,11 +60,13 @@ const useNotification = () => {
     }
 
     socket.on('notification:new', handleNewNotification)
+    socket.on('new_notification', handleNewNotification)
     socket.on('notification:read', handleRead)
     socket.on('notification:all-read', handleAllRead)
 
     return () => {
       socket.off('notification:new', handleNewNotification)
+      socket.off('new_notification', handleNewNotification)
       socket.off('notification:read', handleRead)
       socket.off('notification:all-read', handleAllRead)
     }

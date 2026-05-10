@@ -7,6 +7,7 @@ import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import { useAuth } from '../../hooks/useAuth'
+import NotificationSettingsPanel from '../../components/notifications/NotificationSettingsPanel'
 
 const Settings = () => {
   const [loading, setLoading] = useState(false)
@@ -170,6 +171,8 @@ const Settings = () => {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <NotificationSettingsPanel />
+
         {/* Restaurant Name - Read Only */}
         <Card title="Restaurant Information">
           <div className="space-y-4">

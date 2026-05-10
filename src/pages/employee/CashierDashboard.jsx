@@ -10,6 +10,7 @@ import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import Modal from '../../components/common/Modal'
 import { useSocket } from '../../hooks/useSocket'
+import useOrderAlerts from '../../hooks/useOrderAlerts'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 
 const CashierDashboard = () => {
@@ -22,6 +23,11 @@ const CashierDashboard = () => {
   const [search, setSearch] = useState('')
   const { socket } = useSocket()
 
+  useOrderAlerts({
+    role: 'cashier',
+    onRefresh: () => fetchOrders(),
+  })
+
   useEffect(() => {
     fetchOrders()
   }, [])
@@ -33,12 +39,10 @@ const CashierDashboard = () => {
       fetchOrders()
     }
 
-    socket.on('new_order', handleRealtimeUpdate)
     socket.on('order_updated', handleRealtimeUpdate)
     socket.on('payment_updated', handleRealtimeUpdate)
 
     return () => {
-      socket.off('new_order', handleRealtimeUpdate)
       socket.off('order_updated', handleRealtimeUpdate)
       socket.off('payment_updated', handleRealtimeUpdate)
     }

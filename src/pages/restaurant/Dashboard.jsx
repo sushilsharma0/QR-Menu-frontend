@@ -5,6 +5,7 @@ import {
   FiCalendar,
   FiCheckCircle,
   FiClock,
+  FiPieChart,
   FiRefreshCw,
   FiShoppingBag,
   FiTrendingDown,
@@ -14,10 +15,17 @@ import {
 import { TbCurrencyRupee } from "react-icons/tb";
 import { motion } from "framer-motion";
 import {
+  Area,
+  AreaChart,
   Bar,
+  BarChart,
   CartesianGrid,
+  Cell,
   ComposedChart,
+  Legend,
   Line,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -27,6 +35,7 @@ import toast from "react-hot-toast";
 import api from "../../services/api";
 import Button from "../../components/common/Button";
 import { useSocket } from "../../hooks/useSocket";
+import useOrderAlerts from "../../hooks/useOrderAlerts";
 import { useAuth } from "../../hooks/useAuth";
 import {
   RestaurantPageLoader,
@@ -49,6 +58,8 @@ const containerVariants = {
   },
 };
 
+const chartColors = ["#8f2800", "#f59e0b", "#059669", "#2563eb", "#dc2626", "#7c3aed", "#0f766e"];
+
 const formatPctTrend = (pct) => {
   if (pct === null || pct === undefined) return { text: "New", up: true };
   const rounded = Math.round(Number(pct) * 10) / 10;
@@ -57,6 +68,11 @@ const formatPctTrend = (pct) => {
     up: rounded >= 0,
   };
 };
+
+const formatStatusLabel = (value) =>
+  String(value || "unknown")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 function getOrderCustomerLabel(order) {
   const name = String(order?.customerName || "").trim();
@@ -87,6 +103,18 @@ function SalesTooltip({ active, payload, label }) {
           <span className="font-bold text-emerald-700">{orders}</span>
         </p>
       </div>
+    </div>
+  );
+}
+
+function ChartEmptyState({ title, children }) {
+  return (
+    <div className="flex h-72 flex-col items-center justify-center rounded-2xl bg-surface-50 px-4 text-center">
+      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-primary-600 shadow-sm">
+        <FiBarChart2 className="h-6 w-6" />
+      </div>
+      <h3 className="mt-3 text-sm font-bold text-gray-950">{title}</h3>
+      {children && <p className="mt-1 max-w-xs text-sm text-gray-500">{children}</p>}
     </div>
   );
 }
@@ -185,6 +213,13 @@ const Dashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
   const { socket } = useSocket();
 
+  useOrderAlerts({
+    role: "restaurant",
+    onRefresh: () => {
+      if (!billingLocked) fetchDashboardData(true);
+    },
+  });
+
   const fetchRestaurantProfile = async () => {
     try {
       const res = await api.get("/restaurant/auth/profile");
@@ -236,10 +271,6 @@ const Dashboard = () => {
   useEffect(() => {
     if (billingLocked || !socket) return undefined;
 
-    const handleNewOrder = (order) => {
-      toast.success(`New order #${order.orderNumber} received`, { duration: 5000 });
-      fetchDashboardData(true);
-    };
     const handleOrderUpdate = (order) => {
       toast(`Order #${order.orderNumber} moved to ${order.status}`);
       fetchDashboardData(true);
@@ -259,12 +290,10 @@ const Dashboard = () => {
       toast(`${label} · Table ${payload?.tableNumber ?? "?"}`, { duration: 6000 });
     };
 
-    socket.on("new_order", handleNewOrder);
     socket.on("order_updated", handleOrderUpdate);
     socket.on("payment_updated", handlePaymentUpdate);
     socket.on("guest_table_request", handleGuestTableRequest);
     return () => {
-      socket.off("new_order", handleNewOrder);
       socket.off("order_updated", handleOrderUpdate);
       socket.off("payment_updated", handlePaymentUpdate);
       socket.off("guest_table_request", handleGuestTableRequest);
@@ -284,6 +313,59 @@ const Dashboard = () => {
     const hasSalesData = salesData.some(
       (item) => Number(item.revenue || 0) > 0 || Number(item.orders || 0) > 0,
     );
+    const statusDistributionData = (stats?.statusDistribution || [])
+      .map((item) => ({
+        status: formatStatusLabel(item._id),
+        count: Number(item.count || 0),
+      }))
+      .filter((item) => item.count > 0);
+    const activeStatusData = [
+      { status: "Pending", count: Number(activeOrders.pending || 0) },
+      { status: "Preparing", count: Number(activeOrders.preparing || 0) },
+      { status: "Ready", count: Number(activeOrders.ready || 0) },
+    ];
+    const popularItemChartData = popularItems.slice(0, 6).map((item) => ({
+      name: item.name?.length > 16 ? `${item.name.slice(0, 16)}...` : item.name || "Item",
+      quantity: Number(item.totalQuantity || 0),
+      revenue: Number(item.totalRevenue || 0),
+    }));
+    const averageOrderTrend = salesData.map((item) => ({
+      date: item.date,
+      average: Number(item.orders || 0) ? Number(item.revenue || 0) / Number(item.orders || 0) : 0,
+    }));
+    const paymentStatusData = (stats?.paymentStatusDistribution || [])
+      .map((item) => ({
+        status: formatStatusLabel(item._id),
+        rawStatus: item._id,
+        count: Number(item.count || 0),
+        amount: Number(item.amount || 0),
+      }))
+      .filter((item) => item.count > 0);
+    const unpaidAmount = paymentStatusData
+      .filter((item) => ["pending", "partial", "failed"].includes(item.rawStatus))
+      .reduce((sum, item) => sum + item.amount, 0);
+    const channelData = (stats?.orderChannelDistribution || [])
+      .map((item) => ({
+        channel: formatStatusLabel(item._id),
+        count: Number(item.count || 0),
+        revenue: Number(item.revenue || 0),
+      }))
+      .filter((item) => item.count > 0);
+    const methodRevenueData = (stats?.paymentMethodRevenue || []).map((item) => ({
+      method: formatStatusLabel(item._id),
+      count: Number(item.count || 0),
+      revenue: Number(item.revenue || 0),
+    }));
+    const hourlyOrderFlow = (stats?.hourlyOrderFlow || []).map((item) => ({
+      hour: item._id,
+      orders: Number(item.orders || 0),
+      revenue: Number(item.revenue || 0),
+    }));
+    const tableActivityData = (stats?.tableActivity || []).map((item) => ({
+      table: `Table ${item.tableNumber}`,
+      orders: Number(item.orders || 0),
+      revenue: Number(item.revenue || 0),
+    }));
 
     return {
       activeOrders,
@@ -293,10 +375,20 @@ const Dashboard = () => {
       averageOrderValue,
       bestSalesDay,
       hasSalesData,
+      statusDistributionData,
+      activeStatusData,
+      popularItemChartData,
+      averageOrderTrend,
+      paymentStatusData,
+      unpaidAmount,
+      channelData,
+      methodRevenueData,
+      hourlyOrderFlow,
+      tableActivityData,
       todayTrend: formatPctTrend(stats?.overview?.todayVsYesterdayPercent),
       weekTrend: formatPctTrend(stats?.overview?.weekVsPrevWeekPercent),
     };
-  }, [salesData, stats]);
+  }, [popularItems, salesData, stats]);
 
   if (billingLocked) return null;
 
@@ -611,6 +703,371 @@ const Dashboard = () => {
               </p>
             </div>
           )}
+        </div>
+      </SectionShell>
+
+      <SectionShell title="Dashboard Charts" eyebrow="Deeper view" icon={FiPieChart}>
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+          <div className="rounded-3xl border border-surface-200 bg-gradient-to-b from-white to-surface-50 p-4">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-bold text-gray-950">Order Status Mix</h3>
+                <p className="text-sm text-gray-500">All-time order distribution</p>
+              </div>
+              <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-bold text-primary-700">
+                {stats?.overview?.totalOrders || 0} orders
+              </span>
+            </div>
+            {dashboardModel.statusDistributionData.length > 0 ? (
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={dashboardModel.statusDistributionData}
+                      dataKey="count"
+                      nameKey="status"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={58}
+                      outerRadius={92}
+                      paddingAngle={3}
+                    >
+                      {dashboardModel.statusDistributionData.map((entry, index) => (
+                        <Cell key={entry.status} fill={chartColors[index % chartColors.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value, name) => [value, name]} />
+                    <Legend iconType="circle" />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <ChartEmptyState title="No status data yet">Orders will build this chart automatically.</ChartEmptyState>
+            )}
+          </div>
+
+          <div className="rounded-3xl border border-surface-200 bg-gradient-to-b from-white to-surface-50 p-4">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-bold text-gray-950">Top Item Movement</h3>
+                <p className="text-sm text-gray-500">Quantity sold from recent orders</p>
+              </div>
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                Top {dashboardModel.popularItemChartData.length || 0}
+              </span>
+            </div>
+            {dashboardModel.popularItemChartData.length > 0 ? (
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={dashboardModel.popularItemChartData}
+                    layout="vertical"
+                    margin={{ top: 8, right: 18, left: 18, bottom: 8 }}
+                  >
+                    <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" horizontal={false} />
+                    <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 12 }} />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#374151", fontSize: 12 }}
+                      width={110}
+                    />
+                    <Tooltip
+                      formatter={(value, name) => [
+                        name === "revenue" ? formatRestaurantCurrency(value) : value,
+                        name === "revenue" ? "Revenue" : "Sold",
+                      ]}
+                    />
+                    <Bar dataKey="quantity" name="Sold" fill="#059669" radius={[0, 12, 12, 0]} barSize={22} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <ChartEmptyState title="No item sales yet">Popular dishes will appear here after checkout.</ChartEmptyState>
+            )}
+          </div>
+
+          <div className="rounded-3xl border border-surface-200 bg-gradient-to-b from-white to-surface-50 p-4">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-bold text-gray-950">Live Kitchen Load</h3>
+                <p className="text-sm text-gray-500">Pending, preparing, and ready right now</p>
+              </div>
+              <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">
+                {dashboardModel.activeOrdersTotal} active
+              </span>
+            </div>
+            {dashboardModel.activeOrdersTotal > 0 ? (
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={dashboardModel.activeStatusData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" vertical={false} />
+                    <XAxis dataKey="status" axisLine={false} tickLine={false} tick={{ fill: "#374151", fontSize: 12 }} />
+                    <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 12 }} />
+                    <Tooltip formatter={(value) => [value, "Orders"]} />
+                    <Bar dataKey="count" name="Orders" radius={[14, 14, 4, 4]} barSize={46}>
+                      {dashboardModel.activeStatusData.map((entry, index) => (
+                        <Cell key={entry.status} fill={chartColors[index + 1]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <ChartEmptyState title="Kitchen is clear">Active orders will show here in real time.</ChartEmptyState>
+            )}
+          </div>
+
+          <div className="rounded-3xl border border-surface-200 bg-gradient-to-b from-white to-surface-50 p-4">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-bold text-gray-950">Average Order Value</h3>
+                <p className="text-sm text-gray-500">Daily spend trend over the last 7 days</p>
+              </div>
+              <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
+                {formatRestaurantCurrency(dashboardModel.averageOrderValue)}
+              </span>
+            </div>
+            {dashboardModel.hasSalesData ? (
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={dashboardModel.averageOrderTrend} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="averageOrderGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#2563eb" stopOpacity={0.38} />
+                        <stop offset="100%" stopColor="#2563eb" stopOpacity={0.04} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" vertical={false} />
+                    <XAxis
+                      dataKey="date"
+                      tickFormatter={formatRestaurantShortDate}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#6b7280", fontSize: 12 }}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#6b7280", fontSize: 12 }}
+                      tickFormatter={(value) => `Rs. ${Math.round(Number(value || 0))}`}
+                      width={62}
+                    />
+                    <Tooltip
+                      labelFormatter={formatRestaurantShortDate}
+                      formatter={(value) => [formatRestaurantCurrency(value), "Average order"]}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="average"
+                      stroke="#2563eb"
+                      strokeWidth={3}
+                      fill="url(#averageOrderGradient)"
+                      activeDot={{ r: 6 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <ChartEmptyState title="No average yet">Paid orders will calculate this trend.</ChartEmptyState>
+            )}
+          </div>
+        </div>
+      </SectionShell>
+
+      <SectionShell title="Restaurant Intelligence" eyebrow="Payments, channels, tables" icon={FiBarChart2}>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {[
+            ["Month orders", stats?.overview?.monthOrders || 0],
+            ["Month revenue", formatRestaurantCurrency(stats?.overview?.monthRevenue)],
+            ["Unpaid value", formatRestaurantCurrency(dashboardModel.unpaidAmount)],
+            ["Active table rate", `${stats?.resources?.totalTables ? Math.round(((stats?.resources?.activeTables || 0) / stats.resources.totalTables) * 100) : 0}%`],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-2xl border border-surface-200 bg-surface-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
+              <p className="mt-1 text-xl font-black text-gray-950">{value}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-2">
+          <div className="rounded-3xl border border-surface-200 bg-gradient-to-b from-white to-surface-50 p-4">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-bold text-gray-950">Today's Order Rush</h3>
+                <p className="text-sm text-gray-500">Hourly orders and order value</p>
+              </div>
+              <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-bold text-primary-700">
+                {stats?.overview?.todayOrders || 0} today
+              </span>
+            </div>
+            {dashboardModel.hourlyOrderFlow.length > 0 ? (
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={dashboardModel.hourlyOrderFlow} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" vertical={false} />
+                    <XAxis dataKey="hour" axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 12 }} />
+                    <YAxis yAxisId="left" allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 12 }} width={38} />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#6b7280", fontSize: 12 }}
+                      tickFormatter={(value) => `Rs. ${Math.round(Number(value || 0) / 1000)}k`}
+                      width={58}
+                    />
+                    <Tooltip
+                      formatter={(value, name) => [
+                        name === "revenue" ? formatRestaurantCurrency(value) : value,
+                        name === "revenue" ? "Order value" : "Orders",
+                      ]}
+                    />
+                    <Bar yAxisId="left" dataKey="orders" name="Orders" fill="#f59e0b" radius={[12, 12, 4, 4]} barSize={34} />
+                    <Line yAxisId="right" type="monotone" dataKey="revenue" name="Order value" stroke="#8f2800" strokeWidth={3} dot={{ r: 4, fill: "#fff" }} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <ChartEmptyState title="No orders today">Hourly demand appears after today's first order.</ChartEmptyState>
+            )}
+          </div>
+
+          <div className="rounded-3xl border border-surface-200 bg-gradient-to-b from-white to-surface-50 p-4">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-bold text-gray-950">Payment Status Value</h3>
+                <p className="text-sm text-gray-500">Paid, pending, partial, and failed order value</p>
+              </div>
+              <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
+                {formatRestaurantCurrency(dashboardModel.unpaidAmount)} unpaid
+              </span>
+            </div>
+            {dashboardModel.paymentStatusData.length > 0 ? (
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={dashboardModel.paymentStatusData}
+                      dataKey="amount"
+                      nameKey="status"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={92}
+                      label={({ status, percent }) => `${status} ${Math.round(percent * 100)}%`}
+                    >
+                      {dashboardModel.paymentStatusData.map((entry, index) => (
+                        <Cell key={entry.status} fill={chartColors[index % chartColors.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value, name) => [formatRestaurantCurrency(value), name]} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <ChartEmptyState title="No payment data yet">Payment status will appear after orders are created.</ChartEmptyState>
+            )}
+          </div>
+
+          <div className="rounded-3xl border border-surface-200 bg-gradient-to-b from-white to-surface-50 p-4">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-bold text-gray-950">Payment Method Revenue</h3>
+                <p className="text-sm text-gray-500">Successful payments this month</p>
+              </div>
+            </div>
+            {dashboardModel.methodRevenueData.length > 0 ? (
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={dashboardModel.methodRevenueData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                    <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" vertical={false} />
+                    <XAxis dataKey="method" axisLine={false} tickLine={false} tick={{ fill: "#374151", fontSize: 12 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 12 }} tickFormatter={(value) => `Rs. ${Math.round(Number(value || 0) / 1000)}k`} width={58} />
+                    <Tooltip formatter={(value, name) => [name === "revenue" ? formatRestaurantCurrency(value) : value, name === "revenue" ? "Revenue" : "Payments"]} />
+                    <Bar dataKey="revenue" name="Revenue" fill="#2563eb" radius={[12, 12, 4, 4]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <ChartEmptyState title="No successful payments this month">Completed payments will build this chart.</ChartEmptyState>
+            )}
+          </div>
+
+          <div className="rounded-3xl border border-surface-200 bg-gradient-to-b from-white to-surface-50 p-4">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-bold text-gray-950">Channel Split</h3>
+                <p className="text-sm text-gray-500">QR, dine-in, takeaway, and delivery orders</p>
+              </div>
+            </div>
+            {dashboardModel.channelData.length > 0 ? (
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={dashboardModel.channelData}
+                      dataKey="count"
+                      nameKey="channel"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={56}
+                      outerRadius={92}
+                      paddingAngle={3}
+                    >
+                      {dashboardModel.channelData.map((entry, index) => (
+                        <Cell key={entry.channel} fill={chartColors[index % chartColors.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value, name) => [value, name]} />
+                    <Legend iconType="circle" />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <ChartEmptyState title="No channel data yet">Order sources will appear here after orders arrive.</ChartEmptyState>
+            )}
+          </div>
+
+          <div className="rounded-3xl border border-surface-200 bg-gradient-to-b from-white to-surface-50 p-4 xl:col-span-2">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-bold text-gray-950">Busiest Tables</h3>
+                <p className="text-sm text-gray-500">Top tables by order count in the last 30 days</p>
+              </div>
+            </div>
+            {dashboardModel.tableActivityData.length > 0 ? (
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={dashboardModel.tableActivityData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                    <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" vertical={false} />
+                    <XAxis dataKey="table" axisLine={false} tickLine={false} tick={{ fill: "#374151", fontSize: 12 }} />
+                    <YAxis yAxisId="left" allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 12 }} width={38} />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#6b7280", fontSize: 12 }}
+                      tickFormatter={(value) => `Rs. ${Math.round(Number(value || 0) / 1000)}k`}
+                      width={58}
+                    />
+                    <Tooltip
+                      formatter={(value, name) => [
+                        name === "revenue" ? formatRestaurantCurrency(value) : value,
+                        name === "revenue" ? "Revenue" : "Orders",
+                      ]}
+                    />
+                    <Bar yAxisId="left" dataKey="orders" name="Orders" fill="#059669" radius={[12, 12, 4, 4]} />
+                    <Line yAxisId="right" type="monotone" dataKey="revenue" name="Revenue" stroke="#8f2800" strokeWidth={3} dot={{ r: 4, fill: "#fff" }} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <ChartEmptyState title="No table activity yet">Table performance appears once table orders are placed.</ChartEmptyState>
+            )}
+          </div>
         </div>
       </SectionShell>
 

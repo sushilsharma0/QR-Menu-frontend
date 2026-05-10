@@ -1,11 +1,13 @@
 import { io } from 'socket.io-client'
 import { getSocketOrigin } from '../utils/runtimeConfig'
+import { getAuthToken } from '../utils/authStorage'
 
 let socket = null
 
 export const initSocket = () => {
   if (!socket) {
     socket = io(getSocketOrigin(), {
+      auth: { token: getAuthToken() },
       transports: ['websocket'],
       autoConnect: true,
       reconnection: true,
