@@ -65,7 +65,10 @@ const Expenses = () => {
 
   return (
     <div className="space-y-6">
-      <FinancePageHeader title="Expense Management" subtitle="Capture operating costs, upload receipts and review category spend." />
+      <FinancePageHeader
+        title="Expense Management"
+        subtitle="Operating costs and receipts. When you mark payroll as paid, a staff_salary expense is created automatically so Profit & Loss includes wages."
+      />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <FinanceMetric label="Monthly expense" value={money(summary?.totalMonthlyExpense)} icon={FiCreditCard} tone="warning" />
@@ -102,10 +105,16 @@ const Expenses = () => {
             <FinanceRow
               key={r._id}
               title={r.title}
-              meta={`${new Date(r.expenseDate).toLocaleDateString()} | ${r.category} | ${r.paymentMethod || 'cash'}`}
+              meta={`${new Date(r.expenseDate).toLocaleDateString()} | ${r.category} | ${r.paymentMethod || 'cash'}${r.sourcePayrollId ? ' | Payroll' : ''}`}
               amount={money(r.amount)}
-              action={<Button type="button" size="sm" variant="danger" onClick={() => removeExpense(r._id)}><FiTrash2 className="mr-1" /> Delete</Button>}
-              danger
+              action={
+                r.sourcePayrollId ? (
+                  <span className="text-xs text-gray-500 dark:text-gray-400">From payroll</span>
+                ) : (
+                  <Button type="button" size="sm" variant="danger" onClick={() => removeExpense(r._id)}><FiTrash2 className="mr-1" /> Delete</Button>
+                )
+              }
+              danger={!r.sourcePayrollId}
             />
           ))}
           {rows.length === 0 && <EmptyState>No expenses yet.</EmptyState>}

@@ -1,5 +1,6 @@
 import React, { forwardRef, useState } from 'react'
 import { FiEye, FiEyeOff } from 'react-icons/fi'
+import NepaliDateInput from './NepaliDateInput'
 
 const Input = forwardRef(({ 
   label, 
@@ -12,6 +13,22 @@ const Input = forwardRef(({
 }, ref) => {
   const [showPassword, setShowPassword] = useState(false)
   const isPassword = type === 'password'
+
+  if (type === 'date') {
+    return (
+      <div className="w-full">
+        {label && (
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            {label}
+          </label>
+        )}
+        <NepaliDateInput ref={ref} className={className} {...props} />
+        {error && (
+          <p className="mt-1 text-sm text-red-600">{error}</p>
+        )}
+      </div>
+    )
+  }
   const inputType = isPassword && passwordToggle
     ? (showPassword ? 'text' : 'password')
     : type

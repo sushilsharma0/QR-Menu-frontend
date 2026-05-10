@@ -361,30 +361,24 @@ export default function OrderActivityReport() {
         }
       >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">From</label>
-            <input
-              type="date"
-              value={from}
-              onChange={(e) => {
-                setFrom(e.target.value)
-                setPage(1)
-              }}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">To</label>
-            <input
-              type="date"
-              value={to}
-              onChange={(e) => {
-                setTo(e.target.value)
-                setPage(1)
-              }}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
+          <Input
+            label="From"
+            type="date"
+            value={from}
+            onChange={(e) => {
+              setFrom(e.target.value)
+              setPage(1)
+            }}
+          />
+          <Input
+            label="To"
+            type="date"
+            value={to}
+            onChange={(e) => {
+              setTo(e.target.value)
+              setPage(1)
+            }}
+          />
           <div className="xl:col-span-2">
             <Input
               label="Order number contains"

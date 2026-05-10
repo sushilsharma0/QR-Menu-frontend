@@ -120,25 +120,19 @@ export default function SubscriptionActivity() {
       </div>
 
       <Card title="Filters">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[160px_160px_1fr_auto_auto_auto] xl:items-end">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">From</label>
-            <input
-              type="date"
-              value={from}
-              onChange={(e) => { setFrom(e.target.value); setPage(1) }}
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">To</label>
-            <input
-              type="date"
-              value={to}
-              onChange={(e) => { setTo(e.target.value); setPage(1) }}
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-            />
-          </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[minmax(280px,1fr)_minmax(280px,1fr)_1fr_auto_auto_auto] xl:items-end">
+          <Input
+            label="From"
+            type="date"
+            value={from}
+            onChange={(e) => { setFrom(e.target.value); setPage(1) }}
+          />
+          <Input
+            label="To"
+            type="date"
+            value={to}
+            onChange={(e) => { setTo(e.target.value); setPage(1) }}
+          />
           <Input
             label="Restaurant ID (optional)"
             icon={FiSearch}
