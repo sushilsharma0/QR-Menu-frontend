@@ -8,6 +8,7 @@ import toast from 'react-hot-toast'
 import api from '../../services/api'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
+import Input from '../../components/common/Input'
 import { useSocket } from '../../hooks/useSocket'
 import {
   RestaurantPageLoader,
@@ -601,24 +602,18 @@ const Transactions = () => {
               <option value="refunded">Refunded</option>
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-            <input
-              type="date"
-              value={filters.startDate}
-              onChange={(e) => { setFilters(f => ({ ...f, startDate: e.target.value })); setPage(1) }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-            <input
-              type="date"
-              value={filters.endDate}
-              onChange={(e) => { setFilters(f => ({ ...f, endDate: e.target.value })); setPage(1) }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
-            />
-          </div>
+          <Input
+            label="Start Date"
+            type="date"
+            value={filters.startDate}
+            onChange={(e) => { setFilters(f => ({ ...f, startDate: e.target.value })); setPage(1) }}
+          />
+          <Input
+            label="End Date"
+            type="date"
+            value={filters.endDate}
+            onChange={(e) => { setFilters(f => ({ ...f, endDate: e.target.value })); setPage(1) }}
+          />
         </div>
         {activeFilters > 0 && (
           <div className="mt-3 flex items-center gap-2">

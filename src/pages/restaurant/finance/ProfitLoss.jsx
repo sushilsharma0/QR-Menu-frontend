@@ -29,7 +29,10 @@ const ProfitLoss = () => {
 
   return (
     <div className="space-y-6">
-      <FinancePageHeader title="Profit & Loss" subtitle="Generate period reports and compare revenue, expenses and net margin." />
+      <FinancePageHeader
+        title="Profit & Loss"
+        subtitle="Revenue from sales reports minus all expenses (including staff_salary from paid payroll). Pick a date range that includes payroll payment dates."
+      />
 
       <FinancePanel title="Generate P&L report">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-4">

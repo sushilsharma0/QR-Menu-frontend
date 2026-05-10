@@ -39,7 +39,9 @@ const EmployeeForm = () => {
       setValue('bankAccountNumber', emp.bankAccountNumber || '')
       setValue('bankBranch', emp.bankBranch || '')
       setValue('salary', emp.salary ?? '')
+      setValue('allowance', emp.allowance ?? '')
       setValue('customTdsPercent', emp.customTdsPercent ?? '')
+      setValue('customEpfPercent', emp.customEpfPercent ?? '')
       setPhotoPreview(emp.profileImage || '')
     } catch (error) {
       toast.error('Failed to fetch employee')
@@ -159,7 +161,10 @@ const EmployeeForm = () => {
           </div>
 
           <div className="rounded-2xl border border-surface-200 bg-surface-50 p-4 dark:border-gray-700 dark:bg-gray-900/40">
-            <p className="mb-3 text-sm font-semibold text-gray-800 dark:text-gray-200">Payroll & Nepal TDS</p>
+            <p className="mb-3 text-sm font-semibold text-gray-800 dark:text-gray-200">Payroll, TDS & EPF</p>
+            <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
+              Monthly salary and allowance are used on each payroll run. TDS and EPF percentages apply to the full monthly basic. You can override TDS/EPF % per employee or use restaurant defaults.
+            </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Input label="Department" {...register('department')} />
               <Input label="Designation" {...register('designation')} />
@@ -168,12 +173,19 @@ const EmployeeForm = () => {
               <Input label="Bank name" {...register('bankName')} />
               <Input label="Bank account no." {...register('bankAccountNumber')} />
               <Input label="Bank branch" {...register('bankBranch')} />
-              <Input label="Monthly salary template" type="number" step="0.01" {...register('salary')} />
+              <Input label="Monthly salary (basic)" type="number" step="0.01" {...register('salary')} />
+              <Input label="Monthly allowance" type="number" step="0.01" {...register('allowance')} />
               <Input
                 label="Custom TDS % (optional)"
                 type="number"
                 step="0.01"
                 {...register('customTdsPercent')}
+              />
+              <Input
+                label="Custom EPF % on monthly basic (optional)"
+                type="number"
+                step="0.01"
+                {...register('customEpfPercent')}
               />
             </div>
           </div>
