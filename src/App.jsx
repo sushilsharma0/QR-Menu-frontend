@@ -208,6 +208,13 @@ function App() {
         <Route path="/kitchen/:slug/:restaurantId/orders/:id" element={<RestaurantOrderDetail />} />
         <Route path="/cashier/:slug/:restaurantId/dashboard" element={<CashierDashboard />} />
         <Route path="/cashier/:slug/:restaurantId/orders/:id" element={<RestaurantOrderDetail />} />
+        <Route path="/cashier/:slug/:restaurantId/finance/dashboard" element={<FinanceDashboard />} />
+        <Route path="/cashier/:slug/:restaurantId/finance/expenses" element={<FinanceExpenses />} />
+        <Route path="/cashier/:slug/:restaurantId/finance/profit-loss" element={<FinanceProfitLoss />} />
+        <Route path="/cashier/:slug/:restaurantId/finance/payroll" element={<FinancePayroll />} />
+        <Route path="/cashier/:slug/:restaurantId/finance/invoices" element={<FinanceInvoices />} />
+        <Route path="/cashier/:slug/:restaurantId/finance/inventory" element={<FinanceInventory />} />
+        <Route path="/cashier/:slug/:restaurantId/finance/budget" element={<FinanceBudget />} />
         <Route path="/waiter/:slug/:restaurantId/dashboard" element={<WaiterDashboard />} />
         <Route path="/waiter/:slug/:restaurantId/order" element={<WaiterTakeOrder />} />
         <Route path="/waiter/:slug/:restaurantId/notifications" element={<NotificationsPage />} />

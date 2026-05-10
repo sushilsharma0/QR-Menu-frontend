@@ -1,7 +1,20 @@
 import React, { useEffect, useState } from 'react'
 import { Outlet, Link, NavLink, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import { FiLogOut, FiUser, FiClock, FiGrid, FiPlusCircle } from 'react-icons/fi'
+import {
+  FiBarChart2,
+  FiBookOpen,
+  FiClock,
+  FiCreditCard,
+  FiFileText,
+  FiGrid,
+  FiLogOut,
+  FiPercent,
+  FiPieChart,
+  FiPlusCircle,
+  FiUsers,
+  FiUser,
+} from 'react-icons/fi'
 import { FiMoon, FiSun } from 'react-icons/fi'
 import { TbCurrencyRupee } from 'react-icons/tb'
 import NotificationMenu from '../common/NotificationMenu'
@@ -48,12 +61,20 @@ const EmployeeLayout = () => {
   const kitchenDashboardPath = kb ? `${kb}/dashboard` : ''
   const kitchenOrdersPath = kb ? `${kb}/orders` : ''
   const cashierDashboardPath = cb ? `${cb}/dashboard` : ''
+  const cashierFinanceBase = cb ? `${cb}/finance` : ''
   const waiterDashboardPath = wb ? `${wb}/dashboard` : ''
   const waiterOrderPath = wb ? `${wb}/order` : ''
 
   const navItems = [
     { path: kitchenOrdersPath, label: 'Order History', icon: FiClock, role: 'kitchen', showPending: true },
     { path: cashierDashboardPath, label: 'Orders', icon: TbCurrencyRupee, role: 'cashier' },
+    { path: cashierFinanceBase ? `${cashierFinanceBase}/dashboard` : '', label: 'Finance', icon: FiBarChart2, role: 'cashier' },
+    { path: cashierFinanceBase ? `${cashierFinanceBase}/expenses` : '', label: 'Expenses', icon: FiCreditCard, role: 'cashier' },
+    { path: cashierFinanceBase ? `${cashierFinanceBase}/budget` : '', label: 'Budget', icon: FiPieChart, role: 'cashier' },
+    { path: cashierFinanceBase ? `${cashierFinanceBase}/profit-loss` : '', label: 'P&L', icon: FiPercent, role: 'cashier' },
+    { path: cashierFinanceBase ? `${cashierFinanceBase}/inventory` : '', label: 'Inventory', icon: FiBookOpen, role: 'cashier' },
+    { path: cashierFinanceBase ? `${cashierFinanceBase}/payroll` : '', label: 'Payroll', icon: FiUsers, role: 'cashier' },
+    { path: cashierFinanceBase ? `${cashierFinanceBase}/invoices` : '', label: 'Invoices', icon: FiFileText, role: 'cashier' },
     { path: waiterDashboardPath, label: 'Dashboard', icon: FiGrid, role: 'waiter' },
     { path: waiterOrderPath, label: 'Take Order', icon: FiPlusCircle, role: 'waiter' },
   ]
@@ -99,7 +120,7 @@ const EmployeeLayout = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
       <header className="bg-white dark:bg-gray-900 shadow-sm sticky top-0 z-30 border-b border-transparent dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto px-4 sm:px-6 lg:px-20">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center gap-3">
@@ -159,27 +180,39 @@ const EmployeeLayout = () => {
 
       {/* Navigation Tabs */}
       {currentNavItems.length > 0 && (
-        <div className="bg-white dark:bg-gray-900 border-b dark:border-gray-800">
-          <div className="max-w-7xl mx-auto px-4  sm:px-6 lg:px-8">
-            <nav className="flex gap-8">
+        <div className="border-b border-amber-100 bg-gradient-to-r from-white via-[#fffaf3] to-emerald-50/60 dark:border-gray-800 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950">
+          <div className="mx-auto px-4 py-3 sm:px-6 lg:px-8">
+            <nav className="flex justify-center gap-11 overflow-x-auto rounded-2xl border border-amber-100 bg-white/85 p-2 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/85">
               {currentNavItems.map((item) => (
                 <NavLink
                   key={item.path}
                   to={item.path}
                   className={({ isActive }) =>
-                    `flex items-center gap-2 py-3 px-1 text-sm font-medium border-b-2 transition-all ${
+                    `group relative inline-flex h-11 shrink-0 items-center gap-2 rounded-xl px-3 text-sm font-semibold transition-all ${
                       isActive
-                        ? 'border-primary-500 text-primary-600'
-                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-700'
+                        ? 'bg-primary-700 text-white shadow-md'
+                        : 'text-gray-600 hover:bg-amber-50 hover:text-primary-800 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white'
                     }`
                   }
                 >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                  {item.showPending && pendingCount > 0 && (
-                    <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-semibold flex items-center justify-center">
-                      {pendingCount > 99 ? '99+' : pendingCount}
-                    </span>
+                  {({ isActive }) => (
+                    <>
+                      <span
+                        className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${
+                          isActive
+                            ? 'bg-white/15 text-white'
+                            : 'bg-surface-100 text-gray-500 group-hover:bg-white group-hover:text-primary-700 dark:bg-gray-800 dark:text-gray-300'
+                        }`}
+                      >
+                        <item.icon className="h-4 w-4" />
+                      </span>
+                      <span className="whitespace-nowrap">{item.label}</span>
+                      {item.showPending && pendingCount > 0 && (
+                        <span className="ml-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+                          {pendingCount > 99 ? '99+' : pendingCount}
+                        </span>
+                      )}
+                    </>
                   )}
                 </NavLink>
               ))}
@@ -189,7 +222,7 @@ const EmployeeLayout = () => {
       )}
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 dark:text-gray-100">
+      <main className="mx-auto px-4 sm:px-6 lg:px-20 py-8 dark:text-gray-100">
         <Outlet />
       </main>
 
