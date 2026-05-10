@@ -474,4 +474,19 @@ export const updateInventoryItem = (id, data) =>
 export const deleteInventoryItem = (id) => 
   api.delete(`/restaurant/inventory/${id}`)
 
+// Recipes (menu BOM ↔ inventory)
+export const searchRecipeInventory = (params) =>
+  api.get('/restaurant/recipes/inventory-search', { params })
+
+export const createRecipe = (data) => api.post('/restaurant/recipes', data)
+
+export const updateRecipe = (menuItemId, data) =>
+  api.put(`/restaurant/recipes/menu-item/${menuItemId}`, data)
+
+export const getRecipeByMenuItem = (menuItemId) =>
+  api.get(`/restaurant/recipes/menu-item/${menuItemId}`)
+
+export const deleteRecipe = (menuItemId) =>
+  api.delete(`/restaurant/recipes/menu-item/${menuItemId}`)
+
 export default api

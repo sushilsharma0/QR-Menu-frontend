@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  FiBookOpen,
   FiCheckCircle,
   FiClock,
   FiCoffee,
@@ -28,6 +29,7 @@ import {
   RestaurantStatusPill,
   formatRestaurantCurrency,
 } from "../../components/restaurant/RestaurantUI";
+import MenuRecipeModal from "./MenuRecipeModal";
 
 const PAGE_SIZE_OPTIONS = [8, 12, 24, 48];
 
@@ -76,7 +78,7 @@ function MenuItemImage({ item, className = "" }) {
   );
 }
 
-function MenuActions({ item, onEdit, onDelete, onToggle }) {
+function MenuActions({ item, onEdit, onDelete, onToggle, onManageRecipe }) {
   return (
     <div className="flex items-center gap-2">
       <button
@@ -86,6 +88,14 @@ function MenuActions({ item, onEdit, onDelete, onToggle }) {
         title={item.isAvailable ? "Mark as unavailable" : "Mark as available"}
       >
         {item.isAvailable ? <FiEyeOff className="h-4 w-4" /> : <FiEye className="h-4 w-4" />}
+      </button>
+      <button
+        type="button"
+        onClick={() => onManageRecipe(item)}
+        className="rounded-lg p-2 text-gray-400 transition hover:bg-emerald-50 hover:text-emerald-700"
+        title="Manage recipe"
+      >
+        <FiBookOpen className="h-4 w-4" />
       </button>
       <button
         type="button"
@@ -230,6 +240,7 @@ const Menu = () => {
   const [viewMode, setViewMode] = useState("list");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
+  const [recipeModalItem, setRecipeModalItem] = useState(null);
 
   useEffect(() => {
     fetchMenuData();
@@ -607,6 +618,7 @@ const Menu = () => {
                           onEdit={() => navigate(`${restaurantBase}/menu/item/${item._id}/edit`)}
                           onDelete={() => openDeleteModal("item", item)}
                           onToggle={handleToggleAvailability}
+                          onManageRecipe={setRecipeModalItem}
                         />
                       </div>
                     </div>
@@ -668,6 +680,7 @@ const Menu = () => {
                             onEdit={() => navigate(`${restaurantBase}/menu/item/${item._id}/edit`)}
                             onDelete={() => openDeleteModal("item", item)}
                             onToggle={handleToggleAvailability}
+                            onManageRecipe={setRecipeModalItem}
                           />
                         </td>
                       </tr>
@@ -714,6 +727,13 @@ const Menu = () => {
           </div>
         </div>
       </Modal>
+
+      <MenuRecipeModal
+        isOpen={Boolean(recipeModalItem)}
+        onClose={() => setRecipeModalItem(null)}
+        menuItem={recipeModalItem}
+        onSaved={fetchMenuData}
+      />
     </div>
   );
 };
