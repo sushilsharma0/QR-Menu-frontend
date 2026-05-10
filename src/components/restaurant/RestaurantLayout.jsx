@@ -22,11 +22,21 @@ const RestaurantLayout = () => {
     restaurantBase &&
     !isRestaurantPathAllowedWhenBillingLocked(path)
 
+  const isPosRoute = /\/restaurant\/[^/]+\/[^/]+\/pos(\/|$)/.test(path)
+
   const main = mustRedirectToSubscribe ? (
     <Navigate to={`${restaurantBase}/subscription`} replace />
   ) : (
     <Outlet />
   )
+
+  if (isPosRoute) {
+    return (
+      <div className="restaurant-portal h-screen overflow-hidden bg-[#feefa5] text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+        {mustRedirectToSubscribe ? main : <Outlet />}
+      </div>
+    )
+  }
 
   return (
     <div className="restaurant-portal flex h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">

@@ -1,12 +1,15 @@
 /**
- * Browser calls must not default to localhost — on a phone, localhost is the device.
+ * Browser calls must not default to localhost on every device: on a phone,
+ * localhost is the phone, not the development machine.
  *
- * Local dev (recommended):
- * - Do NOT set VITE_API_URL → axios uses `/api` and Vite proxies to `http://localhost:5000` (see vite.config.js).
- * - Do NOT set VITE_SOCKET_URL → Socket.IO uses the same origin and `/socket.io` is proxied (WebSocket).
- * - Start the API on port 5000 or every request shows ERR_CONNECTION_REFUSED.
+ * Local dev:
+ * - Do NOT set VITE_API_URL: axios uses `/api` and Vite proxies to the API.
+ * - Do NOT set VITE_SOCKET_URL: desktop localhost connects Socket.IO directly
+ *   to port 5000 to avoid noisy Vite websocket proxy resets. LAN/mobile dev
+ *   keeps same-origin `/socket.io` proxying.
+ * - Start the API on port 5000 or requests and realtime events cannot connect.
  *
- * Override VITE_API_URL / VITE_SOCKET_URL only when the API is on another host (e.g. staging).
+ * Override VITE_API_URL / VITE_SOCKET_URL only when the API is on another host.
  */
 export function getApiBaseUrl() {
   const v = import.meta.env.VITE_API_URL
@@ -14,18 +17,17 @@ export function getApiBaseUrl() {
   return '/api'
 }
 
-const DIRECT_LOCAL_5000 = /^https?:\/\/(localhost|127\.0\.0\.1):5000\/?$/i
+const LOCAL_DEV_HOSTS = new Set(['localhost', '127.0.0.1'])
 
 export function getSocketOrigin() {
   const envRaw = import.meta.env.VITE_SOCKET_URL
   const envTrim = envRaw != null && String(envRaw).trim() !== '' ? String(envRaw).trim() : ''
 
   if (typeof window !== 'undefined' && window.location?.origin) {
-    // In dev, pointing the client at :5000 bypasses Vite's WS proxy; use the dev server origin instead.
-    if (import.meta.env.DEV && envTrim && DIRECT_LOCAL_5000.test(envTrim)) {
-      return window.location.origin
-    }
     if (envTrim) return envTrim
+    if (import.meta.env.DEV && LOCAL_DEV_HOSTS.has(window.location.hostname)) {
+      return 'http://127.0.0.1:5000'
+    }
     return window.location.origin
   }
 

@@ -17,8 +17,13 @@ import { TbCurrencyRupee } from 'react-icons/tb'
 import {
   Area,
   Bar,
+  BarChart,
   CartesianGrid,
+  Cell,
   ComposedChart,
+  Legend,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -41,6 +46,8 @@ import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { formatters } from '../../utils/formatters'
 import { DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
 
+const CHART_COLORS = ['#8f2800', '#f59e0b', '#059669', '#2563eb', '#dc2626', '#7c3aed', '#0f766e']
+
 function defaultToDate() {
   return formatDateInputValue(new Date())
 }
@@ -56,6 +63,12 @@ function formatDateInputValue(date) {
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
+}
+
+function titleCase(value) {
+  return String(value || 'Unknown')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
 }
 
 function SalesTooltip({ active, payload, label }) {
@@ -76,6 +89,29 @@ function SalesTooltip({ active, payload, label }) {
           <span className="text-gray-500">Orders</span>
           <span className="font-bold text-emerald-700">{orders}</span>
         </p>
+      </div>
+    </div>
+  )
+}
+
+function ActivityTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null
+
+  return (
+    <div className="rounded-2xl border border-surface-200 bg-white/95 px-4 py-3 shadow-xl backdrop-blur">
+      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{titleCase(label)}</p>
+      <div className="mt-2 space-y-1 text-sm">
+        {payload.map((item) => {
+          const countLike = ['count', 'orderCount', 'quantity'].includes(item.dataKey)
+          return (
+            <p key={item.dataKey} className="flex items-center justify-between gap-8">
+              <span className="text-gray-500">{item.name || item.dataKey}</span>
+              <span className="font-bold text-primary-700">
+                {countLike ? Number(item.value || 0).toLocaleString('en-IN') : formatRestaurantCurrency(item.value)}
+              </span>
+            </p>
+          )
+        })}
       </div>
     </div>
   )
@@ -114,6 +150,7 @@ export default function OrderActivityReport() {
   const [rows, setRows] = useState([])
   const [daily, setDaily] = useState([])
   const [totals, setTotals] = useState(null)
+  const [breakdowns, setBreakdowns] = useState({})
   const [pagination, setPagination] = useState({ page: 1, limit: 40, total: 0, pages: 1 })
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
@@ -128,6 +165,7 @@ export default function OrderActivityReport() {
       setRows(data.rows || [])
       setDaily(data.daily || [])
       setTotals(data.totals || null)
+      setBreakdowns(data.breakdowns || {})
       setPagination(data.pagination || { page: 1, limit: 40, total: 0, pages: 1 })
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to load sales activity')
@@ -174,6 +212,47 @@ export default function OrderActivityReport() {
   )
   const hasChartData = chartData.some((item) => item.grandTotal > 0 || item.orderCount > 0)
   const activeFilterCount = [from, to, appliedQ].filter(Boolean).length
+  const detailsModel = useMemo(() => {
+    const mapAmountBreakdown = (items = [], keyName = 'name') =>
+      items
+        .map((item) => ({
+          [keyName]: titleCase(item._id),
+          raw: item._id,
+          count: Number(item.count || item.orderCount || 0),
+          amount: Number(item.amount || item.grandTotal || 0),
+        }))
+        .filter((item) => item.count > 0 || item.amount > 0)
+
+    const topItemChart = (breakdowns.topItems || []).map((item) => ({
+      name: item._id?.length > 18 ? `${item._id.slice(0, 18)}...` : item._id || 'Item',
+      quantity: Number(item.quantity || 0),
+      revenue: Number(item.revenue || 0),
+    }))
+    const tableChart = (breakdowns.tables || []).map((item) => ({
+      table: `Table ${item.tableNumber}`,
+      orderCount: Number(item.orderCount || 0),
+      grandTotal: Number(item.grandTotal || 0),
+    }))
+    const hourlyChart = (breakdowns.hourly || []).map((item) => ({
+      hour: item._id,
+      orderCount: Number(item.orderCount || 0),
+      grandTotal: Number(item.grandTotal || 0),
+    }))
+
+    return {
+      status: mapAmountBreakdown(breakdowns.status, 'status'),
+      paymentStatus: mapAmountBreakdown(breakdowns.paymentStatus, 'status'),
+      paymentMethod: mapAmountBreakdown(breakdowns.paymentMethod, 'method'),
+      channel: mapAmountBreakdown(breakdowns.channel, 'channel'),
+      topItemChart,
+      tableChart,
+      hourlyChart,
+      paidRate: Number(t.grandTotal || 0) > 0 ? (Number(t.paidValue || 0) / Number(t.grandTotal || 0)) * 100 : 0,
+      taxRate: Number(t.grandTotal || 0) > 0 ? (Number(t.tax || 0) / Number(t.grandTotal || 0)) * 100 : 0,
+      discountRate: Number(t.grandTotal || 0) > 0 ? (Number(t.discount || 0) / Number(t.grandTotal || 0)) * 100 : 0,
+      itemsPerOrder: Number(t.orderCount || 0) > 0 ? Number(t.itemCount || 0) / Number(t.orderCount || 0) : 0,
+    }
+  }, [breakdowns, t])
 
   const summaryTiles = [
     {
@@ -203,6 +282,34 @@ export default function OrderActivityReport() {
       sub: bestDay ? formatRestaurantCurrency(bestDay.grandTotal) : 'No orders yet',
       icon: FiCalendar,
       accent: 'from-indigo-500 to-violet-500',
+    },
+    {
+      label: 'Paid value',
+      value: formatRestaurantCurrency(t.paidValue),
+      sub: `${detailsModel.paidRate.toFixed(1)}% collected`,
+      icon: FiCreditCard,
+      accent: 'from-green-500 to-emerald-500',
+    },
+    {
+      label: 'Pending value',
+      value: formatRestaurantCurrency(t.unpaidValue),
+      sub: 'Pending, partial, or failed payments',
+      icon: FiShoppingBag,
+      accent: 'from-red-500 to-rose-500',
+    },
+    {
+      label: 'Items sold',
+      value: Number(t.itemCount || 0).toLocaleString('en-IN'),
+      sub: `${detailsModel.itemsPerOrder.toFixed(2)} items per order`,
+      icon: FiShoppingBag,
+      accent: 'from-sky-500 to-blue-500',
+    },
+    {
+      label: 'Tax collected',
+      value: formatRestaurantCurrency(t.tax),
+      sub: `${detailsModel.taxRate.toFixed(1)}% of gross sales`,
+      icon: TbCurrencyRupee,
+      accent: 'from-violet-500 to-purple-500',
     },
   ]
 
@@ -484,8 +591,8 @@ export default function OrderActivityReport() {
           </Card>
         </motion.div>
 
-        <Card title="Recent activity" icon={FiShoppingBag}>
-          <div className="space-y-3">
+        <Card title="Recent activity" icon={FiShoppingBag} className="self-start">
+          <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
             {rows.slice(0, 6).map((row) => (
               <Link
                 key={row._id}
@@ -521,6 +628,184 @@ export default function OrderActivityReport() {
           </div>
         </Card>
       </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-4">
+        <Card title="Order status ring" icon={FiBarChart2}>
+          {detailsModel.status.length > 0 ? (
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={detailsModel.status} dataKey="count" nameKey="status" innerRadius={58} outerRadius={92} paddingAngle={4}>
+                    {detailsModel.status.map((entry, index) => (
+                      <Cell key={entry.status} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<ActivityTooltip />} />
+                  <Legend iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-surface-50 p-6 text-center text-sm text-gray-500">No order status data.</div>
+          )}
+        </Card>
+
+        <Card title="Payment status ring" icon={FiCreditCard}>
+          {detailsModel.paymentStatus.length > 0 ? (
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={detailsModel.paymentStatus} dataKey="amount" nameKey="status" innerRadius={58} outerRadius={92} paddingAngle={4}>
+                    {detailsModel.paymentStatus.map((entry, index) => (
+                      <Cell key={entry.status} fill={CHART_COLORS[(index + 1) % CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<ActivityTooltip />} />
+                  <Legend iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-surface-50 p-6 text-center text-sm text-gray-500">No payment status data.</div>
+          )}
+        </Card>
+
+        <Card title="Payment methods" icon={FiCreditCard}>
+          {detailsModel.paymentMethod.length > 0 ? (
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={detailsModel.paymentMethod} dataKey="amount" nameKey="method" innerRadius={58} outerRadius={92} paddingAngle={4}>
+                    {detailsModel.paymentMethod.map((entry, index) => (
+                      <Cell key={entry.method} fill={CHART_COLORS[(index + 2) % CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<ActivityTooltip />} />
+                  <Legend iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-surface-50 p-6 text-center text-sm text-gray-500">No payment method data.</div>
+          )}
+        </Card>
+
+        <Card title="Order channels" icon={FiShoppingBag}>
+          {detailsModel.channel.length > 0 ? (
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={detailsModel.channel} dataKey="amount" nameKey="channel" innerRadius={58} outerRadius={92} paddingAngle={4}>
+                    {detailsModel.channel.map((entry, index) => (
+                      <Cell key={entry.channel} fill={CHART_COLORS[(index + 3) % CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<ActivityTooltip />} />
+                  <Legend iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-surface-50 p-6 text-center text-sm text-gray-500">No channel data.</div>
+          )}
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <Card title="Hourly sales activity" icon={FiTrendingUp}>
+          {detailsModel.hourlyChart.length > 0 ? (
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={detailsModel.hourlyChart} margin={{ top: 12, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" vertical={false} />
+                  <XAxis dataKey="hour" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} />
+                  <YAxis yAxisId="orders" allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} width={36} />
+                  <YAxis
+                    yAxisId="sales"
+                    orientation="right"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#6b7280', fontSize: 12 }}
+                    tickFormatter={(value) => `${DEFAULT_CURRENCY_SYMBOL}${Math.round(Number(value || 0) / 1000)}k`}
+                    width={56}
+                  />
+                  <Tooltip content={<ActivityTooltip />} cursor={{ fill: '#fffcf1' }} />
+                  <Bar yAxisId="orders" dataKey="orderCount" name="Orders" fill="#059669" radius={[10, 10, 4, 4]} barSize={32} />
+                  <Area yAxisId="sales" type="monotone" dataKey="grandTotal" name="Sales" fill="#8f280033" stroke="#8f2800" strokeWidth={3} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-surface-50 p-6 text-center text-sm text-gray-500">No hourly data for this range.</div>
+          )}
+        </Card>
+
+        <Card title="Busiest tables" icon={FiShoppingBag}>
+          {detailsModel.tableChart.length > 0 ? (
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={detailsModel.tableChart} margin={{ top: 12, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" vertical={false} />
+                  <XAxis dataKey="table" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} />
+                  <YAxis yAxisId="orders" allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} width={36} />
+                  <YAxis
+                    yAxisId="sales"
+                    orientation="right"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#6b7280', fontSize: 12 }}
+                    tickFormatter={(value) => `${DEFAULT_CURRENCY_SYMBOL}${Math.round(Number(value || 0) / 1000)}k`}
+                    width={56}
+                  />
+                  <Tooltip content={<ActivityTooltip />} cursor={{ fill: '#fffcf1' }} />
+                  <Bar yAxisId="orders" dataKey="orderCount" name="Orders" fill="#2563eb" radius={[10, 10, 4, 4]} barSize={34} />
+                  <Area yAxisId="sales" type="monotone" dataKey="grandTotal" name="Sales" fill="#f59e0b33" stroke="#f59e0b" strokeWidth={3} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-surface-50 p-6 text-center text-sm text-gray-500">No table data for this range.</div>
+          )}
+        </Card>
+      </div>
+
+      <Card title="Top selling items" icon={FiShoppingBag}>
+        {detailsModel.topItemChart.length > 0 ? (
+          <div className="h-96">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={detailsModel.topItemChart} layout="vertical" margin={{ top: 12, right: 24, left: 40, bottom: 0 }}>
+                <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" horizontal={false} />
+                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} />
+                <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#374151', fontSize: 12 }} width={140} />
+                <Tooltip content={<ActivityTooltip />} cursor={{ fill: '#fffcf1' }} />
+                <Bar dataKey="quantity" name="Quantity" fill="#059669" radius={[0, 12, 12, 0]} barSize={24} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="rounded-2xl bg-surface-50 p-6 text-center text-sm text-gray-500">No item data for this range.</div>
+        )}
+      </Card>
+
+      <Card title="Sales details">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {[
+            ['Subtotal', formatRestaurantCurrency(t.subtotal)],
+            ['Discount', formatRestaurantCurrency(t.discount)],
+            ['Discount rate', `${detailsModel.discountRate.toFixed(1)}%`],
+            ['Tax rate', `${detailsModel.taxRate.toFixed(1)}%`],
+            ['Paid value', formatRestaurantCurrency(t.paidValue)],
+            ['Pending value', formatRestaurantCurrency(t.unpaidValue)],
+            ['Items per order', detailsModel.itemsPerOrder.toFixed(2)],
+            ['Total rows', Number(pagination.total || rows.length).toLocaleString('en-IN')],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-2xl border border-surface-200 bg-surface-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
+              <p className="mt-1 text-xl font-bold text-gray-950">{value}</p>
+            </div>
+          ))}
+        </div>
+      </Card>
 
       <Card title="Daily income">
         <p className="mb-3 text-sm text-gray-600">

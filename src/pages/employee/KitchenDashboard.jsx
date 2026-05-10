@@ -6,6 +6,7 @@ import api from '../../services/api'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import { useSocket } from '../../hooks/useSocket'
+import useOrderAlerts from '../../hooks/useOrderAlerts'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 
 const KitchenDashboard = () => {
@@ -14,6 +15,21 @@ const KitchenDashboard = () => {
   const { socket } = useSocket()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
+  const [recentOrderIds, setRecentOrderIds] = useState([])
+
+  useOrderAlerts({
+    role: 'kitchen',
+    fullscreenUrgent: true,
+    onRefresh: (payload) => {
+      fetchOrders()
+      if (payload?.orderId) {
+        setRecentOrderIds((prev) => [String(payload.orderId), ...prev].slice(0, 8))
+        window.setTimeout(() => {
+          setRecentOrderIds((prev) => prev.filter((id) => id !== String(payload.orderId)))
+        }, 12000)
+      }
+    },
+  })
 
   useEffect(() => {
     fetchOrders()
@@ -21,10 +37,8 @@ const KitchenDashboard = () => {
 
   useEffect(() => {
     if (socket) {
-      socket.on('new_order', handleNewOrder)
       socket.on('order_updated', handleOrderUpdate)
       return () => {
-        socket.off('new_order', handleNewOrder)
         socket.off('order_updated', handleOrderUpdate)
       }
     }
@@ -42,11 +56,6 @@ const KitchenDashboard = () => {
     } finally {
       setLoading(false)
     }
-  }
-
-  const handleNewOrder = (order) => {
-    toast.success(`New order #${order.orderNumber} received!`)
-    fetchOrders()
   }
 
   const handleOrderUpdate = () => {
@@ -228,7 +237,9 @@ const KitchenDashboard = () => {
               {orders.filter(o => section.status.includes(o.status)).map((order) => (
                 <div
                   key={order._id}
-                  className={`border ${getStatusStyle(order.status).card} p-4 rounded-2xl transition-all hover:shadow-md`}
+                  className={`border ${getStatusStyle(order.status).card} p-4 rounded-2xl transition-all hover:shadow-md ${
+                    recentOrderIds.includes(String(order._id)) ? 'ring-4 ring-amber-300 ring-offset-2 animate-pulse' : ''
+                  }`}
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div>

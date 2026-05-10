@@ -198,14 +198,14 @@ const FinancePayroll = () => {
   const slipRef = useRef(null)
   const [month, setMonth] = useState(now.getMonth() + 1)
   const [year, setYear] = useState(now.getFullYear())
-  /** Generate payroll for this many consecutive months starting at month/year (1–3). */
+  /** Generate payroll for this many consecutive months starting at month/year (1-3). */
   const [monthCount, setMonthCount] = useState(1)
   const [data, setData] = useState({ items: [], summary: null })
   const [history, setHistory] = useState([])
   const [generating, setGenerating] = useState(false)
   const [savingModal, setSavingModal] = useState(false)
   const [selectedPayroll, setSelectedPayroll] = useState(null)
-  /** { employeeId, row } — row may be null when opening from staff picker */
+  /** { employeeId, row } - row may be null when opening from staff picker */
   const [payrollModal, setPayrollModal] = useState(null)
   const [modalForm, setModalForm] = useState(null)
   const [modalProfile, setModalProfile] = useState(null)
@@ -391,7 +391,7 @@ const FinancePayroll = () => {
       setPayrollModal(null)
       setStaffPickId('')
       loadHistory()
-      toast.success('Payroll calculated — salary slip opened below')
+      toast.success('Payroll calculated - salary slip opened below')
       if (found) setSelectedPayroll(found)
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to save payroll')

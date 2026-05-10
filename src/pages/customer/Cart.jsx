@@ -9,6 +9,9 @@ import {
   ChefHat,
   Send,
   ShieldCheck,
+  User,
+  Phone,
+  Mail,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
@@ -37,6 +40,11 @@ const Cart = () => {
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [applyingPromo, setApplyingPromo] = useState(false);
   const [guestId, setGuestId] = useState("");
+  const [customerDetails, setCustomerDetails] = useState({
+    name: "",
+    phone: "",
+    email: "",
+  });
   const [orderAgainLines, setOrderAgainLines] = useState([]);
   const [reorderBusy, setReorderBusy] = useState(false);
   const { toasts, removeToast, success, error, warning } = useToast();
@@ -46,6 +54,12 @@ const Cart = () => {
       try {
         const session = await ensureGuestSession(token);
         setGuestId(session.guestId);
+        const savedDetails = JSON.parse(localStorage.getItem(`guest_details_${session.guestId}`) || "{}");
+        setCustomerDetails({
+          name: savedDetails.name || "",
+          phone: savedDetails.phone || "",
+          email: savedDetails.email || "",
+        });
         const cart = await getGuestCart({ guestId: session.guestId, qrToken: token });
         const normalized = (cart.items || []).map((item) => ({
           lineId: item._id ? String(item._id) : null,
@@ -236,13 +250,25 @@ const Cart = () => {
       setIsPlacingOrder(true);
 
       const dashUser = getParsedAuthUser();
+      const finalName = String(customerDetails.name || dashUser?.name || "").trim();
+      const finalPhone = String(customerDetails.phone || dashUser?.phone || "").trim();
+      const finalEmail = String(customerDetails.email || dashUser?.email || "").trim();
+      if (!finalName) {
+        warning("Please enter your full name.");
+        setIsPlacingOrder(false);
+        return;
+      }
+      localStorage.setItem(
+        `guest_details_${guestId}`,
+        JSON.stringify({ name: finalName, phone: finalPhone, email: finalEmail }),
+      );
       const payload = {
         qrToken: token,
         guestId,
         paymentMethod,
-        customerName: dashUser?.name || "Guest",
-        customerPhone: dashUser?.phone || "",
-        customerEmail: dashUser?.email || "",
+        customerName: finalName,
+        customerPhone: finalPhone,
+        customerEmail: finalEmail,
         promoCode: appliedPromo?.code || "",
         items: cartItems.map((item) => ({
           menuItemId: item.menuItemId,
@@ -432,6 +458,43 @@ const Cart = () => {
           <span className="text-xl font-black text-orange-500">
             Rs. {total}
           </span>
+        </div>
+      </div>
+
+      {/* Customer Details */}
+      <div className="mx-5 mt-6 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+        <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-400">
+          Customer Details
+        </h3>
+        <div className="space-y-3">
+          <label className="relative block">
+            <User size={18} className="absolute left-3 top-3.5 text-gray-400" />
+            <input
+              value={customerDetails.name}
+              onChange={(e) => setCustomerDetails((prev) => ({ ...prev, name: e.target.value }))}
+              placeholder="Full name"
+              className="w-full rounded-2xl border border-gray-100 bg-gray-50 py-3 pl-10 pr-3 text-sm font-semibold outline-none focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-100"
+            />
+          </label>
+          <label className="relative block">
+            <Phone size={18} className="absolute left-3 top-3.5 text-gray-400" />
+            <input
+              value={customerDetails.phone}
+              onChange={(e) => setCustomerDetails((prev) => ({ ...prev, phone: e.target.value }))}
+              placeholder="Phone number"
+              className="w-full rounded-2xl border border-gray-100 bg-gray-50 py-3 pl-10 pr-3 text-sm font-semibold outline-none focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-100"
+            />
+          </label>
+          <label className="relative block">
+            <Mail size={18} className="absolute left-3 top-3.5 text-gray-400" />
+            <input
+              type="email"
+              value={customerDetails.email}
+              onChange={(e) => setCustomerDetails((prev) => ({ ...prev, email: e.target.value }))}
+              placeholder="Email optional"
+              className="w-full rounded-2xl border border-gray-100 bg-gray-50 py-3 pl-10 pr-3 text-sm font-semibold outline-none focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-100"
+            />
+          </label>
         </div>
       </div>
 

@@ -48,6 +48,7 @@ const NAV_GROUPS = [
   {
     label: 'Service',
     items: [
+      { segment: 'pos', icon: FiCoffee, label: 'POS' },
       { segment: 'orders', icon: FiShoppingBag, label: 'Orders' },
       { segment: 'menu', icon: FiBookOpen, label: 'Menu' },
       { segment: 'tables', icon: FiMapPin, label: 'Tables & QR' },
@@ -63,14 +64,6 @@ const NAV_GROUPS = [
     ],
   },
   {
-    label: 'Support',
-    items: [
-      { segment: 'tickets', icon: FiHelpCircle, label: 'Support Tickets' },
-      { segment: 'logs', icon: FiTerminal, label: 'Audit Logs' },
-      { segment: 'settings', icon: FiSettings, label: 'Settings' },
-    ],
-  },
-  {
     label: 'Accounting',
     items: [
       { segment: 'finance/dashboard', icon: FiBarChart2, label: 'Finance Dashboard' },
@@ -80,6 +73,14 @@ const NAV_GROUPS = [
       { segment: 'finance/inventory', icon: FiBookOpen, label: 'Inventory' },
       { segment: 'finance/payroll', icon: FiUsers, label: 'Payroll' },
       { segment: 'finance/invoices', icon: FiFileText, label: 'Invoices' },
+    ],
+  },
+  {
+    label: 'Support',
+    items: [
+      { segment: 'tickets', icon: FiHelpCircle, label: 'Support Tickets' },
+      { segment: 'logs', icon: FiTerminal, label: 'Audit Logs' },
+      { segment: 'settings', icon: FiSettings, label: 'Settings' },
     ],
   },
 ]
@@ -95,6 +96,7 @@ const SUBSCRIPTION_REQUIRED_TOAST =
 
 function featureKeyForSegment(segment) {
   const root = segment.split('/')[0]
+  if (root === 'pos') return 'orders'
   if (root === 'menu') return 'menu'
   if (root === 'orders') return segment === 'orders/activity' ? 'analytics' : 'orders'
   if (root === 'tables') return 'tables'

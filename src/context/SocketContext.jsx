@@ -44,6 +44,7 @@ export const SocketProvider = ({ children }) => {
 
     // Create new socket connection
     const newSocket = io(socketOrigin, {
+      auth: { token },
       transports: ['websocket', 'polling'],
       autoConnect: true,
       reconnection: true,
@@ -220,6 +221,20 @@ export const SocketProvider = ({ children }) => {
     }
   }, [socket, isConnected])
 
+  const connect = useCallback(() => {
+    if (socket && !socket.connected) socket.connect()
+  }, [socket])
+
+  const disconnect = useCallback(() => {
+    if (socket) socket.disconnect()
+  }, [socket])
+
+  const reconnect = useCallback(() => {
+    if (!socket) return
+    socket.disconnect()
+    socket.connect()
+  }, [socket])
+
   // Listen to event
   const on = useCallback((event, callback) => {
     if (socket) {
@@ -252,6 +267,9 @@ export const SocketProvider = ({ children }) => {
     joinOrderRoom,
     joinTableRoom,
     emit,
+    connect,
+    disconnect,
+    reconnect,
     on,
     once,
     off,

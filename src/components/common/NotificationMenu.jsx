@@ -69,7 +69,7 @@ const NotificationMenu = () => {
   }
 
   const getTypeMeta = (type) => {
-    if (type === 'order') {
+    if (type === 'order' || type === 'NEW_ORDER' || type === 'ORDER_READY' || type === 'PAYMENT_RECEIVED') {
       return {
         icon: FiShoppingBag,
         tone: 'bg-secondary-100 text-secondary-700',
