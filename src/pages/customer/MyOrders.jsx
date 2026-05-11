@@ -3,7 +3,7 @@ import { ArrowLeft, Clock, CheckCircle2, ShoppingBag, Radio, ChefHat } from "luc
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import Navigation from "../../components/customer/Navigation";
-import { ensureGuestSession, getGuestOrders } from "../../services/customer";
+import { ensureGuestSession, getGuestOrders, getStoredCustomerOrders, rememberCustomerOrderToken } from "../../services/customer";
 import { rememberCustomerPortal } from "../../utils/customerPortalContext";
 
 const MyOrders = () => {
@@ -23,8 +23,21 @@ const MyOrders = () => {
       try {
         setLoading(true);
         const session = await ensureGuestSession(token);
-        const guestOrders = await getGuestOrders({ guestId: session.guestId, qrToken: token });
-        setOrders(guestOrders);
+        const [guestOrders, storedOrders] = await Promise.all([
+          getGuestOrders({ guestId: session.guestId, qrToken: token }),
+          getStoredCustomerOrders({ qrToken: token }),
+        ]);
+        const mergedOrders = [...guestOrders, ...storedOrders].reduce((acc, order) => {
+          const key = String(order?._id || order?.qrToken || "");
+          if (!key || acc.has(key)) return acc;
+          acc.set(key, order);
+          return acc;
+        }, new Map());
+        const nextOrders = Array.from(mergedOrders.values()).sort(
+          (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+        );
+        nextOrders.forEach((order) => rememberCustomerOrderToken(token, order.qrToken));
+        setOrders(nextOrders);
       } catch (err) {
         console.error("Failed to fetch customer orders", err);
         setOrders([]);

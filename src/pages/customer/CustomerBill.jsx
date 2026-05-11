@@ -6,6 +6,7 @@ import api from "../../services/api";
 import Feedback from "../../components/customer/homepage/Feedback";
 import Navigation from "../../components/customer/Navigation";
 import { rememberCustomerPortal } from "../../utils/customerPortalContext";
+import { rememberCustomerOrderToken } from "../../services/customer";
 
 const formatMoney = (value) => `Rs. ${Number(value || 0).toFixed(2)}`;
 
@@ -44,8 +45,9 @@ const CustomerBill = () => {
   useEffect(() => {
     if (order?.restaurantSlug && order?.tableQrToken) {
       rememberCustomerPortal(order.restaurantSlug, order.tableQrToken);
+      rememberCustomerOrderToken(order.tableQrToken, qrToken);
     }
-  }, [order?.restaurantSlug, order?.tableQrToken]);
+  }, [order?.restaurantSlug, order?.tableQrToken, qrToken]);
 
   useEffect(() => {
     const paid = order?.paymentStatus === "paid";

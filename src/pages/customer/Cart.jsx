@@ -22,6 +22,7 @@ import {
   ensureGuestSession,
   getGuestCart,
   getDiningInsights,
+  rememberCustomerOrderToken,
   removeGuestCartItem,
   updateGuestCartItem,
   addItemToGuestCart,
@@ -286,6 +287,7 @@ const Cart = () => {
 
       const res = await api.post("/customer/checkout", payload);
       const order = res?.data?.data;
+      rememberCustomerOrderToken(token, order?.trackToken);
 
       await clearGuestCart({ guestId, qrToken: token });
       setCartItems([]);

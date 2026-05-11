@@ -2,6 +2,7 @@ import api from './api'
 
 const GUEST_ID_STORAGE_KEY = 'customer_guest_id_v1'
 const CART_COUNT_STORAGE_KEY = 'customer_cart_count_v1'
+const ORDER_TOKENS_STORAGE_KEY = 'customer_order_tokens_v1'
 
 // Public Menu
 export const getRestaurantMenu = async (restaurantSlug) => {
@@ -38,6 +39,32 @@ export const setCartItemCount = (count) => {
 }
 
 export const getCartItemCount = () => Number(localStorage.getItem(CART_COUNT_STORAGE_KEY) || 0)
+
+const readStoredOrderTokenMap = () => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(ORDER_TOKENS_STORAGE_KEY) || '{}')
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+export const getStoredOrderTokens = (tableQrToken) => {
+  if (!tableQrToken) return []
+  const tokenMap = readStoredOrderTokenMap()
+  return Array.isArray(tokenMap[tableQrToken]) ? tokenMap[tableQrToken].filter(Boolean) : []
+}
+
+export const rememberCustomerOrderToken = (tableQrToken, orderQrToken) => {
+  if (!tableQrToken || !orderQrToken) return
+  const tokenMap = readStoredOrderTokenMap()
+  const nextTokens = [
+    String(orderQrToken),
+    ...getStoredOrderTokens(tableQrToken).filter((token) => token !== String(orderQrToken)),
+  ].slice(0, 50)
+  tokenMap[tableQrToken] = nextTokens
+  localStorage.setItem(ORDER_TOKENS_STORAGE_KEY, JSON.stringify(tokenMap))
+}
 
 export const ensureGuestSession = async (qrToken) => {
   const existingGuestId = getStoredGuestId()
@@ -137,6 +164,40 @@ export const clearGuestCart = async ({ guestId, qrToken }) => {
 export const getGuestOrders = async ({ guestId, qrToken }) => {
   const response = await api.get(`/customer/orders/${guestId}`, { params: { qrToken } })
   return response?.data?.data?.orders || []
+}
+
+export const getStoredCustomerOrders = async ({ qrToken }) => {
+  const tokens = getStoredOrderTokens(qrToken)
+  if (!tokens.length) return []
+
+  const settled = await Promise.allSettled(
+    tokens.map((orderQrToken) =>
+      api.get(`/customer/order/${orderQrToken}`, { skipErrorToast: true }).then((response) => {
+        const order = response?.data?.data || null
+        if (!order || order.tableQrToken !== qrToken) return null
+        return {
+          _id: order.orderId,
+          qrToken: order.qrToken || orderQrToken,
+          orderNumber: order.orderNumber,
+          status: order.status,
+          paymentStatus: order.paymentStatus,
+          paymentMethod: order.paymentMethod,
+          customerName: order.customerName,
+          table: { tableNumber: order.tableNumber },
+          items: order.items || [],
+          totalAmount: order.subtotal,
+          taxAmount: order.taxAmount,
+          discountAmount: order.discountAmount,
+          grandTotal: order.grandTotal ?? order.totalAmount,
+          createdAt: order.orderTime,
+        }
+      }),
+    ),
+  )
+
+  return settled
+    .filter((entry) => entry.status === 'fulfilled' && entry.value)
+    .map((entry) => entry.value)
 }
 
 export const applyRestaurantCreditAccount = async ({ qrToken, guestId, name, email, phone = '' }) => {
@@ -241,6 +302,9 @@ export default {
   getGuestOrders,
   getCartItemCount,
   setCartItemCount,
+  getStoredOrderTokens,
+  rememberCustomerOrderToken,
+  getStoredCustomerOrders,
   getRestaurantInfo,
   getCategories,
   getAllItems,

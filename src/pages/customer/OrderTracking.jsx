@@ -20,7 +20,7 @@ import CustomerPostServePayment from "../../components/customer/CustomerPostServ
 import Navigation from "../../components/customer/Navigation";
 import { getSocketOrigin } from "../../utils/runtimeConfig";
 import { rememberCustomerPortal } from "../../utils/customerPortalContext";
-import { getStoredGuestId } from "../../services/customer";
+import { getStoredGuestId, rememberCustomerOrderToken } from "../../services/customer";
 
 const getActiveStepIndex = (status, paymentStatus) => {
   if (status === "cancelled") return -1;
@@ -127,7 +127,8 @@ const OrderTracking = () => {
   useEffect(() => {
     if (!order?.restaurantSlug || !order?.tableQrToken) return;
     rememberCustomerPortal(order.restaurantSlug, order.tableQrToken);
-  }, [order?.restaurantSlug, order?.tableQrToken]);
+    rememberCustomerOrderToken(order.tableQrToken, qrToken);
+  }, [order?.restaurantSlug, order?.tableQrToken, qrToken]);
 
   useEffect(() => {
     const paid = order?.paymentStatus === "paid";
