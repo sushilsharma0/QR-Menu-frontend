@@ -1,6 +1,8 @@
 import api from './api'
 
 const GUEST_ID_STORAGE_KEY = 'customer_guest_id_v1'
+const CUSTOMER_ID_STORAGE_KEY = 'customer_identity_id_v1'
+const CUSTOMER_PROFILE_STORAGE_KEY = 'customer_identity_profile_v1'
 const CART_COUNT_STORAGE_KEY = 'customer_cart_count_v1'
 const ORDER_TOKENS_STORAGE_KEY = 'customer_order_tokens_v1'
 
@@ -33,6 +35,14 @@ export const getOrderStatus = async (orderId) => {
 }
 
 export const getStoredGuestId = () => localStorage.getItem(GUEST_ID_STORAGE_KEY) || ''
+export const getStoredCustomerId = () => localStorage.getItem(CUSTOMER_ID_STORAGE_KEY) || ''
+export const getStoredCustomerProfile = () => {
+  try {
+    return JSON.parse(localStorage.getItem(CUSTOMER_PROFILE_STORAGE_KEY) || '{}')
+  } catch {
+    return {}
+  }
+}
 
 export const setCartItemCount = (count) => {
   localStorage.setItem(CART_COUNT_STORAGE_KEY, String(Math.max(0, Number(count) || 0)))
@@ -166,6 +176,46 @@ export const getGuestOrders = async ({ guestId, qrToken }) => {
   return response?.data?.data?.orders || []
 }
 
+export const requestCustomerIdentityOtp = async ({ qrToken, guestId, email }) => {
+  const response = await api.post('/customer/identity/request-otp', {
+    qrToken,
+    guestId,
+    email,
+    purpose: 'signup',
+  })
+  return response?.data?.data || {}
+}
+
+export const claimCustomerIdentity = async ({ qrToken, guestId, name, phone = '', email = '', otp = '', password = '', purpose = 'signup' }) => {
+  const response = await api.post('/customer/identity/claim', {
+    qrToken,
+    guestId,
+    name,
+    phone,
+    email,
+    otp,
+    password,
+    purpose,
+  })
+  const data = response?.data?.data || {}
+  if (data.guestId) localStorage.setItem(GUEST_ID_STORAGE_KEY, data.guestId)
+  if (data.customerId) localStorage.setItem(CUSTOMER_ID_STORAGE_KEY, data.customerId)
+  if (data.customer) localStorage.setItem(CUSTOMER_PROFILE_STORAGE_KEY, JSON.stringify(data.customer))
+  return data
+}
+
+export const getCustomerIdentity = async ({ qrToken, guestId, customerId = getStoredCustomerId() }) => {
+  if (!qrToken || !guestId) return null
+  const response = await api.get('/customer/identity/me', {
+    params: { qrToken, guestId, customerId },
+    skipErrorToast: true,
+  })
+  const data = response?.data?.data || null
+  if (data?.customerId) localStorage.setItem(CUSTOMER_ID_STORAGE_KEY, data.customerId)
+  if (data?.customer) localStorage.setItem(CUSTOMER_PROFILE_STORAGE_KEY, JSON.stringify(data.customer))
+  return data
+}
+
 export const getStoredCustomerOrders = async ({ qrToken }) => {
   const tokens = getStoredOrderTokens(qrToken)
   if (!tokens.length) return []
@@ -294,7 +344,12 @@ export default {
   trackOrder,
   getOrderStatus,
   getStoredGuestId,
+  getStoredCustomerId,
+  getStoredCustomerProfile,
   ensureGuestSession,
+  requestCustomerIdentityOtp,
+  claimCustomerIdentity,
+  getCustomerIdentity,
   addItemToGuestCart,
   getGuestCart,
   updateGuestCartItem,

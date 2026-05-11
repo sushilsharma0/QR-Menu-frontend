@@ -17,13 +17,27 @@ import Navigation from '../../components/customer/Navigation';
 import Feedback from '../../components/customer/homepage/Feedback';
 import { rememberCustomerPortal } from '../../utils/customerPortalContext';
 import toast from 'react-hot-toast';
+import { ensureGuestSession, getCustomerIdentity, getStoredCustomerId, getStoredCustomerProfile } from '../../services/customer';
 
 const AccountPage = () => {
   const { slug, token } = useParams();
   const [showFeedback, setShowFeedback] = useState(false);
+  const [customerId, setCustomerId] = useState(getStoredCustomerId());
+  const [customer, setCustomer] = useState(getStoredCustomerProfile());
+  const [loyalty, setLoyalty] = useState(null);
 
   useEffect(() => {
     if (slug && token) rememberCustomerPortal(slug, token);
+    if (!token) return;
+    ensureGuestSession(token)
+      .then((session) => getCustomerIdentity({ guestId: session.guestId, qrToken: token }))
+      .then((identity) => {
+        if (!identity) return;
+        setCustomerId(identity.customerId || '');
+        setCustomer(identity.customer || {});
+        setLoyalty(identity.loyalty || null);
+      })
+      .catch(() => {});
   }, [slug, token]);
 
   const homePath = slug && token ? `/home/${slug}/${token}` : '/';
@@ -49,6 +63,8 @@ const AccountPage = () => {
   const exitSession = () => {
     try {
       localStorage.removeItem('customer_guest_id_v1');
+      localStorage.removeItem('customer_identity_id_v1');
+      localStorage.removeItem('customer_identity_profile_v1');
       sessionStorage.removeItem('customer_portal_slug');
       sessionStorage.removeItem('customer_portal_table_token');
       toast.success('Session cleared on this device');
@@ -68,10 +84,15 @@ const AccountPage = () => {
         <div className="mb-3 flex h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-primary-50 text-primary-600 shadow-sm dark:border-gray-800">
           <User size={40} />
         </div>
-        <h2 className="font-bold text-gray-800 dark:text-gray-100">Guest</h2>
+        <h2 className="font-bold text-gray-800 dark:text-gray-100">{customer?.name || customerId || 'Guest'}</h2>
         <p className="mt-1 text-[10px] font-medium text-gray-400">
-          {slug ? decodeURIComponent(slug).replace(/-/g, ' ') : 'Restaurant'}
+          {customer?.email || (slug ? decodeURIComponent(slug).replace(/-/g, ' ') : 'Restaurant')}
         </p>
+        {customerId && (
+          <p className="mt-2 rounded-full bg-primary-50 px-3 py-1 text-[10px] font-black text-primary-700">
+            {customerId} {loyalty ? `- ${loyalty.points || 0} pts` : ''}
+          </p>
+        )}
       </div>
 
       <div className="space-y-2 px-6">
