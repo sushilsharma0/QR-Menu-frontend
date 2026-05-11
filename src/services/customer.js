@@ -188,6 +188,7 @@ export const getStoredCustomerOrders = async ({ qrToken }) => {
           totalAmount: order.subtotal,
           taxAmount: order.taxAmount,
           discountAmount: order.discountAmount,
+          serviceChargeAmount: order.serviceChargeAmount,
           grandTotal: order.grandTotal ?? order.totalAmount,
           createdAt: order.orderTime,
         }
