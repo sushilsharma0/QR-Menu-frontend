@@ -10,6 +10,7 @@ import {
   FiChevronRight,
   FiCoffee,
   FiCreditCard,
+  FiDollarSign,
   FiExternalLink,
   FiFileText,
   FiHelpCircle,
@@ -53,6 +54,7 @@ const NAV_GROUPS = [
       { segment: 'menu', icon: FiBookOpen, label: 'Menu' },
       { segment: 'tables', icon: FiMapPin, label: 'Tables & QR' },
       { segment: 'promotions', icon: FiPercent, label: 'Promotions' },
+      { segment: 'credit-customers', icon: FiDollarSign, label: 'Credit customers' },
     ],
   },
   {
@@ -101,6 +103,8 @@ function featureKeyForSegment(segment) {
   if (root === 'orders') return segment === 'orders/activity' ? 'analytics' : 'orders'
   if (root === 'tables') return 'tables'
   if (root === 'promotions') return 'promotions'
+  // House-account approvals are independent of the QR "customer orders" plan flag.
+  if (root === 'credit-customers') return null
   if (root === 'employees') return 'employees'
   if (root === 'tickets') return 'supportTickets'
   if (root === 'logs') return 'activityLogs'

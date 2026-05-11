@@ -14,6 +14,7 @@ import {
   FiMenu,
   FiSettings,
   FiShield,
+  FiStar,
   FiTerminal,
   FiUsers,
   FiX,
@@ -47,6 +48,7 @@ const NAV_GROUPS = [
     label: 'Content & support',
     items: [
       { path: '/platform/cms', icon: FiLayout, label: 'CMS' },
+      { path: '/platform/reviews', icon: FiStar, label: 'Reviews' },
       { path: '/platform/tickets', icon: FiHelpCircle, label: 'Support Tickets' },
     ],
   },

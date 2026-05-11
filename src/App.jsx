@@ -17,6 +17,7 @@ import PlatformKYCDetail from "./pages/platform/KYCDetail";
 import PlatformSubscriptions from "./pages/platform/Subscriptions";
 import PlatformCreatePlan from "./pages/platform/CreatePlan";
 import PlatformCMS from "./pages/platform/CMS";
+import PlatformReviews from "./pages/platform/Reviews";
 import PlatformAdmins from "./pages/platform/Admins";
 import PlatformSettings from "./pages/platform/Settings";
 import PlatformInvoices from "./pages/platform/Invoices";
@@ -45,6 +46,7 @@ import RestaurantSubscription from "./pages/restaurant/Subscription";
 import RestaurantSubscriptionCheckout from "./pages/restaurant/SubscriptionCheckout";
 import RestaurantSubscriptionInvoiceDetail from "./pages/restaurant/SubscriptionInvoiceDetail";
 import RestaurantSettings from "./pages/restaurant/Settings";
+import RestaurantCreditCustomers from "./pages/restaurant/CreditCustomers";
 import RestaurantProfile from "./pages/restaurant/Profile";
 import RestaurantPromotions from "./pages/restaurant/Promotions";
 import RestaurantSystemLogs from "./pages/restaurant/SystemLogs";
@@ -69,6 +71,8 @@ import PosReports from "./pages/restaurant/pos/PosReports";
 // Employee Pages
 import KitchenDashboard from "./pages/employee/KitchenDashboard";
 import CashierDashboard from "./pages/employee/CashierDashboard";
+import CashierTransactions from "./pages/employee/CashierTransactions";
+import CashierHouseCredit from "./pages/employee/CashierHouseCredit";
 import OrderList from "./pages/employee/OrderList";
 import EmployeeChangePassword from "./pages/employee/EmployeeChangePassword";
 import WaiterDashboard from "./pages/waiter/Dashboard";
@@ -85,6 +89,10 @@ import CustomerMyOrders from "./pages/customer/MyOrders";
 import CustomerOrderTracking from "./pages/customer/OrderTracking";
 import CustomerBill from "./pages/customer/CustomerBill";
 import CustomerAccountPage from "./pages/customer/AccountPage";
+import CustomerAboutRestaurant from "./pages/customer/Home/AboutRestaurant";
+import CustomerSettingsPage from "./pages/customer/Home/Settings";
+import CustomerPrivacyPage from "./pages/customer/Home/PrivacyPolicy";
+import CustomerCreditApply from "./pages/customer/CreditApply";
 
 
 // Layouts
@@ -153,6 +161,7 @@ function App() {
           element={<PlatformCreatePlan />}
         />
         <Route path="/platform/cms" element={<PlatformCMS />} />
+        <Route path="/platform/reviews" element={<PlatformReviews />} />
         <Route path="/platform/admins" element={<PlatformAdmins />} />
         <Route path="/platform/tickets" element={<PlatformTickets />} />
         <Route path="/platform/tickets/:id" element={<PlatformTicketDetail />} />
@@ -190,6 +199,7 @@ function App() {
         <Route path="subscription/invoice/:invoiceId" element={<RestaurantSubscriptionInvoiceDetail />} />
         <Route path="transactions" element={<Navigate to="../orders/activity" replace />} />
         <Route path="promotions" element={<RestaurantPromotions />} />
+        <Route path="credit-customers" element={<RestaurantCreditCustomers />} />
         <Route path="tickets" element={<RestaurantTickets />} />
         <Route path="tickets/create" element={<RestaurantTicketDetail />} />
         <Route path="tickets/:id" element={<RestaurantTicketDetail />} />
@@ -224,14 +234,9 @@ function App() {
         <Route path="/kitchen/:slug/:restaurantId/orders" element={<OrderList />} />
         <Route path="/kitchen/:slug/:restaurantId/orders/:id" element={<RestaurantOrderDetail />} />
         <Route path="/cashier/:slug/:restaurantId/dashboard" element={<CashierDashboard />} />
+        <Route path="/cashier/:slug/:restaurantId/transactions" element={<CashierTransactions />} />
+        <Route path="/cashier/:slug/:restaurantId/house-credit" element={<CashierHouseCredit />} />
         <Route path="/cashier/:slug/:restaurantId/orders/:id" element={<RestaurantOrderDetail />} />
-        <Route path="/cashier/:slug/:restaurantId/finance/dashboard" element={<FinanceDashboard />} />
-        <Route path="/cashier/:slug/:restaurantId/finance/expenses" element={<FinanceExpenses />} />
-        <Route path="/cashier/:slug/:restaurantId/finance/profit-loss" element={<FinanceProfitLoss />} />
-        <Route path="/cashier/:slug/:restaurantId/finance/payroll" element={<FinancePayroll />} />
-        <Route path="/cashier/:slug/:restaurantId/finance/invoices" element={<FinanceInvoices />} />
-        <Route path="/cashier/:slug/:restaurantId/finance/inventory" element={<FinanceInventory />} />
-        <Route path="/cashier/:slug/:restaurantId/finance/budget" element={<FinanceBudget />} />
         <Route path="/waiter/:slug/:restaurantId/dashboard" element={<WaiterDashboard />} />
         <Route path="/waiter/:slug/:restaurantId/order" element={<WaiterTakeOrder />} />
         <Route path="/waiter/:slug/:restaurantId/notifications" element={<NotificationsPage />} />
@@ -240,15 +245,6 @@ function App() {
         <Route path="/employee/:slug/:restaurantId/notifications" element={<NotificationsPage />} />
         <Route path="/kitchen/:slug/:restaurantId/notifications" element={<NotificationsPage />} />
         <Route path="/cashier/:slug/:restaurantId/notifications" element={<NotificationsPage />} />
-        <Route path="/cashier/:slug/:restaurantId/pos" element={<PosLayout />}>
-          <Route index element={<PosMain />} />
-          <Route path="orders" element={<PosOrdersList />} />
-          <Route path="billing" element={<PosBilling />} />
-          <Route path="history" element={<PosHistory />} />
-          <Route path="returns" element={<PosReturns />} />
-          <Route path="shift" element={<PosShift />} />
-          <Route path="reports" element={<PosReports />} />
-        </Route>
         <Route path="/waiter/:slug/:restaurantId/pos" element={<PosLayout />}>
           <Route index element={<PosMain />} />
           <Route path="orders" element={<PosOrdersList />} />
@@ -271,6 +267,10 @@ function App() {
       <Route path="/order/track/:qrToken" element={<CustomerOrderTracking />} />
       <Route path="/order/bill/:qrToken" element={<CustomerBill />} />
       <Route path="/account/:slug/:token" element={<CustomerAccountPage />} />
+      <Route path="/about/:slug/:token" element={<CustomerAboutRestaurant />} />
+      <Route path="/settings/:slug/:token" element={<CustomerSettingsPage />} />
+      <Route path="/privacy/:slug/:token" element={<CustomerPrivacyPage />} />
+      <Route path="/credit-apply/:slug/:token" element={<CustomerCreditApply />} />
       <Route path="/subscription/payment/esewa/success" element={<SubscriptionPaymentCallback gateway="esewa" />} />
       <Route path="/subscription/payment/esewa/failure" element={<SubscriptionPaymentCallback gateway="esewa" failed />} />
       <Route path="/subscription/payment/khalti/callback" element={<SubscriptionPaymentCallback gateway="khalti" />} />

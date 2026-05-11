@@ -16,7 +16,11 @@ import { io } from "socket.io-client";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../services/api";
 import Feedback from "../../components/customer/homepage/Feedback";
+import CustomerPostServePayment from "../../components/customer/CustomerPostServePayment";
+import Navigation from "../../components/customer/Navigation";
 import { getSocketOrigin } from "../../utils/runtimeConfig";
+import { rememberCustomerPortal } from "../../utils/customerPortalContext";
+import { getStoredGuestId } from "../../services/customer";
 
 const getActiveStepIndex = (status, paymentStatus) => {
   if (status === "cancelled") return -1;
@@ -121,26 +125,33 @@ const OrderTracking = () => {
   }, [order?.orderId]);
 
   useEffect(() => {
-    if (!qrToken || order?.paymentStatus !== "paid") return;
-    const storageKey = `feedback_prompt_shown_${qrToken}`;
+    if (!order?.restaurantSlug || !order?.tableQrToken) return;
+    rememberCustomerPortal(order.restaurantSlug, order.tableQrToken);
+  }, [order?.restaurantSlug, order?.tableQrToken]);
+
+  useEffect(() => {
+    const paid = order?.paymentStatus === "paid";
+    const done =
+      order?.status === "completed" || (order?.status === "served" && paid);
+    if (!qrToken || !paid || !done || !order?.orderId) return;
+    const storageKey = `feedback_prompt_order_${order.orderId}`;
     if (localStorage.getItem(storageKey)) return;
     const timer = setTimeout(() => {
       setShowFeedback(true);
       localStorage.setItem(storageKey, "true");
     }, 900);
     return () => clearTimeout(timer);
-  }, [order?.paymentStatus, qrToken]);
-
-  useEffect(() => {
-    if (order?.status === "served" && qrToken) {
-      navigate(`/order/bill/${qrToken}`, { replace: true });
-    }
-  }, [navigate, order?.status, qrToken]);
+  }, [order?.paymentStatus, order?.status, order?.orderId, qrToken]);
 
   const currentStatusIndex = getActiveStepIndex(order?.status, order?.paymentStatus);
   const progressPct =
     currentStatusIndex < 0 ? 0 : Math.min(100, Math.round(((currentStatusIndex + 1) / 6) * 100));
   const canShowBill = order?.status === "served" || order?.status === "completed";
+  const guestIdForPay = order?.guestId || getStoredGuestId();
+  const showPostServePay =
+    order?.status === "served" &&
+    order?.customerPaymentDeferred &&
+    order?.paymentStatus !== "paid";
   const subtotal = Number(
     order?.subtotal ??
       order?.totalAmount ??
@@ -219,7 +230,7 @@ const OrderTracking = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafaf7] pb-10 text-gray-950">
+    <div className="min-h-screen bg-[#fafaf7] pb-28 text-gray-950">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white/95 px-5 pb-5 pt-12 backdrop-blur">
         <button className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors" onClick={() => navigate(-1)}>
           <ArrowLeft size={20} className="text-gray-700" />
@@ -351,6 +362,18 @@ const OrderTracking = () => {
           </div>
         </section>
 
+        {showPostServePay && (
+          <CustomerPostServePayment
+            restaurantSlug={order?.restaurant?.slug}
+            tableQrToken={order?.tableQrToken}
+            trackToken={qrToken}
+            guestId={guestIdForPay}
+            grandTotal={grandTotal}
+            customerEmail={order?.customerEmail}
+            onSuccess={fetchOrder}
+          />
+        )}
+
         {canShowBill && (
           <section className="mt-5 overflow-hidden rounded-[2rem] border border-gray-100 bg-white shadow-sm">
             <div className="bg-gray-950 px-5 py-5 text-white">
@@ -427,6 +450,7 @@ const OrderTracking = () => {
         )}
       </main>
       <Feedback isOpen={showFeedback} onClose={() => setShowFeedback(false)} qrToken={qrToken} />
+      <Navigation restaurantSlug={order?.restaurantSlug} tableQrToken={order?.tableQrToken} />
     </div>
   );
 };

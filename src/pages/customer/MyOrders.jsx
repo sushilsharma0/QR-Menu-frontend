@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import Navigation from "../../components/customer/Navigation";
 import { ensureGuestSession, getGuestOrders } from "../../services/customer";
+import { rememberCustomerPortal } from "../../utils/customerPortalContext";
 
 const MyOrders = () => {
   const { slug, token } = useParams();
@@ -37,8 +38,12 @@ const MyOrders = () => {
     return () => clearInterval(intervalId);
   }, [token]);
 
+  useEffect(() => {
+    if (slug && token) rememberCustomerPortal(slug, token);
+  }, [slug, token]);
+
   const isCurrentOrder = (status) =>
-    ["pending", "confirmed", "preparing", "ready"].includes(status);
+    ["pending", "confirmed", "preparing", "cooking", "ready"].includes(status);
 
   const filteredOrders = useMemo(() => {
     if (activeTab === "Current") {
@@ -49,12 +54,21 @@ const MyOrders = () => {
 
   const statusBadgeClass = (status) => {
     if (isCurrentOrder(status)) {
-      return "bg-orange-50 text-orange-600";
+      return "bg-primary-50 text-primary-700";
     }
-    if (status === "served") {
-      return "bg-green-50 text-green-600";
+    if (status === "served" || status === "completed") {
+      return "bg-emerald-50 text-emerald-700";
     }
-    return "bg-red-50 text-red-600";
+    if (status === "cancelled") {
+      return "bg-red-50 text-red-600";
+    }
+    return "bg-surface-100 text-accent-800";
+  };
+
+  const paymentBadgeClass = (paymentStatus) => {
+    if (paymentStatus === "paid") return "bg-emerald-50 text-emerald-700";
+    if (paymentStatus === "failed") return "bg-red-50 text-red-600";
+    return "bg-amber-50 text-amber-800";
   };
 
   const formatStatus = (status) =>
@@ -143,11 +157,20 @@ const MyOrders = () => {
                     Table {order?.table?.tableNumber || "--"} • {formatOrderDate(order.createdAt)}
                   </p>
                 </div>
-                <span
-                  className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase ${statusBadgeClass(order.status)}`}
-                >
-                  {formatStatus(order.status)}
-                </span>
+                <div className="flex flex-col items-end gap-1">
+                  <span
+                    className={`rounded-lg px-3 py-1 text-[10px] font-bold uppercase ${statusBadgeClass(order.status)}`}
+                  >
+                    {formatStatus(order.status)}
+                  </span>
+                  {order.paymentStatus && (
+                    <span
+                      className={`rounded-lg px-2 py-0.5 text-[9px] font-bold uppercase ${paymentBadgeClass(order.paymentStatus)}`}
+                    >
+                      {order.paymentStatus}
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2 border-b border-gray-50 pb-4 mb-4">
@@ -163,23 +186,25 @@ const MyOrders = () => {
 
               <div className="flex justify-between items-center">
                 <span className="font-bold text-gray-800">Total</span>
-                <span className="font-black text-orange-500">Rs. {order.grandTotal}</span>
+                <span className="font-black text-primary-600">Rs. {order.grandTotal}</span>
               </div>
 
-              {isCurrentOrder(order.status) && (
+              {isCurrentOrder(order.status) && order.qrToken && (
                 <button
-                  onClick={() => navigate(`/order/bill/${order.qrToken}`)}
-                  className="w-full mt-4 py-3 bg-primary-600 text-white rounded-2xl text-xs font-black hover:bg-primary-700 transition-all"
+                  type="button"
+                  onClick={() => navigate(`/order/track/${order.qrToken}`)}
+                  className="mt-4 w-full rounded-2xl bg-primary-600 py-3 text-xs font-black text-white transition-all hover:bg-primary-700"
                 >
-                  Open Live Tracking
+                  Open live tracking
                 </button>
               )}
-              {order.status === "served" && (
+              {(order.status === "served" || order.status === "completed") && order.qrToken && (
                 <button
-                  onClick={() => navigate(`/order/track/${order.qrToken}`)}
-                  className="w-full mt-4 py-3 bg-gray-950 text-white rounded-2xl text-xs font-black hover:bg-gray-800 transition-all"
+                  type="button"
+                  onClick={() => navigate(`/order/bill/${order.qrToken}`)}
+                  className="mt-3 w-full rounded-2xl bg-gray-950 py-3 text-xs font-black text-white transition-all hover:bg-gray-800"
                 >
-                  View Bill
+                  View bill
                 </button>
               )}
             </motion.div>

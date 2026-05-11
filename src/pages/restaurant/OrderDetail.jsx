@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   FiArrowLeft,
@@ -15,6 +15,7 @@ import {
   FiSliders,
   FiUser,
   FiX,
+  FiExternalLink,
 } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
@@ -91,6 +92,12 @@ const OrderDetail = () => {
   const { restaurantBase, kitchenBase, cashierBase, employeeBase } = useTenantRoutes()
   const [order, setOrder] = useState(null)
   const [restaurant, setRestaurant] = useState(null)
+  const [creditCustomers, setCreditCustomers] = useState([])
+  const [creditPick, setCreditPick] = useState('')
+  const [payMode, setPayMode] = useState('cash')
+  const [singlePayAmount, setSinglePayAmount] = useState('')
+  const [splitCash, setSplitCash] = useState('')
+  const [splitOnline, setSplitOnline] = useState('')
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const suppressNextSocketToastRef = useRef(false)
@@ -114,6 +121,32 @@ const OrderDetail = () => {
     fetchOrder()
     fetchRestaurantProfile()
   }, [id])
+
+  useEffect(() => {
+    const allowHouseAccountPick =
+      order &&
+      order.paymentStatus !== 'paid' &&
+      order.paymentStatus !== 'failed' &&
+      ['served', 'completed'].includes(order.status) &&
+      !order.isCreditSale
+    if (!order?._id || !allowHouseAccountPick) {
+      setCreditCustomers([])
+      setCreditPick('')
+      return
+    }
+    api
+      .get('/restaurant/credit-customers', { params: { status: 'approved' } })
+      .then((r) => setCreditCustomers(r.data.data?.items || []))
+      .catch(() => setCreditCustomers([]))
+  }, [order?._id, order?.status, order?.paymentStatus, order?.isCreditSale])
+
+  useEffect(() => {
+    if (!order) return
+    const due = Math.max(0, Number(order.grandTotal || 0) - Number(order.amountPaidTotal || 0))
+    setSinglePayAmount(due > 0 ? due.toFixed(2) : '')
+    setSplitCash('')
+    setSplitOnline('')
+  }, [order?._id, order?.grandTotal, order?.amountPaidTotal, order?.paymentStatus])
 
   const fetchRestaurantProfile = async () => {
     try {
@@ -155,6 +188,199 @@ const OrderDetail = () => {
       toast.success(`Order status updated to ${data.status}`)
     }
     fetchOrder()
+  }
+
+  const amountDue = Math.max(0, Number(order?.grandTotal || 0) - Number(order?.amountPaidTotal || 0))
+
+  const submitCounterPayment = async () => {
+    if (!id || amountDue <= 0) return
+    try {
+      setUpdating(true)
+      if (payMode === 'both') {
+        const c = Number(splitCash) || 0
+        const o = Number(splitOnline) || 0
+        if (c <= 0 && o <= 0) {
+          toast.error('Enter cash and/or online amounts')
+          return
+        }
+        if (c + o - amountDue > 0.02) {
+          toast.error(`Cash + online cannot exceed amount due (${formatMoney(amountDue)})`)
+          return
+        }
+        await api.post('/restaurant/cashier/pay', {
+          customerOrderId: id,
+          paymentMode: 'both',
+          cashAmount: c,
+          onlineAmount: o,
+        })
+      } else {
+        const amt = Number(singlePayAmount)
+        if (!Number.isFinite(amt) || amt <= 0) {
+          toast.error('Enter a valid amount')
+          return
+        }
+        if (amt - amountDue > 0.02) {
+          toast.error('Amount exceeds balance due')
+          return
+        }
+        const method = payMode === 'online' ? 'upi' : 'cash'
+        await api.post('/restaurant/cashier/pay', {
+          customerOrderId: id,
+          paymentMethod: method,
+          amount: amt,
+        })
+      }
+      toast.success('Payment recorded')
+      fetchOrder()
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Payment failed')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const postCreditToAccount = async (creditCustomerId) => {
+    try {
+      setUpdating(true)
+      await api.post('/restaurant/cashier/pay', {
+        customerOrderId: id,
+        paymentMethod: 'credit',
+        creditCustomerId,
+      })
+      toast.success('Posted to house account')
+      fetchOrder()
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const canRecordAnyPayment =
+    order &&
+    order.paymentStatus !== 'paid' &&
+    order.paymentStatus !== 'failed' &&
+    ['served', 'completed'].includes(order.status)
+
+  const canPostToNewHouseAccount = canRecordAnyPayment && !order?.isCreditSale
+
+  const houseCreditManageHref =
+    isCashierView && cashierBase ? `${cashierBase}/house-credit` : restaurantBase ? `${restaurantBase}/credit-customers` : ''
+
+  const renderStaffPaymentForm = (compact = false) => {
+    if (!order) return null
+    if (!canRecordAnyPayment) return null
+    return (
+      <div className={compact ? 'space-y-3' : 'mt-4 space-y-3 border-t border-surface-200 pt-4'}>
+        {houseCreditManageHref && (
+          <Link
+            to={houseCreditManageHref}
+            className="inline-flex items-center gap-2 text-xs font-bold text-primary-700 hover:text-primary-900 dark:text-primary-400"
+          >
+            <FiExternalLink className="h-3.5 w-3.5" />
+            {isCashierView ? 'House credit balances' : 'Open credit / house accounts'}
+          </Link>
+        )}
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Record payment</p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Amount due: <span className="font-bold text-gray-900 dark:text-gray-100">{formatMoney(amountDue)}</span>
+            {Number(order.amountPaidTotal) > 0 && (
+              <span className="ml-2">(already paid {formatMoney(order.amountPaidTotal)})</span>
+            )}
+          </p>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { id: 'cash', label: 'Cash' },
+            { id: 'online', label: 'Online' },
+            { id: 'both', label: 'Both' },
+          ].map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => setPayMode(opt.id)}
+              className={`rounded-xl border-2 py-2.5 text-xs font-black transition-colors ${
+                payMode === opt.id
+                  ? 'border-primary-600 bg-primary-50 text-primary-800 dark:border-primary-500 dark:bg-primary-950/50 dark:text-primary-200'
+                  : 'border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        {payMode !== 'both' ? (
+          <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300">
+            Amount ({payMode === 'cash' ? 'cash' : 'online / UPI'})
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={singlePayAmount}
+              onChange={(e) => setSinglePayAmount(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-bold dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            />
+          </label>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+              Cash (Rs.)
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={splitCash}
+                onChange={(e) => setSplitCash(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-bold dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+              />
+            </label>
+            <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+              Online (Rs.)
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={splitOnline}
+                onChange={(e) => setSplitOnline(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-bold dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+              />
+            </label>
+            <p className="col-span-2 text-[10px] text-gray-400">Must add up to amount due for a full settle.</p>
+          </div>
+        )}
+        <Button className="w-full" disabled={updating || amountDue <= 0} onClick={submitCounterPayment}>
+          Save payment
+        </Button>
+
+        {canPostToNewHouseAccount && (
+          <div className="border-t border-gray-200 pt-3 dark:border-gray-700">
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500">Or post to house account</p>
+            <select
+              className="mb-2 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+              value={creditPick}
+              onChange={(e) => setCreditPick(e.target.value)}
+            >
+              <option value="">Select approved customer…</option>
+              {creditCustomers.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.name} — {c.email}
+                </option>
+              ))}
+            </select>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="w-full"
+              disabled={updating || !creditPick}
+              onClick={() => postCreditToAccount(creditPick)}
+            >
+              Post balance to house account
+            </Button>
+          </div>
+        )}
+      </div>
+    )
   }
 
   const updateStatus = async (status, estimatedWaitTime = null) => {
@@ -296,6 +522,9 @@ const OrderDetail = () => {
 
   if (!order) return null
 
+  const statusActionContent = getStatusActions()
+  const showPaymentTools = canRecordAnyPayment
+
   if (isCashierView) {
     return (
       <div className="space-y-6">
@@ -303,12 +532,23 @@ const OrderDetail = () => {
           <button onClick={() => navigate(backPath)} className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-950">
             <FiArrowLeft /> Back to Cashier
           </button>
-          <Button onClick={printReceipt}>
-            <FiPrinter className="mr-2" /> Print Bill
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {houseCreditManageHref && (
+              <Link
+                to={houseCreditManageHref}
+                className="inline-flex items-center gap-2 rounded-xl border border-primary-200 bg-primary-50 px-4 py-2 text-sm font-bold text-primary-800 hover:bg-primary-100 dark:border-primary-800 dark:bg-primary-950/40 dark:text-primary-200"
+              >
+                <FiExternalLink className="h-4 w-4" />
+                House credit
+              </Link>
+            )}
+            <Button onClick={printReceipt}>
+              <FiPrinter className="mr-2" /> Print Bill
+            </Button>
+          </div>
         </div>
 
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto w-full max-w-3xl px-0 sm:px-2">
           <Card className="overflow-hidden rounded-3xl border-surface-200 shadow-xl">
             <div className="-mx-6 -mt-6 mb-6 bg-gradient-to-r from-primary-800 via-secondary-700 to-accent-700 px-6 py-7 text-white">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -368,6 +608,8 @@ const OrderDetail = () => {
             <div className="text-center text-xs text-gray-500 border-t border-dashed pt-4">
               <p>Thank you! Visit Again.</p>
             </div>
+
+            <div className="mt-4 border-t border-dashed pt-4 text-left">{renderStaffPaymentForm(true)}</div>
           </Card>
         </div>
       </div>
@@ -519,12 +761,14 @@ const OrderDetail = () => {
 
         <div className="space-y-6">
           <SectionCard title="Actions" icon={FiSliders} className="lg:sticky lg:top-6">
-            {getStatusActions() || (
+            {statusActionContent}
+            {!statusActionContent && !showPaymentTools && (
               <div className="rounded-2xl border border-surface-200 bg-surface-50/70 px-4 py-5 text-center">
                 <p className="text-sm font-semibold text-gray-900">No actions available</p>
                 <p className="mt-1 text-xs text-gray-500">This order is already in a final state.</p>
               </div>
             )}
+            {showPaymentTools && renderStaffPaymentForm(false)}
           </SectionCard>
 
           <SectionCard title="Customer Information" icon={FiUser}>

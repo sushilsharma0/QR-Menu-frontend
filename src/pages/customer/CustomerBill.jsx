@@ -3,6 +3,9 @@ import { ArrowLeft, ChefHat, Printer, ReceiptText, ShieldCheck } from "lucide-re
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../services/api";
+import Feedback from "../../components/customer/homepage/Feedback";
+import Navigation from "../../components/customer/Navigation";
+import { rememberCustomerPortal } from "../../utils/customerPortalContext";
 
 const formatMoney = (value) => `Rs. ${Number(value || 0).toFixed(2)}`;
 
@@ -17,6 +20,7 @@ const CustomerBill = () => {
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   useEffect(() => {
     const fetchBill = async () => {
@@ -33,7 +37,29 @@ const CustomerBill = () => {
     };
 
     fetchBill();
+    const intervalId = setInterval(fetchBill, 12000);
+    return () => clearInterval(intervalId);
   }, [qrToken]);
+
+  useEffect(() => {
+    if (order?.restaurantSlug && order?.tableQrToken) {
+      rememberCustomerPortal(order.restaurantSlug, order.tableQrToken);
+    }
+  }, [order?.restaurantSlug, order?.tableQrToken]);
+
+  useEffect(() => {
+    const paid = order?.paymentStatus === "paid";
+    const done =
+      order?.status === "completed" || (order?.status === "served" && paid);
+    if (!qrToken || !paid || !done || !order?.orderId) return;
+    const storageKey = `feedback_prompt_order_${order.orderId}`;
+    if (localStorage.getItem(storageKey)) return;
+    const t = setTimeout(() => {
+      setShowFeedback(true);
+      localStorage.setItem(storageKey, "true");
+    }, 600);
+    return () => clearTimeout(t);
+  }, [order?.paymentStatus, order?.status, order?.orderId, qrToken]);
 
   const totals = useMemo(() => {
     const itemSubtotal = (order?.items || []).reduce(
@@ -72,7 +98,7 @@ const CustomerBill = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafaf7] pb-10 text-gray-950 print:bg-white print:pb-0">
+    <div className="min-h-screen bg-[#fafaf7] pb-28 text-gray-950 print:bg-white print:pb-0">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white/95 px-5 pb-5 pt-12 backdrop-blur print:hidden">
         <button className="rounded-xl bg-gray-50 p-2 hover:bg-gray-100" onClick={() => navigate(-1)}>
           <ArrowLeft size={20} />
@@ -188,6 +214,10 @@ const CustomerBill = () => {
           </div>
         </motion.section>
       </main>
+      <div className="print:hidden">
+        <Feedback isOpen={showFeedback} onClose={() => setShowFeedback(false)} qrToken={qrToken} />
+        <Navigation restaurantSlug={order?.restaurantSlug} tableQrToken={order?.tableQrToken} />
+      </div>
     </div>
   );
 };

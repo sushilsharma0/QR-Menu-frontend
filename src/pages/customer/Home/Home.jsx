@@ -28,6 +28,8 @@ import {
   postGuestTableRequest,
 } from "../../../services/customer";
 import toast from "react-hot-toast";
+import Navigation from "../../../components/customer/Navigation";
+import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -70,6 +72,10 @@ export default function Home() {
     fetchTables();
     fetchPromoBanners();
     fetchRestaurantInfo();
+  }, [slug, token]);
+
+  useEffect(() => {
+    if (slug && token) rememberCustomerPortal(slug, token);
   }, [slug, token]);
 
   const fetchRestaurantInfo = async () => {
@@ -157,7 +163,7 @@ export default function Home() {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-[#fafaf7] flex flex-col items-center pb-24 font-sans text-gray-950">
+      <div className="min-h-screen bg-[#fafaf7] flex flex-col items-center pb-28 font-sans text-gray-950">
         <div
           className="relative flex min-h-[54vh] w-full flex-col items-center justify-center overflow-hidden bg-cover bg-center p-6 text-white"
           style={{
@@ -356,6 +362,7 @@ export default function Home() {
         <Feedback isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
         <QRScannerModal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} onScanSuccess={handleScanSuccess} />
         <PromoCodeModal isOpen={showPromoModal} onClose={() => setShowPromoModal(false)} promos={promoBanners} />
+        <Navigation />
       </div>
     </PageTransition>
   );

@@ -16,7 +16,7 @@ const UserProfile = ({ isOpen, onClose }) => {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 flex items-start justify-end z-100 p-6 pt-20">
+        <div className="fixed inset-0 z-[100] flex items-start justify-end p-6 pt-20">
           {/* Click away overlay */}
           <div className="fixed inset-0" onClick={onClose}></div>
 
@@ -24,7 +24,7 @@ const UserProfile = ({ isOpen, onClose }) => {
             initial={{ opacity: 0, scale: 0.9, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: -20 }}
-            className="w-full max-w-70 bg-white rounded-4xl shadow-2xl border border-gray-100 overflow-hidden z-101"
+            className="relative z-[101] w-full max-w-sm overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-2xl"
           >
             {/* Header / Table ID */}
             <div className="bg-orange-500 p-6 text-white text-center relative">

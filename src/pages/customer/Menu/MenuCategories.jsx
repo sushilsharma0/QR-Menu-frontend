@@ -16,6 +16,7 @@ import ViewCartBtn from "../../../components/customer/ViewCartBtn";
 import api from "../../../services/api";
 import { ensureGuestSession, getDiningInsights, getRestaurantInfo } from "../../../services/customer";
 import VoiceOrderFAB from "../../../components/customer/VoiceOrderFAB";
+import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
 
 // const categories = [
 //   {
@@ -92,6 +93,10 @@ const MenuCategories = () => {
     run();
   }, [slug, token]);
 
+  useEffect(() => {
+    if (slug && token) rememberCustomerPortal(slug, token);
+  }, [slug, token]);
+
   const fetchMenuData = async () => {
     try {
       setLoading(true);
@@ -134,7 +139,7 @@ const MenuCategories = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-[#fafaf7] pb-32 text-gray-950">
+      <div className="min-h-screen bg-[#fafaf7] pb-36 text-gray-950">
         {/* Header */}
         <header className="px-4 pt-12 pb-4 h-22.5 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur z-20 border-b border-gray-100">
           {/* LEFT */}

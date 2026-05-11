@@ -10,6 +10,7 @@ import {
   FiLayout,
   FiSettings,
   FiShield,
+  FiStar,
   FiMenu,
   FiShoppingCart,
   FiGrid,
@@ -31,6 +32,7 @@ const Sidebar = () => {
     { path: '/platform/kyc', icon: FiFileText, label: 'KYC Verification' },
     { path: '/platform/subscriptions', icon: FiCreditCard, label: 'Subscriptions' },
     { path: '/platform/cms', icon: FiLayout, label: 'CMS' },
+    { path: '/platform/reviews', icon: FiStar, label: 'Reviews' },
     { path: '/platform/admins', icon: FiShield, label: 'Admins' },
     { path: '/platform/settings', icon: FiSettings, label: 'Settings' },
   ]

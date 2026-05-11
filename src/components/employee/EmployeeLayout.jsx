@@ -1,20 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Outlet, Link, NavLink, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import {
-  FiBarChart2,
-  FiBookOpen,
-  FiClock,
-  FiCreditCard,
-  FiFileText,
-  FiGrid,
-  FiLogOut,
-  FiPercent,
-  FiPieChart,
-  FiPlusCircle,
-  FiUsers,
-  FiUser,
-} from 'react-icons/fi'
+import { FiClock, FiGrid, FiHome, FiList, FiLogOut, FiPlusCircle, FiUser } from 'react-icons/fi'
 import { FiMoon, FiSun } from 'react-icons/fi'
 import { TbCurrencyRupee } from 'react-icons/tb'
 import NotificationMenu from '../common/NotificationMenu'
@@ -62,24 +49,18 @@ const EmployeeLayout = () => {
   const kitchenDashboardPath = kb ? `${kb}/dashboard` : ''
   const kitchenOrdersPath = kb ? `${kb}/orders` : ''
   const cashierDashboardPath = cb ? `${cb}/dashboard` : ''
-  const cashierPosPath = cb ? `${cb}/pos` : ''
-  const cashierFinanceBase = cb ? `${cb}/finance` : ''
+  const cashierTransactionsPath = cb ? `${cb}/transactions` : ''
+  const cashierHouseCreditPath = cb ? `${cb}/house-credit` : ''
   const waiterDashboardPath = wb ? `${wb}/dashboard` : ''
   const waiterOrderPath = wb ? `${wb}/order` : ''
   const waiterPosPath = wb ? `${wb}/pos` : ''
 
   const navItems = [
     { path: kitchenOrdersPath, label: 'Order History', icon: FiClock, role: 'kitchen', showPending: true },
-    { path: cashierPosPath, label: 'POS', icon: FiGrid, role: 'cashier' },
-    { path: cashierPosPath, label: 'POS', icon: FiGrid, role: 'manager' },
-    { path: cashierDashboardPath, label: 'Orders', icon: TbCurrencyRupee, role: 'cashier' },
-    { path: cashierFinanceBase ? `${cashierFinanceBase}/dashboard` : '', label: 'Finance', icon: FiBarChart2, role: 'cashier' },
-    { path: cashierFinanceBase ? `${cashierFinanceBase}/expenses` : '', label: 'Expenses', icon: FiCreditCard, role: 'cashier' },
-    { path: cashierFinanceBase ? `${cashierFinanceBase}/budget` : '', label: 'Budget', icon: FiPieChart, role: 'cashier' },
-    { path: cashierFinanceBase ? `${cashierFinanceBase}/profit-loss` : '', label: 'P&L', icon: FiPercent, role: 'cashier' },
-    { path: cashierFinanceBase ? `${cashierFinanceBase}/inventory` : '', label: 'Inventory', icon: FiBookOpen, role: 'cashier' },
-    { path: cashierFinanceBase ? `${cashierFinanceBase}/payroll` : '', label: 'Payroll', icon: FiUsers, role: 'cashier' },
-    { path: cashierFinanceBase ? `${cashierFinanceBase}/invoices` : '', label: 'Invoices', icon: FiFileText, role: 'cashier' },
+    { path: cashierDashboardPath, label: 'Payments', icon: FiHome, role: 'cashier' },
+    { path: cashierTransactionsPath, label: 'Transactions', icon: FiList, role: 'cashier' },
+    { path: cashierHouseCreditPath, label: 'House credit', icon: FiUser, role: 'cashier' },
+    { path: cashierDashboardPath, label: 'Payments', icon: TbCurrencyRupee, role: 'manager' },
     { path: waiterDashboardPath, label: 'Dashboard', icon: FiGrid, role: 'waiter' },
     { path: waiterPosPath, label: 'POS', icon: FiGrid, role: 'waiter' },
     { path: waiterOrderPath, label: 'Take Order', icon: FiPlusCircle, role: 'waiter' },
@@ -125,9 +106,9 @@ const EmployeeLayout = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-900 shadow-sm sticky top-0 z-30 border-b border-transparent dark:border-gray-800">
-        <div className="mx-auto px-4 sm:px-6 lg:px-20">
-          <div className="flex justify-between items-center h-16">
+      <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
+        <div className="mx-auto w-full max-w-[1920px] px-3 sm:px-5 lg:px-8">
+          <div className="flex h-14 items-center justify-between sm:h-16">
             {/* Logo */}
             <div className="flex items-center gap-3">
               <Link
@@ -186,18 +167,18 @@ const EmployeeLayout = () => {
 
       {/* Navigation Tabs */}
       {!isPosRoute && currentNavItems.length > 0 && (
-        <div className="border-b border-amber-100 bg-gradient-to-r from-white via-[#fffaf3] to-emerald-50/60 dark:border-gray-800 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950">
-          <div className="mx-auto px-4 py-3 sm:px-6 lg:px-8">
-            <nav className="flex justify-center gap-11 overflow-x-auto rounded-2xl border border-amber-100 bg-white/85 p-2 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/85">
+        <div className="border-b border-gray-100 bg-gradient-to-r from-surface-50 via-white to-primary-50/30 dark:border-gray-800 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950">
+          <div className="mx-auto w-full max-w-[1920px] px-3 py-2 sm:px-5 lg:px-8">
+            <nav className="-mx-1 flex gap-1 overflow-x-auto pb-1 sm:mx-0 sm:flex-wrap sm:justify-start sm:gap-2 sm:overflow-visible sm:pb-0">
               {currentNavItems.map((item) => (
                 <NavLink
-                  key={item.path}
+                  key={`${item.role}-${item.path}`}
                   to={item.path}
                   className={({ isActive }) =>
-                    `group relative inline-flex h-11 shrink-0 items-center gap-2 rounded-xl px-3 text-sm font-semibold transition-all ${
+                    `group relative inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-3 text-sm font-semibold transition-all sm:h-11 sm:px-4 ${
                       isActive
                         ? 'bg-primary-700 text-white shadow-md'
-                        : 'text-gray-600 hover:bg-amber-50 hover:text-primary-800 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white'
+                        : 'text-gray-600 hover:bg-white hover:text-primary-800 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white'
                     }`
                   }
                 >
@@ -232,17 +213,17 @@ const EmployeeLayout = () => {
         className={
           isPosRoute
             ? 'min-h-0 flex-1 overflow-hidden p-0 dark:text-gray-100'
-            : 'mx-auto px-4 sm:px-6 lg:px-20 py-8 dark:text-gray-100'
+            : 'mx-auto w-full max-w-[1920px] flex-1 px-3 py-4 sm:px-5 sm:py-6 lg:px-8 dark:text-gray-100'
         }
       >
         <Outlet />
       </main>
 
       {/* Footer */}
-      {!isPosRoute && (
-        <footer className="bg-white dark:bg-gray-900 sticky bottom-0 w-full border-t dark:border-gray-800 mt-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+      {!isPosRoute && user?.role !== 'cashier' && (
+        <footer className="mt-8 w-full border-t border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-900">
+          <div className="mx-auto max-w-[1920px] px-3 py-4 sm:px-5 lg:px-8">
+            <p className="text-center text-xs text-gray-500 dark:text-gray-400 sm:text-sm">
               &copy; {new Date().getFullYear()} QR Menu SaaS. All rights reserved.
             </p>
           </div>

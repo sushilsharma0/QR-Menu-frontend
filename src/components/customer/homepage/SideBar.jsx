@@ -1,9 +1,11 @@
 import React, { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, Info, Settings, History, Globe, ShieldCheck } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 const Sidebar = ({ isOpen, onClose }) => {
+  const { slug, token } = useParams();
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -14,59 +16,72 @@ const Sidebar = ({ isOpen, onClose }) => {
       document.body.style.overflow = "unset";
     };
   }, [isOpen]);
+
+  const hasPortal = Boolean(slug && token);
+  const homePath = hasPortal ? `/home/${slug}/${token}` : "/";
+  const ordersPath = hasPortal ? `/orders/${slug}/${token}` : "/";
+  const aboutPath = hasPortal ? `/about/${slug}/${token}` : "/";
+  const settingsPath = hasPortal ? `/settings/${slug}/${token}` : "/";
+  const privacyPath = hasPortal ? `/privacy/${slug}/${token}` : "/";
+
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Dark Overlay */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-1000"
+            className="fixed inset-0 z-[1000] bg-black/40 backdrop-blur-sm"
           />
 
-          {/* Drawer Content */}
           <motion.div
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed top-0 left-0 h-full w-[80%] max-w-xs bg-white z-101 shadow-2xl p-6"
+            className="fixed left-0 top-0 z-[1001] h-full w-[80%] max-w-xs bg-white p-6 shadow-2xl"
           >
-            <div className="flex justify-between items-center mb-8">
+            <div className="mb-8 flex items-center justify-between">
               <h2 className="text-xl font-black text-gray-800">Explore</h2>
               <button
+                type="button"
                 onClick={onClose}
-                className="p-2 bg-gray-50 rounded-lg text-gray-400"
+                className="rounded-lg bg-gray-50 p-2 text-gray-400 transition-colors hover:bg-gray-100"
+                aria-label="Close menu"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <div className="space-y-4">
-              <Link to="/orderHistory">
-                <SidebarItem icon={<History />} label="Order History" />
+            <div className="space-y-1">
+              <Link to={ordersPath} onClick={onClose}>
+                <SidebarItem icon={<History size={20} />} label="My orders" disabled={!hasPortal} />
               </Link>
-              <Link to="/about">
-                <SidebarItem icon={<Info />} label="About Restaurant" />
+              <Link to={aboutPath} onClick={onClose}>
+                <SidebarItem icon={<Info size={20} />} label="About restaurant" disabled={!hasPortal} />
               </Link>
-              <SidebarItem
-                icon={<Globe />}
-                label="Language"
-                trailing="English"
-              />
-              <Link to="/settings">
-                <SidebarItem icon={<Settings />} label="Settings" />
+              <div className="pointer-events-none opacity-60">
+                <SidebarItem
+                  icon={<Globe size={20} />}
+                  label="Language"
+                  trailing="English"
+                />
+              </div>
+              <Link to={settingsPath} onClick={onClose}>
+                <SidebarItem icon={<Settings size={20} />} label="Settings" disabled={!hasPortal} />
               </Link>
-              <Link to="/privacy">
-                <SidebarItem icon={<ShieldCheck />} label="Privacy Policy" />
+              <Link to={privacyPath} onClick={onClose}>
+                <SidebarItem icon={<ShieldCheck size={20} />} label="Privacy policy" disabled={!hasPortal} />
               </Link>
             </div>
 
             <div className="absolute bottom-10 left-6">
-              <p className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">
+              <Link to={homePath} onClick={onClose} className="text-[10px] font-bold uppercase tracking-widest text-primary-600">
+                ← Back to table home
+              </Link>
+              <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-gray-300">
                 Version 1.0.4
               </p>
             </div>
@@ -77,16 +92,18 @@ const Sidebar = ({ isOpen, onClose }) => {
   );
 };
 
-const SidebarItem = ({ icon, label, trailing }) => (
-  <div className="flex items-center mb-0 justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors cursor-pointer group">
+const SidebarItem = ({ icon, label, trailing, disabled }) => (
+  <div
+    className={`group mb-0 flex cursor-pointer items-center justify-between rounded-2xl p-4 transition-colors ${
+      disabled ? "cursor-not-allowed opacity-50" : "hover:bg-primary-50/80"
+    }`}
+  >
     <div className="flex items-center gap-4">
-      <div className="text-gray-400 group-hover:text-orange-500 transition-colors">
-        {icon}
-      </div>
+      <div className="text-gray-400 transition-colors group-hover:text-primary-600">{icon}</div>
       <span className="text-sm font-bold text-gray-700">{label}</span>
     </div>
     {trailing && (
-      <span className="text-[10px] font-bold text-orange-500 bg-orange-50 px-2 py-1 rounded-md">
+      <span className="rounded-md bg-primary-50 px-2 py-1 text-[10px] font-bold text-primary-700">
         {trailing}
       </span>
     )}

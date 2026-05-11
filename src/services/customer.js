@@ -139,6 +139,29 @@ export const getGuestOrders = async ({ guestId, qrToken }) => {
   return response?.data?.data?.orders || []
 }
 
+export const applyRestaurantCreditAccount = async ({ qrToken, guestId, name, email, phone = '' }) => {
+  const response = await api.post('/customer/credit/apply', {
+    qrToken,
+    guestId,
+    name,
+    email,
+    phone,
+  })
+  return response.data
+}
+
+export const requestCreditCheckoutOtp = async ({ qrToken, guestId, email }) => {
+  const response = await api.post('/customer/credit/request-otp', { qrToken, guestId, email })
+  return response.data
+}
+
+/** After serve: finalize pay-now / house credit for deferred QR checkouts */
+export const submitPostServeOrderPayment = async (payload) => {
+  const { qrToken, ...body } = payload
+  const response = await api.post(`/customer/order/${qrToken}/pay`, body)
+  return response.data
+}
+
 export const postGuestTableRequest = async ({ qrToken, guestId, requestType, message = '' }) => {
   const response = await api.post('/customer/table-request', {
     qrToken,

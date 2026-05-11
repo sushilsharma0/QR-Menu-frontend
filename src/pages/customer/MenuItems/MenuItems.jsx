@@ -17,6 +17,7 @@ import api from "../../../services/api";
 import { useToast } from "../../../hooks/useToast";
 import { ToastContainer } from "../../../components/common/ToastContainer";
 import { addItemToGuestCart, ensureGuestSession } from "../../../services/customer";
+import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
 
 
 
@@ -43,6 +44,10 @@ const MenuItems = () => {
       fetchMenuItems();
     }
   }, [slug, categoryName]);
+
+  useEffect(() => {
+    if (slug && token) rememberCustomerPortal(slug, token);
+  }, [slug, token]);
 
   const fetchMenuItems = async () => {
     try {
@@ -139,7 +144,7 @@ const MenuItems = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white pb-32">
+    <div className="min-h-screen bg-[#fafaf7] pb-36">
       {/* Header */}
       <header className="px-6 pt-12 pb-4 mb-4 flex items-center justify-between bg-white sticky top-0 z-10">
         {/* LEFT (Back Button) */}

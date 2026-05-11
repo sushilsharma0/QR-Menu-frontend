@@ -19,6 +19,8 @@ import api from "../../../services/api";
 import { useToast } from "../../../hooks/useToast";
 import { ToastContainer } from "../../../components/common/ToastContainer";
 import { addItemToGuestCart, ensureGuestSession } from "../../../services/customer";
+import Navigation from "../../../components/customer/Navigation";
+import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
 
 const ItemDetails = () => {
   const navigate = useNavigate();
@@ -136,8 +138,12 @@ const ItemDetails = () => {
     ? descriptionLines
     : descriptionLines.slice(0, 2);
 
+  useEffect(() => {
+    if (slug && token) rememberCustomerPortal(slug, token);
+  }, [slug, token]);
+
   return (
-    <div className="min-h-screen bg-white pb-32">
+    <div className="min-h-screen bg-[#fafaf7] pb-36">
       {/* Hero Image */}
       <div className="relative h-[45vh] w-full">
         <img
@@ -408,10 +414,10 @@ const ItemDetails = () => {
       </div>
 
       {/* Sticky Button */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 pb-6 bg-white border-t z-50">
+      <div className="fixed bottom-[5.5rem] left-0 right-0 z-[85] border-t border-gray-100 bg-white/95 p-4 pb-5 backdrop-blur">
         <button
           onClick={handleAddToCart}
-          className="w-full bg-gradient-to-r from-orange-500 to-orange-600 py-4 rounded-2xl flex items-center justify-between px-6 shadow-lg"
+          className="flex w-full items-center justify-between rounded-2xl bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-4 shadow-lg shadow-primary-900/25"
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
@@ -436,6 +442,7 @@ const ItemDetails = () => {
         </button>
       </div>
 
+      <Navigation />
       <ToastContainer
         toasts={toasts}
         removeToast={removeToast}

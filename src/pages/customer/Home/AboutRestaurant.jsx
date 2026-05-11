@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   MapPin,
   Phone,
@@ -10,7 +10,9 @@ import {
   Heart,
   X,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import Navigation from "../../../components/customer/Navigation";
+import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
 
 const DEFAULT_CURRENCY = "Rs.";
 
@@ -50,8 +52,15 @@ const restaurantInfo = {
 };
 
 export default function AboutRestaurant() {
+  const { slug, token } = useParams();
+  const homePath = slug && token ? `/home/${slug}/${token}` : "/";
+
+  useEffect(() => {
+    if (slug && token) rememberCustomerPortal(slug, token);
+  }, [slug, token]);
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-[#fafaf7] pb-28">
       {/* Hero Image */}
       <div
         className="h-48 bg-cover bg-center relative"
@@ -60,8 +69,8 @@ export default function AboutRestaurant() {
         }}
       >
         <Link
-          to="/"
-          className="absolute text-white top-4 z-10 left-4 bg-white/20 p-2 rounded-lg hover:bg-white/30 transition-colors"
+          to={homePath}
+          className="absolute left-4 top-4 z-10 rounded-lg bg-white/20 p-2 text-white transition-colors hover:bg-white/30"
         >
           <X size={20} />
         </Link>
@@ -207,6 +216,7 @@ export default function AboutRestaurant() {
           </div>
         </div>
       </div>
+      <Navigation />
     </div>
   );
 }

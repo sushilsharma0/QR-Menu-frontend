@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   User, 
   ShoppingBag, 
@@ -8,67 +8,121 @@ import {
   Info, 
   FileText, 
   ChevronRight,
-  Home,
-  Menu as MenuIcon,
-  LogOut
+  LogOut,
+  Settings,
+  Wallet,
 } from 'lucide-react';
+import { Link, useParams } from 'react-router-dom';
 import Navigation from '../../components/customer/Navigation';
+import Feedback from '../../components/customer/homepage/Feedback';
+import { rememberCustomerPortal } from '../../utils/customerPortalContext';
+import toast from 'react-hot-toast';
 
 const AccountPage = () => {
+  const { slug, token } = useParams();
+  const [showFeedback, setShowFeedback] = useState(false);
+
+  useEffect(() => {
+    if (slug && token) rememberCustomerPortal(slug, token);
+  }, [slug, token]);
+
+  const homePath = slug && token ? `/home/${slug}/${token}` : '/';
+  const ordersPath = slug && token ? `/orders/${slug}/${token}` : '/';
+  const menuPath = slug && token ? `/menu/${slug}/${token}` : '/';
+  const aboutPath = slug && token ? `/about/${slug}/${token}` : '/';
+  const privacyPath = slug && token ? `/privacy/${slug}/${token}` : '/';
+  const settingsPath = slug && token ? `/settings/${slug}/${token}` : '/';
+  const creditApplyPath = slug && token ? `/credit-apply/${slug}/${token}` : '/';
+
   const menuItems = [
-    { icon: <User size={20} />, label: "Profile", color: "text-blue-500", bg: "bg-blue-50" },
-    { icon: <ShoppingBag size={20} />, label: "My Orders", color: "text-orange-500", bg: "bg-orange-50" },
-    { icon: <Tag size={20} />, label: "Offers & Deals", color: "text-red-500", bg: "bg-red-50" },
-    { icon: <PhoneCall size={20} />, label: "Call Waiter", color: "text-green-500", bg: "bg-green-50" },
-    { icon: <MessageSquare size={20} />, label: "Feedback", color: "text-purple-500", bg: "bg-purple-50" },
-    { icon: <Info size={20} />, label: "About Us", color: "text-cyan-500", bg: "bg-cyan-50" },
-    { icon: <FileText size={20} />, label: "Terms & Conditions", color: "text-gray-500", bg: "bg-gray-50" },
+    { to: homePath, icon: User, label: 'Table home', color: 'text-primary-600', bg: 'bg-primary-50' },
+    { to: ordersPath, icon: ShoppingBag, label: 'My orders', color: 'text-primary-700', bg: 'bg-primary-50' },
+    { to: menuPath, icon: Tag, label: 'Browse menu', color: 'text-secondary-600', bg: 'bg-secondary-50' },
+    { to: creditApplyPath, icon: Wallet, label: 'Apply for house credit', color: 'text-primary-700', bg: 'bg-primary-50' },
+    { to: homePath, icon: PhoneCall, label: 'Call / assist', color: 'text-emerald-600', bg: 'bg-emerald-50', hint: 'Open home, then tap Call / assist' },
+    { onClick: () => setShowFeedback(true), icon: MessageSquare, label: 'Feedback', color: 'text-primary-600', bg: 'bg-primary-50' },
+    { to: aboutPath, icon: Info, label: 'About', color: 'text-accent-700', bg: 'bg-accent-50' },
+    { to: settingsPath, icon: Settings, label: 'Settings', color: 'text-primary-600', bg: 'bg-primary-50' },
+    { to: privacyPath, icon: FileText, label: 'Privacy', color: 'text-gray-600', bg: 'bg-gray-100' },
   ];
 
+  const exitSession = () => {
+    try {
+      localStorage.removeItem('customer_guest_id_v1');
+      sessionStorage.removeItem('customer_portal_slug');
+      sessionStorage.removeItem('customer_portal_table_token');
+      toast.success('Session cleared on this device');
+    } catch {
+      toast.error('Could not clear storage');
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 pb-32 text-gray-900 dark:text-gray-100">
-      {/* Header */}
-      <header className="px-6 pt-12 pb-6 text-center border-b border-gray-50 dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-950 z-10">
-        <h1 className="text-xl font-black text-gray-800 dark:text-gray-100 tracking-tight">More</h1>
+    <div className="min-h-screen bg-[#fafaf7] pb-28 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+      <header className="sticky top-0 z-10 border-b border-gray-100 bg-white/95 px-6 pb-6 pt-12 text-center backdrop-blur dark:border-gray-800 dark:bg-gray-950/95">
+        <h1 className="text-xl font-black tracking-tight text-gray-800 dark:text-gray-100">More</h1>
+        <p className="mt-1 text-[11px] font-semibold text-gray-400">Shortcuts & account</p>
       </header>
 
-      {/* Profile Header (Optional addition for MERN) */}
-      <div className="px-6 py-8 flex flex-col items-center">
-        <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 mb-3 border-4 border-white shadow-sm">
+      <div className="flex flex-col items-center px-6 py-8">
+        <div className="mb-3 flex h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-primary-50 text-primary-600 shadow-sm dark:border-gray-800">
           <User size={40} />
         </div>
-        <h2 className="font-bold text-gray-800 dark:text-gray-100">Guest User</h2>
-        <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Table 05 • Foodies Cafe</p>
+        <h2 className="font-bold text-gray-800 dark:text-gray-100">Guest</h2>
+        <p className="mt-1 text-[10px] font-medium text-gray-400">
+          {slug ? decodeURIComponent(slug).replace(/-/g, ' ') : 'Restaurant'}
+        </p>
       </div>
 
-      {/* Menu List */}
-      <div className="px-6 space-y-2">
-        {menuItems.map((item, index) => (
-          <button 
-            key={index}
-            className="w-full flex items-center justify-between p-4 bg-white dark:bg-gray-900 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-[0.98] transition-all group border border-transparent dark:border-gray-800 hover:border-gray-100 dark:hover:border-gray-700"
-          >
-            <div className="flex items-center gap-4">
-              <div className={`p-2.5 ${item.bg} ${item.color} rounded-xl`}>
-                {item.icon}
+      <div className="space-y-2 px-6">
+        {menuItems.map((item, index) => {
+          const Inner = (
+            <>
+              <div className="flex items-center gap-4">
+                <div className={`rounded-xl p-2.5 ${item.bg} ${item.color}`}>
+                  <item.icon size={20} />
+                </div>
+                <div className="text-left">
+                  <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{item.label}</span>
+                  {item.hint && (
+                    <p className="text-[10px] text-gray-400">{item.hint}</p>
+                  )}
+                </div>
               </div>
-              <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{item.label}</span>
-            </div>
-            <ChevronRight size={18} className="text-gray-300 dark:text-gray-600 group-hover:text-gray-500 dark:group-hover:text-gray-300 transition-colors" />
-          </button>
-        ))}
+              <ChevronRight size={18} className="text-gray-300 transition-colors group-hover:text-primary-500 dark:text-gray-600 dark:group-hover:text-gray-300" />
+            </>
+          );
+          const className =
+            'group flex w-full items-center justify-between rounded-2xl border border-transparent bg-white p-4 transition-all hover:border-primary-100 active:scale-[0.98] dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700';
 
-        {/* Logout / Exit Session */}
-        <button className="w-full flex items-center gap-4 p-4 mt-4 text-red-500 opacity-80 hover:opacity-100">
-           <div className="p-2.5 bg-red-50 dark:bg-red-900/20 rounded-xl">
-              <LogOut size={20} />
-           </div>
-           <span className="text-sm font-bold">Exit Session</span>
+          if (item.to) {
+            return (
+              <Link key={index} to={item.to} className={className}>
+                {Inner}
+              </Link>
+            );
+          }
+          return (
+            <button key={index} type="button" className={className} onClick={item.onClick}>
+              {Inner}
+            </button>
+          );
+        })}
+
+        <button
+          type="button"
+          className="mt-4 flex w-full items-center gap-4 p-4 text-red-500 opacity-90 hover:opacity-100"
+          onClick={exitSession}
+        >
+          <div className="rounded-xl bg-red-50 p-2.5 dark:bg-red-900/20">
+            <LogOut size={20} />
+          </div>
+          <span className="text-sm font-bold">Clear guest session</span>
         </button>
       </div>
 
-     {/* Nav */}
-     <Navigation />
+      <Feedback isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
+      <Navigation />
     </div>
   );
 };

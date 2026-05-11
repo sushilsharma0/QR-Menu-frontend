@@ -4,7 +4,7 @@ import { X, Star, Send, ThumbsUp, ThumbsDown, Meh, CheckCircle } from 'lucide-re
 import { useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import api from '../../../services/api'
-import { ensureGuestSession } from '../../../services/customer'
+import { ensureGuestSession, getStoredGuestId } from '../../../services/customer'
 
 const feedbackOptions = [
   { id: 'great', icon: ThumbsUp,   label: 'Great',   color: 'text-primary-600',  bg: 'bg-primary-50',  border: 'border-primary-400',  activeBg: 'bg-primary-600'  },
@@ -62,10 +62,16 @@ export default function Feedback({ isOpen, onClose, qrToken }) {
     if (!selectedRating || !starRating) return
     try {
       setSubmitting(true)
-      const session = await ensureGuestSession(activeQrToken)
+      let guestIdForFeedback = getStoredGuestId() || undefined
+      try {
+        const session = await ensureGuestSession(activeQrToken)
+        if (session?.guestId) guestIdForFeedback = session.guestId
+      } catch {
+        /* Table QR session fails for per-order tracking tokens; API resolves order + guest. */
+      }
       await api.post('/customer/feedback', {
         qrToken: activeQrToken,
-        guestId: session.guestId,
+        guestId: guestIdForFeedback,
         systemRating: starRating,
         serviceRating: selectedRating,
         comment,

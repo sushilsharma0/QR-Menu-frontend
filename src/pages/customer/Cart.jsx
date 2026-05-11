@@ -4,8 +4,6 @@ import {
   Trash2,
   Plus,
   Minus,
-  CreditCard,
-  Landmark,
   ChefHat,
   Send,
   ShieldCheck,
@@ -28,12 +26,13 @@ import {
   updateGuestCartItem,
   addItemToGuestCart,
 } from "../../services/customer";
+import Navigation from "../../components/customer/Navigation";
+import { rememberCustomerPortal } from "../../utils/customerPortalContext";
 
 const Cart = () => {
   const navigate = useNavigate();
   const { slug, token } = useParams();
   const [cartItems, setCartItems] = useState([]);
-  const [paymentMethod, setPaymentMethod] = useState("cash");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [promoCode, setPromoCode] = useState("");
   const [promoDiscount, setPromoDiscount] = useState(0);
@@ -90,6 +89,10 @@ const Cart = () => {
     };
     init();
   }, [token, slug]);
+
+  useEffect(() => {
+    if (slug && token) rememberCustomerPortal(slug, token);
+  }, [slug, token]);
 
   // Increase quantity
   const mapCartRows = (cart) =>
@@ -262,10 +265,11 @@ const Cart = () => {
         `guest_details_${guestId}`,
         JSON.stringify({ name: finalName, phone: finalPhone, email: finalEmail }),
       );
+
       const payload = {
         qrToken: token,
         guestId,
-        paymentMethod,
+        deferPayment: true,
         customerName: finalName,
         customerPhone: finalPhone,
         customerEmail: finalEmail,
@@ -289,7 +293,7 @@ const Cart = () => {
       setPromoDiscount(0);
       setPromoCode("");
 
-      success(`Order ${order?.orderNumber || ""} sent to kitchen.`);
+      success(`Order ${order?.orderNumber || ""} sent to kitchen. You’ll pay after your food is served.`);
 
       setTimeout(() => {
         navigate(order?.trackToken ? `/order/track/${order.trackToken}` : `/orders/${slug}/${token}`);
@@ -304,9 +308,9 @@ const Cart = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafaf7] pb-44 text-gray-950">
+    <div className="min-h-screen bg-[#fafaf7] pb-52 text-gray-950 dark:bg-gray-950 dark:text-gray-100">
       {/* Header */}
-      <header className="px-5 pt-12 pb-5 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur z-10 border-b border-gray-100">
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white/95 px-5 pb-5 pt-12 backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
         <button
           className="p-2 bg-gray-50 rounded-xl hover:bg-red-300 transition-colors"
           onClick={() => navigate(-1) || navigate("/")}
@@ -315,7 +319,7 @@ const Cart = () => {
         </button>
         <div className="text-center">
           <h1 className="text-lg font-black text-gray-900">Review Order</h1>
-          <p className="text-[11px] font-semibold text-gray-400">Confirm before kitchen receives it</p>
+          <p className="text-[11px] font-semibold text-gray-400">Pay after your meal — we only send this to the kitchen now</p>
         </div>
         <button 
           className="p-2 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors"
@@ -498,74 +502,18 @@ const Cart = () => {
         </div>
       </div>
 
-      {/* Payment Selection */}
-      <div className="mx-5 mt-6 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
-          Select Payment
-        </h3>
-        <div className="grid grid-cols-2 gap-4">
-          <label
-            className={`relative border-2 rounded-2xl p-4 flex flex-col items-center cursor-pointer transition-all ${
-              paymentMethod === "cash"
-                ? "border-orange-500 bg-orange-50"
-                : "border-gray-100 hover:border-gray-200"
-            }`}
-          >
-            <Landmark
-              size={24}
-              className={`${paymentMethod === "cash" ? "text-orange-500" : "text-gray-400"} mb-2`}
-            />
-            <span
-              className={`text-xs font-bold ${paymentMethod === "cash" ? "text-orange-600" : "text-gray-500"}`}
-            >
-              Pay at Counter
-            </span>
-            <input
-              type="radio"
-              name="payment"
-              className="hidden"
-              checked={paymentMethod === "cash"}
-              onChange={() => setPaymentMethod("cash")}
-            />
-            {paymentMethod === "cash" && (
-              <div className="absolute top-2 right-2 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
-                <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-              </div>
-            )}
-          </label>
-
-          <label
-            className={`relative border-2 rounded-2xl p-4 flex flex-col items-center cursor-pointer transition-all ${
-              paymentMethod === "upi"
-                ? "border-orange-500 bg-orange-50"
-                : "border-gray-100 hover:border-gray-200"
-            }`}
-          >
-            <CreditCard size={24} className="text-gray-400 mb-2" />
-            <span className="text-xs font-bold text-gray-500">
-              Digital Payment
-            </span>
-            <input
-              type="radio"
-              name="payment"
-              className="hidden"
-              checked={paymentMethod === "upi"}
-              onChange={() => setPaymentMethod("upi")}
-            />
-            {paymentMethod === "upi" && (
-              <div className="absolute top-2 right-2 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
-                <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-              </div>
-            )}
-          </label>
-        </div>
+      <div className="mx-5 mt-6 rounded-3xl border border-primary-100 bg-primary-50/60 p-4 dark:border-primary-900/40 dark:bg-primary-950/20">
+        <p className="text-xs font-bold leading-relaxed text-primary-900 dark:text-primary-200">
+          <ShieldCheck className="mb-1 inline-block h-4 w-4 align-middle text-primary-600" />{" "}
+          After your food is served, this app will ask how you want to pay (cash, online, split, or house credit).
+        </p>
       </div>
 
       {/* Checkout Button */}
-      <div className="fixed bottom-0 left-0 right-0 p-5 bg-white/95 border-t border-gray-100 shadow-[0_-10px_24px_rgba(15,23,42,0.08)] backdrop-blur">
+      <div className="fixed bottom-[5.5rem] left-0 right-0 z-[85] border-t border-gray-100 bg-white/95 p-5 shadow-[0_-10px_24px_rgba(15,23,42,0.08)] backdrop-blur">
         <div className="mb-3 flex items-center justify-center gap-2 text-[11px] font-bold text-gray-500">
           <ShieldCheck size={14} className="text-emerald-600" />
-          You can track every kitchen status after sending.
+          Track prep live — payment comes after you&apos;re served.
         </div>
         <button
           onClick={handleProceedToCheckout}
@@ -595,6 +543,7 @@ const Cart = () => {
         )}
       </AnimatePresence>
 
+      <Navigation />
       <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );

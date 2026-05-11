@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Shield,
   Lock,
@@ -10,7 +10,9 @@ import {
   Smartphone,
   X,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import Navigation from "../../../components/customer/Navigation";
+import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
 
 const policySections = [
   {
@@ -156,22 +158,29 @@ const policySections = [
 ];
 
 export default function PrivacyPolicy() {
+  const { slug, token } = useParams();
+  const homePath = slug && token ? `/home/${slug}/${token}` : "/";
+
+  useEffect(() => {
+    if (slug && token) rememberCustomerPortal(slug, token);
+  }, [slug, token]);
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-24 text-gray-900 dark:text-gray-100">
+    <div className="min-h-screen bg-[#fafaf7] pb-28 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       {/* Header */}
-      <div className="bg-linear-to-r from-blue-600 to-indigo-600 p-6 text-white">
-        <div className="flex justify-center items-center gap-3">
+      <div className="relative bg-gradient-to-r from-primary-700 to-primary-900 p-6 text-white">
+        <div className="flex items-center justify-center gap-3">
           <Shield size={32} />
           <div>
             <h1 className="text-2xl font-bold">Privacy Policy</h1>
-            <p className="text-sm opacity-90 mt-1">
+            <p className="mt-1 text-sm opacity-90">
               Last Updated: April 26, 2026
             </p>
           </div>
         </div>
         <Link
-          to="/"
-          className="absolute text-white top-4 z-10 left-4 bg-white/20 p-2 rounded-lg hover:bg-white/30 transition-colors"
+          to={homePath}
+          className="absolute left-4 top-4 z-10 rounded-lg bg-white/20 p-2 text-white transition-colors hover:bg-white/30"
         >
           <X size={20} />
         </Link>
@@ -196,8 +205,8 @@ export default function PrivacyPolicy() {
                 {section.items.map((item, itemIndex) => (
                   <div key={itemIndex} className="flex gap-3">
                     {item.icon && (
-                      <div className="w-8 h-8 bg-orange-50 dark:bg-orange-900/30 rounded-full flex items-center justify-center flex-0 mt-0.5">
-                        <item.icon size={14} className="text-orange-500" />
+                      <div className="mt-0.5 flex h-8 w-8 flex-0 items-center justify-center rounded-full bg-primary-50 dark:bg-orange-900/30">
+                        <item.icon size={14} className="text-primary-600" />
                       </div>
                     )}
                     <div>
@@ -222,6 +231,7 @@ export default function PrivacyPolicy() {
           </p>
         </div>
       </div>
+      <Navigation />
     </div>
   );
 }

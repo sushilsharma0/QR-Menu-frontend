@@ -1,11 +1,14 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useTheme } from '../../../context/ThemeContext'
 import { 
   User, Bell, Lock, Globe, Moon, 
   HelpCircle, Info, ChevronRight, 
   Smartphone, Mail, LogOut,
   X
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
+import Navigation from '../../../components/customer/Navigation'
+import { rememberCustomerPortal } from '../../../utils/customerPortalContext'
 
 const settingsSections = [
   {
@@ -41,8 +44,15 @@ const settingsSections = [
 ]
 
 export default function Settings() {
+  const { slug, token } = useParams()
+  const homePath = slug && token ? `/home/${slug}/${token}` : '/'
+  const { isDark, toggleTheme } = useTheme()
+
+  useEffect(() => {
+    if (slug && token) rememberCustomerPortal(slug, token)
+  }, [slug, token])
+
   const [toggles, setToggles] = useState({
-    darkMode: false,
     pushNotifications: true,
     twoFactor: false,
   })
@@ -52,14 +62,14 @@ export default function Settings() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-24 text-gray-900 dark:text-gray-100">
+    <div className="min-h-screen bg-[#fafaf7] pb-28 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       {/* Header */}
-      <div className="bg-orange-500 p-6 text-white text-center">
+      <div className="relative bg-gradient-to-br from-primary-600 to-primary-800 p-6 text-center text-white">
         <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-sm opacity-90 mt-1">Customize your experience</p>
+        <p className="mt-1 text-sm opacity-90">Customize your experience</p>
         <Link
-          to="/"
-          className="absolute text-white top-4 z-10 left-4 bg-white/20 p-2 rounded-lg hover:bg-white/30 transition-colors"
+          to={homePath}
+          className="absolute left-4 top-4 z-10 rounded-lg bg-white/20 p-2 text-white transition-colors hover:bg-white/30"
         >
           <X size={20} />
         </Link>
@@ -82,8 +92,8 @@ export default function Settings() {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-orange-50 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
-                      <item.icon size={18} className="text-orange-500" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-50 dark:bg-orange-900/30">
+                      <item.icon size={18} className="text-primary-600" />
                     </div>
                     <div>
                       <p className="font-bold text-gray-800 dark:text-gray-100 text-sm">{item.label}</p>
@@ -91,17 +101,33 @@ export default function Settings() {
                     </div>
                   </div>
                   
-                  {item.toggle ? (
+                  {item.label === 'Dark Mode' ? (
                     <button
+                      type="button"
+                      onClick={() => toggleTheme()}
+                      className={`h-6 w-12 rounded-full transition-colors ${
+                        isDark ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-700'
+                      }`}
+                      aria-pressed={isDark}
+                    >
+                      <div
+                        className={`h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                          isDark ? 'translate-x-6' : 'translate-x-0.5'
+                        }`}
+                      />
+                    </button>
+                  ) : item.toggle ? (
+                    <button
+                      type="button"
                       onClick={() => toggleSetting(item.label.toLowerCase().replace(/[^a-z]/g, ''))}
-                      className={`w-12 h-6 rounded-full transition-colors ${
+                      className={`h-6 w-12 rounded-full transition-colors ${
                         toggles[item.label.toLowerCase().replace(/[^a-z]/g, '')]
-                          ? 'bg-orange-500' 
+                          ? 'bg-primary-600' 
                           : 'bg-gray-200 dark:bg-gray-700'
                       }`}
                     >
                       <div 
-                        className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                        className={`h-5 w-5 rounded-full bg-white shadow transition-transform ${
                           toggles[item.label.toLowerCase().replace(/[^a-z]/g, '')]
                             ? 'translate-x-6' 
                             : 'translate-x-0.5'
@@ -130,6 +156,7 @@ export default function Settings() {
           Version 1.0.4 • Made with ❤️
         </p>
       </div>
+      <Navigation />
     </div>
   )
 }
