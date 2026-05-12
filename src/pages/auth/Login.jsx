@@ -133,7 +133,7 @@ const GoogleSignIn = ({ onSuccess, disabled }) => {
 }
 
 const Login = () => {
-  const { login, loginWithGoogle } = useAuth()
+  const { login, loginWithGoogle, loginBranchEmail } = useAuth()
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const roleQuery = searchParams.get('role')
@@ -155,8 +155,12 @@ const Login = () => {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm()
+
+  const watchEmail = watch('email')
+  const isBranchLogin = role === 'restaurant' && String(watchEmail || '').toLowerCase().includes('@branch.com')
 
   const activeMeta = portalMeta[role]
   const ActiveIcon = activeMeta.icon
@@ -192,7 +196,14 @@ const Login = () => {
   const onSubmit = async (data) => {
     setLoading(true)
     try {
-      if (role === 'employee') {
+      if (role === 'restaurant' && String(data.email || '').toLowerCase().includes('@branch.com')) {
+        await loginBranchEmail(
+          data.email,
+          data.restaurantIdBranch,
+          data.ownerEmailBranch || '',
+          data.password,
+        )
+      } else if (role === 'employee') {
         await login(data.username, data.password, 'employee', data.restaurantId)
       } else {
         await login(data.email, data.password, role)
@@ -282,13 +293,19 @@ const Login = () => {
             </div>
           )}
 
+          {role === 'restaurant' && isBranchLogin && (
+            <div className="mb-5 rounded-lg border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+              Branch outlet login: enter your <strong>@branch.com</strong> username, <strong>Restaurant ID</strong>, the <strong>branch owner Gmail</strong> you verified at setup (when required), and your password.
+            </div>
+          )}
+
           {role === 'platform' && (
             <div className="mb-5 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-300">
               Platform access is intentionally separate from vendor registration and staff login.
             </div>
           )}
 
-          {role === 'restaurant' && (
+          {role === 'restaurant' && !isBranchLogin && (
             <div className="mb-6">
               <GoogleSignIn onSuccess={handleGoogleSuccess} disabled={googleLoading} />
               <div className="my-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
@@ -300,15 +317,53 @@ const Login = () => {
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {(role === 'restaurant' || role === 'platform') && (
+            {role === 'platform' && (
               <Input
                 label="Email Address"
                 icon={FiMail}
                 type="email"
-                placeholder={role === 'platform' ? 'admin@company.com' : 'vendor@restaurant.com'}
+                placeholder="admin@company.com"
                 {...register('email', { required: 'Email is required' })}
                 error={errors.email?.message}
               />
+            )}
+
+            {role === 'restaurant' && (
+              <>
+                <Input
+                  label={isBranchLogin ? 'Branch username' : 'Email Address'}
+                  icon={FiMail}
+                  type={isBranchLogin ? 'text' : 'email'}
+                  autoComplete={isBranchLogin ? 'username' : 'email'}
+                  placeholder={isBranchLogin ? 'outletname@branch.com' : 'vendor@restaurant.com'}
+                  {...register('email', {
+                    required: isBranchLogin ? 'Branch username is required' : 'Email is required',
+                  })}
+                  error={errors.email?.message}
+                />
+                {isBranchLogin && (
+                  <>
+                    <Input
+                      label="Restaurant ID"
+                      icon={FiBriefcase}
+                      placeholder="REST-2041 or Mongo id"
+                      {...register('restaurantIdBranch', {
+                        required: 'Restaurant ID is required for branch login',
+                      })}
+                      error={errors.restaurantIdBranch?.message}
+                    />
+                    <Input
+                      label="Branch owner Gmail"
+                      icon={FiMail}
+                      type="email"
+                      autoComplete="email"
+                      placeholder="owner@gmail.com (required if your outlet uses owner verification)"
+                      {...register('ownerEmailBranch')}
+                      error={errors.ownerEmailBranch?.message}
+                    />
+                  </>
+                )}
+              </>
             )}
 
             {role === 'employee' && (
@@ -320,13 +375,13 @@ const Login = () => {
                   {...register('username', { required: 'Username is required' })}
                   error={errors.username?.message}
                 />
-                <Input
-                  label="Restaurant ID"
-                  icon={FiBriefcase}
-                  placeholder="restaurant id"
-                  {...register('restaurantId', { required: 'Restaurant ID is required' })}
-                  error={errors.restaurantId?.message}
-                />
+              <Input
+                label="Restaurant ID"
+                icon={FiBriefcase}
+                placeholder="REST-2041 or technical id"
+                {...register('restaurantId', { required: 'Restaurant ID is required' })}
+                error={errors.restaurantId?.message}
+              />
               </>
             )}
 
@@ -339,19 +394,35 @@ const Login = () => {
               error={errors.password?.message}
             />
 
-            <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-              <Link to="/forgot-password" className="font-medium text-primary-600 hover:text-primary-700">
-                Forgot password?
-              </Link>
-              {role === 'restaurant' && (
+            <div
+              className={`flex flex-wrap items-center gap-3 text-sm ${
+                role === 'restaurant' && isBranchLogin ? 'justify-end' : 'justify-between'
+              }`}
+            >
+              {!(role === 'restaurant' && isBranchLogin) && (
+                <Link to="/forgot-password" className="font-medium text-primary-600 hover:text-primary-700">
+                  Forgot password?
+                </Link>
+              )}
+              {role === 'restaurant' && !isBranchLogin && (
                 <Link to="/vendor/register" className="font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-300">
                   Register vendor
                 </Link>
               )}
+              {role === 'restaurant' && isBranchLogin && (
+                <span className="text-xs text-gray-500 dark:text-gray-400">Password resets are done from the main restaurant dashboard.</span>
+              )}
             </div>
 
             <Button type="submit" loading={loading || googleLoading} className="w-full py-3">
-              Sign in to {role === 'restaurant' ? 'Vendor Dashboard' : role === 'employee' ? 'Staff Workspace' : 'Platform'}
+              Sign in to{' '}
+              {role === 'restaurant'
+                ? isBranchLogin
+                  ? 'Branch Dashboard'
+                  : 'Vendor Dashboard'
+                : role === 'employee'
+                  ? 'Staff Workspace'
+                  : 'Platform'}
             </Button>
           </form>
 
@@ -359,7 +430,10 @@ const Login = () => {
             {role === 'platform' ? (
               <p><span className="font-semibold text-gray-800 dark:text-gray-200">Demo:</span> superadmin@qrmenu.com / Admin@123</p>
             ) : role === 'restaurant' ? (
-              <p><span className="font-semibold text-gray-800 dark:text-gray-200">Demo:</span> test@restaurant.com / Test@123456</p>
+              <p>
+                <span className="font-semibold text-gray-800 dark:text-gray-200">Vendor demo:</span> test@restaurant.com / Test@123456.
+                <span className="mt-2 block">Branch demo: use credentials from Branch Management after creating an outlet (…@branch.com + Restaurant ID).</span>
+              </p>
             ) : (
               <p>Ask your restaurant vendor for your staff username, password, and restaurant ID.</p>
             )}

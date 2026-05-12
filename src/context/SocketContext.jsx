@@ -14,7 +14,7 @@ const getLoginPathForCurrentPage = () => {
   if (path.startsWith('/kitchen') || path.startsWith('/cashier') || path.startsWith('/employee')) {
     return '/login?role=employee'
   }
-  if (path.startsWith('/branch')) return '/branch/login'
+  if (path.startsWith('/branch')) return '/login'
   if (path.startsWith('/restaurant')) return '/login?role=restaurant'
   if (path.startsWith('/platform')) return '/login?role=platform'
   return '/login'

@@ -141,6 +141,16 @@ function App() {
       <Route path="/vendor/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route
+        path="/branch/dashboard"
+        element={
+          user?.scope === 'branch_user' ? (
+            <Navigate to={defaultPortalPathForUser(user)} replace />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
       <Route path="/branch/login" element={<BranchLogin />} />
       <Route path="/branch/:restaurantId/:portalKey/:branchSlug/login" element={<BranchLogin />} />
 

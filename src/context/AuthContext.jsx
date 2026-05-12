@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }) => {
     }
     const loginPath =
       loginRole === 'branch'
-        ? '/branch/login'
+        ? '/login'
         : loginRole === 'platform' || loginRole === 'restaurant' || loginRole === 'employee'
           ? `/login?role=${loginRole}`
           : '/login'
@@ -142,7 +142,7 @@ export const AuthProvider = ({ children }) => {
         requestData = { username: email, password, restaurantId }
       }
       
-      console.log('📤 Login request:', { endpoint, email: email.substring(0, 5) + '***' })
+      console.log('📤 Login request:', { endpoint, identifier: String(email || '').slice(0, 5) + '***' })
       
       const response = await api.post(endpoint, requestData)
       
@@ -222,7 +222,7 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const loginBranch = async (restaurantId, portalKey, branchSlug, username, password) => {
+  const loginBranch = async (restaurantId, portalKey, branchSlug, username, password, ownerEmail = '') => {
     try {
       const response = await api.post('/restaurant/branch-auth/login', {
         restaurantId: String(restaurantId).trim(),
@@ -230,6 +230,41 @@ export const AuthProvider = ({ children }) => {
         branchSlug: String(branchSlug).trim().toLowerCase(),
         username: username.trim(),
         password,
+        ownerEmail: String(ownerEmail || '').trim(),
+      })
+      const { token: newToken, user: userData } = response.data.data || {}
+      const authUser = { ...userData, scope: 'branch_user' }
+      if (!newToken || !userData) {
+        throw new Error('Invalid response structure from server')
+      }
+      setAuthSession(newToken, JSON.stringify(authUser))
+      localStorage.setItem(THEME_KEY, 'light')
+      document.documentElement.classList.remove('dark')
+      if (authUser.branchId) setBranchPortalContext(authUser.branchId)
+      setToken(newToken)
+      setUser(authUser)
+      toast.success(response.data?.message || 'Welcome')
+      navigate(
+        `${branchPortalBase(authUser.restaurantId, authUser.branchPortalKey, authUser.branchSlug)}/dashboard`,
+        { replace: true },
+      )
+      return { success: true }
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || error.message || 'Login failed'
+      if (!error.__toastShown) {
+        toast.error(errorMsg)
+      }
+      return { success: false, error: errorMsg }
+    }
+  }
+
+  const loginBranchEmail = async (identifier, restaurantId, ownerEmail, password) => {
+    try {
+      const response = await api.post('/auth/login', {
+        identifier: String(identifier || '').trim(),
+        password,
+        restaurantId: String(restaurantId || '').trim(),
+        ownerEmail: String(ownerEmail || '').trim(),
       })
       const { token: newToken, user: userData } = response.data.data || {}
       const authUser = { ...userData, scope: 'branch_user' }
@@ -302,7 +337,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, loginBranch, loginWithGoogle, logout, mergeUser }}>
+    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, loginBranch, loginBranchEmail, loginWithGoogle, logout, mergeUser }}>
       {children}
     </AuthContext.Provider>
   )

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { FiBarChart2, FiEdit2, FiMapPin, FiPlus, FiRefreshCw, FiTrash2, FiUsers } from 'react-icons/fi'
+import { FiArrowLeft, FiBarChart2, FiEdit2, FiMapPin, FiPlus, FiRefreshCw, FiTrash2, FiUsers } from 'react-icons/fi'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
@@ -8,6 +8,8 @@ import Input from '../../components/common/Input'
 import Modal from '../../components/common/Modal'
 import { useBranch } from '../../context/BranchContext'
 import { money } from './finance/FinanceUI'
+
+const OTP_RESEND_COOLDOWN_SEC = 60
 
 const MODULE_DEFS = [
   { key: 'dashboard', label: 'Dashboard' },
@@ -28,7 +30,6 @@ const emptyForm = {
   branchCode: '',
   branchManagerName: '',
   phone: '',
-  email: '',
   address: '',
   city: '',
   state: '',
@@ -38,10 +39,12 @@ const emptyForm = {
   branchUsername: '',
   branchPassword: '',
   autoGeneratePassword: true,
+  ownerEmail: '',
+  ownerOtp: '',
   enabledModules: {},
 }
 
-function BranchForm({ initial, onSubmit, onClose, saving }) {
+function BranchEditForm({ initial, onSubmit, onClose, saving }) {
   const [form, setForm] = useState(() => {
     const base = { ...emptyForm, ...(initial || {}) }
     if (initial?.enabledModules && typeof initial.enabledModules === 'object') {
@@ -70,26 +73,9 @@ function BranchForm({ initial, onSubmit, onClose, saving }) {
     >
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <Input label="Branch name" value={form.name} onChange={set('name')} required />
-        <Input label="Branch code (optional)" value={form.branchCode} onChange={set('branchCode')} disabled={Boolean(initial?._id)} placeholder="Auto if empty" />
+        <Input label="Branch code (optional)" value={form.branchCode} onChange={set('branchCode')} disabled placeholder="Auto if empty" />
         <Input label="Branch manager name" value={form.branchManagerName || ''} onChange={set('branchManagerName')} />
-        {!initial?._id && (
-          <>
-            <Input label="Branch login username" value={form.branchUsername} onChange={set('branchUsername')} placeholder="e.g. pokhara_admin" />
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
-              <input
-                type="checkbox"
-                checked={Boolean(form.autoGeneratePassword)}
-                onChange={(e) => setForm((c) => ({ ...c, autoGeneratePassword: e.target.checked }))}
-              />
-              Auto-generate secure password
-            </label>
-            {!form.autoGeneratePassword && (
-              <Input label="Branch password" type="password" value={form.branchPassword} onChange={set('branchPassword')} />
-            )}
-          </>
-        )}
         <Input label="Phone" value={form.phone || ''} onChange={set('phone')} />
-        <Input label="Email" type="email" value={form.email || ''} onChange={set('email')} />
         <Input label="City" value={form.city || ''} onChange={set('city')} />
         <Input label="State" value={form.state || ''} onChange={set('state')} />
         <Input label="Country" value={form.country || ''} onChange={set('country')} />
@@ -133,7 +119,196 @@ function BranchForm({ initial, onSubmit, onClose, saving }) {
       </label>
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-        <Button type="submit" loading={saving}>{initial?._id ? 'Save branch' : 'Create branch'}</Button>
+        <Button type="submit" loading={saving}>Save branch</Button>
+      </div>
+    </form>
+  )
+}
+
+function CreateBranchWizard({
+  form,
+  setForm,
+  step,
+  onStepBack,
+  saving,
+  otpSending,
+  verifySending,
+  resendCooldown,
+  devOtpHint,
+  otpExpiresMinutes,
+  onRequestOwnerOtp,
+  onVerifyOtp,
+  onSubmitCreate,
+  onClose,
+}) {
+  const set = (key) => (event) => setForm((current) => ({ ...current, [key]: event.target.value }))
+  const toggleModule = (key) => () =>
+    setForm((current) => {
+      const prev = current.enabledModules?.[key]
+      const on = prev === false ? false : true
+      return {
+        ...current,
+        enabledModules: { ...current.enabledModules, [key]: !on },
+      }
+    })
+
+  if (step === 1) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-xl border border-primary-200 bg-primary-50/60 px-4 py-3 dark:border-primary-900/50 dark:bg-primary-950/30">
+          <p className="text-xs font-black uppercase tracking-wide text-primary-800 dark:text-primary-200">Step 1 / 2 — Verify owner</p>
+          <p className="mt-1 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+            Enter branch basics and the owner&apos;s Gmail. We send a one-time code to that inbox (check spam). After you verify the code, step 2 opens for portal login, address, and modules.
+          </p>
+        </div>
+        {devOtpHint ? (
+          <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100">
+            <strong>Development only:</strong> SMTP is not configured on the server. Your verification code is{' '}
+            <span className="font-mono text-lg font-black tracking-widest">{devOtpHint}</span>
+            . In production, configure <span className="font-mono">SMTP_USER</span> and <span className="font-mono">SMTP_PASS</span>.
+          </div>
+        ) : null}
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <Input label="Branch name" value={form.name} onChange={set('name')} required />
+          <Input label="Branch code (optional)" value={form.branchCode} onChange={set('branchCode')} placeholder="Auto if empty" />
+          <div className="md:col-span-2">
+            <Input label="Branch manager name" value={form.branchManagerName || ''} onChange={set('branchManagerName')} />
+          </div>
+          <div className="md:col-span-2">
+            <Input
+              label="Branch owner Gmail (@gmail.com)"
+              type="email"
+              value={form.ownerEmail || ''}
+              onChange={set('ownerEmail')}
+              placeholder="owner@gmail.com"
+              required
+            />
+          </div>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <div className="min-w-0 flex-1">
+            <Input
+              label="Verification code from Gmail"
+              value={form.ownerOtp || ''}
+              onChange={set('ownerOtp')}
+              placeholder="6-digit code"
+              autoComplete="one-time-code"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="shrink-0"
+            loading={otpSending}
+            disabled={resendCooldown > 0 && !otpSending}
+            onClick={() => onRequestOwnerOtp(form.ownerEmail)}
+          >
+            {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Send code'}
+          </Button>
+          <Button
+            type="button"
+            className="shrink-0"
+            loading={verifySending}
+            onClick={onVerifyOtp}
+          >
+            Verify code
+          </Button>
+        </div>
+        {otpExpiresMinutes != null && otpExpiresMinutes > 0 && !devOtpHint ? (
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Each code is valid for about {otpExpiresMinutes} minutes. You can resend after the timer on the button.
+          </p>
+        ) : null}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <form
+      className="space-y-4"
+      onSubmit={(event) => {
+        event.preventDefault()
+        onSubmitCreate()
+      }}
+    >
+      <div className="rounded-xl border border-surface-200 bg-surface-50/80 p-4 text-sm dark:border-gray-700 dark:bg-gray-800/50">
+        <p className="text-xs font-black uppercase tracking-wide text-primary-700 dark:text-primary-300">Step 2 / 2 — Branch details</p>
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Owner Gmail is already verified. Finish portal access, contact info, and modules below.</p>
+        <p className="mt-3 font-bold text-gray-900 dark:text-gray-100">Summary from step 1</p>
+        <ul className="mt-2 space-y-1 text-gray-600 dark:text-gray-300">
+          <li><span className="font-semibold">Branch:</span> {form.name || '—'}</li>
+          {form.branchCode && <li><span className="font-semibold">Code:</span> {form.branchCode}</li>}
+          {form.branchManagerName && <li><span className="font-semibold">Manager:</span> {form.branchManagerName}</li>}
+          <li><span className="font-semibold">Owner Gmail:</span> {form.ownerEmail || '—'}</li>
+        </ul>
+        <Button type="button" variant="outline" size="sm" className="mt-3" onClick={onStepBack}>
+          <FiArrowLeft className="mr-1 inline h-4 w-4" />
+          Back to step 1
+        </Button>
+      </div>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <Input label="Custom branch username" value={form.branchUsername} onChange={set('branchUsername')} placeholder="e.g. pokhara (becomes …@branch.com)" />
+        <label className="flex items-center gap-2 self-end text-sm font-semibold text-gray-700 dark:text-gray-200 md:pb-2">
+          <input
+            type="checkbox"
+            checked={Boolean(form.autoGeneratePassword)}
+            onChange={(e) => setForm((c) => ({ ...c, autoGeneratePassword: e.target.checked }))}
+          />
+          Auto-generate secure password
+        </label>
+        {!form.autoGeneratePassword && (
+          <div className="md:col-span-2">
+            <Input label="Branch password" type="password" value={form.branchPassword} onChange={set('branchPassword')} />
+          </div>
+        )}
+        <Input label="Phone" value={form.phone || ''} onChange={set('phone')} />
+        <Input label="City" value={form.city || ''} onChange={set('city')} />
+        <Input label="State" value={form.state || ''} onChange={set('state')} />
+        <Input label="Country" value={form.country || ''} onChange={set('country')} />
+        <Input label="Tax number" value={form.taxNumber || ''} onChange={set('taxNumber')} />
+      </div>
+      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+        Status
+        <select
+          value={form.status}
+          onChange={set('status')}
+          className="mt-1 w-full rounded-xl border border-surface-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary-300 focus:ring-2 focus:ring-primary-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+        >
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="suspended">Suspended</option>
+        </select>
+      </label>
+      <div>
+        <p className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">Enabled modules (branch portal)</p>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {MODULE_DEFS.map(({ key, label }) => (
+            <label key={key} className="flex cursor-pointer items-center gap-2 rounded-xl border border-surface-200 px-3 py-2 text-sm dark:border-gray-700">
+              <input
+                type="checkbox"
+                checked={form.enabledModules?.[key] !== false}
+                onChange={toggleModule(key)}
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+      </div>
+      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+        Address
+        <textarea
+          value={form.address || ''}
+          onChange={set('address')}
+          rows={3}
+          className="mt-1 w-full rounded-xl border border-surface-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary-300 focus:ring-2 focus:ring-primary-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+        />
+      </label>
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+        <Button type="submit" loading={saving}>Create branch</Button>
       </div>
     </form>
   )
@@ -149,6 +324,44 @@ const Branches = () => {
   const [credentials, setCredentials] = useState(null)
   const [activity, setActivity] = useState([])
   const [loadingActivity, setLoadingActivity] = useState(false)
+
+  const [otpSending, setOtpSending] = useState(false)
+  const [verifySending, setVerifySending] = useState(false)
+  const [createStep, setCreateStep] = useState(1)
+  const [ownerVerifyToken, setOwnerVerifyToken] = useState('')
+  const [createForm, setCreateForm] = useState(() => ({ ...emptyForm }))
+  const [resendCooldown, setResendCooldown] = useState(0)
+  const [devOtpBanner, setDevOtpBanner] = useState(null)
+  const [otpExpiryMinutesHint, setOtpExpiryMinutesHint] = useState(null)
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return undefined
+    const id = setInterval(() => {
+      setResendCooldown((s) => (s <= 1 ? 0 : s - 1))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [resendCooldown > 0])
+
+  const resetCreateWizard = () => {
+    setCreateStep(1)
+    setOwnerVerifyToken('')
+    setCreateForm({ ...emptyForm })
+    setResendCooldown(0)
+    setDevOtpBanner(null)
+    setOtpExpiryMinutesHint(null)
+  }
+
+  const closeModal = () => {
+    setModalOpen(false)
+    setModalBranch(null)
+    resetCreateWizard()
+  }
+
+  const openCreateModal = () => {
+    setModalBranch(null)
+    resetCreateWizard()
+    setModalOpen(true)
+  }
 
   const selectedBranch = branches.find((branch) => String(branch._id) === String(selectedBranchId)) || branches[0]
   const trendData = useMemo(() => analytics.trends || [], [analytics])
@@ -187,28 +400,127 @@ const Branches = () => {
     loadActivity()
   }, [selectedBranch?._id])
 
-  const saveBranch = async (form) => {
+  const requestOwnerOtp = async (ownerEmail) => {
+    const e = String(ownerEmail || '').trim().toLowerCase()
+    if (!e) {
+      toast.error('Enter the branch owner Gmail first.')
+      return
+    }
+    if (!e.endsWith('@gmail.com') && !e.endsWith('@googlemail.com')) {
+      toast.error('Branch owner email must be a Gmail address (@gmail.com).')
+      return
+    }
+    try {
+      setOtpSending(true)
+      const res = await api.post('/restaurant/branches/owner-email/request-otp', { ownerEmail: e }, { skipBranchHeader: true })
+      const data = res.data?.data || {}
+      setResendCooldown(OTP_RESEND_COOLDOWN_SEC)
+      setOtpExpiryMinutesHint(typeof data.expiresInMinutes === 'number' ? data.expiresInMinutes : 10)
+      if (data.devOtp) {
+        setDevOtpBanner(String(data.devOtp))
+        toast.success('Development mode: SMTP is off — use the code shown in the yellow box.', { duration: 8000 })
+      } else {
+        setDevOtpBanner(null)
+        toast.success(
+          `Verification code sent to ${e}. Check inbox and spam. Valid for about ${data.expiresInMinutes ?? 10} minutes.`,
+          { duration: 6000 },
+        )
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to send code')
+    } finally {
+      setOtpSending(false)
+    }
+  }
+
+  const verifyOwnerOtp = async () => {
+    const ownerEmail = String(createForm.ownerEmail || '').trim().toLowerCase()
+    const ownerOtp = String(createForm.ownerOtp || '').trim()
+    if (!ownerEmail) {
+      toast.error('Enter the branch owner Gmail first.')
+      return
+    }
+    if (!ownerOtp) {
+      toast.error('Enter the verification code from Gmail.')
+      return
+    }
+    if (!ownerEmail.endsWith('@gmail.com') && !ownerEmail.endsWith('@googlemail.com')) {
+      toast.error('Branch owner email must be a Gmail address (@gmail.com).')
+      return
+    }
+    try {
+      setVerifySending(true)
+      const res = await api.post(
+        '/restaurant/branches/owner-email/verify-otp',
+        { ownerEmail, ownerOtp },
+        { skipBranchHeader: true },
+      )
+      const tok = res.data?.data?.ownerVerifyToken
+      if (!tok) throw new Error('Missing token')
+      setOwnerVerifyToken(tok)
+      setCreateStep(2)
+      setDevOtpBanner(null)
+      toast.success('Gmail verified. Continue with branch details.')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Invalid or expired code')
+    } finally {
+      setVerifySending(false)
+    }
+  }
+
+  const saveBranchEdit = async (form) => {
     try {
       setSaving(true)
-      if (modalBranch?._id) {
-        const { branchUsername, branchPassword, autoGeneratePassword, ...patchBody } = form
-        await api.patch(`/restaurant/branches/${modalBranch._id}`, patchBody, { skipBranchHeader: true })
-        toast.success('Branch updated')
-      } else {
-        const payload = {
-          ...form,
-          enabledModules: MODULE_DEFS.reduce((acc, { key }) => {
-            acc[key] = form.enabledModules?.[key] !== false
-            return acc
-          }, {}),
-        }
-        const res = await api.post('/restaurant/branches', payload, { skipBranchHeader: true })
-        const cred = res.data?.data?.credentials
-        if (cred) setCredentials(cred)
-        toast.success('Branch created')
+      const { branchUsername, branchPassword, autoGeneratePassword, ownerEmail, ownerOtp, ...patchBody } = form
+      await api.patch(`/restaurant/branches/${modalBranch._id}`, patchBody, { skipBranchHeader: true })
+      toast.success('Branch updated')
+      closeModal()
+      await reloadBranches()
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Failed to save branch')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const submitCreateBranch = async () => {
+    if (!ownerVerifyToken) {
+      toast.error('Verify your Gmail on step 1 first.')
+      return
+    }
+    if (!String(createForm.name || '').trim()) {
+      toast.error('Branch name is missing. Go back to step 1.')
+      return
+    }
+    try {
+      setSaving(true)
+      const ownerEmail = String(createForm.ownerEmail || '').trim().toLowerCase()
+      const payload = {
+        name: createForm.name,
+        branchCode: createForm.branchCode,
+        branchManagerName: createForm.branchManagerName,
+        ownerEmail,
+        ownerVerifyToken,
+        phone: createForm.phone,
+        address: createForm.address,
+        city: createForm.city,
+        state: createForm.state,
+        country: createForm.country,
+        taxNumber: createForm.taxNumber,
+        status: createForm.status,
+        branchUsername: createForm.branchUsername,
+        branchPassword: createForm.branchPassword,
+        autoGeneratePassword: createForm.autoGeneratePassword,
+        enabledModules: MODULE_DEFS.reduce((acc, { key }) => {
+          acc[key] = createForm.enabledModules?.[key] !== false
+          return acc
+        }, {}),
       }
-      setModalOpen(false)
-      setModalBranch(null)
+      const res = await api.post('/restaurant/branches', payload, { skipBranchHeader: true })
+      const cred = res.data?.data?.credentials
+      if (cred) setCredentials(cred)
+      toast.success('Branch created')
+      closeModal()
       await reloadBranches()
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to save branch')
@@ -238,7 +550,7 @@ const Branches = () => {
           <h1 className="mt-1 text-3xl font-black text-gray-950 dark:text-gray-100">Branch Management</h1>
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Create, switch, monitor, and protect independent branch operations.</p>
         </div>
-        <Button onClick={() => { setModalBranch(null); setModalOpen(true) }}>
+        <Button onClick={openCreateModal}>
           <FiPlus className="mr-2 h-4 w-4" /> Add branch
         </Button>
       </div>
@@ -335,9 +647,38 @@ const Branches = () => {
         </ul>
       </section>
 
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={modalBranch?._id ? 'Edit branch' : 'Create branch'} size="lg">
+      <Modal isOpen={modalOpen} onClose={closeModal} title={modalBranch?._id ? 'Edit branch' : createStep === 1 ? 'Create branch (1 / 2)' : 'Create branch (2 / 2)'} size="lg">
         <div className="p-6">
-          <BranchForm initial={modalBranch} saving={saving} onClose={() => setModalOpen(false)} onSubmit={saveBranch} />
+          {modalBranch?._id ? (
+            <BranchEditForm
+              initial={modalBranch}
+              saving={saving}
+              onClose={closeModal}
+              onSubmit={saveBranchEdit}
+            />
+          ) : (
+            <CreateBranchWizard
+              form={createForm}
+              setForm={setCreateForm}
+              step={createStep}
+              onStepBack={() => {
+                setCreateStep(1)
+                setOwnerVerifyToken('')
+                setResendCooldown(0)
+                setCreateForm((c) => ({ ...c, ownerOtp: '' }))
+              }}
+              saving={saving}
+              otpSending={otpSending}
+              verifySending={verifySending}
+              resendCooldown={resendCooldown}
+              devOtpHint={devOtpBanner}
+              otpExpiresMinutes={otpExpiryMinutesHint}
+              onRequestOwnerOtp={requestOwnerOtp}
+              onVerifyOtp={verifyOwnerOtp}
+              onSubmitCreate={submitCreateBranch}
+              onClose={closeModal}
+            />
+          )}
         </div>
       </Modal>
 
@@ -346,11 +687,13 @@ const Branches = () => {
           <p className="text-gray-600 dark:text-gray-300">Share these credentials with the branch manager. The password is shown only once.</p>
           {credentials && (
             <div className="rounded-xl bg-surface-50 p-4 font-mono text-xs dark:bg-gray-800">
-              <p><span className="font-sans font-bold">Restaurant id:</span> {credentials.restaurantId}</p>
+              <p><span className="font-sans font-bold">Branch owner Gmail:</span> {credentials.ownerEmail || '—'}</p>
+              <p><span className="font-sans font-bold">Restaurant ID (sign-in):</span> {credentials.publicRestaurantId || credentials.restaurantId}</p>
+              <p><span className="font-sans font-bold">Branch login email:</span> {credentials.branchEmail || '—'}</p>
               <p><span className="font-sans font-bold">Branch security key:</span> {credentials.branchPortalKey}</p>
-              <p><span className="font-sans font-bold">Public ID:</span> {credentials.publicBranchId}</p>
+              <p><span className="font-sans font-bold">Public branch ID:</span> {credentials.publicBranchId}</p>
               <p><span className="font-sans font-bold">Branch slug:</span> {credentials.branchSlug}</p>
-              <p><span className="font-sans font-bold">Username:</span> {credentials.username}</p>
+              <p><span className="font-sans font-bold">Local username:</span> {credentials.username}</p>
               <p><span className="font-sans font-bold">Password:</span> {credentials.password}</p>
               <p className="mt-2 break-all font-sans text-gray-500">
                 Sign-in URL:{' '}
