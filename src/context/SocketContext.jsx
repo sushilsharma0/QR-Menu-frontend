@@ -14,6 +14,7 @@ const getLoginPathForCurrentPage = () => {
   if (path.startsWith('/kitchen') || path.startsWith('/cashier') || path.startsWith('/employee')) {
     return '/login?role=employee'
   }
+  if (path.startsWith('/branch')) return '/branch/login'
   if (path.startsWith('/restaurant')) return '/login?role=restaurant'
   if (path.startsWith('/platform')) return '/login?role=platform'
   return '/login'
@@ -48,6 +49,7 @@ export const SocketProvider = ({ children }) => {
   const userId = user?.id
   const userRole = user?.role
   const userScope = user?.scope
+  const branchId = user?.branchId
 
   // Initialize socket connection (depend on stable ids — avoid reconnecting when mergeUser replaces `user`)
   useEffect(() => {
@@ -106,7 +108,10 @@ export const SocketProvider = ({ children }) => {
         if (recipientType) {
           newSocket.emit('join:user', { recipientType, recipientId: userId })
         }
-        if (userRole === 'restaurant') {
+        if (userScope === 'branch_user' && resolvedRestaurantId && branchId) {
+          newSocket.emit('join:restaurant', resolvedRestaurantId)
+          newSocket.emit('join:branch', { restaurantId: resolvedRestaurantId, branchId })
+        } else if (userRole === 'restaurant') {
           newSocket.emit('join:restaurant', userId)
           console.log('Joined restaurant room:', userId)
         } else if (userScope === 'employee') {
@@ -179,7 +184,10 @@ export const SocketProvider = ({ children }) => {
         if (recipientType) {
           newSocket.emit('join:user', { recipientType, recipientId: userId })
         }
-        if (userRole === 'restaurant') {
+        if (userScope === 'branch_user' && resolvedRestaurantId && branchId) {
+          newSocket.emit('join:restaurant', resolvedRestaurantId)
+          newSocket.emit('join:branch', { restaurantId: resolvedRestaurantId, branchId })
+        } else if (userRole === 'restaurant') {
           newSocket.emit('join:restaurant', userId)
         } else if (userScope === 'employee') {
           if (resolvedRestaurantId) {
@@ -224,7 +232,7 @@ export const SocketProvider = ({ children }) => {
         newSocket.disconnect()
       }
     }
-  }, [userId, userRole, userScope, token, isAuthenticated, socketOrigin, resolvedRestaurantId])
+  }, [userId, userRole, userScope, branchId, token, isAuthenticated, socketOrigin, resolvedRestaurantId])
 
   // Join a specific room
   const joinRoom = useCallback((roomName, roomId) => {

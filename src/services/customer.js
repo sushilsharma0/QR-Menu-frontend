@@ -7,8 +7,10 @@ const CART_COUNT_STORAGE_KEY = 'customer_cart_count_v1'
 const ORDER_TOKENS_STORAGE_KEY = 'customer_order_tokens_v1'
 
 // Public Menu
-export const getRestaurantMenu = async (restaurantSlug) => {
-  const response = await api.get(`/restaurant/menu/public/${restaurantSlug}`)
+export const getRestaurantMenu = async (restaurantSlug, qrToken = null) => {
+  const response = await api.get(`/restaurant/menu/public/${restaurantSlug}`, {
+    params: qrToken ? { qrToken } : {},
+  })
   return response.data
 }
 
@@ -366,6 +368,7 @@ const cleanText = (value) => {
 }
 
 // Helper functions for customer flow
+<<<<<<< HEAD
 export const getRestaurantInfo = async (restaurantSlug) => {
   // Public menu gives base fields; public profile gives the admin-managed
   // About fields (tagline, gallery, hours…). We merge both so the customer
@@ -376,6 +379,10 @@ export const getRestaurantInfo = async (restaurantSlug) => {
   ])
   const menuRestaurant = menuRes?.data?.restaurant || {}
   const about = profile?.about || {}
+=======
+export const getRestaurantInfo = async (restaurantSlug, qrToken = null) => {
+  const menu = await getRestaurantMenu(restaurantSlug, qrToken)
+>>>>>>> d0d4d9d0e5ddc22de7ed601f0d54b7f39ce48965
   return {
     id: menuRestaurant.id || profile?.id,
     name: menuRestaurant.name || profile?.name,
@@ -389,13 +396,13 @@ export const getRestaurantInfo = async (restaurantSlug) => {
   }
 }
 
-export const getCategories = async (restaurantSlug) => {
-  const menu = await getRestaurantMenu(restaurantSlug)
+export const getCategories = async (restaurantSlug, qrToken = null) => {
+  const menu = await getRestaurantMenu(restaurantSlug, qrToken)
   return menu.data.menu || []
 }
 
-export const getAllItems = async (restaurantSlug) => {
-  const menu = await getRestaurantMenu(restaurantSlug)
+export const getAllItems = async (restaurantSlug, qrToken = null) => {
+  const menu = await getRestaurantMenu(restaurantSlug, qrToken)
   const allItems = []
   menu.data.menu?.forEach(category => {
     category.items?.forEach(item => {
@@ -409,8 +416,8 @@ export const getAllItems = async (restaurantSlug) => {
   return allItems
 }
 
-export const getItemsByCategory = async (restaurantSlug, categoryId) => {
-  const menu = await getRestaurantMenu(restaurantSlug)
+export const getItemsByCategory = async (restaurantSlug, categoryId, qrToken = null) => {
+  const menu = await getRestaurantMenu(restaurantSlug, qrToken)
   const category = menu.data.menu?.find(cat => cat._id === categoryId)
   return category?.items || []
 }

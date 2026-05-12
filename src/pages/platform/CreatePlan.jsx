@@ -32,6 +32,8 @@ const CreatePlan = () => {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [billing, setBilling] = useState(null)
+  const [featureOptions, setFeatureOptions] = useState([])
+  const [selectedFeatureFlags, setSelectedFeatureFlags] = useState({})
   const [limitState, setLimitState] = useState({
     maxTables: { selectValue: '0', customValue: '' },
     maxEmployees: { selectValue: '0', customValue: '' },
@@ -45,6 +47,24 @@ const CreatePlan = () => {
     api.get('/platform/billing/settings')
       .then((res) => setBilling(res.data.data))
       .catch(() => setBilling(null))
+  }, [])
+
+  useEffect(() => {
+    api.get('/platform/subscriptions/plan-feature-options')
+      .then((res) => {
+        const options = res.data?.data?.features || []
+        setFeatureOptions(options)
+        setSelectedFeatureFlags((prev) => {
+          const next = {}
+          options.forEach((opt) => {
+            next[opt.key] = prev[opt.key] !== false
+          })
+          return next
+        })
+      })
+      .catch(() => {
+        setFeatureOptions([])
+      })
   }, [])
 
   const pricePreview = useMemo(() => {
@@ -93,6 +113,8 @@ const CreatePlan = () => {
       })
       setLimitState(nextLimitState)
       setValue('isPopular', plan.isPopular)
+      const incomingFlags = plan.featureFlags && typeof plan.featureFlags === 'object' ? plan.featureFlags : {}
+      setSelectedFeatureFlags((prev) => ({ ...prev, ...incomingFlags }))
       plan.features?.forEach(f => append({ feature: f }))
     } catch (error) {
       toast.error('Failed to fetch plan')
@@ -121,6 +143,7 @@ const CreatePlan = () => {
       const payload = {
         ...data,
         limits,
+        featureFlags: selectedFeatureFlags,
         features: data.features?.map(f => f.feature).filter(Boolean) || [],
       }
       if (id) {
@@ -151,7 +174,13 @@ const CreatePlan = () => {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <PlatformMetric label="Pricing" value={pricePreview ? `${pricePreview.sym}${pricePreview.total.toFixed(2)}` : 'Set price'} sub="Grand total incl. VAT" icon={FiCreditCard} accent="from-blue-500 to-indigo-500" />
         <PlatformMetric label="Limits" value={LIMIT_KEYS.length} sub="Restaurant resources" icon={FiSliders} accent="from-emerald-500 to-teal-500" />
-        <PlatformMetric label="Features" value={fields.length} sub="Plan selling points" icon={FiList} accent="from-amber-500 to-orange-500" />
+        <PlatformMetric
+          label="Features"
+          value={Object.values(selectedFeatureFlags).filter(Boolean).length}
+          sub="Enabled platform features"
+          icon={FiList}
+          accent="from-amber-500 to-orange-500"
+        />
       </div>
 
       <Card title="Plan Builder" icon={FiCreditCard}>
@@ -252,6 +281,36 @@ const CreatePlan = () => {
               ))}
             </div>
             <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Set to Unlimited when you do not want to restrict that resource.</p>
+          </div>
+
+          <div className="border-t border-gray-200 pt-4 dark:border-gray-800">
+            <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-900 dark:text-gray-100"><FiCheckCircle /> Restaurant platform feature access</h3>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {featureOptions.map((opt) => (
+                <label key={opt.key} className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800">
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedFeatureFlags[opt.key] !== false}
+                      onChange={(e) =>
+                        setSelectedFeatureFlags((prev) => ({
+                          ...prev,
+                          [opt.key]: e.target.checked,
+                        }))
+                      }
+                      className="mt-1"
+                    />
+                    <span>
+                      <span className="block font-semibold text-gray-900 dark:text-gray-100">{opt.label}</span>
+                      <span className="block text-xs text-gray-500 dark:text-gray-400">{opt.description}</span>
+                    </span>
+                  </div>
+                </label>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              These toggles decide which restaurant modules are included in this subscription plan.
+            </p>
           </div>
 
           <div className="border-t border-gray-200 pt-4 dark:border-gray-800">

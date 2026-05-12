@@ -2,8 +2,24 @@ import axios from 'axios'
 import toast from 'react-hot-toast'
 import { getAuthToken, clearAuthSession } from '../utils/authStorage'
 import { getApiBaseUrl } from '../utils/runtimeConfig'
+import { getSelectedBranchId } from '../utils/branchStorage'
 
 const API_URL = getApiBaseUrl()
+const FEATURE_LABELS = {
+  menu: 'Menu & categories',
+  orders: 'Order management',
+  customerOrders: 'QR / customer orders',
+  tables: 'Tables & QR codes',
+  employees: 'Employees',
+  promotions: 'Promotions',
+  branches: 'Branch management',
+  cashier: 'Cashier & payments',
+  analytics: 'Dashboard analytics',
+  billing: 'Subscription billing',
+  activityLogs: 'Activity logs',
+  supportTickets: 'Support tickets',
+  accountSettings: 'Account settings',
+}
 
 const api = axios.create({
   baseURL: API_URL,
@@ -16,6 +32,10 @@ api.interceptors.request.use(
     const token = getAuthToken()
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+    }
+    const branchId = !config.skipBranchHeader && getSelectedBranchId()
+    if (branchId) {
+      config.headers['X-Branch-Id'] = branchId
     }
     // Don't set Content-Type for FormData - let browser set it with boundary
     if (config.data instanceof FormData) {
@@ -37,7 +57,8 @@ api.interceptors.response.use(
     const isLoginRequest =
       requestUrl.includes('/platform/auth/login') ||
       requestUrl.includes('/restaurant/auth/login') ||
-      requestUrl.includes('/restaurant/employees/login')
+      requestUrl.includes('/restaurant/employees/login') ||
+      requestUrl.includes('/restaurant/branch-auth/login')
     const shouldSkipToast = Boolean(error.config?.skipErrorToast)
 
     if (status === 401 && !isLoginRequest) {
@@ -60,6 +81,9 @@ api.interceptors.response.use(
           path.startsWith('/employee')
         ) {
           qs = '?role=employee'
+        } else if (path.startsWith('/branch')) {
+          window.location.href = '/branch/login'
+          return Promise.reject(error)
         } else if (path.startsWith('/restaurant')) {
           qs = '?role=restaurant'
         } else if (path.startsWith('/platform')) {
@@ -86,6 +110,15 @@ api.interceptors.response.use(
     if (status === 403 && errorCode === 'KYC_REQUIRED') {
       if (!shouldSkipToast) {
         toast.error(message || 'Complete KYC verification to use this action.')
+        error.__toastShown = true
+      }
+      return Promise.reject(error)
+    }
+    if (status === 403 && errorCode === 'PLAN_FEATURE_DISABLED') {
+      if (!shouldSkipToast) {
+        const featureKey = error.response?.data?.errors?.feature
+        const featureLabel = FEATURE_LABELS[featureKey] || 'This feature'
+        toast.error(`${featureLabel} is not included in your subscription. Contact super admin.`)
         error.__toastShown = true
       }
       return Promise.reject(error)
@@ -131,6 +164,9 @@ export const updateRestaurantProfile = (data) =>
 
 export const changeRestaurantPassword = (data) => 
   api.post('/restaurant/auth/change-password', data)
+
+export const verifyRestaurantPassword = (password) =>
+  api.post('/restaurant/auth/verify-password', { password })
 
 // Employee Auth
 export const employeeLogin = (username, password, restaurantId) => 

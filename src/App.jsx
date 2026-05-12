@@ -50,6 +50,8 @@ import RestaurantCreditCustomers from "./pages/restaurant/CreditCustomers";
 import RestaurantProfile from "./pages/restaurant/Profile";
 import RestaurantPublicProfile from "./pages/restaurant/PublicProfile";
 import RestaurantPromotions from "./pages/restaurant/Promotions";
+import RestaurantBranches from "./pages/restaurant/Branches";
+import BranchLogin from "./pages/branch/BranchLogin";
 import RestaurantSystemLogs from "./pages/restaurant/SystemLogs";
 import RestaurantTickets from "./pages/restaurant/Tickets";
 import RestaurantTicketDetail from "./pages/restaurant/TicketDetail";
@@ -99,6 +101,7 @@ import CustomerCreditApply from "./pages/customer/CreditApply";
 // Layouts
 import PlatformLayout from "./components/platform/PlatformLayout";
 import RestaurantLayout from "./components/restaurant/RestaurantLayout";
+import BranchLayout from "./components/branch/BranchLayout";
 import EmployeeLayout from "./components/employee/EmployeeLayout";
 import { defaultPortalPathForUser, getTenantSegments } from "./utils/tenantPaths";
 import LandingPage from "./pages/LandingPage";
@@ -138,6 +141,8 @@ function App() {
       <Route path="/vendor/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/branch/login" element={<BranchLogin />} />
+      <Route path="/branch/:restaurantId/:portalKey/:branchSlug/login" element={<BranchLogin />} />
 
       {/* Platform Routes */}
       <Route element={<PlatformLayout />}>
@@ -200,6 +205,7 @@ function App() {
         <Route path="subscription/invoice/:invoiceId" element={<RestaurantSubscriptionInvoiceDetail />} />
         <Route path="transactions" element={<Navigate to="../orders/activity" replace />} />
         <Route path="promotions" element={<RestaurantPromotions />} />
+        <Route path="branches" element={<RestaurantBranches />} />
         <Route path="credit-customers" element={<RestaurantCreditCustomers />} />
         <Route path="tickets" element={<RestaurantTickets />} />
         <Route path="tickets/create" element={<RestaurantTicketDetail />} />
@@ -214,6 +220,47 @@ function App() {
         <Route path="finance/budget" element={<FinanceBudget />} />
         <Route path="settings" element={<RestaurantSettings />} />
         <Route path="public-profile" element={<RestaurantPublicProfile />} />
+        <Route path="profile" element={<RestaurantProfile />} />
+        <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="pos" element={<PosLayout />}>
+          <Route index element={<PosMain />} />
+          <Route path="orders" element={<PosOrdersList />} />
+          <Route path="billing" element={<PosBilling />} />
+          <Route path="history" element={<PosHistory />} />
+          <Route path="returns" element={<PosReturns />} />
+          <Route path="shift" element={<PosShift />} />
+          <Route path="reports" element={<PosReports />} />
+        </Route>
+      </Route>
+
+      {/* Branch portal: /branch/:restaurantId/:portalKey/:branchSlug/... */}
+      <Route path="/branch/:restaurantId/:portalKey/:branchSlug" element={<BranchLayout />}>
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<RestaurantDashboard />} />
+        <Route path="menu" element={<RestaurantMenu />} />
+        <Route path="menu/category/new" element={<RestaurantCategoryForm />} />
+        <Route path="menu/category/:id/edit" element={<RestaurantCategoryForm />} />
+        <Route path="menu/item/new" element={<RestaurantMenuItemForm />} />
+        <Route path="menu/item/:id/edit" element={<RestaurantMenuItemForm />} />
+        <Route path="orders" element={<RestaurantOrders />} />
+        <Route path="orders/new" element={<RestaurantCreateOrder />} />
+        <Route path="orders/activity" element={<RestaurantOrderActivityReport />} />
+        <Route path="orders/:id" element={<RestaurantOrderDetail />} />
+        <Route path="tables" element={<RestaurantTables />} />
+        <Route path="tables/new" element={<RestaurantTableForm />} />
+        <Route path="tables/:id/edit" element={<RestaurantTableForm />} />
+        <Route path="employees" element={<RestaurantEmployees />} />
+        <Route path="employees/new" element={<RestaurantEmployeeForm />} />
+        <Route path="employees/:id/edit" element={<RestaurantEmployeeForm />} />
+        <Route path="promotions" element={<RestaurantPromotions />} />
+        <Route path="credit-customers" element={<RestaurantCreditCustomers />} />
+        <Route path="finance/dashboard" element={<FinanceDashboard />} />
+        <Route path="finance/expenses" element={<FinanceExpenses />} />
+        <Route path="finance/profit-loss" element={<FinanceProfitLoss />} />
+        <Route path="finance/payroll" element={<FinancePayroll />} />
+        <Route path="finance/invoices" element={<FinanceInvoices />} />
+        <Route path="finance/inventory" element={<FinanceInventory />} />
+        <Route path="finance/budget" element={<FinanceBudget />} />
         <Route path="profile" element={<RestaurantProfile />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="pos" element={<PosLayout />}>
@@ -289,6 +336,8 @@ function App() {
             <Navigate to="/login" />
           ) : isEmployeeUser && user.mustChangePassword ? (
             <Navigate to="/employee/change-password" />
+          ) : user?.scope === "branch_user" && user?.branchSlug ? (
+            <Navigate to={defaultPortalPathForUser(user)} replace />
           ) : isEmployeeUser && userSlug != null && userRestaurantId != null ? (
             <Navigate to={defaultPortalPathForUser(user)} replace />
           ) : user.role === "super_admin" || user.role === "admin" ? (

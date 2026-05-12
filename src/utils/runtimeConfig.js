@@ -13,7 +13,16 @@
  */
 export function getApiBaseUrl() {
   const v = import.meta.env.VITE_API_URL
-  if (v !== undefined && v !== null && String(v).trim() !== '') return v
+  if (v !== undefined && v !== null && String(v).trim() !== '') {
+    const raw = String(v).trim()
+    // Guard against malformed values like ":5000/api"
+    if (raw.startsWith(':') && typeof window !== 'undefined') {
+      const protocol = window.location.protocol || 'http:'
+      const hostname = window.location.hostname || 'localhost'
+      return `${protocol}//${hostname}${raw}`
+    }
+    return raw
+  }
   return '/api'
 }
 

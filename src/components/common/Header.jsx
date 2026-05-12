@@ -4,19 +4,31 @@ import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { useAuth } from '../../hooks/useAuth'
-import { FiChevronDown, FiLogOut, FiMail, FiMoon, FiSettings, FiSun, FiUser, FiZap } from 'react-icons/fi'
+import { FiCheck, FiChevronDown, FiLock, FiLogOut, FiMail, FiMoon, FiSettings, FiSun, FiUser, FiZap } from 'react-icons/fi'
 import NotificationMenu from './NotificationMenu'
 import { useTheme } from '../../context/ThemeContext'
-import { getTenantSegments, restaurantPortalBase } from '../../utils/tenantPaths'
+import { getTenantSegments, restaurantPortalBase, branchPortalBase } from '../../utils/tenantPaths'
+import { useBranch } from '../../context/BranchContext'
+import { verifyRestaurantPassword } from '../../services/api'
 
 const Header = () => {
   const { user, logout } = useAuth()
   const { isDark, toggleTheme } = useTheme()
+  const { activeBranches, selectedBranchId, setSelectedBranchId, canSwitchBranches, selectedBranch } = useBranch()
   const [profileOpen, setProfileOpen] = useState(false)
   const [confirmLogout, setConfirmLogout] = useState(false)
+  const [confirmBranchSwitch, setConfirmBranchSwitch] = useState(false)
+  const [branchTargetId, setBranchTargetId] = useState('')
+  const [branchPassword, setBranchPassword] = useState('')
+  const [switchingBranch, setSwitchingBranch] = useState(false)
+  const [branchMenuOpen, setBranchMenuOpen] = useState(false)
   const profileRef = useRef(null)
+  const branchMenuRef = useRef(null)
   const { slug, restaurantId } = getTenantSegments(user)
-  const restaurantBase = restaurantPortalBase(slug, restaurantId)
+  const portalBase =
+    user?.scope === 'branch_user'
+      ? branchPortalBase(user?.restaurantId, user?.branchPortalKey, user?.branchSlug)
+      : restaurantPortalBase(slug, restaurantId)
   const profileImage = user?.logo || user?.profilePhoto
   const restaurantBillingLocked =
     user?.role === 'restaurant' && user?.scope !== 'employee' && user?.needsPlanUpgrade === true
@@ -38,23 +50,29 @@ const Header = () => {
   const loginRoleAfterLogout = () => {
     if (user?.role === 'super_admin' || user?.role === 'admin') return 'platform'
     if (user?.scope === 'employee') return 'employee'
+    if (user?.scope === 'branch_user') return 'branch'
     if (user?.role === 'restaurant') return 'restaurant'
     return undefined
   }
 
   const roleLabel =
-    user?.scope === 'employee'
-      ? user?.role
-      : user?.role === 'super_admin'
-        ? 'Super Admin'
-        : user?.role === 'admin'
-          ? 'Platform Admin'
-          : user?.role || 'User'
+    user?.scope === 'branch_user'
+      ? String(user?.role || '').replace(/_/g, ' ')
+      : user?.scope === 'employee'
+        ? user?.role
+        : user?.role === 'super_admin'
+          ? 'Super Admin'
+          : user?.role === 'admin'
+            ? 'Platform Admin'
+            : user?.role || 'User'
 
   useEffect(() => {
     const handleClick = (event) => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
         setProfileOpen(false)
+      }
+      if (branchMenuRef.current && !branchMenuRef.current.contains(event.target)) {
+        setBranchMenuOpen(false)
       }
     }
 
@@ -66,6 +84,34 @@ const Header = () => {
     setConfirmLogout(false)
     setProfileOpen(false)
     logout({ loginRole: loginRoleAfterLogout() })
+  }
+
+  const openBranchSwitchModal = (nextBranchId) => {
+    if (!nextBranchId || String(nextBranchId) === String(selectedBranchId)) return
+    setBranchTargetId(String(nextBranchId))
+    setBranchPassword('')
+    setConfirmBranchSwitch(true)
+  }
+
+  const handleConfirmBranchSwitch = async () => {
+    if (!branchTargetId) return
+    if (!branchPassword) {
+      toast.error('Enter your password to switch branch.')
+      return
+    }
+    try {
+      setSwitchingBranch(true)
+      await verifyRestaurantPassword(branchPassword)
+      setSelectedBranchId(branchTargetId)
+      window.dispatchEvent(new CustomEvent('branch:changed', { detail: { branchId: branchTargetId } }))
+      setConfirmBranchSwitch(false)
+      setBranchMenuOpen(false)
+      window.location.reload()
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Incorrect password')
+    } finally {
+      setSwitchingBranch(false)
+    }
   }
 
   const avatar = (
@@ -101,6 +147,61 @@ const Header = () => {
         </div>
         
         <div className="flex items-center justify-between gap-3 lg:justify-end">
+          {(canSwitchBranches || selectedBranch) && (
+            <div className="min-w-0" ref={branchMenuRef}>
+              {canSwitchBranches ? (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setBranchMenuOpen((prev) => !prev)}
+                    className="group flex h-10 min-w-[170px] max-w-[240px] items-center justify-between gap-2 rounded-xl border border-primary-200 bg-gradient-to-r from-white to-primary-50 px-3 text-sm font-bold text-gray-800 shadow-sm transition hover:border-primary-300 hover:shadow-md dark:border-gray-700 dark:from-gray-900 dark:to-gray-800 dark:text-gray-100"
+                    aria-expanded={branchMenuOpen}
+                    aria-label="Select branch"
+                  >
+                    <span className="truncate">{selectedBranch?.name || 'Select branch'}</span>
+                    <FiChevronDown className={`h-4 w-4 text-primary-600 transition ${branchMenuOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  <AnimatePresence>
+                    {branchMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 z-40 mt-2 w-[240px] overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900"
+                      >
+                        <div className="max-h-64 overflow-y-auto p-1.5">
+                          {activeBranches.map((branch) => {
+                            const isSelected = String(selectedBranchId) === String(branch._id)
+                            return (
+                              <button
+                                key={branch._id}
+                                type="button"
+                                onClick={() => openBranchSwitchModal(branch._id)}
+                                className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${
+                                  isSelected
+                                    ? 'bg-primary-600 text-white'
+                                    : 'text-gray-700 hover:bg-primary-50 hover:text-primary-700 dark:text-gray-200 dark:hover:bg-gray-800'
+                                }`}
+                              >
+                                <span className="truncate">{branch.name}</span>
+                                {isSelected && <FiCheck className="h-4 w-4" />}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div className="max-w-[220px] truncate rounded-xl border border-surface-200 bg-white px-3 py-2 text-sm font-bold text-gray-700 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
+                  {selectedBranch?.name || 'Assigned branch'}
+                </div>
+              )}
+            </div>
+          )}
           <button
             onClick={toggleTheme}
             className="flex h-10 w-10 items-center justify-center rounded-xl border border-surface-200 bg-white text-primary-700 shadow-sm transition hover:bg-surface-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
@@ -151,10 +252,10 @@ const Header = () => {
                     </div>
                   </div>
                   <div className="grid gap-1 p-2">
-                    {user?.role === 'restaurant' && restaurantBase && (
+                    {user?.role === 'restaurant' && portalBase && (
                       <>
                         <Link
-                          to={`${restaurantBase}/settings`}
+                          to={`${portalBase}/settings`}
                           onClick={(e) => {
                             if (restaurantBillingLocked) {
                               e.preventDefault()
@@ -174,7 +275,7 @@ const Header = () => {
                           Restaurant settings
                         </Link>
                         <Link
-                          to={`${restaurantBase}/profile`}
+                          to={`${portalBase}/profile`}
                           onClick={(e) => {
                             if (restaurantBillingLocked) {
                               e.preventDefault()
@@ -194,6 +295,16 @@ const Header = () => {
                           Account security
                         </Link>
                       </>
+                    )}
+                    {user?.scope === 'branch_user' && portalBase && (
+                      <Link
+                        to={`${portalBase}/profile`}
+                        onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold text-gray-700 transition hover:bg-surface-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                      >
+                        <FiUser className="h-4 w-4 text-primary-600 dark:text-primary-300" />
+                        Branch profile
+                      </Link>
                     )}
                     <button
                       type="button"
@@ -254,6 +365,56 @@ const Header = () => {
                       className="rounded-2xl bg-red-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-red-900/20 transition hover:bg-red-700"
                     >
                       Logout
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+            {confirmBranchSwitch && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[9999] grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm"
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 20, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 20, scale: 0.96 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  className="w-full max-w-[420px] rounded-3xl border border-white/80 bg-white p-6 text-center shadow-2xl shadow-slate-950/25 dark:border-gray-800 dark:bg-gray-900"
+                >
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-amber-50 text-amber-700 ring-8 ring-amber-50/70 dark:bg-amber-900/30 dark:text-amber-200 dark:ring-amber-900/20">
+                    <FiLock className="h-7 w-7" />
+                  </div>
+                  <h3 className="mt-6 text-2xl font-black tracking-tight text-gray-950 dark:text-gray-100">
+                    Confirm branch switch
+                  </h3>
+                  <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-gray-500 dark:text-gray-400">
+                    Enter your restaurant password to switch to another branch.
+                  </p>
+                  <input
+                    type="password"
+                    value={branchPassword}
+                    onChange={(e) => setBranchPassword(e.target.value)}
+                    placeholder="Restaurant password"
+                    className="mt-5 w-full rounded-2xl border border-surface-200 bg-white px-4 py-3 text-sm font-semibold text-gray-800 outline-none focus:border-primary-300 focus:ring-2 focus:ring-primary-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                  />
+                  <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmBranchSwitch(false)}
+                      className="rounded-2xl border border-surface-200 bg-white px-5 py-3 text-sm font-black text-gray-700 transition hover:bg-surface-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={switchingBranch}
+                      onClick={handleConfirmBranchSwitch}
+                      className="rounded-2xl bg-primary-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-primary-900/20 transition hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {switchingBranch ? 'Verifying...' : 'Switch branch'}
                     </button>
                   </div>
                 </motion.div>
