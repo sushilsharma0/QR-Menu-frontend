@@ -143,7 +143,7 @@ export default function Home() {
   const fetchPromoBanners = async () => {
     try {
       if (!slug) return;
-      const res = await api.get(`/customer/promotions/${slug}/banners`);
+      const res = await api.get(`/customer/offers/${slug}`);
       const promos = res?.data?.data || [];
       setPromoBanners(promos);
       if (!promoModalShown && promos.length > 0) {

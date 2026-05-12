@@ -104,9 +104,9 @@ const EmployeeLayout = () => {
   }, [socket, user?.role])
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
+    <div className={`employee-portal ${isPosRoute ? 'h-screen overflow-hidden' : 'min-h-screen'} flex flex-col bg-gray-50 dark:bg-gray-950`}>
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
+      {!isPosRoute && <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
         <div className="mx-auto w-full max-w-[1920px] px-3 sm:px-5 lg:px-8">
           <div className="flex h-14 items-center justify-between sm:h-16">
             {/* Logo */}
@@ -163,7 +163,7 @@ const EmployeeLayout = () => {
             </div>
           </div>
         </div>
-      </header>
+      </header>}
 
       {/* Navigation Tabs */}
       {!isPosRoute && currentNavItems.length > 0 && (

@@ -157,7 +157,7 @@ const policySections = [
   },
 ];
 
-export default function PrivacyPolicy() {
+export default function CustomerDataNotice() {
   const { slug, token } = useParams();
   const homePath = slug && token ? `/home/${slug}/${token}` : "/";
 

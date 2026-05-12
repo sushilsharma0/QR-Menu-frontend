@@ -43,6 +43,25 @@ export default function PosLayout() {
   }, [])
 
   useEffect(() => {
+    if (!socket) return undefined
+    let alive = true
+    const refreshMeta = () => {
+      fetchPosMeta()
+        .then((d) => {
+          if (alive) setMeta(d)
+        })
+        .catch(() => {})
+    }
+    socket.on('pos:shift_opened', refreshMeta)
+    socket.on('pos:shift_closed', refreshMeta)
+    return () => {
+      alive = false
+      socket.off('pos:shift_opened', refreshMeta)
+      socket.off('pos:shift_closed', refreshMeta)
+    }
+  }, [socket])
+
+  useEffect(() => {
     const rid = user?.restaurantId ?? user?.id
     if (!socket || !rid) return undefined
     socket.emit('join:restaurant', String(rid))
@@ -132,45 +151,45 @@ export default function PosLayout() {
   return (
     <div className="flex h-full min-h-0 flex-col bg-surface-50">
       <header className="shrink-0 border-b border-primary-900/10 bg-[#210b02] text-white shadow-[0_18px_45px_-28px_rgba(57,16,0,0.8)]">
-        <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-5">
-          <div className="flex min-w-0 items-center gap-3">
-            <button
-              type="button"
-              onClick={() => navigate(dashboardTo)}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40"
-              aria-label="Go to dashboard"
-              title="Dashboard"
-            >
-              <FiArrowLeft className="h-5 w-5" />
-            </button>
-            <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-white/80">
-                <FiCoffee className="h-3.5 w-3.5" />
-                POS Terminal
+        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-2 gap-y-2 px-2.5 py-2.5 sm:gap-x-3 sm:px-5 sm:py-3">
+          <button
+            type="button"
+            onClick={() => navigate(dashboardTo)}
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 sm:h-11 sm:w-11"
+            aria-label="Go to dashboard"
+            title="Dashboard"
+          >
+            <FiArrowLeft className="h-5 w-5" />
+          </button>
+
+          <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-1.5 overflow-hidden sm:gap-2">
+              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-white/80 sm:px-3 sm:py-1 sm:text-[11px]">
+                <FiCoffee className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                POS
               </span>
               <span
-                className={`rounded-full px-3 py-1 text-xs font-bold ${
+                className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold sm:px-3 sm:py-1 sm:text-xs ${
                   meta?.shift ? 'bg-emerald-400 text-emerald-950' : 'bg-white/15 text-white'
                 }`}
               >
                 {meta?.shift ? 'Shift open' : 'No shift'}
               </span>
             </div>
-            <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1">
-              <h1 className="truncate text-xl font-black leading-none sm:text-2xl">
-                {meta?.restaurant?.name || 'POS'}
-              </h1>
-              <span className="text-sm text-white/70">{user?.name}</span>
-              <span className="text-sm text-white/70">Tables active: {meta?.activeTables ?? '-'}</span>
+            <h1 className="mt-1 min-w-0 truncate text-base font-black leading-tight sm:text-2xl">
+              {meta?.restaurant?.name || 'POS'}
+            </h1>
+            <div className="mt-0.5 flex min-w-0 items-center gap-1.5 overflow-hidden text-[11px] text-white/70 sm:text-sm">
+              <span className="min-w-0 truncate">{user?.name}</span>
+              <span className="shrink-0">Tables: {meta?.activeTables ?? '-'}</span>
             </div>
           </div>
-          </div>
-          <div className="flex items-center gap-3">
+
+          <div className="flex min-w-0 items-center justify-end gap-1.5 sm:gap-3">
             <button
               type="button"
               onClick={toggleTheme}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-amber-200 bg-white text-[#6b3a13] shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-300"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-200 bg-white text-[#6b3a13] shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-300 sm:h-11 sm:w-11"
               title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
               aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
             >
@@ -181,17 +200,17 @@ export default function PosLayout() {
               <button
                 type="button"
                 onClick={() => setProfileOpen((current) => !current)}
-                className="inline-flex min-h-14 items-center gap-3 rounded-2xl border-2 border-gray-950 bg-white px-3 py-2 text-left text-gray-950 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-300"
+                className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-2xl border-2 border-gray-950 bg-white px-1.5 py-1.5 text-left text-gray-950 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-300 sm:min-h-14 sm:gap-3 sm:px-3 sm:py-2"
                 title={displayName}
                 aria-expanded={profileOpen}
                 aria-label="Open profile menu"
               >
                 {avatar}
-                <span className="hidden min-w-0 sm:block">
+                <span className="hidden min-w-0 md:block">
                   <span className="block max-w-40 truncate text-sm font-black">{displayName}</span>
                   <span className="block max-w-40 truncate text-xs text-gray-500">{displayEmail}</span>
                 </span>
-                <FiChevronDown className={`h-4 w-4 text-gray-400 transition ${profileOpen ? 'rotate-180' : ''}`} />
+                <FiChevronDown className={`hidden h-4 w-4 text-gray-400 transition min-[380px]:block ${profileOpen ? 'rotate-180' : ''}`} />
               </button>
 
               <AnimatePresence>
@@ -201,7 +220,7 @@ export default function PosLayout() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -8, scale: 0.98 }}
                     transition={{ duration: 0.18 }}
-                    className="absolute right-0 z-40 mt-3 w-[310px] overflow-hidden rounded-3xl border border-amber-200 bg-white text-gray-950 shadow-2xl shadow-slate-950/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                    className="absolute right-0 z-40 mt-3 w-[min(310px,calc(100vw-1.5rem))] overflow-hidden rounded-3xl border border-amber-200 bg-white text-gray-950 shadow-2xl shadow-slate-950/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                   >
                     <div className="p-4">
                       <div className="flex items-center gap-3">
@@ -253,12 +272,12 @@ export default function PosLayout() {
         </div>
       </header>
 
-      <nav className="flex shrink-0 gap-2 overflow-x-auto border-b border-surface-200 bg-white px-3 py-2 shadow-sm">
+      <nav className="scrollbar-hide flex shrink-0 gap-1.5 overflow-x-auto border-b border-surface-200 bg-white px-2 py-2 shadow-sm sm:gap-2 sm:px-3">
         {tabs.map(({ to, end, label, icon: Icon }) => (
           !hasOpenShift && metaLoaded && to !== shiftPath ? (
             <span
               key={to}
-              className="flex shrink-0 cursor-not-allowed items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-gray-300 sm:text-sm"
+              className="flex shrink-0 cursor-not-allowed items-center gap-1.5 rounded-xl px-2.5 py-2 text-xs font-semibold text-gray-300 sm:px-3 sm:text-sm"
               title="Open a shift first"
             >
               <Icon className="h-4 w-4" />
@@ -270,7 +289,7 @@ export default function PosLayout() {
               to={to}
               end={end}
               className={({ isActive }) =>
-                `flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all sm:text-sm ${
+                `flex shrink-0 items-center gap-1.5 rounded-xl px-2.5 py-2 text-xs font-semibold transition-all sm:px-3 sm:text-sm ${
                   isActive
                     ? 'bg-primary-600 text-white shadow-sm'
                     : 'text-gray-600 hover:bg-surface-100 hover:text-primary-700'
@@ -285,30 +304,30 @@ export default function PosLayout() {
       </nav>
 
       <motion.div
-        className="min-h-0 flex-1 overflow-hidden bg-surface-50"
+        className="min-h-0 flex-1 overflow-y-auto bg-surface-50"
         initial={{ opacity: 0.96 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.2 }}
       >
         {posLocked ? (
-          <div className="flex h-full items-center justify-center p-6">
-            <div className="w-full max-w-xl rounded-3xl border border-amber-200 bg-white p-8 text-center shadow-sm">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-50 text-primary-700">
-                <FiLayers className="h-6 w-6" />
+          <div className="flex min-h-full items-center justify-center px-4 py-5 sm:p-6">
+            <div className="w-full max-w-xl rounded-3xl border border-amber-200 bg-white px-5 py-7 text-center shadow-sm sm:p-8">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-50 text-primary-700 sm:h-16 sm:w-16">
+                <FiLayers className="h-6 w-6 sm:h-7 sm:w-7" />
               </div>
-              <h2 className="mt-5 text-2xl font-black text-gray-950">Open a shift first</h2>
-              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-500">
+              <h2 className="mt-5 text-xl font-black text-gray-950 sm:text-2xl">Open a shift first</h2>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-500 sm:text-base sm:leading-7">
                 POS register, orders, billing, returns, reports, and saved carts are locked until a cashier or manager opens the current shift.
               </p>
               {canShift ? (
                 <Link
                   to={shiftPath}
-                  className="mt-6 inline-flex items-center justify-center rounded-xl bg-primary-600 px-5 py-3 text-sm font-black text-white transition hover:bg-primary-700"
+                  className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-primary-600 px-5 py-3 text-sm font-black text-white transition hover:bg-primary-700 sm:w-auto"
                 >
                   Go to Shift
                 </Link>
               ) : (
-                <p className="mt-6 rounded-2xl bg-surface-50 px-4 py-3 text-sm font-bold text-gray-600">
+                <p className="mt-6 rounded-2xl bg-surface-50 px-4 py-3 text-sm font-bold leading-6 text-gray-600">
                   Ask a cashier, manager, or owner to open the shift.
                 </p>
               )}

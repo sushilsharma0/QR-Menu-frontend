@@ -211,6 +211,112 @@
   .dark .restaurant-portal table tbody {
     background-color: rgb(17 24 39 / 1);
   }
+
+  /*
+    Employee routes reuse many restaurant/POS surfaces but are mounted outside
+    .restaurant-portal. Keep waiter dashboard/POS visually consistent in dark
+    mode without touching public customer pages.
+  */
+  .dark .employee-portal .bg-white,
+  .dark .employee-portal .bg-white\/70,
+  .dark .employee-portal .bg-white\/80,
+  .dark .employee-portal .bg-white\/90,
+  .dark .employee-portal .bg-white\/95 {
+    background-color: rgb(17 24 39 / 1);
+  }
+
+  .dark .employee-portal .bg-surface-50,
+  .dark .employee-portal .bg-surface-50\/70,
+  .dark .employee-portal .bg-surface-100,
+  .dark .employee-portal .bg-gray-50,
+  .dark .employee-portal .bg-primary-50,
+  .dark .employee-portal .bg-secondary-50,
+  .dark .employee-portal .bg-accent-50,
+  .dark .employee-portal .bg-attention-50 {
+    background-color: rgb(31 41 55 / 0.65);
+  }
+
+  .dark .employee-portal .from-white {
+    --tw-gradient-from: rgb(17 24 39 / 1) var(--tw-gradient-from-position);
+    --tw-gradient-to: rgb(17 24 39 / 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+  }
+
+  .dark .employee-portal .from-primary-50,
+  .dark .employee-portal .from-secondary-50,
+  .dark .employee-portal .from-surface-50,
+  .dark .employee-portal .from-surface-100,
+  .dark .employee-portal .from-gray-50 {
+    --tw-gradient-from: rgb(31 41 55 / 0.75) var(--tw-gradient-from-position);
+    --tw-gradient-to: rgb(31 41 55 / 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+  }
+
+  .dark .employee-portal .via-white,
+  .dark .employee-portal .via-surface-50 {
+    --tw-gradient-to: rgb(31 41 55 / 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), rgb(31 41 55 / 0.65) var(--tw-gradient-via-position), var(--tw-gradient-to);
+  }
+
+  .dark .employee-portal .to-white,
+  .dark .employee-portal .to-primary-50,
+  .dark .employee-portal .to-secondary-50,
+  .dark .employee-portal .to-accent-50,
+  .dark .employee-portal .to-surface-50 {
+    --tw-gradient-to: rgb(17 24 39 / 0.95) var(--tw-gradient-to-position);
+  }
+
+  .dark .employee-portal .border-surface-100,
+  .dark .employee-portal .border-surface-200,
+  .dark .employee-portal .border-surface-300,
+  .dark .employee-portal .border-gray-100,
+  .dark .employee-portal .border-gray-200,
+  .dark .employee-portal .border-secondary-200,
+  .dark .employee-portal .border-primary-100,
+  .dark .employee-portal .border-primary-200,
+  .dark .employee-portal .border-attention-400 {
+    border-color: rgb(31 41 55 / 1);
+  }
+
+  .dark .employee-portal .text-gray-950,
+  .dark .employee-portal .text-gray-900,
+  .dark .employee-portal .text-gray-800,
+  .dark .employee-portal .text-primary-900,
+  .dark .employee-portal .text-primary-800,
+  .dark .employee-portal .text-primary-700,
+  .dark .employee-portal .text-primary-600,
+  .dark .employee-portal .text-accent-700 {
+    color: rgb(243 244 246 / 1);
+  }
+
+  .dark .employee-portal .text-gray-700,
+  .dark .employee-portal .text-gray-600,
+  .dark .employee-portal .text-gray-500,
+  .dark .employee-portal .text-accent-600 {
+    color: rgb(209 213 219 / 1);
+  }
+
+  .dark .employee-portal input,
+  .dark .employee-portal select,
+  .dark .employee-portal textarea {
+    border-color: rgb(55 65 81 / 1);
+    background-color: rgb(17 24 39 / 1);
+    color: rgb(243 244 246 / 1);
+  }
+
+  .dark .employee-portal input::placeholder,
+  .dark .employee-portal textarea::placeholder {
+    color: rgb(156 163 175 / 1);
+  }
+
+  .dark .employee-portal .hover\:bg-white:hover,
+  .dark .employee-portal .hover\:bg-surface-50:hover,
+  .dark .employee-portal .hover\:bg-surface-100:hover,
+  .dark .employee-portal .hover\:bg-gray-50:hover,
+  .dark .employee-portal .hover\:bg-gray-100:hover,
+  .dark .employee-portal .hover\:bg-primary-50:hover {
+    background-color: rgb(31 41 55 / 1);
+  }
 }
 
 
