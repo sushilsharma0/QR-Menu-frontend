@@ -108,7 +108,7 @@ const CashierDashboard = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50 sm:text-3xl">Payments</h1>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 sm:text-base">
-            Record cash or UPI, post to house credit, print bills, and review what every cashier has closed.
+            Record cash or online payments, post to house credit, print bills, and review what every cashier has closed.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -225,7 +225,7 @@ const CashierDashboard = () => {
                     <span className="text-lg font-bold text-green-600 dark:text-green-400">{formatAmount(due)}</span>
                   </div>
                   <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
-                    Open the bill to take cash, UPI, split tender, or settle house credit.
+                    Open the bill to take cash, online, split tender, or settle house credit.
                   </p>
                   <Button
                     size="sm"

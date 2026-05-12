@@ -45,6 +45,9 @@ export default function Select({
   value: valueProp,
   defaultValue,
   showLabel = true,
+  /** When true, shows a search field at the top of the dropdown (long option lists). */
+  searchable = false,
+  searchPlaceholder = 'Search…',
   ...rest
 }) {
   const uid = useId()
@@ -56,6 +59,8 @@ export default function Select({
   const [open, setOpen] = useState(false)
   const [entered, setEntered] = useState(false)
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0, width: 0 })
+  const [optionFilter, setOptionFilter] = useState('')
+  const searchInputRef = useRef(null)
   const uncontrolled = valueProp === undefined
   const [uncontrolledVal, setUncontrolledVal] = useState(defaultValue ?? '')
   const value = uncontrolled ? uncontrolledVal : valueProp
@@ -64,6 +69,15 @@ export default function Select({
     if (children) return []
     return normalizeOptions(options, placeholder)
   }, [options, placeholder, children])
+
+  const filteredOpts = useMemo(() => {
+    if (!searchable || !optionFilter.trim()) return opts
+    const q = optionFilter.trim().toLowerCase()
+    return opts.filter((o) => {
+      if (o.value === '' || o.value == null) return false
+      return String(o.label || '').toLowerCase().includes(q) || String(o.value).toLowerCase().includes(q)
+    })
+  }, [opts, optionFilter, searchable])
 
   const selectedOption = useMemo(
     () => opts.find((o) => optionsEqual(o.value, value)),
@@ -82,7 +96,7 @@ export default function Select({
     const vw = window.innerWidth
     const vh = window.innerHeight
     const spaceBelow = vh - r.bottom - gap - 12
-    const maxH = Math.max(120, Math.min(320, spaceBelow))
+    const maxH = Math.max(searchable ? 200 : 120, Math.min(searchable ? 420 : 320, spaceBelow))
     let left = r.left
     let width = r.width
     if (left + width > vw - 8) left = Math.max(8, vw - width - 8)
@@ -92,17 +106,24 @@ export default function Select({
       width,
       maxHeight: maxH,
     })
-  }, [])
+  }, [searchable])
 
   useLayoutEffect(() => {
     if (!open) {
       setEntered(false)
+      setOptionFilter('')
       return
     }
     updateMenuPosition()
     const raf = requestAnimationFrame(() => setEntered(true))
     return () => cancelAnimationFrame(raf)
   }, [open, updateMenuPosition])
+
+  useEffect(() => {
+    if (!open || !searchable) return undefined
+    const t = requestAnimationFrame(() => searchInputRef.current?.focus())
+    return () => cancelAnimationFrame(t)
+  }, [open, searchable])
 
   useEffect(() => {
     if (!open) return undefined
@@ -281,9 +302,31 @@ export default function Select({
           onWheel={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.stopPropagation()}
         >
-          <div className="max-h-[inherit] overflow-y-auto overscroll-contain p-1.5 [scrollbar-gutter:stable]">
+          <div className="flex max-h-[inherit] flex-col overflow-hidden">
+            {searchable ? (
+              <div className="shrink-0 border-b border-surface-100 p-2 dark:border-gray-800">
+                <input
+                  ref={searchInputRef}
+                  type="search"
+                  value={optionFilter}
+                  onChange={(e) => setOptionFilter(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      e.stopPropagation()
+                      setOptionFilter('')
+                    }
+                  }}
+                  placeholder={searchPlaceholder}
+                  className="w-full rounded-lg border border-surface-200 bg-surface-50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
+                  autoComplete="off"
+                  aria-label={searchPlaceholder}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            ) : null}
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-1.5 [scrollbar-gutter:stable]">
             <ul className="space-y-0.5">
-              {opts.map((o) => {
+              {filteredOpts.map((o) => {
                 const selected = optionsEqual(o.value, value)
                 const itemClass = [
                   'flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm transition-colors duration-100',
@@ -313,6 +356,10 @@ export default function Select({
                 )
               })}
             </ul>
+            {searchable && filteredOpts.length === 0 ? (
+              <p className="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">No matches.</p>
+            ) : null}
+            </div>
           </div>
         </div>,
         document.body,

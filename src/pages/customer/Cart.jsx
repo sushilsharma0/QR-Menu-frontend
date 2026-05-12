@@ -517,7 +517,7 @@ const Cart = () => {
       <div className="mx-5 mt-6 rounded-3xl border border-primary-100 bg-primary-50/60 p-4 dark:border-primary-900/40 dark:bg-primary-950/20">
         <p className="text-xs font-bold leading-relaxed text-primary-900 dark:text-primary-200">
           <ShieldCheck className="mb-1 inline-block h-4 w-4 align-middle text-primary-600" />{" "}
-          After your food is served, this app will ask how you want to pay (cash, online, split, or house credit).
+          After your food is served, this app will ask how you want to pay (cash, online, split cash/online, or house credit).
         </p>
       </div>
 

@@ -51,15 +51,53 @@ export function usePayrollPage() {
   const [summarySearch, setSummarySearch] = useState('')
   const [employeeSummary, setEmployeeSummary] = useState(null)
   const [summaryLoading, setSummaryLoading] = useState(false)
+  /** Restaurant document fields for salary slip (GET /restaurant/auth/profile) */
+  const [employerFromProfile, setEmployerFromProfile] = useState(null)
 
-  const company = useMemo(
-    () => ({
-      name: user?.restaurantName || user?.name || 'GOLDEN GATE HOTEL PVT.LTD.',
-      address: user?.address || 'Pokhara -06, lakeside Nepal',
-      city: [user?.city, user?.state].filter(Boolean).join(', ') || user?.city || 'Pokhara',
-    }),
-    [user],
-  )
+  useEffect(() => {
+    let cancelled = false
+    const loadEmployer = async () => {
+      try {
+        const res = await api.get('/restaurant/auth/profile')
+        const r = res.data?.data
+        if (cancelled || !r) return
+        setEmployerFromProfile({
+          name: r.name || '',
+          address: r.address || '',
+          city: r.city || '',
+          state: r.state || '',
+          pincode: r.pincode || '',
+        })
+      } catch {
+        if (!cancelled) setEmployerFromProfile(null)
+      }
+    }
+    loadEmployer()
+    return () => {
+      cancelled = true
+    }
+  }, [user?.id, user?.restaurantId])
+
+  const company = useMemo(() => {
+    const r = employerFromProfile
+    const name =
+      (r?.name || '').trim() ||
+      user?.restaurantName ||
+      user?.name ||
+      'Company'
+    const street = (r?.address || user?.address || '').trim()
+    const pin = (r?.pincode || user?.pincode || '').trim()
+    const addressLine = [street, pin].filter(Boolean).join(', ') || '—'
+    const cityLine =
+      [r?.city, r?.state].filter((x) => String(x || '').trim()).join(', ') ||
+      [user?.city, user?.state].filter(Boolean).join(', ') ||
+      ''
+    return {
+      name,
+      address: addressLine,
+      city: cityLine.trim() || '—',
+    }
+  }, [employerFromProfile, user])
 
   const payrollPeriodBs = useMemo(() => adPayrollMonthYearToBs(month, year), [month, year])
   const payrollPeriodAdIso = useMemo(

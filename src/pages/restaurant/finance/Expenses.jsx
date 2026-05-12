@@ -89,6 +89,11 @@ const Expenses = () => {
             options={manualExpenseCategories.map((x) => ({ value: x, label: x.replace(/_/g, ' ') }))}
           />
           <Input label="Payment Method" value={form.paymentMethod} onChange={(e) => setForm((s) => ({ ...s, paymentMethod: e.target.value }))} />
+          <p className="text-xs text-gray-500 md:col-span-2 -mt-2">
+            For the cash book: <span className="font-semibold">cash</span> reduces cash on hand;{' '}
+            <span className="font-semibold">bank_transfer</span>, <span className="font-semibold">card</span>,{' '}
+            <span className="font-semibold">upi</span>, or <span className="font-semibold">wallet</span> reduce bank balance. Pending expenses do not move balances.
+          </p>
           <Input label="Expense Date" type="date" value={form.expenseDate} onChange={(e) => setForm((s) => ({ ...s, expenseDate: e.target.value }))} required />
           <Input label="Description" value={form.description} onChange={(e) => setForm((s) => ({ ...s, description: e.target.value }))} />
           <div className="md:col-span-2">

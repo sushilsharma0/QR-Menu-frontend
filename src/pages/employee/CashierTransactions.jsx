@@ -13,8 +13,7 @@ import { DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
 const METHOD_OPTIONS = [
   { value: '', label: 'All methods' },
   { value: 'cash', label: 'Cash' },
-  { value: 'upi', label: 'UPI / Online' },
-  { value: 'card', label: 'Card' },
+  { value: 'online', label: 'Online' },
   { value: 'credit', label: 'House credit' },
 ]
 

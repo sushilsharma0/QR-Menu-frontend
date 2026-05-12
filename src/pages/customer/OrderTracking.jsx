@@ -36,7 +36,9 @@ const getActiveStepIndex = (status, paymentStatus) => {
   return 0;
 };
 
-const getStatusText = (status, paymentStatus) => {
+const getStatusText = (order) => {
+  const status = order?.status
+  const paymentStatus = order?.paymentStatus
   if (status === "cancelled") return "Order cancelled";
   if (status === "completed" || (status === "served" && paymentStatus === "paid")) return "Order completed — thank you!";
   if (status === "pending") return "Order received by the restaurant";
@@ -44,6 +46,9 @@ const getStatusText = (status, paymentStatus) => {
   if (status === "preparing") return "Kitchen is preparing your order";
   if (status === "cooking") return "Your food is cooking now";
   if (status === "ready") return "Your order is ready for pickup";
+  if (status === "served" && paymentStatus !== "paid" && order?.guestPaymentPreferenceAt) {
+    return "Served — your payment choice was sent to staff";
+  }
   if (status === "served") return "Served at your table";
   return "Tracking your order";
 };
@@ -61,6 +66,10 @@ const normalizeRealtimeOrder = (payload, current) => ({
   kitchenDelayMessage: payload?.kitchenDelayMessage ?? current?.kitchenDelayMessage,
   kitchenDelayUpdatedAt: payload?.kitchenDelayUpdatedAt ?? current?.kitchenDelayUpdatedAt,
   estimatedWaitTime: payload?.estimatedWaitTime ?? current?.estimatedWaitTime,
+  guestPaymentPreferenceAt: payload?.guestPaymentPreferenceAt ?? current?.guestPaymentPreferenceAt,
+  guestPaymentPreferenceCash: payload?.guestPaymentPreferenceCash ?? current?.guestPaymentPreferenceCash,
+  guestPaymentPreferenceOnline: payload?.guestPaymentPreferenceOnline ?? current?.guestPaymentPreferenceOnline,
+  customerPaymentDeferred: payload?.customerPaymentDeferred ?? current?.customerPaymentDeferred,
 });
 
 const OrderTracking = () => {
@@ -278,7 +287,7 @@ const OrderTracking = () => {
             <div className="mt-8">
               <p className="text-xs font-black uppercase tracking-[0.22em] text-surface-100">Current Status</p>
               <h2 className="mt-2 text-3xl font-black leading-tight">
-                {getStatusText(order.status, order.paymentStatus)}
+                {getStatusText(order)}
               </h2>
               <p className="mt-3 text-sm leading-6 text-slate-300">
                 {order.estimatedCompletionTime
@@ -409,6 +418,10 @@ const OrderTracking = () => {
             guestId={guestIdForPay}
             grandTotal={grandTotal}
             customerEmail={order?.customerEmail}
+            guestPaymentPreferenceAt={order?.guestPaymentPreferenceAt}
+            paymentMethod={order?.paymentMethod}
+            guestPaymentPreferenceCash={order?.guestPaymentPreferenceCash}
+            guestPaymentPreferenceOnline={order?.guestPaymentPreferenceOnline}
             onSuccess={fetchOrder}
           />
         )}
@@ -437,6 +450,17 @@ const OrderTracking = () => {
                 <div className="rounded-2xl bg-gray-50 p-3">
                   <p className="font-bold uppercase text-gray-400">Payment</p>
                   <p className="mt-1 font-black capitalize text-gray-900">{order.paymentStatus || "pending"}</p>
+                  {order.paymentStatus !== "paid" && order.guestPaymentPreferenceAt ? (
+                    <p className="mt-1 text-[10px] font-semibold leading-relaxed text-gray-500">
+                      You chose{" "}
+                      <span className="font-bold text-gray-800">
+                        {order.paymentMethod === "mixed"
+                          ? `split (cash ${formatMoney(order.guestPaymentPreferenceCash)} + online ${formatMoney(order.guestPaymentPreferenceOnline)})`
+                          : order.paymentMethod || "—"}
+                      </span>
+                      . Staff will mark paid when they collect.
+                    </p>
+                  ) : null}
                 </div>
               </div>
 

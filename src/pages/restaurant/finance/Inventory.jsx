@@ -4,8 +4,10 @@ import {
   FiAlertTriangle,
   FiArchive,
   FiBarChart2,
-  FiBox,
   FiCalendar,
+  FiChevronDown,
+  FiCreditCard,
+  FiDollarSign,
   FiDownload,
   FiEdit2,
   FiFileText,
@@ -42,7 +44,6 @@ import {
   FinanceMetric,
   FinancePageHeader,
   FinancePanel,
-  FinanceRow,
   FinanceTooltip,
   money,
 } from './FinanceUI'
@@ -69,11 +70,11 @@ const emptyItem = {
 }
 
 const emptyMovement = { inventoryItemId: '', type: 'stock_in', quantity: 0, reason: '', referenceNumber: '' }
-const emptyRawUse = { inventoryItemId: '', quantity: 0, reason: '', referenceNumber: '' }
+const emptyRawUse = { inventoryItemId: '', quantity: 0, reason: '', referenceNumber: '', ingredientsPaidFrom: 'cash' }
+const emptyWaste = { inventoryItemId: '', quantity: 0, reason: '', referenceNumber: '' }
 const emptySupplier = { name: '', phone: '', address: '', panVat: '', paymentDue: 0, notes: '' }
-const emptyPurchase = { inventoryItemId: '', supplierId: '', quantity: 0, unitCost: 0, paymentStatus: 'paid', supplierBillNumber: '', notes: '' }
-const emptyPurchaseEdit = { _id: '', quantity: 0, unitCost: 0, paymentStatus: 'paid', supplierBillNumber: '', notes: '', supplierId: '' }
-const emptyPo = { supplierId: '', supplier: '', inventoryItemId: '', quantity: 0, unitCost: 0, expectedDate: '', notes: '' }
+const emptyPurchase = { inventoryItemId: '', supplierId: '', quantity: 0, unitCost: 0, paymentStatus: 'paid', paymentSource: 'cash', supplierBillNumber: '', notes: '' }
+const emptyPurchaseEdit = { _id: '', quantity: 0, unitCost: 0, paymentStatus: 'paid', paymentSource: 'cash', supplierBillNumber: '', notes: '', supplierId: '' }
 
 const statusTone = (item) => {
   const qty = Number(item.quantity || 0)
@@ -109,6 +110,15 @@ const apiItemToForm = (item) => ({
   notes: item.notes || '',
 })
 
+function formatForecastQty(value, unit) {
+  const n = Number(value || 0)
+  if (!Number.isFinite(n)) return `0 ${unit || ''}`.trim()
+  const u = unit ? ` ${unit}` : ''
+  const abs = Math.abs(n)
+  const decimals = abs >= 100 ? 1 : abs >= 10 ? 2 : abs >= 1 ? 2 : 3
+  return `${n.toLocaleString('en-IN', { maximumFractionDigits: decimals, minimumFractionDigits: 0 })}${u}`
+}
+
 const downloadCsv = (filename, rows) => {
   if (!rows.length) {
     toast.error('No rows to export')
@@ -134,29 +144,36 @@ const Inventory = () => {
   const [suppliers, setSuppliers] = useState([])
   const [transactions, setTransactions] = useState([])
   const [purchases, setPurchases] = useState([])
-  const [purchaseOrders, setPurchaseOrders] = useState([])
   const [report, setReport] = useState(null)
+  const [cashBook, setCashBook] = useState({ cashBalance: 0, bankBalance: 0 })
+  const [cashBookDraft, setCashBookDraft] = useState({ cashBalance: '', bankBalance: '' })
   const [summary, setSummary] = useState({ valuation: 0, lowStock: 0, deadStock: 0, expiringSoon: 0 })
   const [search, setSearch] = useState('')
   const [itemForm, setItemForm] = useState(emptyItem)
   const [editingItemId, setEditingItemId] = useState(null)
   const [movementForm, setMovementForm] = useState(emptyMovement)
   const [rawUseForm, setRawUseForm] = useState(emptyRawUse)
+  const [wasteForm, setWasteForm] = useState(emptyWaste)
   const [supplierForm, setSupplierForm] = useState(emptySupplier)
   const [purchaseForm, setPurchaseForm] = useState(emptyPurchase)
   const [purchaseEdit, setPurchaseEdit] = useState(null)
-  const [poForm, setPoForm] = useState(emptyPo)
   const [loading, setLoading] = useState(false)
+  /** Items tab: show category, unit, qty, cost, supplier, etc. */
+  const [itemFormAdvancedOpen, setItemFormAdvancedOpen] = useState(false)
 
   const loadAll = async () => {
     try {
-      const [invRes, supplierRes, txnRes, purchaseRes, reportRes, poRes] = await Promise.all([
+      const from90 = new Date()
+      from90.setDate(from90.getDate() - 90)
+      const [invRes, supplierRes, txnRes, purchaseRes, reportRes, cbRes] = await Promise.all([
         api.get('/restaurant/inventory', { params: { q: search || undefined } }),
         api.get('/restaurant/inventory/suppliers'),
-        api.get('/restaurant/inventory/transactions'),
+        api.get('/restaurant/inventory/transactions', {
+          params: { limit: 4000, from: from90.toISOString() },
+        }),
         api.get('/restaurant/inventory/purchases'),
         api.get('/restaurant/inventory/reports/summary'),
-        api.get('/restaurant/inventory/purchase-orders'),
+        api.get('/restaurant/inventory/cash-book'),
       ])
       const inv = invRes.data?.data || {}
       setItems(inv.items || [])
@@ -170,13 +187,24 @@ const Inventory = () => {
       setTransactions(txnRes.data?.data || [])
       setPurchases(purchaseRes.data?.data || [])
       setReport(reportRes.data?.data || null)
-      setPurchaseOrders(poRes.data?.data || [])
+      const cb = cbRes.data?.data || {}
+      setCashBook({
+        cashBalance: Number(cb.cashBalance || 0),
+        bankBalance: Number(cb.bankBalance || 0),
+      })
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to load inventory')
     }
   }
 
   useEffect(() => { loadAll() }, [])
+
+  useEffect(() => {
+    setCashBookDraft({
+      cashBalance: String(cashBook.cashBalance ?? ''),
+      bankBalance: String(cashBook.bankBalance ?? ''),
+    })
+  }, [cashBook.cashBalance, cashBook.bankBalance])
 
   const analytics = useMemo(() => {
     const byCategory = CATEGORIES.map((cat) => {
@@ -210,15 +238,33 @@ const Inventory = () => {
       in: ['stock_in', 'purchase'].includes(txn.type) ? Number(txn.quantity || 0) : 0,
       out: ['stock_out', 'usage', 'wastage', 'recipe_sale'].includes(txn.type) ? Number(txn.quantity || 0) : 0,
     }))
+    const FORECAST_MS = 30 * 24 * 60 * 60 * 1000
+    const windowStart = Date.now() - FORECAST_MS
+    const outTypes = ['usage', 'recipe_sale', 'stock_out', 'wastage']
     const forecast = items
       .map((item) => {
-        const used30 = transactions
-          .filter((txn) => String(txn.inventoryItemId?._id || txn.inventoryItemId) === String(item._id) && ['usage', 'recipe_sale', 'stock_out', 'wastage'].includes(txn.type))
-          .reduce((sum, txn) => sum + Number(txn.quantity || 0), 0)
-        const daily = used30 / 30
-        return { ...item, dailyUsage: daily, daysLeft: daily > 0 ? Math.floor(Number(item.quantity || 0) / daily) : null }
+        const relevant = transactions.filter((txn) => {
+          if (String(txn.inventoryItemId?._id || txn.inventoryItemId) !== String(item._id)) return false
+          if (!outTypes.includes(txn.type)) return false
+          const t = new Date(txn.createdAt).getTime()
+          return !Number.isNaN(t) && t >= windowStart
+        })
+        const usedInWindow = relevant.reduce((sum, txn) => sum + Number(txn.quantity || 0), 0)
+        if (usedInWindow <= 0) return null
+        const activeDays = new Set(relevant.map((txn) => new Date(txn.createdAt).toISOString().slice(0, 10))).size
+        const denomDays = Math.max(1, Math.min(30, activeDays))
+        const dailyUsage = usedInWindow / denomDays
+        const daysLeft = dailyUsage > 0 ? Math.floor(Number(item.quantity || 0) / dailyUsage) : null
+        return {
+          ...item,
+          dailyUsage,
+          daysLeft,
+          usedInWindow,
+          activeDays,
+        }
       })
-      .filter((item) => item.daysLeft !== null)
+      .filter(Boolean)
+      .filter((row) => row.daysLeft !== null)
       .sort((a, b) => a.daysLeft - b.daysLeft)
       .slice(0, 6)
     return { byCategory, mostUsed, wasteTrend, expensive, movement, forecast }
@@ -231,6 +277,15 @@ const Inventory = () => {
     const days = (expiry.getTime() - Date.now()) / (24 * 60 * 60 * 1000)
     return days <= 7
   })
+  const itemsListFilter = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return items
+    return items.filter(
+      (item) =>
+        String(item.name || '').toLowerCase().includes(q) ||
+        String(item.category || '').toLowerCase().includes(q),
+    )
+  }, [items, search])
   const wasteCost = transactions.filter((txn) => txn.type === 'wastage').reduce((sum, txn) => sum + Number(txn.totalCost || 0), 0)
   const pendingSupplierDue = suppliers.reduce((sum, supplier) => sum + Number(supplier.paymentDue || 0), 0)
 
@@ -257,6 +312,7 @@ const Inventory = () => {
       }
       setItemForm(emptyItem)
       setEditingItemId(null)
+      setItemFormAdvancedOpen(false)
       loadAll()
     } catch (e2) {
       toast.error(e2.response?.data?.message || 'Failed to save item')
@@ -268,12 +324,14 @@ const Inventory = () => {
   const cancelItemEdit = () => {
     setEditingItemId(null)
     setItemForm(emptyItem)
+    setItemFormAdvancedOpen(false)
   }
 
   const beginEditItem = (item) => {
     setActiveTab('Items')
     setEditingItemId(String(item._id))
     setItemForm(apiItemToForm(item))
+    setItemFormAdvancedOpen(true)
   }
 
   const removeItem = async (item) => {
@@ -340,6 +398,7 @@ const Inventory = () => {
         reason: rawUseForm.reason,
         referenceNumber: rawUseForm.referenceNumber,
         syncIngredientsExpense: true,
+        ingredientsPaidFrom: rawUseForm.ingredientsPaidFrom,
       })
       if (res.data?.data?.expense) {
         toast.success('Usage saved — stock reduced and cost posted to Expenses (ingredients)')
@@ -350,6 +409,32 @@ const Inventory = () => {
       loadAll()
     } catch (e2) {
       toast.error(e2.response?.data?.message || 'Failed to record raw material use')
+    }
+  }
+
+  const postWaste = async (e) => {
+    e.preventDefault()
+    if (!wasteForm.inventoryItemId) {
+      toast.error('Please select an inventory item')
+      return
+    }
+    if (Number(wasteForm.quantity || 0) <= 0) {
+      toast.error('Quantity must be greater than 0')
+      return
+    }
+    try {
+      await api.post('/restaurant/inventory/movements', {
+        inventoryItemId: wasteForm.inventoryItemId,
+        quantity: Number(wasteForm.quantity),
+        type: 'wastage',
+        reason: wasteForm.reason,
+        referenceNumber: wasteForm.referenceNumber,
+      })
+      toast.success('Waste recorded — stock reduced')
+      setWasteForm(emptyWaste)
+      loadAll()
+    } catch (e2) {
+      toast.error(e2.response?.data?.message || 'Failed to record waste')
     }
   }
 
@@ -389,6 +474,24 @@ const Inventory = () => {
     }
   }
 
+  const saveCashBookOpening = async (e) => {
+    e.preventDefault()
+    try {
+      const cashBalance = Number(cashBookDraft.cashBalance)
+      const bankBalance = Number(cashBookDraft.bankBalance)
+      if (!Number.isFinite(cashBalance) || !Number.isFinite(bankBalance)) {
+        toast.error('Enter valid numbers for cash and bank')
+        return
+      }
+      const res = await api.patch('/restaurant/inventory/cash-book', { cashBalance, bankBalance })
+      const d = res.data?.data || {}
+      setCashBook({ cashBalance: Number(d.cashBalance || 0), bankBalance: Number(d.bankBalance || 0) })
+      toast.success('Cash & bank balances updated')
+    } catch (e2) {
+      toast.error(e2.response?.data?.message || 'Failed to update balances')
+    }
+  }
+
   const beginEditPurchase = (purchase) => {
     setPurchaseEdit({
       _id: purchase._id,
@@ -397,11 +500,24 @@ const Inventory = () => {
       quantity: Number(purchase.quantity || 0),
       unitCost: Number(purchase.unitCost || 0),
       paymentStatus: purchase.paymentStatus || 'paid',
+      paymentSource: purchase.paymentSource || 'cash',
       supplierBillNumber: purchase.supplierBillNumber || '',
       notes: purchase.notes || '',
       supplierId: purchase.supplierId?._id || purchase.supplierId || '',
     })
   }
+
+  const exportItems = () => downloadCsv('inventory-valuation.csv', items.map((item) => ({
+    Item: item.name,
+    Category: item.category,
+    Quantity: item.quantity,
+    Unit: item.unit,
+    Minimum: item.minimumStock,
+    CostPerUnit: item.costPerUnit,
+    StockValue: Number(item.quantity || 0) * Number(item.costPerUnit || 0),
+    Supplier: item.supplierId?.name || item.supplier || '',
+    Expiry: formatDate(item.expiryDate),
+  })))
 
   const saveEditPurchase = async (e) => {
     e.preventDefault()
@@ -415,6 +531,7 @@ const Inventory = () => {
         quantity: Number(purchaseEdit.quantity),
         unitCost: Number(purchaseEdit.unitCost),
         paymentStatus: purchaseEdit.paymentStatus,
+        paymentSource: purchaseEdit.paymentSource,
         supplierBillNumber: purchaseEdit.supplierBillNumber,
         notes: purchaseEdit.notes,
         supplierId: purchaseEdit.supplierId || null,
@@ -446,54 +563,6 @@ const Inventory = () => {
     }
   }
 
-  const savePurchaseOrder = async (e) => {
-    e.preventDefault()
-    if (!poForm.inventoryItemId) {
-      toast.error('Please select an inventory item for the purchase order')
-      return
-    }
-    if (Number(poForm.quantity || 0) <= 0) {
-      toast.error('Purchase order quantity must be greater than 0')
-      return
-    }
-    try {
-      await api.post('/restaurant/inventory/purchase-orders', {
-        supplierId: poForm.supplierId || null,
-        supplier: poForm.supplier,
-        expectedDate: poForm.expectedDate,
-        notes: poForm.notes,
-        items: [{ inventoryItemId: poForm.inventoryItemId, quantity: Number(poForm.quantity || 0), unitCost: Number(poForm.unitCost || 0) }],
-      })
-      toast.success('Purchase order created')
-      setPoForm(emptyPo)
-      loadAll()
-    } catch (e2) {
-      toast.error(e2.response?.data?.message || 'Failed to create purchase order')
-    }
-  }
-
-  const updatePoStatus = async (id, status) => {
-    try {
-      await api.patch(`/restaurant/inventory/purchase-orders/${id}/status`, { status })
-      toast.success(status === 'delivered' ? 'PO delivered and stock updated' : 'PO updated')
-      loadAll()
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Failed to update PO')
-    }
-  }
-
-  const exportItems = () => downloadCsv('inventory-valuation.csv', items.map((item) => ({
-    Item: item.name,
-    Category: item.category,
-    Quantity: item.quantity,
-    Unit: item.unit,
-    Minimum: item.minimumStock,
-    CostPerUnit: item.costPerUnit,
-    StockValue: Number(item.quantity || 0) * Number(item.costPerUnit || 0),
-    Supplier: item.supplierId?.name || item.supplier || '',
-    Expiry: formatDate(item.expiryDate),
-  })))
-
   const exportTransactions = () => downloadCsv('inventory-transactions.csv', transactions.map((txn) => ({
     Date: formatDate(txn.createdAt),
     Item: txn.inventoryItemId?.name || '',
@@ -524,7 +593,10 @@ const Inventory = () => {
           <button
             key={tab}
             type="button"
-            onClick={() => setActiveTab(tab)}
+            onClick={() => {
+              setActiveTab(tab)
+              if (tab !== 'Items') setItemFormAdvancedOpen(false)
+            }}
             className={`shrink-0 rounded-xl px-4 py-2 text-sm font-bold transition ${activeTab === tab ? 'bg-primary-700 text-white shadow-md' : 'text-gray-600 hover:bg-primary-50 dark:text-gray-300 dark:hover:bg-gray-800'}`}
           >
             {tab}
@@ -532,15 +604,43 @@ const Inventory = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+      {activeTab !== 'Items' && (
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-7">
         <FinanceMetric label="Stock value" value={money(summary.valuation)} icon={FiPackage} />
         <FinanceMetric label="Low stock" value={summary.lowStock} icon={FiAlertTriangle} tone="danger" />
         <FinanceMetric label="Expiring soon" value={summary.expiringSoon} icon={FiCalendar} tone="warning" />
         <FinanceMetric label="Waste cost" value={money(wasteCost)} icon={FiArchive} tone="danger" />
         <FinanceMetric label="Supplier due" value={money(pendingSupplierDue)} icon={FiTruck} tone="neutral" />
+        <FinanceMetric label="Cash on hand" value={money(cashBook.cashBalance)} icon={FiDollarSign} tone="neutral" />
+        <FinanceMetric label="Bank balance" value={money(cashBook.bankBalance)} icon={FiCreditCard} tone="neutral" />
       </div>
+      )}
 
       {activeTab === 'Overview' && (
+        <div className="flex flex-col gap-6">
+          <FinancePanel title="Cash & bank (running balances)">
+            <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+              Set your opening figures here, then the app moves money when you record a <strong>paid</strong> stock purchase (choose cash or bank on the Purchases tab),
+              add a paid expense (cash vs card/bank/UPI), pay payroll, or post raw-material use with a paid-from choice. Pending supplier bills do not change these balances until marked paid.
+            </p>
+            <form onSubmit={saveCashBookOpening} className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <Input
+                label="Cash balance"
+                type="number"
+                value={cashBookDraft.cashBalance}
+                onChange={(e) => setCashBookDraft((s) => ({ ...s, cashBalance: e.target.value }))}
+              />
+              <Input
+                label="Bank balance"
+                type="number"
+                value={cashBookDraft.bankBalance}
+                onChange={(e) => setCashBookDraft((s) => ({ ...s, bankBalance: e.target.value }))}
+              />
+              <div className="flex items-end">
+                <Button type="submit">Save balances</Button>
+              </div>
+            </form>
+          </FinancePanel>
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <FinancePanel title="Stock alerts" className="xl:col-span-2">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -566,136 +666,223 @@ const Inventory = () => {
               {analytics.forecast.map((item) => (
                 <div key={item._id} className="rounded-2xl border border-surface-200 p-4">
                   <p className="font-bold text-gray-950 dark:text-gray-100">{item.name}</p>
-                  <p className="mt-1 text-sm text-gray-500">Predicted finish in <span className="font-black text-primary-700">{item.daysLeft}</span> days</p>
-                  <p className="text-xs text-gray-500">Daily usage avg {item.dailyUsage.toFixed(2)} {item.unit}</p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Predicted finish in <span className="font-black text-primary-700">{item.daysLeft}</span> days
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Last 30 days: {formatForecastQty(item.usedInWindow, item.unit)} out · avg{' '}
+                    {formatForecastQty(item.dailyUsage, item.unit)}/day
+                    <span className="text-gray-400"> ({item.activeDays} active day{item.activeDays !== 1 ? 's' : ''})</span>
+                  </p>
                 </div>
               ))}
-              {analytics.forecast.length === 0 && <EmptyState>Forecast appears after you log raw use, waste, or other stock movements.</EmptyState>}
+              {analytics.forecast.length === 0 && (
+                <EmptyState>
+                  Forecast uses usage, waste, and stock-out in the last 30 days (loaded from your transaction history). Log Raw use or Waste
+                  to see projections.
+                </EmptyState>
+              )}
             </div>
           </FinancePanel>
+        </div>
         </div>
       )}
 
       {activeTab === 'Items' && (
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-          <FinancePanel title={editingItemId ? 'Edit inventory item' : 'Add inventory item'} className="xl:col-span-1">
-            <form onSubmit={saveItem} className="space-y-3">
+        <div className="flex flex-col gap-6">
+          <section className="rounded-2xl border border-amber-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <div className="flex flex-col gap-1 border-b border-amber-100/80 px-4 py-4 dark:border-gray-800 sm:px-6">
+              <h2 className="text-lg font-black text-gray-950 dark:text-gray-100">
+                {editingItemId ? 'Edit item' : 'Quick add item'}
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Enter name, minimum stock, and optional expiry. Use <span className="font-semibold text-gray-700 dark:text-gray-300">More fields</span> for unit, opening quantity, cost, and supplier.
+              </p>
+            </div>
+            <form onSubmit={saveItem} className="space-y-5 px-4 py-5 sm:px-6">
               {editingItemId && (
-                <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-                  Editing an existing item — save to apply changes, or cancel to discard.
+                <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+                  Editing this item — save to apply, cancel to discard.
                 </p>
               )}
-              <Input label="Item name" value={itemForm.name} onChange={(e) => setItemForm((s) => ({ ...s, name: e.target.value }))} required />
-              <div className="grid grid-cols-2 gap-3">
-                <Select
-                  label="Category"
-                  value={itemForm.category}
-                  onValueChange={(value) => setItemForm((s) => ({ ...s, category: value }))}
-                  options={CATEGORIES.map((c) => ({ value: c, label: c }))}
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="md:col-span-1">
+                  <Input
+                    label="Item name"
+                    value={itemForm.name}
+                    onChange={(e) => setItemForm((s) => ({ ...s, name: e.target.value }))}
+                    required
+                  />
+                </div>
+                <Input
+                  label="Minimum stock"
+                  type="number"
+                  min={0}
+                  value={itemForm.minimumStock}
+                  onChange={(e) => setItemForm((s) => ({ ...s, minimumStock: Number(e.target.value) }))}
                 />
-                <Select
-                  label="Base unit"
-                  value={itemForm.unit}
-                  onValueChange={(value) => setItemForm((s) => ({ ...s, unit: value }))}
-                  options={UNITS.map((u) => ({ value: u, label: u }))}
+                <Input
+                  label="Expiry date (optional)"
+                  type="date"
+                  value={itemForm.expiryDate}
+                  onChange={(e) => setItemForm((s) => ({ ...s, expiryDate: e.target.value }))}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Input label="Quantity" type="number" value={itemForm.quantity} onChange={(e) => setItemForm((s) => ({ ...s, quantity: Number(e.target.value) }))} />
-                <Input label="Minimum stock" type="number" value={itemForm.minimumStock} onChange={(e) => setItemForm((s) => ({ ...s, minimumStock: Number(e.target.value) }))} />
+
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setItemFormAdvancedOpen((o) => !o)}
+                  aria-expanded={itemFormAdvancedOpen}
+                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-surface-200 bg-surface-50 px-4 py-3 text-left text-sm font-bold text-gray-800 transition hover:bg-amber-50/80 dark:border-gray-700 dark:bg-gray-800/60 dark:text-gray-100 dark:hover:bg-gray-800"
+                >
+                  <span>More fields — category, unit, quantity, cost, supplier…</span>
+                  <FiChevronDown
+                    className={`h-5 w-5 shrink-0 text-gray-500 transition-transform ${itemFormAdvancedOpen ? 'rotate-180' : ''}`}
+                    aria-hidden
+                  />
+                </button>
+                {itemFormAdvancedOpen && (
+                  <div className="mt-4 space-y-4 rounded-xl border border-dashed border-amber-200/80 bg-[#fffdf8] p-4 dark:border-gray-700 dark:bg-gray-950/80">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <Select
+                        label="Category"
+                        value={itemForm.category}
+                        onValueChange={(value) => setItemForm((s) => ({ ...s, category: value }))}
+                        options={CATEGORIES.map((c) => ({ value: c, label: c }))}
+                      />
+                      <Select
+                        label="Base unit"
+                        value={itemForm.unit}
+                        onValueChange={(value) => setItemForm((s) => ({ ...s, unit: value }))}
+                        options={UNITS.map((u) => ({ value: u, label: u }))}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <Input
+                        label="Opening quantity"
+                        type="number"
+                        value={itemForm.quantity}
+                        onChange={(e) => setItemForm((s) => ({ ...s, quantity: Number(e.target.value) }))}
+                      />
+                      <Input
+                        label="Cost per unit"
+                        type="number"
+                        value={itemForm.costPerUnit}
+                        onChange={(e) => setItemForm((s) => ({ ...s, costPerUnit: Number(e.target.value) }))}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <Input
+                        label="Purchase unit"
+                        value={itemForm.purchaseUnit}
+                        placeholder="e.g. carton, bag"
+                        onChange={(e) => setItemForm((s) => ({ ...s, purchaseUnit: e.target.value }))}
+                      />
+                      <Input
+                        label="Conversion factor"
+                        type="number"
+                        value={itemForm.conversionFactor}
+                        onChange={(e) => setItemForm((s) => ({ ...s, conversionFactor: Number(e.target.value) }))}
+                      />
+                    </div>
+                    <Input
+                      label="Manufacturing date (optional)"
+                      type="date"
+                      value={itemForm.manufacturingDate}
+                      onChange={(e) => setItemForm((s) => ({ ...s, manufacturingDate: e.target.value }))}
+                    />
+                    <Select
+                      label="Supplier"
+                      placeholder="Optional"
+                      value={itemForm.supplierId || ''}
+                      onValueChange={(value) => setItemForm((s) => ({ ...s, supplierId: value }))}
+                      searchable
+                      searchPlaceholder="Search supplier…"
+                      options={suppliers.map((s) => ({ label: s.name, value: String(s._id) }))}
+                    />
+                    <Input label="Notes" value={itemForm.notes} onChange={(e) => setItemForm((s) => ({ ...s, notes: e.target.value }))} />
+                  </div>
+                )}
               </div>
-              <Input label="Cost per unit" type="number" value={itemForm.costPerUnit} onChange={(e) => setItemForm((s) => ({ ...s, costPerUnit: Number(e.target.value) }))} />
-              <div className="grid grid-cols-2 gap-3">
-                <Input label="Purchase unit" value={itemForm.purchaseUnit} placeholder="carton / kg" onChange={(e) => setItemForm((s) => ({ ...s, purchaseUnit: e.target.value }))} />
-                <Input label="Conversion factor" type="number" value={itemForm.conversionFactor} onChange={(e) => setItemForm((s) => ({ ...s, conversionFactor: Number(e.target.value) }))} />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Input label="MFG date" type="date" value={itemForm.manufacturingDate} onChange={(e) => setItemForm((s) => ({ ...s, manufacturingDate: e.target.value }))} />
-                <Input label="Expiry date" type="date" value={itemForm.expiryDate} onChange={(e) => setItemForm((s) => ({ ...s, expiryDate: e.target.value }))} />
-              </div>
-              <Select
-                label="Supplier"
-                placeholder="Optional"
-                value={itemForm.supplierId || ''}
-                onValueChange={(value) => setItemForm((s) => ({ ...s, supplierId: value }))}
-                options={suppliers.map((s) => ({ label: s.name, value: String(s._id) }))}
-              />
-              <Input label="Notes" value={itemForm.notes} onChange={(e) => setItemForm((s) => ({ ...s, notes: e.target.value }))} />
-              <div className="flex flex-wrap gap-2">
+
+              <div className="flex flex-wrap items-center gap-3 border-t border-surface-100 pt-4 dark:border-gray-800">
                 <Button type="submit" loading={loading}>
                   {editingItemId ? (
                     <>
-                      <FiEdit2 className="mr-1" /> Update item
+                      <FiEdit2 className="mr-1" /> Save changes
                     </>
                   ) : (
                     <>
-                      <FiPlus className="mr-1" /> Save item
+                      <FiPlus className="mr-1" /> Add item
                     </>
                   )}
                 </Button>
                 {editingItemId && (
                   <Button type="button" variant="secondary" onClick={cancelItemEdit}>
-                    Cancel
+                    Cancel edit
                   </Button>
                 )}
               </div>
             </form>
-          </FinancePanel>
+          </section>
 
-          <FinancePanel
-            title="Inventory list"
-            className="xl:col-span-2"
-            actions={
-              <div className="relative">
-                <FiSearch className="pointer-events-none absolute left-3 top-3 text-gray-400" />
-                <input className="w-72 rounded-xl border border-surface-300 py-2 pl-9 pr-3 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && loadAll()} placeholder="Search item" />
+          <section className="overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <div className="flex flex-col gap-4 border-b border-amber-100/80 px-4 py-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <div>
+                <h2 className="text-lg font-black text-gray-950 dark:text-gray-100">All items</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {search.trim()
+                    ? `${itemsListFilter.length} match${itemsListFilter.length === 1 ? '' : 'es'} for “${search.trim()}” (of ${items.length} loaded). Press Enter to fetch from server.`
+                    : `${itemsListFilter.length} item${itemsListFilter.length === 1 ? '' : 's'} — list view below.`}
+                </p>
               </div>
-            }
-          >
-            <div className="space-y-2">
-              {items.map((item) => {
-                const tone = statusTone(item)
-                const stockValue = Number(item.quantity || 0) * Number(item.costPerUnit || 0)
-                return (
-                  <FinanceRow
-                    key={item._id}
-                    title={item.name}
-                    meta={`${item.category || 'General'} | ${item.quantity} ${item.unit} | Min ${item.minimumStock} | ${item.purchaseUnit ? `1 ${item.purchaseUnit} = ${item.conversionFactor || 1} ${item.unit}` : 'base unit stock'}`}
-                    amount={money(stockValue)}
-                    status={tone.label}
-                    danger={tone.label !== 'Healthy'}
-                    action={
-                      <div className="flex flex-wrap gap-2">
-                        <Button type="button" size="sm" variant="secondary" onClick={() => beginEditItem(item)}>
-                          <FiEdit2 className="mr-1" /> Edit
-                        </Button>
-                        <Button type="button" size="sm" variant="danger" onClick={() => removeItem(item)}>
-                          <FiTrash2 className="mr-1" /> Delete
-                        </Button>
-                      </div>
-                    }
-                  />
-                )
-              })}
-              {items.length === 0 && <EmptyState>No inventory items found.</EmptyState>}
+              <div className="relative w-full sm:max-w-md">
+                <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  className="w-full rounded-xl border border-surface-300 bg-white py-2.5 pl-10 pr-3 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && loadAll()}
+                  placeholder="Filter by name or category… (Enter = reload from server)"
+                />
+              </div>
             </div>
-          </FinancePanel>
+              <div className="max-h-[min(70vh,920px)] overflow-y-auto p-4 sm:p-6">
+                {itemsListFilter.length === 0 ? (
+                  <div className="py-16">
+                    <EmptyState>
+                      {items.length === 0
+                        ? 'No inventory items yet. Add one with the form above.'
+                        : 'No items match this filter. Clear the search box or press Enter to reload from the server.'}
+                    </EmptyState>
+                  </div>
+                ) : (
+                  <InventoryItemsTable items={itemsListFilter} onEdit={beginEditItem} onRemove={removeItem} />
+                )}
+              </div>
+          </section>
         </div>
       )}
 
       {activeTab === 'Raw use' && (
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-          <FinancePanel title="Record raw material use" className="xl:col-span-1">
+        <div className="flex flex-col gap-6">
+          <FinancePanel title="Record raw material use">
             <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
               Choose an inventory item and how much you used. Stock goes down by that amount. Cost is quantity × <strong>cost per unit</strong> on the item; the same value is posted as an <strong>ingredients</strong> expense so Profit & Loss matches your sell-side COGS.
             </p>
-            <form onSubmit={postRawUse} className="space-y-3">
+            <form onSubmit={postRawUse} className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Select
                 label="Raw material (inventory item)"
                 placeholder="Select item"
                 value={rawUseForm.inventoryItemId || ''}
                 onValueChange={(value) => setRawUseForm((s) => ({ ...s, inventoryItemId: value }))}
-                options={items.map((i) => ({ label: `${i.name} (${i.quantity} ${i.unit} on hand)`, value: String(i._id) }))}
+                searchable
+                searchPlaceholder="Search by item name…"
+                options={items.map((i) => ({
+                  label: `${i.name} (${i.quantity} ${i.unit} on hand)${i.category ? ` · ${i.category}` : ''}`,
+                  value: String(i._id),
+                }))}
               />
               <Input
                 label="Quantity used"
@@ -705,27 +892,40 @@ const Inventory = () => {
                 value={rawUseForm.quantity || ''}
                 onChange={(e) => setRawUseForm((s) => ({ ...s, quantity: Number(e.target.value) }))}
               />
-              <div className="rounded-xl border border-surface-200 bg-surface-50 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800/80">
-                <p className="font-semibold text-gray-900 dark:text-gray-100">Line cost (for expense)</p>
-                <p className="mt-1 text-gray-600 dark:text-gray-400">
-                  {rawUseSelectedItem
-                    ? `${Number(rawUseForm.quantity || 0)} ${rawUseSelectedItem.unit} × ${money(rawUseSelectedItem.costPerUnit)} = ${money(rawUseLineCost)}`
-                    : 'Select an item to preview.'}
-                </p>
-              </div>
+              <Select
+                label="Ingredient cost paid from"
+                value={rawUseForm.ingredientsPaidFrom || 'cash'}
+                onValueChange={(value) => setRawUseForm((s) => ({ ...s, ingredientsPaidFrom: value }))}
+                options={[
+                  { value: 'cash', label: 'Cash' },
+                  { value: 'bank', label: 'Bank' },
+                ]}
+              />
               <Input label="Reference (optional)" value={rawUseForm.referenceNumber} onChange={(e) => setRawUseForm((s) => ({ ...s, referenceNumber: e.target.value }))} />
               <Input label="Note (optional)" value={rawUseForm.reason} onChange={(e) => setRawUseForm((s) => ({ ...s, reason: e.target.value }))} />
-              <Button type="submit">Save use and post COGS</Button>
+              <div className="md:col-span-2 lg:col-span-3">
+                <div className="rounded-xl border border-surface-200 bg-surface-50 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800/80">
+                  <p className="font-semibold text-gray-900 dark:text-gray-100">Line cost (for expense)</p>
+                  <p className="mt-1 text-gray-600 dark:text-gray-400">
+                    {rawUseSelectedItem
+                      ? `${Number(rawUseForm.quantity || 0)} ${rawUseSelectedItem.unit} × ${money(rawUseSelectedItem.costPerUnit)} = ${money(rawUseLineCost)}`
+                      : 'Select an item to preview.'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-end gap-3 md:col-span-2 lg:col-span-3">
+                <Button type="submit">Save use and post COGS</Button>
+              </div>
             </form>
           </FinancePanel>
-          <FinancePanel title="Recent usage (COGS)" className="xl:col-span-2">
+          <FinancePanel title="Recent usage (COGS)">
             <TransactionTable transactions={transactions.filter((txn) => txn.type === 'usage')} />
           </FinancePanel>
         </div>
       )}
 
       {activeTab === 'Suppliers' && (
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="flex flex-col gap-6">
           <FinancePanel title="Add supplier">
             <form onSubmit={saveSupplier} className="space-y-3">
               <Input label="Name" value={supplierForm.name} onChange={(e) => setSupplierForm((s) => ({ ...s, name: e.target.value }))} required />
@@ -737,19 +937,14 @@ const Inventory = () => {
               <Button type="submit">Save Supplier</Button>
             </form>
           </FinancePanel>
-          <FinancePanel title="Supplier history" className="xl:col-span-2">
-            <div className="space-y-2">
-              {suppliers.map((supplier) => (
-                <FinanceRow key={supplier._id} title={supplier.name} meta={`${supplier.phone || '-'} | PAN/VAT ${supplier.panVat || '-'} | ${supplier.address || '-'}`} amount={money(supplier.paymentDue)} status={supplier.paymentDue > 0 ? 'Due' : 'Clear'} />
-              ))}
-              {suppliers.length === 0 && <EmptyState>No suppliers saved yet.</EmptyState>}
-            </div>
+          <FinancePanel title="Supplier directory">
+            <SuppliersListTable suppliers={suppliers} />
           </FinancePanel>
         </div>
       )}
 
       {activeTab === 'Purchases' && (
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="flex flex-col gap-6">
           <FinancePanel title="Stock in purchase">
             <form onSubmit={savePurchase} className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <Select
@@ -757,13 +952,20 @@ const Inventory = () => {
                 placeholder="Select item"
                 value={purchaseForm.inventoryItemId || ''}
                 onValueChange={(value) => setPurchaseForm((s) => ({ ...s, inventoryItemId: value }))}
-                options={items.map((i) => ({ label: i.name, value: String(i._id) }))}
+                searchable
+                searchPlaceholder="Search by item name…"
+                options={items.map((i) => ({
+                  label: `${i.name}${i.category ? ` · ${i.category}` : ''}`,
+                  value: String(i._id),
+                }))}
               />
               <Select
                 label="Supplier"
                 placeholder="Select supplier"
                 value={purchaseForm.supplierId || ''}
                 onValueChange={(value) => setPurchaseForm((s) => ({ ...s, supplierId: value }))}
+                searchable
+                searchPlaceholder="Search supplier…"
                 options={suppliers.map((s) => ({ label: s.name, value: String(s._id) }))}
               />
               <Input label="Quantity" type="number" value={purchaseForm.quantity} onChange={(e) => setPurchaseForm((s) => ({ ...s, quantity: Number(e.target.value) }))} />
@@ -775,48 +977,23 @@ const Inventory = () => {
                 onValueChange={(value) => setPurchaseForm((s) => ({ ...s, paymentStatus: value }))}
                 options={['paid', 'pending', 'partial'].map((x) => ({ value: x, label: x }))}
               />
+              {purchaseForm.paymentStatus === 'paid' && (
+                <Select
+                  label="Paid from"
+                  value={purchaseForm.paymentSource || 'cash'}
+                  onValueChange={(value) => setPurchaseForm((s) => ({ ...s, paymentSource: value }))}
+                  options={[
+                    { value: 'cash', label: 'Cash' },
+                    { value: 'bank', label: 'Bank' },
+                  ]}
+                />
+              )}
               <div className="md:col-span-2"><Input label="Notes" value={purchaseForm.notes} onChange={(e) => setPurchaseForm((s) => ({ ...s, notes: e.target.value }))} /></div>
               <div className="md:col-span-2"><Button type="submit"><FiShoppingCart className="mr-1" /> Record Purchase</Button></div>
             </form>
           </FinancePanel>
 
-          <FinancePanel title="Purchase orders">
-            <form onSubmit={savePurchaseOrder} className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              <Select
-                label="Supplier"
-                placeholder="Select supplier"
-                value={poForm.supplierId || ''}
-                onValueChange={(value) => setPoForm((s) => ({ ...s, supplierId: value }))}
-                options={suppliers.map((s) => ({ label: s.name, value: String(s._id) }))}
-              />
-              <Select
-                label="Item"
-                placeholder="Select item"
-                value={poForm.inventoryItemId || ''}
-                onValueChange={(value) => setPoForm((s) => ({ ...s, inventoryItemId: value }))}
-                options={items.map((i) => ({ label: i.name, value: String(i._id) }))}
-              />
-              <Input label="Quantity" type="number" value={poForm.quantity} onChange={(e) => setPoForm((s) => ({ ...s, quantity: Number(e.target.value) }))} />
-              <Input label="Unit cost" type="number" value={poForm.unitCost} onChange={(e) => setPoForm((s) => ({ ...s, unitCost: Number(e.target.value) }))} />
-              <Input label="Expected date" type="date" value={poForm.expectedDate} onChange={(e) => setPoForm((s) => ({ ...s, expectedDate: e.target.value }))} />
-              <Input label="Notes" value={poForm.notes} onChange={(e) => setPoForm((s) => ({ ...s, notes: e.target.value }))} />
-              <div className="md:col-span-2"><Button type="submit">Create PO</Button></div>
-            </form>
-            <div className="mt-5 space-y-2">
-              {purchaseOrders.map((po) => (
-                <FinanceRow
-                  key={po._id}
-                  title={`${po.poNumber} - ${po.supplierId?.name || po.supplier || 'Supplier'}`}
-                  meta={`${po.items?.map((i) => `${i.name} ${i.quantity} ${i.unit}`).join(', ')} | Expected ${formatDate(po.expectedDate)}`}
-                  amount={money((po.items || []).reduce((sum, i) => sum + Number(i.quantity || 0) * Number(i.unitCost || 0), 0))}
-                  status={po.status}
-                  action={po.status !== 'delivered' && po.status !== 'cancelled' ? <Button type="button" size="sm" onClick={() => updatePoStatus(po._id, 'delivered')}>Mark Delivered</Button> : null}
-                />
-              ))}
-            </div>
-          </FinancePanel>
-
-          <FinancePanel title="Purchase history" className="xl:col-span-2">
+          <FinancePanel title="Purchase history">
             {purchaseEdit && (
               <form
                 onSubmit={saveEditPurchase}
@@ -880,6 +1057,19 @@ const Inventory = () => {
                       { label: 'Pending', value: 'pending' },
                     ]}
                   />
+                  {purchaseEdit.paymentStatus === 'paid' && (
+                    <Select
+                      label="Paid from"
+                      value={purchaseEdit.paymentSource || 'cash'}
+                      onValueChange={(value) =>
+                        setPurchaseEdit((s) => ({ ...s, paymentSource: value }))
+                      }
+                      options={[
+                        { value: 'cash', label: 'Cash' },
+                        { value: 'bank', label: 'Bank' },
+                      ]}
+                    />
+                  )}
                 </div>
                 <Input
                   label="Notes"
@@ -897,55 +1087,30 @@ const Inventory = () => {
               </form>
             )}
 
-            <div className="space-y-2">
-              {purchases.map((purchase) => (
-                <FinanceRow
-                  key={purchase._id}
-                  title={purchase.inventoryItemId?.name || 'Purchase'}
-                  meta={`${formatDate(purchase.purchasedAt)} | ${purchase.quantity} ${
-                    purchase.inventoryItemId?.unit || ''
-                  } | ${purchase.supplierId?.name || purchase.supplier || 'Supplier'}`}
-                  amount={money(purchase.totalCost)}
-                  status={purchase.paymentStatus}
-                  action={
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => beginEditPurchase(purchase)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => deletePurchase(purchase)}
-                        className="text-red-600 hover:bg-red-50"
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  }
-                />
-              ))}
-              {purchases.length === 0 && <EmptyState>No purchases recorded yet.</EmptyState>}
-            </div>
+            <PurchaseHistoryListTable
+              purchases={purchases}
+              onEdit={beginEditPurchase}
+              onDelete={deletePurchase}
+            />
           </FinancePanel>
         </div>
       )}
 
       {activeTab === 'Transactions' && (
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="flex flex-col gap-6">
           <FinancePanel title="Add / remove stock">
-            <form onSubmit={postMovement} className="space-y-3">
+            <form onSubmit={postMovement} className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Select
                 label="Item"
                 placeholder="Select item"
                 value={movementForm.inventoryItemId || ''}
                 onValueChange={(value) => setMovementForm((s) => ({ ...s, inventoryItemId: value }))}
-                options={items.map((i) => ({ label: i.name, value: String(i._id) }))}
+                searchable
+                searchPlaceholder="Search by item name…"
+                options={items.map((i) => ({
+                  label: `${i.name} (${i.quantity} ${i.unit})${i.category ? ` · ${i.category}` : ''}`,
+                  value: String(i._id),
+                }))}
               />
               <Select
                 label="Action"
@@ -961,25 +1126,61 @@ const Inventory = () => {
               <Input label="Quantity" type="number" value={movementForm.quantity} onChange={(e) => setMovementForm((s) => ({ ...s, quantity: Number(e.target.value) }))} />
               <Input label="Reference" value={movementForm.referenceNumber} onChange={(e) => setMovementForm((s) => ({ ...s, referenceNumber: e.target.value }))} />
               <Input label="Reason / notes" value={movementForm.reason} onChange={(e) => setMovementForm((s) => ({ ...s, reason: e.target.value }))} />
-              <Button type="submit">{movementForm.type === 'stock_in' ? 'Add Stock' : 'Remove Stock'}</Button>
+              <div className="flex items-end md:col-span-2 lg:col-span-3">
+                <Button type="submit">{movementForm.type === 'stock_in' ? 'Add Stock' : 'Remove Stock'}</Button>
+              </div>
             </form>
           </FinancePanel>
 
-          <FinancePanel title="Transaction history" className="xl:col-span-2" actions={<Button type="button" variant="secondary" onClick={exportTransactions}><FiDownload className="mr-1" /> Export</Button>}>
+          <FinancePanel title="Transaction history" actions={<Button type="button" variant="secondary" onClick={exportTransactions}><FiDownload className="mr-1" /> Export</Button>}>
             <TransactionTable transactions={transactions} />
           </FinancePanel>
         </div>
       )}
 
       {activeTab === 'Waste' && (
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-          <FinanceMetric label="Monthly waste cost" value={money(wasteCost)} icon={FiArchive} tone="danger" />
-          <FinanceMetric label="Waste entries" value={transactions.filter((txn) => txn.type === 'wastage').length} icon={FiFileText} tone="warning" />
-          <FinanceMetric label="Pending bills" value={report?.purchases?.pendingBills || 0} icon={FiTruck} tone="neutral" />
-          <FinancePanel title="Waste report" className="xl:col-span-3">
+        <>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <FinanceMetric label="Waste cost (loaded period)" value={money(wasteCost)} icon={FiArchive} tone="danger" />
+            <FinanceMetric label="Waste entries" value={transactions.filter((txn) => txn.type === 'wastage').length} icon={FiFileText} tone="warning" />
+            <FinanceMetric label="Pending bills" value={report?.purchases?.pendingBills || 0} icon={FiTruck} tone="neutral" />
+          </div>
+          <div className="flex flex-col gap-6">
+            <FinancePanel title="Record waste / damage">
+            <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
+              Log spoilage, prep mistakes, or breakage. Stock is reduced by the amount you enter. This does not post an ingredients expense (unlike Raw use); it shows in waste analytics only.
+            </p>
+            <form onSubmit={postWaste} className="space-y-3">
+              <Select
+                label="Item"
+                placeholder="Select item"
+                value={wasteForm.inventoryItemId || ''}
+                onValueChange={(value) => setWasteForm((s) => ({ ...s, inventoryItemId: value }))}
+                searchable
+                searchPlaceholder="Search by item name…"
+                options={items.map((i) => ({
+                  label: `${i.name} (${i.quantity} ${i.unit} on hand)${i.category ? ` · ${i.category}` : ''}`,
+                  value: String(i._id),
+                }))}
+              />
+              <Input
+                label="Quantity lost"
+                type="number"
+                min={0}
+                step="any"
+                value={wasteForm.quantity || ''}
+                onChange={(e) => setWasteForm((s) => ({ ...s, quantity: Number(e.target.value) }))}
+              />
+              <Input label="Reference (optional)" value={wasteForm.referenceNumber} onChange={(e) => setWasteForm((s) => ({ ...s, referenceNumber: e.target.value }))} />
+              <Input label="Note (optional)" value={wasteForm.reason} onChange={(e) => setWasteForm((s) => ({ ...s, reason: e.target.value }))} />
+              <Button type="submit">Record waste</Button>
+            </form>
+          </FinancePanel>
+          <FinancePanel title="Waste history">
             <TransactionTable transactions={transactions.filter((txn) => txn.type === 'wastage')} />
           </FinancePanel>
-        </div>
+          </div>
+        </>
       )}
 
       {activeTab === 'Analytics' && (
@@ -1037,34 +1238,206 @@ const Inventory = () => {
   )
 }
 
-function TransactionTable({ transactions }) {
+function InventoryItemsTable({ items, onEdit, onRemove }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto rounded-xl border border-surface-100 dark:border-gray-800">
       <table className="min-w-full text-sm">
         <thead>
-          <tr className="border-b border-surface-200 text-left text-xs uppercase tracking-wide text-gray-500">
-            <th className="py-3 pr-3">Date</th>
-            <th className="py-3 pr-3">Item</th>
-            <th className="py-3 pr-3">Action</th>
-            <th className="py-3 pr-3">Qty</th>
-            <th className="py-3 pr-3">Cost</th>
-            <th className="py-3 pr-3">User / Note</th>
+          <tr className="border-b border-surface-200 bg-surface-50/80 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-400">
+            <th className="px-4 py-3">Item</th>
+            <th className="px-4 py-3">Category</th>
+            <th className="px-4 py-3">Status</th>
+            <th className="px-4 py-3 text-right">On hand</th>
+            <th className="px-4 py-3 text-right">Min</th>
+            <th className="px-4 py-3">Expiry</th>
+            <th className="px-4 py-3 text-right">Value</th>
+            <th className="px-4 py-3 text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {transactions.map((txn) => (
-            <tr key={txn._id} className="border-b border-surface-100">
-              <td className="py-3 pr-3">{formatDate(txn.createdAt)}</td>
-              <td className="py-3 pr-3 font-semibold">{txn.inventoryItemId?.name || '-'}</td>
-              <td className="py-3 pr-3"><span className="rounded-full bg-primary-50 px-2 py-1 text-xs font-bold text-primary-700">{txn.type}</span></td>
-              <td className="py-3 pr-3">{txn.quantity} {txn.inventoryItemId?.unit || ''}</td>
-              <td className="py-3 pr-3 font-bold">{money(txn.totalCost)}</td>
-              <td className="py-3 pr-3 text-gray-500">{txn.note || txn.referenceNumber || '-'}</td>
+          {items.map((item) => {
+            const tone = statusTone(item)
+            const stockValue = Number(item.quantity || 0) * Number(item.costPerUnit || 0)
+            return (
+              <tr
+                key={item._id}
+                className="border-b border-surface-100 transition hover:bg-amber-50/40 dark:border-gray-800 dark:hover:bg-gray-900/60"
+              >
+                <td className="px-4 py-3 font-semibold text-gray-950 dark:text-gray-100">{item.name}</td>
+                <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{item.category || 'General'}</td>
+                <td className="px-4 py-3">
+                  <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-bold ${tone.cls}`}>{tone.label}</span>
+                </td>
+                <td className="px-4 py-3 text-right tabular-nums text-gray-900 dark:text-gray-100">
+                  {item.quantity} {item.unit}
+                </td>
+                <td className="px-4 py-3 text-right tabular-nums text-gray-700 dark:text-gray-300">{item.minimumStock}</td>
+                <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                  {item.expiryDate ? (
+                    <span className="font-medium text-orange-800 dark:text-orange-300">{formatDate(item.expiryDate)}</span>
+                  ) : (
+                    '—'
+                  )}
+                </td>
+                <td className="px-4 py-3 text-right font-bold text-primary-800 dark:text-primary-300">{money(stockValue)}</td>
+                <td className="px-4 py-3 text-right">
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <Button type="button" size="sm" variant="secondary" onClick={() => onEdit(item)}>
+                      <FiEdit2 className="mr-1" /> Edit
+                    </Button>
+                    <Button type="button" size="sm" variant="danger" onClick={() => onRemove(item)}>
+                      <FiTrash2 className="mr-1" /> Delete
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function SuppliersListTable({ suppliers }) {
+  if (!suppliers.length) {
+    return <EmptyState>No suppliers saved yet.</EmptyState>
+  }
+  return (
+    <div className="overflow-x-auto rounded-xl border border-surface-100 dark:border-gray-800">
+      <table className="min-w-full text-sm">
+        <thead>
+          <tr className="border-b border-surface-200 bg-surface-50/80 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-400">
+            <th className="px-4 py-3">Name</th>
+            <th className="px-4 py-3">Phone</th>
+            <th className="px-4 py-3">PAN / VAT</th>
+            <th className="px-4 py-3">Address</th>
+            <th className="px-4 py-3 text-right">Due</th>
+            <th className="px-4 py-3">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {suppliers.map((s) => (
+            <tr key={s._id} className="border-b border-surface-100 hover:bg-amber-50/40 dark:border-gray-800 dark:hover:bg-gray-900/60">
+              <td className="px-4 py-3 font-semibold text-gray-950 dark:text-gray-100">{s.name}</td>
+              <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{s.phone || '—'}</td>
+              <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{s.panVat || '—'}</td>
+              <td className="max-w-[220px] truncate px-4 py-3 text-gray-600 dark:text-gray-300" title={s.address || ''}>
+                {s.address || '—'}
+              </td>
+              <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-gray-100">{money(s.paymentDue)}</td>
+              <td className="px-4 py-3">
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                    Number(s.paymentDue || 0) > 0 ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-800'
+                  }`}
+                >
+                  {Number(s.paymentDue || 0) > 0 ? 'Due' : 'Clear'}
+                </span>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
-      {transactions.length === 0 && <EmptyState>No transactions found.</EmptyState>}
+    </div>
+  )
+}
+
+function purchaseGrandTotal(p) {
+  return Number(p.totalCost || 0) + Number(p.taxAmount || 0)
+}
+
+function PurchaseHistoryListTable({ purchases, onEdit, onDelete }) {
+  if (!purchases.length) {
+    return <EmptyState>No purchases recorded yet.</EmptyState>
+  }
+  return (
+    <div className="overflow-x-auto rounded-xl border border-surface-100 dark:border-gray-800">
+      <table className="min-w-full text-sm">
+        <thead>
+          <tr className="border-b border-surface-200 bg-surface-50/80 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-400">
+            <th className="px-4 py-3">Date</th>
+            <th className="px-4 py-3">Item</th>
+            <th className="px-4 py-3 text-right">Qty</th>
+            <th className="px-4 py-3">Supplier</th>
+            <th className="px-4 py-3 text-right">Total</th>
+            <th className="px-4 py-3">Payment</th>
+            <th className="px-4 py-3">Paid from</th>
+            <th className="px-4 py-3 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {purchases.map((purchase) => (
+            <tr key={purchase._id} className="border-b border-surface-100 hover:bg-amber-50/40 dark:border-gray-800 dark:hover:bg-gray-900/60">
+              <td className="whitespace-nowrap px-4 py-3 text-gray-600 dark:text-gray-300">{formatDate(purchase.purchasedAt)}</td>
+              <td className="px-4 py-3 font-semibold text-gray-950 dark:text-gray-100">{purchase.inventoryItemId?.name || '—'}</td>
+              <td className="px-4 py-3 text-right tabular-nums text-gray-800 dark:text-gray-200">
+                {purchase.quantity} {purchase.inventoryItemId?.unit || ''}
+              </td>
+              <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{purchase.supplierId?.name || purchase.supplier || '—'}</td>
+              <td className="px-4 py-3 text-right font-bold text-primary-800 dark:text-primary-300">{money(purchaseGrandTotal(purchase))}</td>
+              <td className="px-4 py-3">
+                <span className="rounded-full bg-surface-100 px-2 py-0.5 text-xs font-bold capitalize text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                  {purchase.paymentStatus || '—'}
+                </span>
+              </td>
+              <td className="px-4 py-3 text-sm capitalize text-gray-700 dark:text-gray-300">
+                {purchase.paymentStatus === 'paid' ? (purchase.paymentSource === 'bank' ? 'Bank' : 'Cash') : '—'}
+              </td>
+              <td className="px-4 py-3 text-right">
+                <div className="flex flex-wrap justify-end gap-2">
+                  <Button type="button" size="sm" variant="secondary" onClick={() => onEdit(purchase)}>
+                    Edit
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => onDelete(purchase)} className="text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40">
+                    Delete
+                  </Button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function TransactionTable({ transactions }) {
+  if (!transactions.length) {
+    return (
+      <div className="rounded-xl border border-dashed border-surface-200 bg-surface-50/50 py-12 dark:border-gray-700 dark:bg-gray-900/40">
+        <EmptyState>No transactions found.</EmptyState>
+      </div>
+    )
+  }
+  return (
+    <div className="overflow-x-auto rounded-xl border border-surface-100 dark:border-gray-800">
+      <table className="min-w-full text-sm">
+        <thead>
+          <tr className="border-b border-surface-200 bg-surface-50/80 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-400">
+            <th className="px-4 py-3">Date</th>
+            <th className="px-4 py-3">Item</th>
+            <th className="px-4 py-3">Action</th>
+            <th className="px-4 py-3">Qty</th>
+            <th className="px-4 py-3">Cost</th>
+            <th className="px-4 py-3">User / Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          {transactions.map((txn) => (
+            <tr key={txn._id} className="border-b border-surface-100 hover:bg-amber-50/40 dark:border-gray-800 dark:hover:bg-gray-900/60">
+              <td className="whitespace-nowrap px-4 py-3 text-gray-600 dark:text-gray-300">{formatDate(txn.createdAt)}</td>
+              <td className="px-4 py-3 font-semibold text-gray-950 dark:text-gray-100">{txn.inventoryItemId?.name || '-'}</td>
+              <td className="px-4 py-3">
+                <span className="rounded-full bg-primary-50 px-2 py-1 text-xs font-bold text-primary-700 dark:bg-gray-800 dark:text-primary-300">{txn.type}</span>
+              </td>
+              <td className="px-4 py-3 tabular-nums text-gray-800 dark:text-gray-200">{txn.quantity} {txn.inventoryItemId?.unit || ''}</td>
+              <td className="px-4 py-3 font-bold text-primary-800 dark:text-primary-300">{money(txn.totalCost)}</td>
+              <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{txn.note || txn.referenceNumber || '-'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }

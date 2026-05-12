@@ -11,11 +11,8 @@ import PosOrderCard, { getCustomerDisplayName } from './PosOrderCard'
 
 const METHODS = [
   { value: 'cash', label: 'Cash' },
-  { value: 'card', label: 'Card' },
-  { value: 'esewa', label: 'eSewa' },
-  { value: 'khalti', label: 'Khalti' },
-  { value: 'fonepay', label: 'FonePay' },
-  { value: 'wallet', label: 'Wallet' },
+  { value: 'online', label: 'Online' },
+  { value: 'credit', label: 'House credit' },
 ]
 
 export default function PosBilling() {

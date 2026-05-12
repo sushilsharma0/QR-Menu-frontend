@@ -144,9 +144,30 @@ const OrderDetail = () => {
     if (!order) return
     const due = Math.max(0, Number(order.grandTotal || 0) - Number(order.amountPaidTotal || 0))
     setSinglePayAmount(due > 0 ? due.toFixed(2) : '')
+    if (order.guestPaymentPreferenceAt && order.paymentMethod === 'mixed') {
+      const gCash = Number(order.guestPaymentPreferenceCash || 0)
+      const gOnline = Number(order.guestPaymentPreferenceOnline || 0)
+      if (gCash > 0.01 || gOnline > 0.01) {
+        setPayMode('both')
+        setSplitCash(gCash > 0.01 ? String(gCash) : '')
+        setSplitOnline(gOnline > 0.01 ? String(gOnline) : '')
+        return
+      }
+    }
+    if (order.guestPaymentPreferenceAt && order.paymentMethod === 'cash') setPayMode('cash')
+    else if (order.guestPaymentPreferenceAt && order.paymentMethod === 'online') setPayMode('online')
     setSplitCash('')
     setSplitOnline('')
-  }, [order?._id, order?.grandTotal, order?.amountPaidTotal, order?.paymentStatus])
+  }, [
+    order?._id,
+    order?.grandTotal,
+    order?.amountPaidTotal,
+    order?.paymentStatus,
+    order?.guestPaymentPreferenceAt,
+    order?.paymentMethod,
+    order?.guestPaymentPreferenceCash,
+    order?.guestPaymentPreferenceOnline,
+  ])
 
   const fetchRestaurantProfile = async () => {
     try {
@@ -223,7 +244,7 @@ const OrderDetail = () => {
           toast.error('Amount exceeds balance due')
           return
         }
-        const method = payMode === 'online' ? 'upi' : 'cash'
+        const method = payMode === 'online' ? 'online' : 'cash'
         await api.post('/restaurant/cashier/pay', {
           customerOrderId: id,
           paymentMethod: method,
@@ -283,6 +304,14 @@ const OrderDetail = () => {
         )}
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Record payment</p>
+          {order.guestPaymentPreferenceAt ? (
+            <p className="mt-1 rounded-lg bg-primary-50 px-2 py-1.5 text-xs font-semibold text-primary-900 dark:bg-primary-950/50 dark:text-primary-100">
+              Guest indicated:{' '}
+              {order.paymentMethod === 'mixed'
+                ? `split — cash ${formatMoney(order.guestPaymentPreferenceCash)} + online ${formatMoney(order.guestPaymentPreferenceOnline)}`
+                : String(order.paymentMethod || '—')}
+            </p>
+          ) : null}
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             Amount due: <span className="font-bold text-gray-900 dark:text-gray-100">{formatMoney(amountDue)}</span>
             {Number(order.amountPaidTotal) > 0 && (
@@ -312,7 +341,7 @@ const OrderDetail = () => {
         </div>
         {payMode !== 'both' ? (
           <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300">
-            Amount ({payMode === 'cash' ? 'cash' : 'online / UPI'})
+            Amount ({payMode === 'cash' ? 'cash' : 'online'})
             <input
               type="number"
               min="0"

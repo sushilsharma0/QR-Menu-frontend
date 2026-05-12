@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import {
   FiBarChart2,
   FiCalendar,
+  FiChevronDown,
   FiClock,
   FiCreditCard,
   FiDollarSign,
@@ -55,6 +56,25 @@ function MixedTooltip({ active, payload, label, labelFormatter }) {
   )
 }
 
+function FinanceAccordion({ title, description, open, onToggle, children }) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-amber-50/50 dark:hover:bg-gray-800/50"
+      >
+        <div className="min-w-0">
+          <h2 className="text-lg font-bold text-gray-950 dark:text-gray-100">{title}</h2>
+          {description && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{description}</p>}
+        </div>
+        <FiChevronDown className={`h-5 w-5 shrink-0 text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && <div className="border-t border-surface-100 p-5 pt-4 dark:border-gray-800">{children}</div>}
+    </div>
+  )
+}
+
 const FinanceDashboard = () => {
   const [range, setRange] = useState('monthly')
   const [summary, setSummary] = useState(null)
@@ -63,6 +83,16 @@ const FinanceDashboard = () => {
   const [erp, setErp] = useState(null)
   const [channel, setChannel] = useState([])
   const [loading, setLoading] = useState(true)
+  const [openSections, setOpenSections] = useState(() => new Set(['summary']))
+
+  const toggleSection = (key) => {
+    setOpenSections((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
 
   const query = useMemo(() => {
     const now = new Date()
@@ -188,70 +218,84 @@ const FinanceDashboard = () => {
         ))}
       />
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {cards.map((c) => (
-          <FinanceMetric key={c.label} label={c.label} value={loading ? '...' : c.value} sub={c.sub} icon={c.icon} tone={c.tone} />
-        ))}
-      </div>
+      <FinanceAccordion
+        title="Summary & headline numbers"
+        description="Key totals for the selected period, ERP snapshot, channels, and the finance deep dive grid."
+        open={openSections.has('summary')}
+        onToggle={() => toggleSection('summary')}
+      >
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {cards.map((c) => (
+              <FinanceMetric key={c.label} label={c.label} value={loading ? '...' : c.value} sub={c.sub} icon={c.icon} tone={c.tone} />
+            ))}
+          </div>
 
-      {erp && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <FinanceMetric label="Sales today (ERP)" value={fmtMoney(erp.today?.revenue)} icon={FiDollarSign} />
-          <FinanceMetric label="Expenses today" value={fmtMoney(erp.today?.expenses)} icon={FiCalendar} tone="warning" />
-          <FinanceMetric label="Profit today" value={fmtMoney(erp.today?.profit)} icon={FiBarChart2} tone={Number(erp.today?.profit || 0) >= 0 ? 'success' : 'danger'} />
-          <FinanceMetric label="Inventory valuation" value={fmtMoney(erp.inventoryValuation)} icon={FiShoppingBag} />
-          <FinanceMetric label="Best seller today" value={erp.bestSellingItem?._id || '-'} sub={erp.bestSellingItem ? fmtMoney(erp.bestSellingItem.revenue) : ''} icon={FiShoppingBag} tone="neutral" />
-          <FinanceMetric label="Top expense category" value={erp.topExpenseCategory?._id || '-'} sub={erp.topExpenseCategory ? fmtMoney(erp.topExpenseCategory.amount) : ''} icon={FiBarChart2} tone="warning" />
-          <FinanceMetric label="Monthly revenue" value={fmtMoney(erp.monthlyRevenue)} icon={FiDollarSign} />
-          <FinanceMetric label="Monthly growth" value={erp.monthlyGrowthPercent != null ? `${erp.monthlyGrowthPercent}%` : '-'} icon={FiBarChart2} tone="success" />
-        </div>
-      )}
-
-      {channel?.length > 0 && (
-        <FinancePanel title="Revenue by channel">
-          <FinanceChartBox>
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={channel} margin={{ top: 12, right: 10, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="channelRevenueGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#0f766e" stopOpacity={0.95} />
-                      <stop offset="100%" stopColor="#14b8a6" stopOpacity={0.25} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" vertical={false} />
-                  <XAxis dataKey="_id" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={8} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} tickFormatter={(v) => `Rs.${Math.round(Number(v || 0) / 1000)}k`} width={58} />
-                  <Tooltip content={<FinanceTooltip />} cursor={{ fill: '#fffcf1' }} />
-                  <Bar dataKey="revenue" name="Revenue" fill="url(#channelRevenueGradient)" radius={[14, 14, 5, 5]} barSize={46} />
-                </BarChart>
-              </ResponsiveContainer>
+          {erp && (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <FinanceMetric label="Sales today (ERP)" value={fmtMoney(erp.today?.revenue)} icon={FiDollarSign} />
+              <FinanceMetric label="Expenses today" value={fmtMoney(erp.today?.expenses)} icon={FiCalendar} tone="warning" />
+              <FinanceMetric label="Profit today" value={fmtMoney(erp.today?.profit)} icon={FiBarChart2} tone={Number(erp.today?.profit || 0) >= 0 ? 'success' : 'danger'} />
+              <FinanceMetric label="Inventory valuation" value={fmtMoney(erp.inventoryValuation)} icon={FiShoppingBag} />
+              <FinanceMetric label="Best seller today" value={erp.bestSellingItem?._id || '-'} sub={erp.bestSellingItem ? fmtMoney(erp.bestSellingItem.revenue) : ''} icon={FiShoppingBag} tone="neutral" />
+              <FinanceMetric label="Top expense category" value={erp.topExpenseCategory?._id || '-'} sub={erp.topExpenseCategory ? fmtMoney(erp.topExpenseCategory.amount) : ''} icon={FiBarChart2} tone="warning" />
+              <FinanceMetric label="Monthly revenue" value={fmtMoney(erp.monthlyRevenue)} icon={FiDollarSign} />
+              <FinanceMetric label="Monthly growth" value={erp.monthlyGrowthPercent != null ? `${erp.monthlyGrowthPercent}%` : '-'} icon={FiBarChart2} tone="success" />
             </div>
-          </FinanceChartBox>
-        </FinancePanel>
-      )}
+          )}
 
-      <FinancePanel title="Finance Deep Dive">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {[
-            ['Gross revenue', fmtMoney(summary?.totalRevenue)],
-            ['Net revenue', fmtMoney(summary?.netRevenue)],
-            ['Paid expenses', fmtMoney(summary?.paidExpenses)],
-            ['Pending expenses', fmtMoney(summary?.pendingExpenses)],
-            ['Items sold', Number(summary?.itemCount || 0).toLocaleString('en-IN')],
-            ['Expense entries', Number(summary?.expenseEntries || 0).toLocaleString('en-IN')],
-            ['Tax collected', fmtMoney(summary?.taxCollected)],
-            ['Refund amount', fmtMoney(summary?.refundAmount)],
-          ].map(([label, value]) => (
-            <div key={label} className="rounded-2xl border border-amber-100 bg-[#fffaf0] px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
-              <p className="text-xs font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
-              <p className="mt-1 text-xl font-black text-gray-950 dark:text-gray-100">{value}</p>
+          {channel?.length > 0 && (
+            <FinancePanel title="Revenue by channel">
+              <FinanceChartBox>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={channel} margin={{ top: 12, right: 10, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="channelRevenueGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#0f766e" stopOpacity={0.95} />
+                          <stop offset="100%" stopColor="#14b8a6" stopOpacity={0.25} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" vertical={false} />
+                      <XAxis dataKey="_id" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={8} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} tickFormatter={(v) => `Rs.${Math.round(Number(v || 0) / 1000)}k`} width={58} />
+                      <Tooltip content={<FinanceTooltip />} cursor={{ fill: '#fffcf1' }} />
+                      <Bar dataKey="revenue" name="Revenue" fill="url(#channelRevenueGradient)" radius={[14, 14, 5, 5]} barSize={46} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </FinanceChartBox>
+            </FinancePanel>
+          )}
+
+          <FinancePanel title="Finance Deep Dive">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {[
+                ['Gross revenue', fmtMoney(summary?.totalRevenue)],
+                ['Net revenue', fmtMoney(summary?.netRevenue)],
+                ['Paid expenses', fmtMoney(summary?.paidExpenses)],
+                ['Pending expenses', fmtMoney(summary?.pendingExpenses)],
+                ['Items sold', Number(summary?.itemCount || 0).toLocaleString('en-IN')],
+                ['Expense entries', Number(summary?.expenseEntries || 0).toLocaleString('en-IN')],
+                ['Tax collected', fmtMoney(summary?.taxCollected)],
+                ['Refund amount', fmtMoney(summary?.refundAmount)],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-2xl border border-amber-100 bg-[#fffaf0] px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
+                  <p className="text-xs font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
+                  <p className="mt-1 text-xl font-black text-gray-950 dark:text-gray-100">{loading ? '...' : value}</p>
+                </div>
+              ))}
             </div>
-          ))}
+          </FinancePanel>
         </div>
-      </FinancePanel>
+      </FinanceAccordion>
 
-      <FinancePanel title="Finance Ring Insights">
+      <FinanceAccordion
+        title="Composition, rings & expense mix"
+        description="KPI ratios, channel and expense doughnuts, profit trend, and payment mix."
+        open={openSections.has('rings')}
+        onToggle={() => toggleSection('rings')}
+      >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {[
             ['Net revenue rate', pct(financeModel.netRevenueRate), 'Net revenue as a share of gross sales'],
@@ -308,8 +352,11 @@ const FinanceDashboard = () => {
           </FinanceChartBox>
 
 
-          <FinancePanel title="Profit trend">
           <FinanceChartBox empty={financeModel.profitTrend.length === 0} emptyTitle="No profit trend yet">
+            <div className="mb-3">
+              <h3 className="font-bold text-gray-950 dark:text-gray-100">Profit trend</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Revenue, expenses and profit per day.</p>
+            </div>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={financeModel.profitTrend} margin={{ top: 14, right: 12, left: 0, bottom: 0 }}>
@@ -325,7 +372,6 @@ const FinanceDashboard = () => {
               </ResponsiveContainer>
             </div>
           </FinanceChartBox>
-        </FinancePanel>
 
           
 
@@ -399,7 +445,6 @@ const FinanceDashboard = () => {
             </div>
           </FinanceChartBox>
         </div>
-      </FinancePanel>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
        <FinanceChartBox empty={financeModel.paymentMethodRing.length === 0} emptyTitle="No payment method ring data yet">
@@ -453,7 +498,14 @@ const FinanceDashboard = () => {
           </FinanceChartBox>
         </FinancePanel>
       </div>
+      </FinanceAccordion>
 
+      <FinanceAccordion
+        title="Trends, timing & top sellers"
+        description="Peak hours, revenue trend, category mix, payment bars, and best-selling menu lines."
+        open={openSections.has('charts')}
+        onToggle={() => toggleSection('charts')}
+      >
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <FinancePanel title="Peak sales hours">
           <FinanceChartBox empty={financeModel.peakHours.length === 0} emptyTitle="No hourly sales yet">
@@ -617,6 +669,7 @@ const FinanceDashboard = () => {
           </div>
         </FinancePanel>
       </div>
+      </FinanceAccordion>
     </div>
   )
 }

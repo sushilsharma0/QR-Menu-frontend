@@ -12,6 +12,10 @@ export default function CustomerPostServePayment({
   guestId,
   grandTotal,
   customerEmail: initialEmail,
+  guestPaymentPreferenceAt,
+  paymentMethod: orderPaymentMethod,
+  guestPaymentPreferenceCash = 0,
+  guestPaymentPreferenceOnline = 0,
   onSuccess,
 }) {
   const { success, error, warning, toasts, removeToast } = useToast();
@@ -25,6 +29,7 @@ export default function CustomerPostServePayment({
   const [submitting, setSubmitting] = useState(false);
 
   const total = Math.max(0, Number(grandTotal || 0));
+  const preferenceSent = Boolean(guestPaymentPreferenceAt);
 
   const sendCreditOtp = async () => {
     const em = String(creditEmail || initialEmail || "").trim();
@@ -84,10 +89,14 @@ export default function CustomerPostServePayment({
         creditOtp: checkoutTiming === "credit" ? String(creditOtp).trim() : "",
         customerEmail: String(initialEmail || "").trim(),
       });
-      success("Payment choice saved.");
+      if (checkoutTiming === "credit") {
+        success("House account recorded — thank you!");
+      } else {
+        success("Choice sent — staff will confirm when payment is received.");
+      }
       onSuccess?.();
     } catch (err) {
-      error(err?.response?.data?.message || "Could not save payment.");
+      error(err?.response?.data?.message || "Could not save.");
     } finally {
       setSubmitting(false);
     }
@@ -104,14 +113,31 @@ export default function CustomerPostServePayment({
   return (
     <section className="mt-5 space-y-4 rounded-[2rem] border border-primary-200 bg-white p-5 shadow-sm dark:border-primary-900/40 dark:bg-gray-900">
       <div>
-        <p className="text-xs font-black uppercase tracking-wider text-primary-700 dark:text-primary-400">Pay for your meal</p>
+        <p className="text-xs font-black uppercase tracking-wider text-primary-700 dark:text-primary-400">Settle your bill</p>
         <p className="mt-1 text-sm font-semibold text-gray-600 dark:text-gray-400">
-          Your order was served. Choose how you settle the bill.
+          Tell us how you plan to pay. A team member will record payment when they collect cash or confirm your online
+          payment — you are not charged from this screen alone.
         </p>
       </div>
 
+      {preferenceSent && checkoutTiming === "pay_now" ? (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/90 p-4 text-sm font-semibold text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-100">
+          <p className="font-black">Waiting for staff</p>
+          <p className="mt-2 text-xs leading-relaxed opacity-90">
+            We shared your choice
+            {orderPaymentMethod === "mixed"
+              ? `: cash ${Number(guestPaymentPreferenceCash || 0).toFixed(2)} + online ${Number(guestPaymentPreferenceOnline || 0).toFixed(2)}`
+              : orderPaymentMethod
+                ? ` (${orderPaymentMethod})`
+                : ""}
+            . Payment status stays pending until the restaurant marks it paid.
+          </p>
+          <p className="mt-2 text-xs font-bold text-emerald-800 dark:text-emerald-200">You can update your choice below if you change your mind.</p>
+        </div>
+      ) : null}
+
       <div className="rounded-2xl border border-gray-100 bg-gray-50/80 p-4 dark:border-gray-800 dark:bg-gray-950/50">
-        <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">When do you pay?</h3>
+        <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">How do you want to pay?</h3>
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
@@ -122,7 +148,7 @@ export default function CustomerPostServePayment({
                 : "border-gray-100 text-gray-600 dark:border-gray-700 dark:text-gray-300"
             }`}
           >
-            Pay now
+            Cash / online
           </button>
           <button
             type="button"
@@ -133,7 +159,7 @@ export default function CustomerPostServePayment({
                 : "border-gray-100 text-gray-600 dark:border-gray-700 dark:text-gray-300"
             }`}
           >
-            Pay later (credit)
+            House credit
           </button>
         </div>
         {checkoutTiming === "credit" && (
@@ -148,12 +174,12 @@ export default function CustomerPostServePayment({
 
       {checkoutTiming === "pay_now" && (
         <div className="rounded-2xl border border-gray-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-          <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">How do you pay (today)?</h3>
+          <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Payment type</h3>
           <div className="grid grid-cols-3 gap-2">
             {[
               { id: "cash", icon: Landmark, label: "Cash" },
               { id: "online", icon: CreditCard, label: "Online" },
-              { id: "both", icon: ShieldCheck, label: "Both" },
+              { id: "both", icon: ShieldCheck, label: "Split" },
             ].map((opt) => {
               const Icon = opt.icon;
               const active = paymentMode === opt.id;
@@ -246,7 +272,7 @@ export default function CustomerPostServePayment({
         onClick={submit}
         className="w-full rounded-2xl bg-primary-600 py-4 text-sm font-black text-white shadow-lg transition-all active:scale-[0.98] disabled:opacity-60"
       >
-        {submitting ? "Saving…" : "Confirm payment"}
+        {submitting ? "Sending…" : checkoutTiming === "credit" ? "Verify & use house credit" : "Send choice to restaurant"}
       </button>
 
       <ToastContainer toasts={toasts} removeToast={removeToast} />
