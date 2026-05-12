@@ -184,6 +184,15 @@ export const getGuestLoyalty = async ({ guestId, qrToken }) => {
   return response?.data?.data || { points: 0, lifetimePoints: 0 }
 }
 
+/**
+ * Public restaurant profile (About + Privacy) entered by the restaurant admin.
+ * Customer About / Privacy pages render entirely from this response.
+ */
+export const getRestaurantPublicProfile = async (restaurantSlug) => {
+  const response = await api.get(`/customer/restaurant/${restaurantSlug}/profile`)
+  return response?.data?.data || null
+}
+
 // Helper functions for customer flow
 export const getRestaurantInfo = async (restaurantSlug) => {
   const menu = await getRestaurantMenu(restaurantSlug)
