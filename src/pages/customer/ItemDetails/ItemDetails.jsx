@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import * as FramerMotion from "framer-motion";
 import {
   ArrowLeft,
@@ -71,12 +71,46 @@ const ItemDetails = () => {
     }
   };
 
-  const nutritionalInfo = [
-    { label: "Protein", value: "18g" },
-    { label: "Carbs", value: "52g" },
-    { label: "Fat", value: "16g" },
-    { label: "Fiber", value: "3g" },
-  ];
+  // Build the Nutritional Facts grid from whatever the admin actually saved.
+  // Each gram-based macro is rendered as e.g. "18g"; the section is hidden
+  // entirely when no values are present so we don't show empty placeholders.
+  const nutritionalInfo = useMemo(() => {
+    const n = item?.nutrition || {};
+    const macros = [
+      { key: "protein", label: "Protein", unit: "g" },
+      { key: "carbs", label: "Carbs", unit: "g" },
+      { key: "fat", label: "Fat", unit: "g" },
+      { key: "fiber", label: "Fiber", unit: "g" },
+    ];
+    return macros
+      .filter((m) => Number.isFinite(Number(n[m.key])))
+      .map((m) => ({ label: m.label, value: `${Number(n[m.key])}${m.unit}` }));
+  }, [item?.nutrition]);
+
+  // Dynamic dietary chips driven by `dietaryTags` set in the admin panel.
+  // Falls back to the legacy `isVegetarian` flag (or "Non-Veg") when no
+  // tag has been picked yet.
+  const TAG_BADGES = {
+    veg:     { label: "Pure Veg",     border: "border-green-500",  fill: "bg-green-500",  text: "text-green-600" },
+    egg:     { label: "Contains Egg", border: "border-amber-500",  fill: "bg-amber-500",  text: "text-amber-600" },
+    chicken: { label: "Chicken",      border: "border-orange-500", fill: "bg-orange-500", text: "text-orange-600" },
+    mutton:  { label: "Mutton",       border: "border-red-500",    fill: "bg-red-500",    text: "text-red-600" },
+    buff:    { label: "Buff",         border: "border-rose-500",   fill: "bg-rose-500",   text: "text-rose-600" },
+    pork:    { label: "Pork",         border: "border-pink-500",   fill: "bg-pink-500",   text: "text-pink-600" },
+    fish:    { label: "Fish",         border: "border-blue-500",   fill: "bg-blue-500",   text: "text-blue-600" },
+    seafood: { label: "Seafood",      border: "border-cyan-500",   fill: "bg-cyan-500",   text: "text-cyan-600" },
+  };
+
+  const dietaryBadges = useMemo(() => {
+    const tags = Array.isArray(item?.dietaryTags) ? item.dietaryTags : [];
+    if (tags.length > 0) {
+      return tags
+        .map((t) => TAG_BADGES[t])
+        .filter(Boolean);
+    }
+    if (item?.isVegetarian) return [TAG_BADGES.veg];
+    return [{ label: "Non-Veg", border: "border-red-500", fill: "bg-red-500", text: "text-red-600" }];
+  }, [item?.dietaryTags, item?.isVegetarian]);
 
   const lineTotal = () => Number(item.price || 0) * quantity;
 
@@ -214,16 +248,19 @@ const ItemDetails = () => {
               {item.name}
             </h1>
 
-            <div className="flex items-center gap-3 mt-2">
-              <div className="flex items-center gap-1">
-                <div className="w-4 h-4 border-2 border-green-500 rounded-sm flex items-center justify-center">
-                  <div className="w-2 h-1.5 bg-green-500 rounded-sm"></div>
+            <div className="flex items-center gap-3 mt-2 flex-wrap">
+              {dietaryBadges.map((badge, idx) => (
+                <div key={`${badge.label}-${idx}`} className="flex items-center gap-1">
+                  <div
+                    className={`w-4 h-4 border-2 ${badge.border} rounded-sm flex items-center justify-center`}
+                  >
+                    <div className={`w-2 h-2 ${badge.fill} rounded-sm`}></div>
+                  </div>
+                  <span className={`text-xs font-medium ${badge.text}`}>
+                    {badge.label}
+                  </span>
                 </div>
-
-                <span className="text-xs font-medium text-green-600">
-                  Pure Veg
-                </span>
-              </div>
+              ))}
 
               <div className="flex items-center gap-1 text-yellow-500">
                 <Star size={14} fill="currentColor" />
@@ -253,22 +290,24 @@ const ItemDetails = () => {
         </div>
 
         {/* Quick Info */}
-        <div className="flex gap-3 mt-4">
-          <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-xl">
-            <Clock size={16} className="text-orange-500" />
+        <div className="flex gap-3 mt-4 flex-wrap">
+          {(item.preparationTime || item.prepTime) && (
+            <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-xl">
+              <Clock size={16} className="text-orange-500" />
+              <span className="text-xs font-medium text-gray-600">
+                {item.prepTime || `${item.preparationTime} min`}
+              </span>
+            </div>
+          )}
 
-            <span className="text-xs font-medium text-gray-600">
-              {item.prepTime || "20-25 min"}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-xl">
-            <Flame size={16} className="text-orange-500" />
-
-            <span className="text-xs font-medium text-gray-600">
-              {item.calories || 420} kcal
-            </span>
-          </div>
+          {Number.isFinite(Number(item?.nutrition?.calories)) && (
+            <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-xl">
+              <Flame size={16} className="text-orange-500" />
+              <span className="text-xs font-medium text-gray-600">
+                {Number(item.nutrition.calories)} kcal
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Description */}
@@ -306,29 +345,40 @@ const ItemDetails = () => {
           )}
         </div>
 
-        {/* Nutritional Info */}
-        <div className="mt-6">
-          <h3 className="font-bold text-gray-800 mb-3">
-            Nutritional Facts
-          </h3>
+        {/* Nutritional Info — only shown when the admin has saved values */}
+        {nutritionalInfo.length > 0 && (
+          <div className="mt-6">
+            <h3 className="font-bold text-gray-800 mb-3">
+              Nutritional Facts
+            </h3>
 
-          <div className="grid grid-cols-4 gap-2">
-            {nutritionalInfo.map((nutrient, index) => (
-              <div
-                key={index}
-                className="bg-gray-50 rounded-xl p-3 text-center"
-              >
-                <p className="text-xs font-bold text-gray-800">
-                  {nutrient.value}
-                </p>
-
-                <p className="text-[10px] text-gray-400 mt-1">
-                  {nutrient.label}
-                </p>
-              </div>
-            ))}
+            <div
+              className={`grid gap-2 ${
+                nutritionalInfo.length >= 4
+                  ? "grid-cols-4"
+                  : nutritionalInfo.length === 3
+                  ? "grid-cols-3"
+                  : nutritionalInfo.length === 2
+                  ? "grid-cols-2"
+                  : "grid-cols-1"
+              }`}
+            >
+              {nutritionalInfo.map((nutrient, index) => (
+                <div
+                  key={index}
+                  className="bg-gray-50 rounded-xl p-3 text-center"
+                >
+                  <p className="text-xs font-bold text-gray-800">
+                    {nutrient.value}
+                  </p>
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    {nutrient.label}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {(item.customizations || []).length > 0 && (
           <div className="mt-8 space-y-5">

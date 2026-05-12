@@ -79,8 +79,29 @@ function MenuItemImage({ item, className = "" }) {
 }
 
 function MenuActions({ item, onEdit, onDelete, onToggle, onManageRecipe }) {
+  const hasRecipe = Array.isArray(item.recipe) && item.recipe.length > 0;
   return (
     <div className="flex items-center gap-2">
+      {/* Recipe button is labelled (not icon-only) so admins discover it.
+         Green when a BOM is set (stock will auto-decrement on each sale);
+         amber when missing (selling this item won't move inventory). */}
+      <button
+        type="button"
+        onClick={() => onManageRecipe(item)}
+        title={
+          hasRecipe
+            ? `Recipe set (${item.recipe.length} ingredient${item.recipe.length === 1 ? "" : "s"}) — auto-deducts stock on sale`
+            : "No recipe yet — click to link ingredients so stock auto-deducts"
+        }
+        className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
+          hasRecipe
+            ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+            : "bg-amber-50 text-amber-700 hover:bg-amber-100"
+        }`}
+      >
+        <FiBookOpen className="h-3.5 w-3.5" />
+        {hasRecipe ? `Recipe · ${item.recipe.length}` : "Add recipe"}
+      </button>
       <button
         type="button"
         onClick={() => onToggle(item)}
@@ -88,14 +109,6 @@ function MenuActions({ item, onEdit, onDelete, onToggle, onManageRecipe }) {
         title={item.isAvailable ? "Mark as unavailable" : "Mark as available"}
       >
         {item.isAvailable ? <FiEyeOff className="h-4 w-4" /> : <FiEye className="h-4 w-4" />}
-      </button>
-      <button
-        type="button"
-        onClick={() => onManageRecipe(item)}
-        className="rounded-lg p-2 text-gray-400 transition hover:bg-emerald-50 hover:text-emerald-700"
-        title="Manage recipe"
-      >
-        <FiBookOpen className="h-4 w-4" />
       </button>
       <button
         type="button"

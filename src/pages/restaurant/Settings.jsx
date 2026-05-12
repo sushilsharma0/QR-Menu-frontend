@@ -109,16 +109,25 @@ const Settings = () => {
     try {
       setLoading(true)
       const formData = new FormData()
-      
-      // Add text fields
-      formData.append('phone', data.phone)
-      formData.append('address', data.address)
-      formData.append('city', data.city)
-      formData.append('state', data.state)
-      formData.append('pincode', data.pincode)
-      formData.append('description', data.description)
-      formData.append('openingTime', data.openingTime)
-      formData.append('closingTime', data.closingTime)
+
+      // Only append values that are actually present — otherwise FormData
+      // serialises `undefined` / `null` to the literal strings "undefined"
+      // / "null", which then get persisted into MongoDB.
+      const appendIfPresent = (key, value) => {
+        if (value === undefined || value === null) return
+        const str = String(value)
+        if (!str.trim()) return
+        formData.append(key, str)
+      }
+
+      appendIfPresent('phone', data.phone)
+      appendIfPresent('address', data.address)
+      appendIfPresent('city', data.city)
+      appendIfPresent('state', data.state)
+      appendIfPresent('pincode', data.pincode)
+      appendIfPresent('description', data.description)
+      appendIfPresent('openingTime', data.openingTime)
+      appendIfPresent('closingTime', data.closingTime)
       
       // Add file fields if present
       if (logoFile) {

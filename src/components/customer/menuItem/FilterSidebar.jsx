@@ -23,6 +23,21 @@ const filterOptions = {
     { id: "gluten-free", label: "Gluten Free" },
     { id: "nuts-free", label: "Nuts Free" },
   ],
+  /**
+   * Cuisine / meat tags chosen by the restaurant admin per menu item.
+   * Single-select — clicking "Mutton" hides everything else, "All" resets.
+   */
+  types: [
+    { id: "all", label: "All", dotClass: "bg-gray-700", activeClass: "bg-gray-900 text-white border-gray-900" },
+    { id: "veg", label: "Veg", dotClass: "bg-green-500", activeClass: "bg-green-500 text-white border-green-500" },
+    { id: "egg", label: "Egg", dotClass: "bg-amber-400", activeClass: "bg-amber-500 text-white border-amber-500" },
+    { id: "chicken", label: "Chicken", dotClass: "bg-orange-500", activeClass: "bg-orange-500 text-white border-orange-500" },
+    { id: "mutton", label: "Mutton", dotClass: "bg-red-500", activeClass: "bg-red-500 text-white border-red-500" },
+    { id: "buff", label: "Buff", dotClass: "bg-rose-500", activeClass: "bg-rose-500 text-white border-rose-500" },
+    { id: "pork", label: "Pork", dotClass: "bg-pink-500", activeClass: "bg-pink-500 text-white border-pink-500" },
+    { id: "fish", label: "Fish", dotClass: "bg-blue-500", activeClass: "bg-blue-500 text-white border-blue-500" },
+    { id: "seafood", label: "Seafood", dotClass: "bg-cyan-500", activeClass: "bg-cyan-500 text-white border-cyan-500" },
+  ],
 };
 
 const FilterSidebar = ({ isOpen, onClose, onApply, currentFilters }) => {
@@ -30,6 +45,7 @@ const FilterSidebar = ({ isOpen, onClose, onApply, currentFilters }) => {
     sort: currentFilters?.sort || "popular",
     priceRange: currentFilters?.priceRange || "all",
     dietary: currentFilters?.dietary || "",
+    type: currentFilters?.type || "all",
   });
 
   // Reset filters when sidebar opens with currentFilters
@@ -39,6 +55,7 @@ const FilterSidebar = ({ isOpen, onClose, onApply, currentFilters }) => {
         sort: currentFilters.sort || "popular",
         priceRange: currentFilters.priceRange || "all",
         dietary: currentFilters.dietary || "",
+        type: currentFilters.type || "all",
       });
     }
   }, [isOpen, currentFilters]);
@@ -75,11 +92,16 @@ const FilterSidebar = ({ isOpen, onClose, onApply, currentFilters }) => {
     onClose();
   };
 
+  const handleTypeSelect = (typeId) => {
+    setFilters((prev) => ({ ...prev, type: typeId || "all" }));
+  };
+
   const handleClear = () => {
     const resetFilters = {
       sort: "popular",
       priceRange: "all",
       dietary: "",
+      type: "all",
     };
     setFilters(resetFilters);
   };
@@ -162,6 +184,39 @@ const FilterSidebar = ({ isOpen, onClose, onApply, currentFilters }) => {
                       {option.label}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Type (cuisine/meat tags set by restaurant admin) — single-select */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                  Type
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {filterOptions.types.map((option) => {
+                    const active = (filters.type || "all") === option.id;
+                    return (
+                      <button
+                        key={option.id}
+                        onClick={() => handleTypeSelect(option.id)}
+                        aria-pressed={active}
+                        className={`flex items-center gap-2 px-3.5 py-2 rounded-full border text-xs font-semibold transition-all ${
+                          active
+                            ? `${option.activeClass} shadow-sm`
+                            : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100 hover:border-gray-300"
+                        }`}
+                      >
+                        {option.id !== "all" && (
+                          <span
+                            className={`w-2.5 h-2.5 rounded-full ${
+                              active ? "bg-white/90" : option.dotClass
+                            }`}
+                          />
+                        )}
+                        {option.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
