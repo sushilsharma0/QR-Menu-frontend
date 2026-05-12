@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import {
+  BadgePlus,
   ChefHat,
   ClipboardList,
+  LogIn,
   Menu,
   MessageSquare,
   Phone,
@@ -23,6 +25,13 @@ import PageTransition from "../../../components/customer/PageTransition";
 import api from "../../../services/api";
 import {
   ensureGuestSession,
+  claimCustomerIdentity,
+  requestCustomerIdentityOtp,
+  requestCustomerPasswordReset,
+  resetCustomerPassword,
+  verifyCustomerPasswordResetOtp,
+  getStoredCustomerId,
+  getCustomerIdentity,
   getRestaurantInfo,
   getGuestLoyalty,
   postGuestTableRequest,
@@ -45,6 +54,11 @@ export default function Home() {
   const [tableNumber, setTableNumber] = useState("");
   const [restaurantInfo, setRestaurantInfo] = useState(null);
   const [guestIdLocal, setGuestIdLocal] = useState("");
+  const [customerId, setCustomerId] = useState("");
+  const [customerProfile, setCustomerProfile] = useState(null);
+  const [showFirstScanChoice, setShowFirstScanChoice] = useState(false);
+  const [profileInitialMode, setProfileInitialMode] = useState("signup");
+  const [profileDefaultOpenAuth, setProfileDefaultOpenAuth] = useState(false);
   const [loyaltyPoints, setLoyaltyPoints] = useState(null);
   const [showGuestAssist, setShowGuestAssist] = useState(false);
   const [assistSending, setAssistSending] = useState(false);
@@ -56,12 +70,25 @@ export default function Home() {
 
   useEffect(() => {
     if (!slug || !token) return;
+    const storedCustomerId = getStoredCustomerId();
+    const storedGuestId = localStorage.getItem("customer_guest_id_v1") || "";
+    setCustomerId(storedCustomerId);
+    if (!storedCustomerId && !storedGuestId && !sessionStorage.getItem(`customer_entry_choice_${token}`)) {
+      setShowFirstScanChoice(true);
+    }
     ensureGuestSession(token)
       .then(async (session) => {
         setGuestIdLocal(session.guestId || "");
         try {
-          const bal = await getGuestLoyalty({ guestId: session.guestId, qrToken: token });
-          setLoyaltyPoints(bal.points ?? 0);
+          const identity = await getCustomerIdentity({ guestId: session.guestId, qrToken: token });
+          if (identity?.customerId) {
+            setCustomerId(identity.customerId);
+            setCustomerProfile(identity.customer);
+            setLoyaltyPoints(identity.loyalty?.points ?? 0);
+          } else {
+            const bal = await getGuestLoyalty({ guestId: session.guestId, qrToken: token });
+            setLoyaltyPoints(bal.points ?? 0);
+          }
         } catch {
           setLoyaltyPoints(0);
         }
@@ -73,6 +100,18 @@ export default function Home() {
     fetchPromoBanners();
     fetchRestaurantInfo();
   }, [slug, token]);
+
+  const openAuthProfile = (mode) => {
+    setProfileInitialMode(mode);
+    setProfileDefaultOpenAuth(true);
+    setIsProfileOpen(true);
+    setShowFirstScanChoice(false);
+  };
+
+  const continueAsGuest = () => {
+    sessionStorage.setItem(`customer_entry_choice_${token}`, "guest");
+    setShowFirstScanChoice(false);
+  };
 
   useEffect(() => {
     if (slug && token) rememberCustomerPortal(slug, token);
@@ -104,7 +143,7 @@ export default function Home() {
   const fetchPromoBanners = async () => {
     try {
       if (!slug) return;
-      const res = await api.get(`/customer/promotions/${slug}/banners`);
+      const res = await api.get(`/customer/offers/${slug}`);
       const promos = res?.data?.data || [];
       setPromoBanners(promos);
       if (!promoModalShown && promos.length > 0) {
@@ -155,6 +194,129 @@ export default function Home() {
     } finally {
       setAssistSending(false);
     }
+  };
+
+  const refreshLoyalty = async (guestId) => {
+    try {
+      const bal = await getGuestLoyalty({ guestId, qrToken: token });
+      setLoyaltyPoints(bal.points ?? 0);
+    } catch {
+      setLoyaltyPoints(0);
+    }
+  };
+
+  const handleRequestCustomerOtp = async ({ email }) => {
+    if (!guestIdLocal) {
+      toast.error("Session not ready yet.");
+      return;
+    }
+    if (!String(email || "").trim()) {
+      toast.error("Enter your Gmail or email address.");
+      return;
+    }
+    try {
+      await requestCustomerIdentityOtp({
+        qrToken: token,
+        guestId: guestIdLocal,
+        email,
+      });
+      toast.success("OTP sent to your email.");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Could not send OTP");
+      throw err;
+    }
+  };
+
+  const handleCreateCustomerId = async ({ name, phone, email, otp, password, purpose }) => {
+    if (!guestIdLocal) {
+      toast.error("Session not ready yet.");
+      return;
+    }
+    if (!String(email || "").trim() || !String(password || "").trim() || (purpose !== "login" && !String(otp || "").trim())) {
+      toast.error(purpose === "login" ? "Enter email and password." : "Enter email, password and OTP.");
+      return;
+    }
+    try {
+      const data = await claimCustomerIdentity({
+        qrToken: token,
+        guestId: guestIdLocal,
+        name,
+        phone,
+        email,
+        otp,
+        password,
+        purpose,
+      });
+      setGuestIdLocal(data.guestId || guestIdLocal);
+      setCustomerId(data.customerId || "");
+      setCustomerProfile(data.customer || null);
+      setLoyaltyPoints(data.loyalty?.points ?? 0);
+      sessionStorage.setItem(`customer_entry_choice_${token}`, purpose === "login" ? "login" : "signup");
+      setProfileDefaultOpenAuth(false);
+      toast.success(`${data.customerId} ready. Previous orders and points merged.`);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Could not verify customer ID");
+    }
+  };
+
+  const handleRequestPasswordReset = async ({ email }) => {
+    const cleanEmail = String(email || "").trim();
+    if (!cleanEmail) {
+      toast.error("Enter your email first.");
+      throw new Error("Email is required");
+    }
+
+    let activeGuestId = guestIdLocal;
+    if (!activeGuestId) {
+      try {
+        const session = await ensureGuestSession(token);
+        activeGuestId = session.guestId || "";
+        setGuestIdLocal(activeGuestId);
+      } catch {
+        toast.error("Session not ready yet. Please try again.");
+        throw new Error("Guest session is not ready");
+      }
+    }
+
+    if (!activeGuestId) {
+      toast.error("Session not ready yet. Please try again.");
+      throw new Error("Guest session is not ready");
+    }
+
+    await requestCustomerPasswordReset({ qrToken: token, guestId: activeGuestId, email: cleanEmail });
+    toast.success("Reset OTP sent to your email.");
+  };
+
+  const handleResetPassword = async ({ email, otp, newPassword }) => {
+    if (!guestIdLocal) return;
+    try {
+      await resetCustomerPassword({ qrToken: token, guestId: guestIdLocal, email, otp, newPassword });
+      toast.success("Password reset. You can login now.");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Could not reset password");
+      throw err;
+    }
+  };
+
+  const handleVerifyPasswordResetOtp = async ({ email, otp }) => {
+    if (!guestIdLocal) return;
+    try {
+      await verifyCustomerPasswordResetOtp({ qrToken: token, guestId: guestIdLocal, email, otp });
+      toast.success("OTP verified. Enter your new password.");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Invalid reset OTP");
+      throw err;
+    }
+  };
+
+  const handleEndSession = () => {
+    localStorage.removeItem("customer_guest_id_v1");
+    localStorage.removeItem("customer_identity_id_v1");
+    setGuestIdLocal("");
+    setCustomerId("");
+    setCustomerProfile(null);
+    setLoyaltyPoints(0);
+    toast.success("Session ended on this device.");
   };
 
   const heroImage =
@@ -321,7 +483,65 @@ export default function Home() {
         </p>
 
         <SideBar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-        <UserProfile isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
+        <UserProfile
+          isOpen={isProfileOpen}
+          onClose={() => {
+            setIsProfileOpen(false);
+            setProfileDefaultOpenAuth(false);
+          }}
+          guestId={guestIdLocal}
+          customerId={customerId}
+          customer={customerProfile}
+          tableNumber={tableNumber}
+          rewardPoints={loyaltyPoints}
+          onRequestOtp={handleRequestCustomerOtp}
+          onCreateId={handleCreateCustomerId}
+          onRequestPasswordReset={handleRequestPasswordReset}
+          onVerifyPasswordResetOtp={handleVerifyPasswordResetOtp}
+          onResetPassword={handleResetPassword}
+          onEndSession={handleEndSession}
+          defaultOpenAuth={profileDefaultOpenAuth}
+          initialMode={profileInitialMode}
+        />
+        {showFirstScanChoice && (
+          <div className="fixed inset-0 z-[95] flex items-end justify-center bg-black/55 px-4 pb-8 pt-12 backdrop-blur-sm sm:items-center sm:pb-12">
+            <div className="w-full max-w-md rounded-[2rem] bg-white p-5 shadow-2xl">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-50 text-primary-700">
+                <User size={26} />
+              </div>
+              <h2 className="text-center text-xl font-black text-gray-950">How would you like to continue?</h2>
+              <p className="mx-auto mt-2 max-w-xs text-center text-sm font-semibold leading-6 text-gray-500">
+                Order as a guest now, or login/signup to keep all orders and reward points under one ID.
+              </p>
+              <div className="mt-5 space-y-2">
+                <button
+                  type="button"
+                  onClick={continueAsGuest}
+                  className="flex w-full items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3 text-left text-sm font-black text-gray-800"
+                >
+                  Use as guest
+                  <User size={18} className="text-gray-400" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openAuthProfile("signup")}
+                  className="flex w-full items-center justify-between rounded-2xl bg-primary-600 px-4 py-3 text-left text-sm font-black text-white"
+                >
+                  Sign up and save rewards
+                  <BadgePlus size={18} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openAuthProfile("login")}
+                  className="flex w-full items-center justify-between rounded-2xl bg-gray-950 px-4 py-3 text-left text-sm font-black text-white"
+                >
+                  Login with password
+                  <LogIn size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <Waiters isOpen={showWaiters} onClose={() => setShowWaiters(false)} />
         {showGuestAssist && (
           <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 px-4 pb-8 pt-12">

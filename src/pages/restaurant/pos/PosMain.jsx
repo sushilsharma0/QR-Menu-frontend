@@ -209,32 +209,34 @@ export default function PosMain() {
   }, [])
 
   return (
-    <div className="flex h-full min-h-0 gap-3 p-3 md:p-4">
+    <div className="flex min-h-full flex-col gap-3 p-3 md:p-4 xl:h-full xl:min-h-0 xl:flex-row">
       {/* Categories / filters */}
-      <aside className="flex w-[8rem] shrink-0 flex-col gap-3 overflow-y-auto rounded-3xl border border-surface-200 bg-white p-3 shadow-sm md:w-60 dark:border-gray-700 dark:bg-gray-900">
+      <aside className="flex shrink-0 flex-col gap-3 rounded-3xl border border-surface-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-900 xl:w-60 xl:overflow-y-auto">
         <div className="flex items-center gap-2 rounded-2xl bg-primary-50 px-3 py-2 text-xs font-black uppercase tracking-wide text-primary-700">
           <FiShoppingBag className="h-4 w-4" />
           Mode
         </div>
-        {['dine_in', 'takeaway', 'delivery'].map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => setMode(m)}
-            className={`rounded-xl px-3 py-2 text-left text-xs font-semibold capitalize transition md:text-sm ${
-              mode === m
-                ? 'bg-primary-600 text-white shadow-sm'
-                : 'bg-surface-50 text-gray-700 hover:bg-primary-50 hover:text-primary-700'
-            }`}
-          >
-            {m.replace('_', ' ')}
-          </button>
-        ))}
+        <div className="grid grid-cols-3 gap-2 xl:grid-cols-1">
+          {['dine_in', 'takeaway', 'delivery'].map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              className={`truncate rounded-xl px-3 py-2 text-center text-xs font-semibold capitalize transition md:text-sm xl:text-left ${
+                mode === m
+                  ? 'bg-primary-600 text-white shadow-sm'
+                  : 'bg-surface-50 text-gray-700 hover:bg-primary-50 hover:text-primary-700'
+              }`}
+            >
+              {m.replace('_', ' ')}
+            </button>
+          ))}
+        </div>
         <div className="mt-1 flex items-center gap-2 rounded-2xl bg-surface-50 px-3 py-2 text-xs font-black uppercase tracking-wide text-gray-500">
           <FiCoffee className="h-4 w-4" />
           Categories
         </div>
-        <div className="flex max-h-40 flex-col gap-1 overflow-y-auto md:max-h-none">
+        <div className="scrollbar-hide flex gap-1 overflow-x-auto pb-1 xl:max-h-none xl:flex-col xl:overflow-y-auto xl:pb-0">
           {loadingMenu ? (
             <div className="animate-pulse text-xs text-gray-500">Loading...</div>
           ) : (
@@ -246,7 +248,7 @@ export default function PosMain() {
                   setActiveCategory(c._id)
                   setSearch('')
                 }}
-                className={`truncate rounded-xl px-3 py-2 text-left text-xs font-semibold transition md:text-sm ${
+                className={`shrink-0 truncate rounded-xl px-3 py-2 text-left text-xs font-semibold transition md:text-sm xl:w-full ${
                   activeCategory === c._id && !search.trim()
                     ? 'bg-[#210b02] text-white'
                     : 'text-gray-600 hover:bg-surface-100 hover:text-primary-700'
@@ -282,13 +284,13 @@ export default function PosMain() {
               placeholder="Filter"
               className="w-full rounded-xl border border-surface-200 px-3 py-2 text-xs outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800"
             />
-            <div className="max-h-32 space-y-1 overflow-y-auto md:max-h-48">
+            <div className="scrollbar-hide flex max-h-32 gap-1 overflow-x-auto overflow-y-hidden xl:max-h-48 xl:flex-col xl:overflow-y-auto">
               {filteredTables.map((t) => (
                 <button
                   key={t._id}
                   type="button"
                   onClick={() => setField('tableId', t._id)}
-                  className={`flex w-full flex-col rounded-xl px-3 py-2 text-left text-[10px] transition md:text-xs ${
+                  className={`flex min-w-20 flex-col rounded-xl px-3 py-2 text-left text-[10px] transition md:text-xs xl:w-full ${
                     tableId === t._id
                       ? 'bg-primary-600 text-white shadow-sm'
                       : 'bg-surface-50 hover:bg-primary-50 hover:text-primary-700 dark:bg-gray-800'
@@ -304,13 +306,13 @@ export default function PosMain() {
       </aside>
 
       {/* Grid */}
-      <section className="min-w-0 flex-1 overflow-y-auto rounded-3xl border border-surface-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-900 md:p-4">
+      <section className="min-w-0 flex-1 rounded-3xl border border-surface-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-900 md:p-4 xl:overflow-y-auto">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-black uppercase tracking-wide text-primary-700">Menu register</p>
-            <h2 className="mt-1 text-2xl font-black text-gray-950 dark:text-gray-100">Add items to order</h2>
+            <h2 className="mt-1 text-xl font-black text-gray-950 dark:text-gray-100 sm:text-2xl">Add items to order</h2>
           </div>
-          <div className="rounded-2xl bg-surface-50 px-4 py-2 text-sm font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+          <div className="rounded-2xl bg-surface-50 px-3 py-2 text-xs font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-300 sm:px-4 sm:text-sm">
             {items.length} available items
           </div>
         </div>
@@ -356,12 +358,12 @@ export default function PosMain() {
       </section>
 
       {/* Cart */}
-      <aside className="flex w-[100vw] max-w-[21rem] shrink-0 flex-col overflow-hidden rounded-3xl border border-surface-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900 md:w-80">
+      <aside className="flex w-full shrink-0 flex-col overflow-hidden rounded-3xl border border-surface-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900 lg:max-h-[45rem] xl:h-full xl:w-80">
         <div className="border-b border-surface-200 px-4 py-3 dark:border-gray-800">
           <p className="text-xs font-black uppercase tracking-wide text-primary-700">Cart</p>
           <h2 className="mt-1 text-lg font-black text-gray-950 dark:text-gray-100">Current order</h2>
         </div>
-        <div className="flex-1 space-y-2 overflow-y-auto p-3">
+        <div className="max-h-72 flex-1 space-y-2 overflow-y-auto p-3 xl:max-h-none">
           <AnimatePresence initial={false}>
             {lines.map((l) => (
               <motion.div

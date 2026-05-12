@@ -61,8 +61,8 @@ export default function PosOrderCard({
       id={id || `pos-order-${order._id}`}
       type={onSelect ? 'button' : undefined}
       onClick={onSelect ? () => onSelect(order) : undefined}
-      className={`w-full rounded-3xl border bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${
-        selected ? 'border-primary-500 bg-primary-50/60' : 'border-surface-200'
+      className={`w-full rounded-3xl border bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:bg-gray-900 ${
+        selected ? 'border-primary-500 bg-primary-50/60 dark:bg-primary-950/30' : 'border-surface-200 dark:border-gray-800'
       }`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -81,27 +81,27 @@ export default function PosOrderCard({
         </div>
       </div>
 
-      <div className="mt-4 grid gap-2 text-xs text-gray-600 sm:grid-cols-3">
-        <div className="flex items-center gap-2 rounded-xl bg-surface-50 px-3 py-2">
+      <div className="mt-4 grid gap-2 text-xs text-gray-600 dark:text-gray-200 sm:grid-cols-3">
+        <div className="flex items-center gap-2 rounded-xl bg-surface-50 px-3 py-2 dark:bg-gray-800">
           <FiMapPin className="h-4 w-4 text-primary-700" />
           <span className="truncate">Table {order.table?.tableNumber || '-'}</span>
         </div>
-        <div className="flex items-center gap-2 rounded-xl bg-surface-50 px-3 py-2">
+        <div className="flex items-center gap-2 rounded-xl bg-surface-50 px-3 py-2 dark:bg-gray-800">
           <FiUser className="h-4 w-4 text-primary-700" />
           <span className="truncate">{getCustomerDisplayName(order)}</span>
         </div>
-        <div className="flex items-center gap-2 rounded-xl bg-surface-50 px-3 py-2">
+        <div className="flex items-center gap-2 rounded-xl bg-surface-50 px-3 py-2 dark:bg-gray-800">
           <FiClock className="h-4 w-4 text-primary-700" />
           <span className="truncate">{createdAt ? createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
         </div>
       </div>
 
-      <div className="mt-4 rounded-2xl border border-surface-100 bg-surface-50/70 p-3">
+      <div className="mt-4 rounded-2xl border border-surface-100 bg-surface-50/70 p-3 dark:border-gray-700 dark:bg-gray-950/70">
         <div className="space-y-2">
           {items.slice(0, 4).map((item, idx) => (
             <div key={`${item.menuItem || item.name}-${idx}`} className="flex items-start justify-between gap-3 text-sm">
               <div className="min-w-0">
-                <p className="font-bold leading-tight text-gray-900">
+                <p className="font-bold leading-tight text-gray-900 dark:text-gray-100">
                   {item.quantity}x {item.name}
                 </p>
                 {(item.specialInstructions || item.cookingInstructions) && (
@@ -119,7 +119,7 @@ export default function PosOrderCard({
             </div>
           ))}
           {items.length > 4 && (
-            <p className="rounded-xl bg-white px-3 py-2 text-xs font-bold text-gray-500">
+            <p className="rounded-xl bg-white px-3 py-2 text-xs font-bold text-gray-500 dark:bg-gray-900 dark:text-gray-300">
               +{items.length - 4} more item{items.length - 4 === 1 ? '' : 's'}
             </p>
           )}
@@ -128,7 +128,7 @@ export default function PosOrderCard({
       </div>
 
       {(order.specialRequests || order.customerPhone) && (
-        <div className="mt-3 rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+        <div className="mt-3 rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
           {order.customerPhone && <span className="font-bold">Phone: {order.customerPhone}</span>}
           {order.customerPhone && order.specialRequests && <span className="mx-2">-</span>}
           {order.specialRequests && <span>{order.specialRequests}</span>}

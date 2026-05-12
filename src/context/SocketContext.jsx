@@ -2,10 +2,39 @@ import React, { createContext, useState, useEffect, useCallback, useMemo } from 
 import { io } from 'socket.io-client'
 import { useAuth } from '../hooks/useAuth'
 import { getSocketOrigin } from '../utils/runtimeConfig'
+import { clearAuthSession } from '../utils/authStorage'
 
 export const SocketContext = createContext()
 
 let lastSocketConnectErrorLogMs = 0
+
+const getLoginPathForCurrentPage = () => {
+  if (typeof window === 'undefined') return '/login'
+  const path = window.location.pathname || ''
+  if (path.startsWith('/kitchen') || path.startsWith('/cashier') || path.startsWith('/employee')) {
+    return '/login?role=employee'
+  }
+  if (path.startsWith('/restaurant')) return '/login?role=restaurant'
+  if (path.startsWith('/platform')) return '/login?role=platform'
+  return '/login'
+}
+
+const decodeJwtPayload = (jwtToken) => {
+  try {
+    const payload = jwtToken?.split('.')?.[1]
+    if (!payload) return null
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=')
+    return JSON.parse(atob(padded))
+  } catch (err) {
+    return null
+  }
+}
+
+const isJwtExpired = (jwtToken) => {
+  const exp = decodeJwtPayload(jwtToken)?.exp
+  return Number.isFinite(exp) && exp * 1000 <= Date.now()
+}
 
 export const SocketProvider = ({ children }) => {
   const { user, token, isAuthenticated } = useAuth()
@@ -14,16 +43,7 @@ export const SocketProvider = ({ children }) => {
   const [connectionError, setConnectionError] = useState(null)
 
   const socketOrigin = useMemo(() => getSocketOrigin(), [])
-  const parseJwtPayload = (jwtToken) => {
-    try {
-      const payload = jwtToken?.split('.')?.[1]
-      if (!payload) return null
-      return JSON.parse(atob(payload))
-    } catch (err) {
-      return null
-    }
-  }
-  const resolvedRestaurantId = user?.restaurantId || parseJwtPayload(token)?.restaurantId
+  const resolvedRestaurantId = user?.restaurantId || decodeJwtPayload(token)?.restaurantId
 
   const userId = user?.id
   const userRole = user?.role
@@ -38,6 +58,17 @@ export const SocketProvider = ({ children }) => {
         socket.disconnect()
         setSocket(null)
         setIsConnected(false)
+      }
+      return
+    }
+
+    if (isJwtExpired(token)) {
+      clearAuthSession()
+      setSocket(null)
+      setIsConnected(false)
+      setConnectionError('Session expired')
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.href = getLoginPathForCurrentPage()
       }
       return
     }
@@ -107,6 +138,15 @@ export const SocketProvider = ({ children }) => {
     newSocket.on('connect_error', (error) => {
       setConnectionError(error.message)
       setIsConnected(false)
+      if (error?.message === 'Unauthorized socket') {
+        newSocket.disconnect()
+        clearAuthSession()
+        setSocket(null)
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+          window.location.href = getLoginPathForCurrentPage()
+        }
+        return
+      }
       const now = Date.now()
       if (import.meta.env.DEV) {
         if (now - lastSocketConnectErrorLogMs > 15000) {

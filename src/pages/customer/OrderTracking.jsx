@@ -7,8 +7,10 @@ import {
   Clock,
   Flame,
   PackageCheck,
+  Plus,
   Radio,
   ReceiptText,
+  UtensilsCrossed,
   Utensils,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -20,7 +22,7 @@ import CustomerPostServePayment from "../../components/customer/CustomerPostServ
 import Navigation from "../../components/customer/Navigation";
 import { getSocketOrigin } from "../../utils/runtimeConfig";
 import { rememberCustomerPortal } from "../../utils/customerPortalContext";
-import { getStoredGuestId } from "../../services/customer";
+import { getStoredGuestId, rememberCustomerOrderToken } from "../../services/customer";
 
 const getActiveStepIndex = (status, paymentStatus) => {
   if (status === "cancelled") return -1;
@@ -127,7 +129,8 @@ const OrderTracking = () => {
   useEffect(() => {
     if (!order?.restaurantSlug || !order?.tableQrToken) return;
     rememberCustomerPortal(order.restaurantSlug, order.tableQrToken);
-  }, [order?.restaurantSlug, order?.tableQrToken]);
+    rememberCustomerOrderToken(order.tableQrToken, qrToken);
+  }, [order?.restaurantSlug, order?.tableQrToken, qrToken]);
 
   useEffect(() => {
     const paid = order?.paymentStatus === "paid";
@@ -147,6 +150,11 @@ const OrderTracking = () => {
   const progressPct =
     currentStatusIndex < 0 ? 0 : Math.min(100, Math.round(((currentStatusIndex + 1) / 6) * 100));
   const canShowBill = order?.status === "served" || order?.status === "completed";
+  const canAddMoreItems = Boolean(
+    order?.tableQrToken &&
+      (order?.restaurantSlug || order?.restaurant?.slug) &&
+      !["served", "completed", "cancelled"].includes(order?.status),
+  );
   const guestIdForPay = order?.guestId || getStoredGuestId();
   const showPostServePay =
     order?.status === "served" &&
@@ -159,7 +167,13 @@ const OrderTracking = () => {
   );
   const taxAmount = Number(order?.taxAmount || 0);
   const discountAmount = Number(order?.discountAmount || 0);
-  const grandTotal = Number(order?.grandTotal ?? order?.totalAmount ?? Math.max(0, subtotal + taxAmount - discountAmount));
+  const serviceChargeAmount = Number(order?.serviceChargeAmount || 0);
+  const grandTotal = Number(order?.grandTotal ?? order?.totalAmount ?? Math.max(0, subtotal + taxAmount + serviceChargeAmount - discountAmount));
+  const estimatedPrepLabel = order?.estimatedCompletionTime
+    ? `Ready around ${new Date(order.estimatedCompletionTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+    : order?.estimatedWaitTime
+      ? `About ${order.estimatedWaitTime} min`
+      : "Waiting for restaurant estimate";
 
   const steps = useMemo(() => {
     const defs = [
@@ -285,6 +299,31 @@ const OrderTracking = () => {
               <span className="text-2xl font-black">{formatMoney(grandTotal)}</span>
             </div>
           </div>
+        </section>
+
+        <section className="mt-5 grid grid-cols-1 gap-3">
+          <div className="rounded-[1.5rem] border border-gray-100 bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
+                <Clock size={20} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-black uppercase text-gray-400">Estimated preparation</p>
+                <p className="text-sm font-black text-gray-900">{estimatedPrepLabel}</p>
+              </div>
+            </div>
+          </div>
+          {canAddMoreItems && (
+            <button
+              type="button"
+              onClick={() => navigate(`/menu/${order.restaurantSlug || order.restaurant?.slug}/${order.tableQrToken}`)}
+              className="flex items-center justify-center gap-2 rounded-[1.5rem] bg-primary-600 px-5 py-4 text-sm font-black text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-700"
+            >
+              <Plus size={18} />
+              Add More Items
+              <UtensilsCrossed size={18} />
+            </button>
+          )}
         </section>
 
         <section className="mt-5 rounded-[2rem] border border-gray-100 bg-white p-5 shadow-sm">
@@ -430,6 +469,10 @@ const OrderTracking = () => {
                   <span className="font-semibold text-gray-500">Tax</span>
                   <span className="font-bold text-gray-900">{formatMoney(taxAmount)}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="font-semibold text-gray-500">Service charge</span>
+                  <span className="font-bold text-gray-900">{formatMoney(serviceChargeAmount)}</span>
+                </div>
                 {discountAmount > 0 && (
                   <div className="flex justify-between">
                     <span className="font-semibold text-gray-500">Discount</span>
@@ -449,7 +492,16 @@ const OrderTracking = () => {
           </section>
         )}
       </main>
-      <Feedback isOpen={showFeedback} onClose={() => setShowFeedback(false)} qrToken={qrToken} />
+      <Feedback
+        isOpen={showFeedback}
+        onClose={() => setShowFeedback(false)}
+        qrToken={qrToken}
+        onSubmitted={() => {
+          if (order?.restaurantSlug && order?.tableQrToken) {
+            navigate(`/home/${order.restaurantSlug}/${order.tableQrToken}`);
+          }
+        }}
+      />
       <Navigation restaurantSlug={order?.restaurantSlug} tableQrToken={order?.tableQrToken} />
     </div>
   );

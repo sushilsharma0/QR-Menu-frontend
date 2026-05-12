@@ -225,7 +225,7 @@ export default function PosOrdersList() {
   return (
     <div className="h-full overflow-y-auto p-4">
       <div className="mx-auto max-w-7xl space-y-4">
-        <section className="rounded-3xl border border-surface-200 bg-white p-5 shadow-sm">
+        <section className="rounded-3xl border border-surface-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <span className="inline-flex items-center gap-2 rounded-full bg-primary-50 px-3 py-1 text-xs font-black uppercase tracking-wide text-primary-700">
@@ -247,7 +247,7 @@ export default function PosOrdersList() {
               <button
                 type="button"
                 onClick={load}
-                className="inline-flex items-center gap-2 rounded-xl border border-surface-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 hover:bg-surface-50"
+                className="inline-flex items-center gap-2 rounded-xl border border-surface-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 hover:bg-surface-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
               >
                 <FiRefreshCw className="h-4 w-4" />
                 Refresh
@@ -258,7 +258,7 @@ export default function PosOrdersList() {
 
         <div className="space-y-4">
         {!visibleOrders.length && (
-          <div className="rounded-3xl border border-dashed border-surface-300 bg-white p-10 text-center text-sm text-gray-500">
+          <div className="rounded-3xl border border-dashed border-surface-300 bg-white p-10 text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
             No matching POS orders.
           </div>
         )}
@@ -275,7 +275,7 @@ export default function PosOrdersList() {
               <article
                 id={`pos-order-${o._id}`}
                 key={row._id}
-                className="rounded-3xl border border-surface-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+                className="rounded-3xl border border-surface-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
@@ -293,27 +293,27 @@ export default function PosOrdersList() {
                   </div>
                 </div>
 
-                <div className="mt-4 grid gap-2 text-xs text-gray-600 sm:grid-cols-3">
-                  <div className="flex items-center gap-2 rounded-xl bg-surface-50 px-3 py-2">
+                <div className="mt-4 grid gap-2 text-xs text-gray-600 dark:text-gray-200 sm:grid-cols-3">
+                  <div className="flex items-center gap-2 rounded-xl bg-surface-50 px-3 py-2 dark:bg-gray-800">
                     <FiMapPin className="h-4 w-4 text-primary-700" />
                     <span className="truncate">Table {o.table?.tableNumber || '-'}</span>
                   </div>
-                  <div className="flex items-center gap-2 rounded-xl bg-surface-50 px-3 py-2">
+                  <div className="flex items-center gap-2 rounded-xl bg-surface-50 px-3 py-2 dark:bg-gray-800">
                     <FiUser className="h-4 w-4 text-primary-700" />
                     <span className="truncate">{getCustomerDisplayName(o)}</span>
                   </div>
-                  <div className="flex items-center gap-2 rounded-xl bg-surface-50 px-3 py-2">
+                  <div className="flex items-center gap-2 rounded-xl bg-surface-50 px-3 py-2 dark:bg-gray-800">
                     <FiClock className="h-4 w-4 text-primary-700" />
                     <span className="truncate">{createdAt ? createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-2xl border border-surface-100 bg-surface-50/70 p-3">
+                <div className="mt-4 rounded-2xl border border-surface-100 bg-surface-50/70 p-3 dark:border-gray-700 dark:bg-gray-950/70">
                   <div className="space-y-2">
                     {items.slice(0, 4).map((item, idx) => (
                       <div key={`${item.menuItem || item.name}-${idx}`} className="flex items-start justify-between gap-3 text-sm">
                         <div className="min-w-0">
-                          <p className="font-bold leading-tight text-gray-900">
+                          <p className="font-bold leading-tight text-gray-900 dark:text-gray-100">
                             {item.quantity}x {item.name}
                           </p>
                           {(item.specialInstructions || item.cookingInstructions) && (
@@ -331,7 +331,7 @@ export default function PosOrdersList() {
                       </div>
                     ))}
                     {items.length > 4 && (
-                      <p className="rounded-xl bg-white px-3 py-2 text-xs font-bold text-gray-500">
+                      <p className="rounded-xl bg-white px-3 py-2 text-xs font-bold text-gray-500 dark:bg-gray-900 dark:text-gray-300">
                         +{items.length - 4} more item{items.length - 4 === 1 ? '' : 's'}
                       </p>
                     )}
@@ -340,7 +340,7 @@ export default function PosOrdersList() {
                 </div>
 
                 {(o.specialRequests || o.customerPhone) && (
-                  <div className="mt-3 rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  <div className="mt-3 rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
                     {o.customerPhone && <span className="font-bold">Phone: {o.customerPhone}</span>}
                     {o.customerPhone && o.specialRequests && <span className="mx-2">-</span>}
                     {o.specialRequests && <span>{o.specialRequests}</span>}
@@ -357,7 +357,7 @@ export default function PosOrdersList() {
                       Pay
                     </Link>
                   ) : (
-                    <span className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">
+                    <span className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200">
                       <FiCreditCard className="h-4 w-4" />
                       Paid
                     </span>

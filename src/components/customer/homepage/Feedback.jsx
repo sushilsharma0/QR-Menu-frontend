@@ -14,7 +14,7 @@ const feedbackOptions = [
 
 const starLabels = ['Terrible', 'Bad', 'Okay', 'Good', 'Excellent']
 
-export default function Feedback({ isOpen, onClose, qrToken }) {
+export default function Feedback({ isOpen, onClose, qrToken, onSubmitted }) {
   const { slug, token, qrToken: routeQrToken } = useParams()
   const activeQrToken = qrToken || token || routeQrToken
   const [selectedRating, setSelectedRating] = useState(null)
@@ -78,7 +78,10 @@ export default function Feedback({ isOpen, onClose, qrToken }) {
         reviewImages: reviewPhotoUrl.trim() ? [reviewPhotoUrl.trim()] : [],
       })
       setSubmitted(true)
-      setTimeout(() => onClose(), 2500)
+      setTimeout(() => {
+        onClose()
+        onSubmitted?.()
+      }, 2500)
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to submit feedback')
     } finally {

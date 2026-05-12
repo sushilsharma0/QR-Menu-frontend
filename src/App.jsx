@@ -92,7 +92,7 @@ import CustomerBill from "./pages/customer/CustomerBill";
 import CustomerAccountPage from "./pages/customer/AccountPage";
 import CustomerAboutRestaurant from "./pages/customer/Home/AboutRestaurant";
 import CustomerSettingsPage from "./pages/customer/Home/Settings";
-import CustomerPrivacyPage from "./pages/customer/Home/PrivacyPolicy";
+import CustomerPrivacyPage from "./pages/customer/Home/CustomerDataNotice";
 import CustomerCreditApply from "./pages/customer/CreditApply";
 
 

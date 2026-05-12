@@ -6,6 +6,7 @@ import api from "../../services/api";
 import Feedback from "../../components/customer/homepage/Feedback";
 import Navigation from "../../components/customer/Navigation";
 import { rememberCustomerPortal } from "../../utils/customerPortalContext";
+import { rememberCustomerOrderToken } from "../../services/customer";
 
 const formatMoney = (value) => `Rs. ${Number(value || 0).toFixed(2)}`;
 
@@ -44,8 +45,9 @@ const CustomerBill = () => {
   useEffect(() => {
     if (order?.restaurantSlug && order?.tableQrToken) {
       rememberCustomerPortal(order.restaurantSlug, order.tableQrToken);
+      rememberCustomerOrderToken(order.tableQrToken, qrToken);
     }
-  }, [order?.restaurantSlug, order?.tableQrToken]);
+  }, [order?.restaurantSlug, order?.tableQrToken, qrToken]);
 
   useEffect(() => {
     const paid = order?.paymentStatus === "paid";
@@ -69,8 +71,9 @@ const CustomerBill = () => {
     const subtotal = Number(order?.subtotal ?? itemSubtotal);
     const taxAmount = Number(order?.taxAmount || 0);
     const discountAmount = Number(order?.discountAmount || 0);
-    const grandTotal = Number(order?.grandTotal ?? order?.totalAmount ?? Math.max(0, subtotal + taxAmount - discountAmount));
-    return { subtotal, taxAmount, discountAmount, grandTotal };
+    const serviceChargeAmount = Number(order?.serviceChargeAmount || 0);
+    const grandTotal = Number(order?.grandTotal ?? order?.totalAmount ?? Math.max(0, subtotal + taxAmount + serviceChargeAmount - discountAmount));
+    return { subtotal, taxAmount, serviceChargeAmount, discountAmount, grandTotal };
   }, [order]);
 
   const printBill = () => {
@@ -194,6 +197,10 @@ const CustomerBill = () => {
                 <span className="font-semibold text-gray-500">Tax</span>
                 <span className="font-bold text-gray-900">{formatMoney(totals.taxAmount)}</span>
               </div>
+              <div className="flex justify-between py-1">
+                <span className="font-semibold text-gray-500">Service charge</span>
+                <span className="font-bold text-gray-900">{formatMoney(totals.serviceChargeAmount)}</span>
+              </div>
               {totals.discountAmount > 0 && (
                 <div className="flex justify-between py-1">
                   <span className="font-semibold text-gray-500">Discount</span>
@@ -215,7 +222,16 @@ const CustomerBill = () => {
         </motion.section>
       </main>
       <div className="print:hidden">
-        <Feedback isOpen={showFeedback} onClose={() => setShowFeedback(false)} qrToken={qrToken} />
+        <Feedback
+          isOpen={showFeedback}
+          onClose={() => setShowFeedback(false)}
+          qrToken={qrToken}
+          onSubmitted={() => {
+            if (order?.restaurantSlug && order?.tableQrToken) {
+              navigate(`/home/${order.restaurantSlug}/${order.tableQrToken}`);
+            }
+          }}
+        />
         <Navigation restaurantSlug={order?.restaurantSlug} tableQrToken={order?.tableQrToken} />
       </div>
     </div>

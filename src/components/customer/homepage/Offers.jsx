@@ -190,7 +190,7 @@ export default function Offers({ isOpen, onClose, slug }) {
   const fetchOffers = async () => {
     try {
       setLoading(true);
-      const res = await api.get(`/customer/promotions/${slug}/banners`);
+      const res = await api.get(`/customer/offers/${slug}`);
       setOffersData(res?.data?.data || []);
     } catch {
       setOffersData([]);

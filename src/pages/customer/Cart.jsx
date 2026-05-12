@@ -20,8 +20,11 @@ import { ToastContainer } from "../../components/common/ToastContainer";
 import {
   clearGuestCart,
   ensureGuestSession,
+  getCustomerIdentity,
   getGuestCart,
   getDiningInsights,
+  getStoredCustomerProfile,
+  rememberCustomerOrderToken,
   removeGuestCartItem,
   updateGuestCartItem,
   addItemToGuestCart,
@@ -54,10 +57,18 @@ const Cart = () => {
         const session = await ensureGuestSession(token);
         setGuestId(session.guestId);
         const savedDetails = JSON.parse(localStorage.getItem(`guest_details_${session.guestId}`) || "{}");
+        const storedProfile = getStoredCustomerProfile();
+        let identityProfile = storedProfile;
+        try {
+          const identity = await getCustomerIdentity({ guestId: session.guestId, qrToken: token });
+          identityProfile = identity?.customer || storedProfile;
+        } catch {
+          identityProfile = storedProfile;
+        }
         setCustomerDetails({
-          name: savedDetails.name || "",
-          phone: savedDetails.phone || "",
-          email: savedDetails.email || "",
+          name: identityProfile?.name || savedDetails.name || "",
+          phone: identityProfile?.phone || savedDetails.phone || "",
+          email: identityProfile?.email || savedDetails.email || "",
         });
         const cart = await getGuestCart({ guestId: session.guestId, qrToken: token });
         const normalized = (cart.items || []).map((item) => ({
@@ -286,6 +297,7 @@ const Cart = () => {
 
       const res = await api.post("/customer/checkout", payload);
       const order = res?.data?.data;
+      rememberCustomerOrderToken(token, order?.trackToken);
 
       await clearGuestCart({ guestId, qrToken: token });
       setCartItems([]);

@@ -5,7 +5,7 @@ import Navigation from "../../../components/customer/Navigation";
 import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
 import { getRestaurantPublicProfile } from "../../../services/customer";
 
-export default function PrivacyPolicy() {
+export default function CustomerDataNotice() {
   const { slug, token } = useParams();
   const homePath = slug && token ? `/home/${slug}/${token}` : "/";
   const [profile, setProfile] = useState(null);
