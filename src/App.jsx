@@ -48,6 +48,7 @@ import RestaurantSubscriptionInvoiceDetail from "./pages/restaurant/Subscription
 import RestaurantSettings from "./pages/restaurant/Settings";
 import RestaurantCreditCustomers from "./pages/restaurant/CreditCustomers";
 import RestaurantProfile from "./pages/restaurant/Profile";
+import RestaurantPublicProfile from "./pages/restaurant/PublicProfile";
 import RestaurantPromotions from "./pages/restaurant/Promotions";
 import RestaurantBranches from "./pages/restaurant/Branches";
 import BranchLogin from "./pages/branch/BranchLogin";
@@ -218,6 +219,7 @@ function App() {
         <Route path="finance/inventory" element={<FinanceInventory />} />
         <Route path="finance/budget" element={<FinanceBudget />} />
         <Route path="settings" element={<RestaurantSettings />} />
+        <Route path="public-profile" element={<RestaurantPublicProfile />} />
         <Route path="profile" element={<RestaurantProfile />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="pos" element={<PosLayout />}>

@@ -83,6 +83,7 @@ const NAV_GROUPS = [
     items: [
       { segment: 'tickets', icon: FiHelpCircle, label: 'Support Tickets' },
       { segment: 'logs', icon: FiTerminal, label: 'Audit Logs' },
+      { segment: 'public-profile', icon: FiFileText, label: 'About & Privacy' },
       { segment: 'settings', icon: FiSettings, label: 'Settings' },
     ],
   },

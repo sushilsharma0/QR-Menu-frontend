@@ -1,180 +1,103 @@
-import React, { useEffect } from "react";
-import {
-  Shield,
-  Lock,
-  Eye,
-  Database,
-  Globe,
-  Mail,
-  User,
-  Smartphone,
-  X,
-} from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { MapPin, Mail, Phone, Shield, X } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import Navigation from "../../../components/customer/Navigation";
 import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
-
-const policySections = [
-  {
-    title: "Introduction",
-    content: `Welcome to Foodies Cafe. We are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your data when you use our restaurant ordering and dining services.`,
-  },
-  {
-    title: "Information We Collect",
-    items: [
-      {
-        icon: User,
-        label: "Personal Information",
-        description:
-          "Name, phone number, email address, and delivery address when you create an account or place an order.",
-      },
-      {
-        icon: Database,
-        label: "Order Information",
-        description:
-          "Details of your orders, including items purchased, order history, and special preferences.",
-      },
-      {
-        icon: Globe,
-        label: "Usage Data",
-        description:
-          "Information about how you interact with our app, including pages visited and features used.",
-      },
-      {
-        icon: Smartphone,
-        label: "Device Information",
-        description:
-          "Device type, operating system, and unique device identifiers.",
-      },
-    ],
-  },
-  {
-    title: "How We Use Your Information",
-    items: [
-      {
-        label: "Order Processing",
-        description: "To process and deliver your food orders efficiently.",
-      },
-      {
-        label: "Account Management",
-        description:
-          "To create and manage your account, including authentication and customer support.",
-      },
-      {
-        label: "Personalization",
-        description:
-          "To recommend dishes and offers based on your preferences and order history.",
-      },
-      {
-        label: "Communications",
-        description:
-          "To send you order updates, promotional offers, and important notifications.",
-      },
-      {
-        label: "Improvement",
-        description:
-          "To analyze usage patterns and improve our services and user experience.",
-      },
-    ],
-  },
-  {
-    title: "Information Sharing",
-    content: `We do not sell or rent your personal information to third parties. We may share your information with:
-    • Our restaurant partners for order fulfillment
-    • Payment processors for secure transactions
-    • Delivery partners for order delivery
-    • Legal authorities when required by law
-    
-    We ensure all third parties follow strict data protection guidelines.`,
-  },
-  {
-    title: "Data Security",
-    items: [
-      {
-        icon: Lock,
-        label: "Encryption",
-        description:
-          "All sensitive data is encrypted using industry-standard SSL/TLS protocols.",
-      },
-      {
-        icon: Shield,
-        label: "Access Control",
-        description:
-          "Strict access controls limit employee access to personal data.",
-      },
-      {
-        icon: Eye,
-        label: "Regular Audits",
-        description:
-          "We conduct regular security audits to ensure data protection compliance.",
-      },
-    ],
-  },
-  {
-    title: "Your Rights",
-    items: [
-      {
-        label: "Access",
-        description:
-          "You can request a copy of all personal data we hold about you.",
-      },
-      {
-        label: "Correction",
-        description:
-          "You can update or correct any inaccurate personal information.",
-      },
-      {
-        label: "Deletion",
-        description:
-          "You can request deletion of your account and personal data.",
-      },
-      {
-        label: "Opt-out",
-        description:
-          "You can opt-out of promotional communications at any time.",
-      },
-    ],
-  },
-  {
-    title: "Cookies & Tracking",
-    content: `We use cookies and similar tracking technologies to enhance your browsing experience. Cookies help us remember your preferences, analyze site traffic, and understand how our app is used. You can control cookie settings through your browser preferences.`,
-  },
-  {
-    title: "Children's Privacy",
-    content: `Our services are not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If we become aware of such collection, we will immediately delete the information.`,
-  },
-  {
-    title: "Changes to Policy",
-    content: `We may update this Privacy Policy from time to time. We will notify you of any material changes by posting the new policy on this page and updating the "Last Updated" date. We encourage you to review this policy periodically.`,
-  },
-  {
-    title: "Contact Us",
-    content: `If you have any questions or concerns about this Privacy Policy, please contact us:
-    
-    Email: privacy@foodiescafe.com
-    Phone: +91 98765 43210
-    Address: 123 Food Street, Culinary District, City - 400001`,
-  },
-];
+import { getRestaurantPublicProfile } from "../../../services/customer";
 
 export default function CustomerDataNotice() {
   const { slug, token } = useParams();
   const homePath = slug && token ? `/home/${slug}/${token}` : "/";
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [errored, setErrored] = useState(false);
 
   useEffect(() => {
     if (slug && token) rememberCustomerPortal(slug, token);
   }, [slug, token]);
 
+  useEffect(() => {
+    if (!slug) return;
+    let cancelled = false;
+    setLoading(true);
+    getRestaurantPublicProfile(slug)
+      .then((data) => {
+        if (cancelled) return;
+        setProfile(data);
+        setErrored(false);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error("Failed to load privacy policy:", err);
+        setErrored(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
+
+  const privacy = profile?.privacyPolicy || null;
+  const enabled = privacy?.enabled === true;
+  const sections = Array.isArray(privacy?.sections) ? privacy.sections.filter((s) => s.title) : [];
+
+  const restaurantName = profile?.name || "this restaurant";
+  const lastUpdated = privacy?.lastUpdated
+    ? new Date(privacy.lastUpdated).toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : null;
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#fafaf7] dark:bg-gray-950">
+        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary-600" />
+      </div>
+    );
+  }
+
+  if (errored || !profile) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#fafaf7] p-6 text-center dark:bg-gray-950">
+        <Shield className="h-12 w-12 text-gray-400" />
+        <h1 className="text-xl font-black text-gray-900 dark:text-gray-100">Privacy policy unavailable</h1>
+        <p className="max-w-xs text-sm text-gray-500 dark:text-gray-400">
+          We couldn&apos;t load this restaurant&apos;s privacy policy. Please try again later.
+        </p>
+        <Link to={homePath} className="rounded-2xl bg-primary-600 px-4 py-2 text-sm font-bold text-white">
+          Back home
+        </Link>
+        <Navigation />
+      </div>
+    );
+  }
+
+  const renderEmptyState = () => (
+    <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-6 text-center dark:border-gray-700 dark:bg-gray-900">
+      <Shield className="mx-auto mb-3 h-10 w-10 text-gray-400" />
+      <h2 className="font-bold text-gray-800 dark:text-gray-100">
+        {restaurantName} hasn&apos;t published a privacy policy yet
+      </h2>
+      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+        The restaurant administrator can publish a policy from their admin panel under
+        &ldquo;About &amp; Privacy&rdquo;.
+      </p>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-[#fafaf7] pb-28 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
-      {/* Header */}
       <div className="relative bg-gradient-to-r from-primary-700 to-primary-900 p-6 text-white">
         <div className="flex items-center justify-center gap-3">
           <Shield size={32} />
           <div>
             <h1 className="text-2xl font-bold">Privacy Policy</h1>
             <p className="mt-1 text-sm opacity-90">
-              Last Updated: April 26, 2026
+              {lastUpdated ? `Last Updated: ${lastUpdated}` : restaurantName}
             </p>
           </div>
         </div>
@@ -186,48 +109,78 @@ export default function CustomerDataNotice() {
         </Link>
       </div>
 
-      <div className="p-4 space-y-4">
-        {policySections.map((section, index) => (
-          <div
-            key={index}
-            className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-800"
-          >
-            <h2 className="font-bold text-gray-800 dark:text-gray-100 mb-3">{section.title}</h2>
+      <div className="space-y-4 p-4">
+        {!enabled || sections.length === 0 ? (
+          renderEmptyState()
+        ) : (
+          sections.map((section, index) => (
+            <div
+              key={`${section.title}-${index}`}
+              className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+            >
+              <h2 className="mb-3 font-bold text-gray-800 dark:text-gray-100">{section.title}</h2>
+              {section.content && (
+                <p className="whitespace-pre-line text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+                  {section.content}
+                </p>
+              )}
+            </div>
+          ))
+        )}
 
-            {section.content && (
-              <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
-                {section.content}
-              </p>
-            )}
-
-            {section.items && (
-              <div className="space-y-3">
-                {section.items.map((item, itemIndex) => (
-                  <div key={itemIndex} className="flex gap-3">
-                    {item.icon && (
-                      <div className="mt-0.5 flex h-8 w-8 flex-0 items-center justify-center rounded-full bg-primary-50 dark:bg-orange-900/30">
-                        <item.icon size={14} className="text-primary-600" />
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-bold text-gray-800 dark:text-gray-100 text-sm">
-                        {item.label}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {item.description}
-                      </p>
-                    </div>
+        {enabled && (privacy?.contactEmail || privacy?.contactPhone || privacy?.contactAddress) && (
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <h2 className="mb-3 font-bold text-gray-800 dark:text-gray-100">Contact Us</h2>
+            <div className="space-y-3">
+              {privacy.contactEmail && (
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-50 dark:bg-primary-900/20">
+                    <Mail size={16} className="text-primary-600" />
                   </div>
-                ))}
-              </div>
-            )}
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Email</p>
+                    <a
+                      href={`mailto:${privacy.contactEmail}`}
+                      className="text-sm font-bold text-gray-800 dark:text-gray-100"
+                    >
+                      {privacy.contactEmail}
+                    </a>
+                  </div>
+                </div>
+              )}
+              {privacy.contactPhone && (
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-50 dark:bg-primary-900/20">
+                    <Phone size={16} className="text-primary-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Phone</p>
+                    <p className="text-sm font-bold text-gray-800 dark:text-gray-100">
+                      {privacy.contactPhone}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {privacy.contactAddress && (
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary-50 dark:bg-primary-900/20">
+                    <MapPin size={16} className="text-primary-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Address</p>
+                    <p className="whitespace-pre-line text-sm font-bold text-gray-800 dark:text-gray-100">
+                      {privacy.contactAddress}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        ))}
+        )}
 
-        {/* Footer */}
-        <div className="text-center py-4">
+        <div className="py-4 text-center">
           <p className="text-xs text-gray-400 dark:text-gray-500">
-            By using Foodies Cafe, you agree to this Privacy Policy
+            By using {restaurantName}, you agree to this Privacy Policy
           </p>
         </div>
       </div>
