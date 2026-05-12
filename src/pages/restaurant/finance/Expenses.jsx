@@ -8,6 +8,7 @@ import Select from '../../../components/common/Select'
 import { EmptyState, FinanceMetric, FinancePageHeader, FinancePanel, FinanceRow, money } from './FinanceUI'
 
 const categories = ['rent', 'electricity', 'gas', 'staff_salary', 'ingredients', 'marketing', 'maintenance', 'tax', 'internet', 'water', 'fuel', 'transportation', 'equipment', 'miscellaneous']
+const manualExpenseCategories = categories.filter((c) => c !== 'staff_salary')
 
 const Expenses = () => {
   const [rows, setRows] = useState([])
@@ -68,7 +69,7 @@ const Expenses = () => {
     <div className="space-y-6">
       <FinancePageHeader
         title="Expense Management"
-        subtitle="Operating costs and receipts. When you mark payroll as paid, a staff_salary expense is created for net pay plus employee and employer EPF (see description on each payroll line). Profit & Loss picks that up as total wages-related outflow."
+        subtitle="Operating costs and receipts. Staff salary is not added here—it is created automatically when you pay payroll. Raw ingredient cost tied to stock is recorded under Finance → Inventory → Raw use (ingredients lines appear below and roll into Profit & Loss)."
       />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -85,7 +86,7 @@ const Expenses = () => {
             label="Category"
             value={form.category}
             onValueChange={(v) => setForm((s) => ({ ...s, category: v }))}
-            options={categories.map((x) => ({ value: x, label: x.replace(/_/g, ' ') }))}
+            options={manualExpenseCategories.map((x) => ({ value: x, label: x.replace(/_/g, ' ') }))}
           />
           <Input label="Payment Method" value={form.paymentMethod} onChange={(e) => setForm((s) => ({ ...s, paymentMethod: e.target.value }))} />
           <Input label="Expense Date" type="date" value={form.expenseDate} onChange={(e) => setForm((s) => ({ ...s, expenseDate: e.target.value }))} required />
@@ -106,16 +107,18 @@ const Expenses = () => {
             <FinanceRow
               key={r._id}
               title={r.title}
-              meta={`${new Date(r.expenseDate).toLocaleDateString()} | ${r.category} | ${r.paymentMethod || 'cash'}${r.sourcePayrollId ? ' | Payroll' : ''}`}
+              meta={`${new Date(r.expenseDate).toLocaleDateString()} | ${r.category} | ${r.paymentMethod || 'cash'}${r.sourcePayrollId ? ' | Payroll' : ''}${r.sourceInventoryLogId ? ' | Inventory use' : ''}`}
               amount={money(r.amount)}
               action={
                 r.sourcePayrollId ? (
                   <span className="text-xs text-gray-500 dark:text-gray-400">From payroll</span>
+                ) : r.sourceInventoryLogId ? (
+                  <span className="text-xs text-gray-500 dark:text-gray-400">From inventory</span>
                 ) : (
                   <Button type="button" size="sm" variant="danger" onClick={() => removeExpense(r._id)}><FiTrash2 className="mr-1" /> Delete</Button>
                 )
               }
-              danger={!r.sourcePayrollId}
+              danger={!r.sourcePayrollId && !r.sourceInventoryLogId}
             />
           ))}
           {rows.length === 0 && <EmptyState>No expenses yet.</EmptyState>}

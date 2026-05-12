@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FiBookOpen,
   FiCheckCircle,
   FiClock,
   FiCoffee,
@@ -29,7 +28,6 @@ import {
   RestaurantStatusPill,
   formatRestaurantCurrency,
 } from "../../components/restaurant/RestaurantUI";
-import MenuRecipeModal from "./MenuRecipeModal";
 
 const PAGE_SIZE_OPTIONS = [8, 12, 24, 48];
 
@@ -78,30 +76,9 @@ function MenuItemImage({ item, className = "" }) {
   );
 }
 
-function MenuActions({ item, onEdit, onDelete, onToggle, onManageRecipe }) {
-  const hasRecipe = Array.isArray(item.recipe) && item.recipe.length > 0;
+function MenuActions({ item, onEdit, onDelete, onToggle }) {
   return (
     <div className="flex items-center gap-2">
-      {/* Recipe button is labelled (not icon-only) so admins discover it.
-         Green when a BOM is set (stock will auto-decrement on each sale);
-         amber when missing (selling this item won't move inventory). */}
-      <button
-        type="button"
-        onClick={() => onManageRecipe(item)}
-        title={
-          hasRecipe
-            ? `Recipe set (${item.recipe.length} ingredient${item.recipe.length === 1 ? "" : "s"}) — auto-deducts stock on sale`
-            : "No recipe yet — click to link ingredients so stock auto-deducts"
-        }
-        className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
-          hasRecipe
-            ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-            : "bg-amber-50 text-amber-700 hover:bg-amber-100"
-        }`}
-      >
-        <FiBookOpen className="h-3.5 w-3.5" />
-        {hasRecipe ? `Recipe · ${item.recipe.length}` : "Add recipe"}
-      </button>
       <button
         type="button"
         onClick={() => onToggle(item)}
@@ -253,7 +230,6 @@ const Menu = () => {
   const [viewMode, setViewMode] = useState("list");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
-  const [recipeModalItem, setRecipeModalItem] = useState(null);
 
   useEffect(() => {
     fetchMenuData();
@@ -631,7 +607,6 @@ const Menu = () => {
                           onEdit={() => navigate(`${restaurantBase}/menu/item/${item._id}/edit`)}
                           onDelete={() => openDeleteModal("item", item)}
                           onToggle={handleToggleAvailability}
-                          onManageRecipe={setRecipeModalItem}
                         />
                       </div>
                     </div>
@@ -693,7 +668,6 @@ const Menu = () => {
                             onEdit={() => navigate(`${restaurantBase}/menu/item/${item._id}/edit`)}
                             onDelete={() => openDeleteModal("item", item)}
                             onToggle={handleToggleAvailability}
-                            onManageRecipe={setRecipeModalItem}
                           />
                         </td>
                       </tr>
@@ -740,13 +714,6 @@ const Menu = () => {
           </div>
         </div>
       </Modal>
-
-      <MenuRecipeModal
-        isOpen={Boolean(recipeModalItem)}
-        onClose={() => setRecipeModalItem(null)}
-        menuItem={recipeModalItem}
-        onSaved={fetchMenuData}
-      />
     </div>
   );
 };

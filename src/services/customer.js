@@ -368,21 +368,13 @@ const cleanText = (value) => {
 }
 
 // Helper functions for customer flow
-<<<<<<< HEAD
-export const getRestaurantInfo = async (restaurantSlug) => {
-  // Public menu gives base fields; public profile gives the admin-managed
-  // About fields (tagline, gallery, hours…). We merge both so the customer
-  // Home page can display the tagline the admin set in the admin panel.
+export const getRestaurantInfo = async (restaurantSlug, qrToken = null) => {
   const [menuRes, profile] = await Promise.all([
-    getRestaurantMenu(restaurantSlug),
+    getRestaurantMenu(restaurantSlug, qrToken),
     getRestaurantPublicProfile(restaurantSlug).catch(() => null),
   ])
   const menuRestaurant = menuRes?.data?.restaurant || {}
   const about = profile?.about || {}
-=======
-export const getRestaurantInfo = async (restaurantSlug, qrToken = null) => {
-  const menu = await getRestaurantMenu(restaurantSlug, qrToken)
->>>>>>> d0d4d9d0e5ddc22de7ed601f0d54b7f39ce48965
   return {
     id: menuRestaurant.id || profile?.id,
     name: menuRestaurant.name || profile?.name,

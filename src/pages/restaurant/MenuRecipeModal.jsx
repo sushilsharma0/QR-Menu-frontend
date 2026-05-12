@@ -13,8 +13,9 @@ import {
 } from "../../services/api";
 
 /** Must match server `InventoryItem.INVENTORY_UNITS` — same set so any
- *  inventory item can be used in a recipe regardless of how it's stocked. */
-export const RECIPE_UNITS = [
+ *  inventory item can be used in a recipe regardless of how it's stocked.
+ *  Kept module-local (not a named export) so React Fast Refresh stays valid. */
+const RECIPE_UNITS = [
   "kg",
   "gram",
   "liter",

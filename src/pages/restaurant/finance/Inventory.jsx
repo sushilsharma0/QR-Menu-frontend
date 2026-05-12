@@ -7,12 +7,14 @@ import {
   FiBox,
   FiCalendar,
   FiDownload,
+  FiEdit2,
   FiFileText,
   FiPackage,
   FiPlus,
   FiPrinter,
   FiSearch,
   FiShoppingCart,
+  FiTrash2,
   FiTruck,
 } from 'react-icons/fi'
 import toast from 'react-hot-toast'
@@ -47,7 +49,7 @@ import {
 
 const UNITS = ['kg', 'gram', 'liter', 'ml', 'piece', 'packet', 'bottle', 'carton', 'box', 'other']
 const CATEGORIES = ['Vegetables', 'Meat', 'Drinks', 'Dairy', 'Frozen', 'Packaging', 'Spices', 'General']
-const TABS = ['Overview', 'Items', 'Suppliers', 'Purchases', 'Transactions', 'Waste', 'Analytics']
+const TABS = ['Overview', 'Items', 'Raw use', 'Suppliers', 'Purchases', 'Transactions', 'Waste', 'Analytics']
 const chartColors = ['#8f2d0a', '#14b8a6', '#f97316', '#6366f1', '#ef4444', '#84cc16', '#0ea5e9']
 
 const emptyItem = {
@@ -67,6 +69,7 @@ const emptyItem = {
 }
 
 const emptyMovement = { inventoryItemId: '', type: 'stock_in', quantity: 0, reason: '', referenceNumber: '' }
+const emptyRawUse = { inventoryItemId: '', quantity: 0, reason: '', referenceNumber: '' }
 const emptySupplier = { name: '', phone: '', address: '', panVat: '', paymentDue: 0, notes: '' }
 const emptyPurchase = { inventoryItemId: '', supplierId: '', quantity: 0, unitCost: 0, paymentStatus: 'paid', supplierBillNumber: '', notes: '' }
 const emptyPurchaseEdit = { _id: '', quantity: 0, unitCost: 0, paymentStatus: 'paid', supplierBillNumber: '', notes: '', supplierId: '' }
@@ -82,6 +85,29 @@ const statusTone = (item) => {
 }
 
 const formatDate = (date) => (date ? new Date(date).toLocaleDateString() : '-')
+
+const toInputDate = (d) => {
+  if (!d) return ''
+  const x = new Date(d)
+  if (Number.isNaN(x.getTime())) return ''
+  return x.toISOString().slice(0, 10)
+}
+
+const apiItemToForm = (item) => ({
+  name: item.name || '',
+  category: item.category || 'General',
+  unit: item.unit || 'piece',
+  purchaseUnit: item.purchaseUnit || '',
+  conversionFactor: item.conversionFactor ?? 1,
+  quantity: Number(item.quantity ?? 0),
+  minimumStock: Number(item.minimumStock ?? 0),
+  costPerUnit: Number(item.costPerUnit ?? 0),
+  supplier: item.supplier || '',
+  supplierId: item.supplierId?._id ? String(item.supplierId._id) : item.supplierId ? String(item.supplierId) : '',
+  manufacturingDate: toInputDate(item.manufacturingDate),
+  expiryDate: toInputDate(item.expiryDate),
+  notes: item.notes || '',
+})
 
 const downloadCsv = (filename, rows) => {
   if (!rows.length) {
@@ -113,7 +139,9 @@ const Inventory = () => {
   const [summary, setSummary] = useState({ valuation: 0, lowStock: 0, deadStock: 0, expiringSoon: 0 })
   const [search, setSearch] = useState('')
   const [itemForm, setItemForm] = useState(emptyItem)
+  const [editingItemId, setEditingItemId] = useState(null)
   const [movementForm, setMovementForm] = useState(emptyMovement)
+  const [rawUseForm, setRawUseForm] = useState(emptyRawUse)
   const [supplierForm, setSupplierForm] = useState(emptySupplier)
   const [purchaseForm, setPurchaseForm] = useState(emptyPurchase)
   const [purchaseEdit, setPurchaseEdit] = useState(null)
@@ -206,16 +234,64 @@ const Inventory = () => {
   const wasteCost = transactions.filter((txn) => txn.type === 'wastage').reduce((sum, txn) => sum + Number(txn.totalCost || 0), 0)
   const pendingSupplierDue = suppliers.reduce((sum, supplier) => sum + Number(supplier.paymentDue || 0), 0)
 
+  const rawUseSelectedItem = useMemo(
+    () => items.find((x) => String(x._id) === String(rawUseForm.inventoryItemId)),
+    [items, rawUseForm.inventoryItemId],
+  )
+  const rawUseLineCost = useMemo(() => {
+    const qty = Number(rawUseForm.quantity || 0)
+    const cpu = Number(rawUseSelectedItem?.costPerUnit || 0)
+    return qty * cpu
+  }, [rawUseForm.quantity, rawUseSelectedItem])
+
   const saveItem = async (e) => {
     e.preventDefault()
     try {
       setLoading(true)
-      await api.post('/restaurant/inventory', itemForm)
-      toast.success('Inventory item saved')
+      if (editingItemId) {
+        await api.patch(`/restaurant/inventory/${editingItemId}`, itemForm)
+        toast.success('Inventory item updated')
+      } else {
+        await api.post('/restaurant/inventory', itemForm)
+        toast.success('Inventory item saved')
+      }
       setItemForm(emptyItem)
+      setEditingItemId(null)
       loadAll()
     } catch (e2) {
       toast.error(e2.response?.data?.message || 'Failed to save item')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const cancelItemEdit = () => {
+    setEditingItemId(null)
+    setItemForm(emptyItem)
+  }
+
+  const beginEditItem = (item) => {
+    setActiveTab('Items')
+    setEditingItemId(String(item._id))
+    setItemForm(apiItemToForm(item))
+  }
+
+  const removeItem = async (item) => {
+    if (
+      !window.confirm(
+        `Delete "${item.name}" from inventory? It will be hidden from lists; existing purchase and movement history is kept.`,
+      )
+    ) {
+      return
+    }
+    try {
+      setLoading(true)
+      await api.delete(`/restaurant/inventory/${item._id}`)
+      toast.success('Item removed')
+      if (editingItemId === String(item._id)) cancelItemEdit()
+      loadAll()
+    } catch (e2) {
+      toast.error(e2.response?.data?.message || 'Failed to delete item')
     } finally {
       setLoading(false)
     }
@@ -232,12 +308,48 @@ const Inventory = () => {
       return
     }
     try {
-      await api.post('/restaurant/inventory/movements', movementForm)
-      toast.success(movementForm.type === 'stock_in' ? 'Stock added' : 'Stock removed')
+      const res = await api.post('/restaurant/inventory/movements', movementForm)
+      const expense = res.data?.data?.expense
+      if (movementForm.type === 'usage' && expense) {
+        toast.success('Stock reduced and ingredients expense added for P&L')
+      } else {
+        toast.success(movementForm.type === 'stock_in' ? 'Stock added' : 'Stock removed')
+      }
       setMovementForm(emptyMovement)
       loadAll()
     } catch (e2) {
       toast.error(e2.response?.data?.message || 'Failed to record movement')
+    }
+  }
+
+  const postRawUse = async (e) => {
+    e.preventDefault()
+    if (!rawUseForm.inventoryItemId) {
+      toast.error('Please select a raw material item')
+      return
+    }
+    if (Number(rawUseForm.quantity || 0) <= 0) {
+      toast.error('Quantity must be greater than 0')
+      return
+    }
+    try {
+      const res = await api.post('/restaurant/inventory/movements', {
+        inventoryItemId: rawUseForm.inventoryItemId,
+        quantity: Number(rawUseForm.quantity),
+        type: 'usage',
+        reason: rawUseForm.reason,
+        referenceNumber: rawUseForm.referenceNumber,
+        syncIngredientsExpense: true,
+      })
+      if (res.data?.data?.expense) {
+        toast.success('Usage saved — stock reduced and cost posted to Expenses (ingredients)')
+      } else {
+        toast.success('Usage saved — stock reduced (no cost recorded; set cost per unit on the item)')
+      }
+      setRawUseForm(emptyRawUse)
+      loadAll()
+    } catch (e2) {
+      toast.error(e2.response?.data?.message || 'Failed to record raw material use')
     }
   }
 
@@ -397,7 +509,7 @@ const Inventory = () => {
     <div className="space-y-6">
       <FinancePageHeader
         title="Inventory Control"
-        subtitle="Manage stock in/out, suppliers, purchase orders, waste, expiry alerts, recipe deductions and inventory valuation."
+        subtitle="Stock purchases, manual raw-material use (COGS), waste, and valuation. Record kitchen consumption under Raw use — that lowers quantity on hand and posts an ingredients expense for Profit & Loss."
         actions={
           <>
             <Button type="button" variant="secondary" onClick={loadAll}><FiActivity className="mr-1" /> Refresh</Button>
@@ -458,7 +570,7 @@ const Inventory = () => {
                   <p className="text-xs text-gray-500">Daily usage avg {item.dailyUsage.toFixed(2)} {item.unit}</p>
                 </div>
               ))}
-              {analytics.forecast.length === 0 && <EmptyState>Forecast starts after usage or order recipe deductions are logged.</EmptyState>}
+              {analytics.forecast.length === 0 && <EmptyState>Forecast appears after you log raw use, waste, or other stock movements.</EmptyState>}
             </div>
           </FinancePanel>
         </div>
@@ -466,8 +578,13 @@ const Inventory = () => {
 
       {activeTab === 'Items' && (
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-          <FinancePanel title="Add inventory item" className="xl:col-span-1">
+          <FinancePanel title={editingItemId ? 'Edit inventory item' : 'Add inventory item'} className="xl:col-span-1">
             <form onSubmit={saveItem} className="space-y-3">
+              {editingItemId && (
+                <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+                  Editing an existing item — save to apply changes, or cancel to discard.
+                </p>
+              )}
               <Input label="Item name" value={itemForm.name} onChange={(e) => setItemForm((s) => ({ ...s, name: e.target.value }))} required />
               <div className="grid grid-cols-2 gap-3">
                 <Select
@@ -504,7 +621,24 @@ const Inventory = () => {
                 options={suppliers.map((s) => ({ label: s.name, value: String(s._id) }))}
               />
               <Input label="Notes" value={itemForm.notes} onChange={(e) => setItemForm((s) => ({ ...s, notes: e.target.value }))} />
-              <Button type="submit" loading={loading}><FiPlus className="mr-1" /> Save Item</Button>
+              <div className="flex flex-wrap gap-2">
+                <Button type="submit" loading={loading}>
+                  {editingItemId ? (
+                    <>
+                      <FiEdit2 className="mr-1" /> Update item
+                    </>
+                  ) : (
+                    <>
+                      <FiPlus className="mr-1" /> Save item
+                    </>
+                  )}
+                </Button>
+                {editingItemId && (
+                  <Button type="button" variant="secondary" onClick={cancelItemEdit}>
+                    Cancel
+                  </Button>
+                )}
+              </div>
             </form>
           </FinancePanel>
 
@@ -530,11 +664,62 @@ const Inventory = () => {
                     amount={money(stockValue)}
                     status={tone.label}
                     danger={tone.label !== 'Healthy'}
+                    action={
+                      <div className="flex flex-wrap gap-2">
+                        <Button type="button" size="sm" variant="secondary" onClick={() => beginEditItem(item)}>
+                          <FiEdit2 className="mr-1" /> Edit
+                        </Button>
+                        <Button type="button" size="sm" variant="danger" onClick={() => removeItem(item)}>
+                          <FiTrash2 className="mr-1" /> Delete
+                        </Button>
+                      </div>
+                    }
                   />
                 )
               })}
               {items.length === 0 && <EmptyState>No inventory items found.</EmptyState>}
             </div>
+          </FinancePanel>
+        </div>
+      )}
+
+      {activeTab === 'Raw use' && (
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <FinancePanel title="Record raw material use" className="xl:col-span-1">
+            <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
+              Choose an inventory item and how much you used. Stock goes down by that amount. Cost is quantity × <strong>cost per unit</strong> on the item; the same value is posted as an <strong>ingredients</strong> expense so Profit & Loss matches your sell-side COGS.
+            </p>
+            <form onSubmit={postRawUse} className="space-y-3">
+              <Select
+                label="Raw material (inventory item)"
+                placeholder="Select item"
+                value={rawUseForm.inventoryItemId || ''}
+                onValueChange={(value) => setRawUseForm((s) => ({ ...s, inventoryItemId: value }))}
+                options={items.map((i) => ({ label: `${i.name} (${i.quantity} ${i.unit} on hand)`, value: String(i._id) }))}
+              />
+              <Input
+                label="Quantity used"
+                type="number"
+                min={0}
+                step="any"
+                value={rawUseForm.quantity || ''}
+                onChange={(e) => setRawUseForm((s) => ({ ...s, quantity: Number(e.target.value) }))}
+              />
+              <div className="rounded-xl border border-surface-200 bg-surface-50 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800/80">
+                <p className="font-semibold text-gray-900 dark:text-gray-100">Line cost (for expense)</p>
+                <p className="mt-1 text-gray-600 dark:text-gray-400">
+                  {rawUseSelectedItem
+                    ? `${Number(rawUseForm.quantity || 0)} ${rawUseSelectedItem.unit} × ${money(rawUseSelectedItem.costPerUnit)} = ${money(rawUseLineCost)}`
+                    : 'Select an item to preview.'}
+                </p>
+              </div>
+              <Input label="Reference (optional)" value={rawUseForm.referenceNumber} onChange={(e) => setRawUseForm((s) => ({ ...s, referenceNumber: e.target.value }))} />
+              <Input label="Note (optional)" value={rawUseForm.reason} onChange={(e) => setRawUseForm((s) => ({ ...s, reason: e.target.value }))} />
+              <Button type="submit">Save use and post COGS</Button>
+            </form>
+          </FinancePanel>
+          <FinancePanel title="Recent usage (COGS)" className="xl:col-span-2">
+            <TransactionTable transactions={transactions.filter((txn) => txn.type === 'usage')} />
           </FinancePanel>
         </div>
       )}
@@ -769,7 +954,7 @@ const Inventory = () => {
                 options={[
                   { label: 'Add Stock', value: 'stock_in' },
                   { label: 'Remove Stock', value: 'stock_out' },
-                  { label: 'Kitchen Usage', value: 'usage' },
+                  { label: 'Raw material use (COGS)', value: 'usage' },
                   { label: 'Wastage / Damage', value: 'wastage' },
                 ]}
               />
