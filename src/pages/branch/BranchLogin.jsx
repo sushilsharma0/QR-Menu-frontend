@@ -6,7 +6,7 @@ import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 
 export default function BranchLogin() {
-  const { loginBranch } = useAuth()
+  const { loginBranch, loginBranchEmail } = useAuth()
   const params = useParams()
   const hasRouteLink = Boolean(params.restaurantId && params.portalKey && params.branchSlug)
 
@@ -14,6 +14,7 @@ export default function BranchLogin() {
   const [manualPortalKey, setManualPortalKey] = useState('')
   const [manualBranchSlug, setManualBranchSlug] = useState('')
   const [username, setUsername] = useState('')
+  const [ownerGmail, setOwnerGmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -23,13 +24,27 @@ export default function BranchLogin() {
     const portalKey = hasRouteLink ? params.portalKey : manualPortalKey.trim()
     const branchSlug = hasRouteLink ? params.branchSlug : manualBranchSlug.trim()
 
+    if (!hasRouteLink && username.trim().toLowerCase().includes('@branch.com')) {
+      if (!manualRestaurantId.trim() || !password) {
+        toast.error('Enter Restaurant ID, branch username, and password.')
+        return
+      }
+      setLoading(true)
+      try {
+        await loginBranchEmail(username.trim(), manualRestaurantId.trim(), ownerGmail.trim(), password)
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
     if (!restaurantId || !portalKey || !branchSlug || !username.trim() || !password) {
       toast.error('Fill in all sign-in fields.')
       return
     }
     setLoading(true)
     try {
-      await loginBranch(restaurantId, portalKey, branchSlug, username, password)
+      await loginBranch(restaurantId, portalKey, branchSlug, username, password, ownerGmail.trim())
     } finally {
       setLoading(false)
     }
@@ -43,28 +58,35 @@ export default function BranchLogin() {
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
           {hasRouteLink
             ? 'Use the username and password from your branch manager.'
-            : 'Use the full sign-in link from your head office, or enter outlet id, security key, and branch slug below.'}
+            : 'Prefer the unified vendor login: enter your …@branch.com username, Restaurant ID, and password on the main sign-in page.'}
 
         </p>
+
+        {!hasRouteLink && (
+          <p className="mt-3 text-sm">
+            <Link to="/login?role=restaurant" className="font-semibold text-primary-700 hover:underline dark:text-primary-300">
+              Open unified login (recommended)
+            </Link>
+          </p>
+        )}
 
         <form className="mt-8 space-y-4" onSubmit={onSubmit}>
           {!hasRouteLink && (
             <>
               <Input
-                label="Restaurant outlet id"
+                label="Restaurant outlet id or REST- id"
                 value={manualRestaurantId}
                 onChange={(ev) => setManualRestaurantId(ev.target.value)}
-                placeholder="24-character id from your manager"
+                placeholder="REST-2041 or technical id"
                 autoComplete="off"
-                required
+                required={!username.trim().toLowerCase().includes('@branch.com')}
               />
               <Input
                 label="Branch security key"
                 value={manualPortalKey}
                 onChange={(ev) => setManualPortalKey(ev.target.value)}
-                placeholder="12-character key"
+                placeholder="12-character key (legacy link sign-in)"
                 autoComplete="off"
-                required
               />
               <Input
                 label="Branch URL slug"
@@ -72,11 +94,18 @@ export default function BranchLogin() {
                 onChange={(ev) => setManualBranchSlug(ev.target.value)}
                 placeholder="pizza-hub-pokhara"
                 autoComplete="off"
-                required
               />
             </>
           )}
-          <Input label="Username" value={username} onChange={(ev) => setUsername(ev.target.value)} autoComplete="username" required />
+          <Input label="Username or branch email" value={username} onChange={(ev) => setUsername(ev.target.value)} autoComplete="username" required />
+          <Input
+            label="Branch owner Gmail (if your outlet uses it)"
+            type="email"
+            value={ownerGmail}
+            onChange={(ev) => setOwnerGmail(ev.target.value)}
+            autoComplete="email"
+            placeholder="owner@gmail.com"
+          />
           <Input label="Password" type="password" value={password} onChange={(ev) => setPassword(ev.target.value)} autoComplete="current-password" required />
           <Button type="submit" className="w-full" loading={loading}>
             Sign in

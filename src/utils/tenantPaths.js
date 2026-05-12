@@ -97,7 +97,7 @@ export function parseBranchPortalPath(pathname) {
 export function defaultPortalPathForUser(user) {
   if (user?.scope === 'branch_user' && user?.branchSlug) {
     if (!user?.branchPortalKey || !user?.restaurantId) {
-      return '/branch/login'
+      return '/login'
     }
     return `${branchPortalBase(user.restaurantId, user.branchPortalKey, user.branchSlug)}/dashboard`
   }
