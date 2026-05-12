@@ -41,7 +41,7 @@ const ItemDetails = () => {
 
   useEffect(() => {
     fetchItemDetails();
-  }, [id]);
+  }, [id, slug, token]);
 
   useEffect(() => {
     const groups = item?.customizations;
@@ -60,9 +60,9 @@ const ItemDetails = () => {
 
   const fetchItemDetails = async () => {
     try {
-      const res = await api.get(
-        `/restaurant/menu/items/${id}?restaurantSlug=${slug}`
-      );
+      const qs = new URLSearchParams({ restaurantSlug: slug || '' });
+      if (token) qs.set('qrToken', token);
+      const res = await api.get(`/restaurant/menu/items/customer/${id}?${qs.toString()}`);
 
       setItem(res.data.data);
     } catch (err) {

@@ -6,6 +6,7 @@ import RestaurantTrialKycBanner from './RestaurantTrialKycBanner'
 import { useAuth } from '../../hooks/useAuth'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { isRestaurantPathAllowedWhenBillingLocked } from '../../utils/tenantPaths'
+import { BranchProvider } from '../../context/BranchContext'
 
 const RestaurantLayout = () => {
   const { user } = useAuth()
@@ -32,13 +33,16 @@ const RestaurantLayout = () => {
 
   if (isPosRoute) {
     return (
+      <BranchProvider>
       <div className="restaurant-portal h-screen overflow-hidden bg-[#feefa5] text-gray-900 dark:bg-gray-950 dark:text-gray-100">
         {mustRedirectToSubscribe ? main : <Outlet />}
       </div>
+      </BranchProvider>
     )
   }
 
   return (
+    <BranchProvider>
     <div className="restaurant-portal flex h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       <RestaurantSidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -49,6 +53,7 @@ const RestaurantLayout = () => {
         </main>
       </div>
     </div>
+    </BranchProvider>
   )
 }
 

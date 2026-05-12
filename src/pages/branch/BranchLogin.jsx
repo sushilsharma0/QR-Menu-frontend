@@ -1,0 +1,94 @@
+import React, { useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import toast from 'react-hot-toast'
+import { useAuth } from '../../hooks/useAuth'
+import Button from '../../components/common/Button'
+import Input from '../../components/common/Input'
+
+export default function BranchLogin() {
+  const { loginBranch } = useAuth()
+  const params = useParams()
+  const hasRouteLink = Boolean(params.restaurantId && params.portalKey && params.branchSlug)
+
+  const [manualRestaurantId, setManualRestaurantId] = useState('')
+  const [manualPortalKey, setManualPortalKey] = useState('')
+  const [manualBranchSlug, setManualBranchSlug] = useState('')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const onSubmit = async (e) => {
+    e.preventDefault()
+    const restaurantId = hasRouteLink ? params.restaurantId : manualRestaurantId.trim()
+    const portalKey = hasRouteLink ? params.portalKey : manualPortalKey.trim()
+    const branchSlug = hasRouteLink ? params.branchSlug : manualBranchSlug.trim()
+
+    if (!restaurantId || !portalKey || !branchSlug || !username.trim() || !password) {
+      toast.error('Fill in all sign-in fields.')
+      return
+    }
+    setLoading(true)
+    try {
+      await loginBranch(restaurantId, portalKey, branchSlug, username, password)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-primary-50 px-4 py-16 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+      <div className="mx-auto max-w-md rounded-3xl border border-amber-100 bg-white/90 p-8 shadow-xl backdrop-blur dark:border-gray-800 dark:bg-gray-900/90">
+        <p className="text-xs font-black uppercase tracking-widest text-primary-700 dark:text-primary-300">Branch access</p>
+        <h1 className="mt-2 text-2xl font-black text-gray-950 dark:text-gray-100">Sign in to your branch</h1>
+        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          {hasRouteLink
+            ? 'Use the username and password from your branch manager.'
+            : 'Use the full sign-in link from your head office, or enter outlet id, security key, and branch slug below.'}
+
+        </p>
+
+        <form className="mt-8 space-y-4" onSubmit={onSubmit}>
+          {!hasRouteLink && (
+            <>
+              <Input
+                label="Restaurant outlet id"
+                value={manualRestaurantId}
+                onChange={(ev) => setManualRestaurantId(ev.target.value)}
+                placeholder="24-character id from your manager"
+                autoComplete="off"
+                required
+              />
+              <Input
+                label="Branch security key"
+                value={manualPortalKey}
+                onChange={(ev) => setManualPortalKey(ev.target.value)}
+                placeholder="12-character key"
+                autoComplete="off"
+                required
+              />
+              <Input
+                label="Branch URL slug"
+                value={manualBranchSlug}
+                onChange={(ev) => setManualBranchSlug(ev.target.value)}
+                placeholder="pizza-hub-pokhara"
+                autoComplete="off"
+                required
+              />
+            </>
+          )}
+          <Input label="Username" value={username} onChange={(ev) => setUsername(ev.target.value)} autoComplete="username" required />
+          <Input label="Password" type="password" value={password} onChange={(ev) => setPassword(ev.target.value)} autoComplete="current-password" required />
+          <Button type="submit" className="w-full" loading={loading}>
+            Sign in
+          </Button>
+        </form>
+
+        <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+          <Link to="/login?role=restaurant" className="font-semibold text-primary-700 hover:underline dark:text-primary-300">
+            Restaurant owner login
+          </Link>
+        </p>
+      </div>
+    </div>
+  )
+}

@@ -43,7 +43,7 @@ const MenuItems = () => {
     if (slug && categoryName) {
       fetchMenuItems();
     }
-  }, [slug, categoryName]);
+  }, [slug, categoryName, token]);
 
   useEffect(() => {
     if (slug && token) rememberCustomerPortal(slug, token);
@@ -52,7 +52,9 @@ const MenuItems = () => {
   const fetchMenuItems = async () => {
     try {
       // Call the by-category endpoint with slug as query param
-      const res = await api.get(`/restaurant/menu/items/by-category/${categoryName}?restaurantSlug=${slug}`);
+      const qs = new URLSearchParams({ restaurantSlug: slug });
+      if (token) qs.set('qrToken', token);
+      const res = await api.get(`/restaurant/menu/items/by-category/${encodeURIComponent(categoryName)}?${qs.toString()}`);
     
 
       // Handle the response - items are in res.data.data.items

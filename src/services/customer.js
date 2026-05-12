@@ -7,8 +7,10 @@ const CART_COUNT_STORAGE_KEY = 'customer_cart_count_v1'
 const ORDER_TOKENS_STORAGE_KEY = 'customer_order_tokens_v1'
 
 // Public Menu
-export const getRestaurantMenu = async (restaurantSlug) => {
-  const response = await api.get(`/restaurant/menu/public/${restaurantSlug}`)
+export const getRestaurantMenu = async (restaurantSlug, qrToken = null) => {
+  const response = await api.get(`/restaurant/menu/public/${restaurantSlug}`, {
+    params: qrToken ? { qrToken } : {},
+  })
   return response.data
 }
 
@@ -348,8 +350,8 @@ export const getGuestLoyalty = async ({ guestId, qrToken }) => {
 }
 
 // Helper functions for customer flow
-export const getRestaurantInfo = async (restaurantSlug) => {
-  const menu = await getRestaurantMenu(restaurantSlug)
+export const getRestaurantInfo = async (restaurantSlug, qrToken = null) => {
+  const menu = await getRestaurantMenu(restaurantSlug, qrToken)
   return {
     id: menu.data.restaurant?.id,
     name: menu.data.restaurant?.name,
@@ -362,13 +364,13 @@ export const getRestaurantInfo = async (restaurantSlug) => {
   }
 }
 
-export const getCategories = async (restaurantSlug) => {
-  const menu = await getRestaurantMenu(restaurantSlug)
+export const getCategories = async (restaurantSlug, qrToken = null) => {
+  const menu = await getRestaurantMenu(restaurantSlug, qrToken)
   return menu.data.menu || []
 }
 
-export const getAllItems = async (restaurantSlug) => {
-  const menu = await getRestaurantMenu(restaurantSlug)
+export const getAllItems = async (restaurantSlug, qrToken = null) => {
+  const menu = await getRestaurantMenu(restaurantSlug, qrToken)
   const allItems = []
   menu.data.menu?.forEach(category => {
     category.items?.forEach(item => {
@@ -382,8 +384,8 @@ export const getAllItems = async (restaurantSlug) => {
   return allItems
 }
 
-export const getItemsByCategory = async (restaurantSlug, categoryId) => {
-  const menu = await getRestaurantMenu(restaurantSlug)
+export const getItemsByCategory = async (restaurantSlug, categoryId, qrToken = null) => {
+  const menu = await getRestaurantMenu(restaurantSlug, qrToken)
   const category = menu.data.menu?.find(cat => cat._id === categoryId)
   return category?.items || []
 }

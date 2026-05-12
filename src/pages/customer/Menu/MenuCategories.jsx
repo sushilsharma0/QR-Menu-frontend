@@ -73,7 +73,7 @@ const MenuCategories = () => {
       fetchMenuData();
       fetchRestaurantBrand();
     }
-  }, [slug]);
+  }, [slug, token]);
 
   useEffect(() => {
     const run = async () => {
@@ -101,7 +101,8 @@ const MenuCategories = () => {
     try {
       setLoading(true);
       // Use public endpoint with restaurant slug
-      const response = await api.get(`/restaurant/menu/public/${slug}`);
+      const qs = token ? `?qrToken=${encodeURIComponent(token)}` : '';
+      const response = await api.get(`/restaurant/menu/public/${slug}${qs}`);
       // response.data.data contains { restaurant, menu }
       const menuData = response.data.data.menu || [];
       setCategories(menuData);
@@ -116,7 +117,7 @@ const MenuCategories = () => {
 
   const fetchRestaurantBrand = async () => {
     try {
-      const info = await getRestaurantInfo(slug);
+      const info = await getRestaurantInfo(slug, token);
       setRestaurantInfo(info);
     } catch (error) {
       setRestaurantInfo(null);

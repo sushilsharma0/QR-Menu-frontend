@@ -1,6 +1,16 @@
 /** Path helpers for restaurant / kitchen / cashier portals (slug + restaurant id). */
 
 export function getTenantSegments(user) {
+  if (user?.scope === 'branch_user') {
+    const slug = user?.restaurantSlug ?? user?.slug
+    const restaurantId = user?.restaurantId
+    return {
+      slug,
+      restaurantId,
+      branchSlug: user?.branchSlug,
+      branchPortalKey: user?.branchPortalKey,
+    }
+  }
   const slug =
     user?.slug ??
     user?.restaurantSlug ??
@@ -64,8 +74,34 @@ export function waiterPortalBase(slug, restaurantId) {
   return `/waiter/${encodePathSegment(slug)}/${encodePathSegment(restaurantId)}`
 }
 
-/** Post-login or default home path for the current auth user. */
+/**
+ * Branch portal: restaurant Mongo id + unguessable portal key + branch slug.
+ * Same pattern as /restaurant/:slug/:id so outlets are not enumerable by slug alone.
+ */
+export function branchPortalBase(restaurantId, portalKey, branchSlug) {
+  if (restaurantId == null || portalKey == null || branchSlug == null) return ''
+  return `/branch/${encodePathSegment(restaurantId)}/${encodePathSegment(portalKey)}/${encodePathSegment(branchSlug)}`
+}
+
+export function parseBranchPortalPath(pathname) {
+  const m = String(pathname || '').match(/^\/branch\/([^/]+)\/([^/]+)\/([^/]+)(?:\/(.*))?$/)
+  if (!m) return null
+  return {
+    restaurantId: decodeURIComponent(m[1]),
+    portalKey: decodeURIComponent(m[2]),
+    branchSlug: decodeURIComponent(m[3]),
+    tail: m[4] || '',
+  }
+}
+
 export function defaultPortalPathForUser(user) {
+  if (user?.scope === 'branch_user' && user?.branchSlug) {
+    if (!user?.branchPortalKey || !user?.restaurantId) {
+      return '/branch/login'
+    }
+    return `${branchPortalBase(user.restaurantId, user.branchPortalKey, user.branchSlug)}/dashboard`
+  }
+
   const { slug, restaurantId } = getTenantSegments(user)
   if (slug == null || restaurantId == null) return '/login'
 

@@ -109,20 +109,23 @@ export function FinanceChartBox({ children, empty, emptyTitle = 'No chart data y
   )
 }
 
-export function FinanceTooltip({ active, payload, label, labelFormatter, valuePrefix = 'Rs. ' }) {
+export function FinanceTooltip({ active, payload, label, labelFormatter, valuePrefix = 'Rs. ', valueSuffix = '' }) {
   if (!active || !payload?.length) return null
+  const displayLabel = labelFormatter ? labelFormatter(label) : (label || payload[0]?.name || payload[0]?.payload?.name || '')
 
   return (
     <div className="rounded-2xl border border-amber-100 bg-white/95 px-4 py-3 shadow-xl backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-        {labelFormatter ? labelFormatter(label) : label}
-      </p>
+      {displayLabel && (
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          {displayLabel}
+        </p>
+      )}
       <div className="mt-2 space-y-1">
         {payload.map((item) => (
           <p key={item.dataKey} className="flex items-center justify-between gap-6 text-sm">
             <span className="text-gray-500 dark:text-gray-400">{item.name || item.dataKey}</span>
             <span className="font-bold text-primary-700 dark:text-primary-300">
-              {typeof item.value === 'number' ? `${valuePrefix}${Number(item.value || 0).toLocaleString('en-IN')}` : item.value}
+              {typeof item.value === 'number' ? `${valuePrefix}${Number(item.value || 0).toLocaleString('en-IN')}${valueSuffix}` : item.value}
             </span>
           </p>
         ))}

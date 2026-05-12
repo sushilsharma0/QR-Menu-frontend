@@ -4,6 +4,7 @@ import { useAuth } from './useAuth'
 import {
   getTenantSegments,
   restaurantPortalBase,
+  branchPortalBase,
   kitchenPortalBase,
   cashierPortalBase,
   employeePortalBase,
@@ -15,24 +16,46 @@ import {
  * Use inside restaurant / employee layouts and pages that live under those paths.
  */
 export function useTenantRoutes() {
-  const { slug: slugParam, restaurantId: ridParam } = useParams()
+  const params = useParams()
   const { user } = useAuth()
 
   return useMemo(() => {
     const fromUser = getTenantSegments(user)
+    const slugParam = params.slug
+    const ridRestaurant = params.restaurantId
+    const portalKeyParam = params.portalKey
+    const branchSlugParam = params.branchSlug
+
+    const isSecuredBranchRoute = Boolean(portalKeyParam && branchSlugParam && ridRestaurant && !slugParam)
+
     const slug = slugParam ?? fromUser.slug
-    const restaurantId = ridParam ?? fromUser.restaurantId
-    const hasTenant = slug != null && restaurantId != null
+    const restaurantId = isSecuredBranchRoute ? ridRestaurant : (ridRestaurant ?? fromUser.restaurantId)
+    const branchSlug = branchSlugParam ?? user?.branchSlug
+    const portalKey = portalKeyParam ?? user?.branchPortalKey ?? ''
+
+    const isBranchPortal = user?.scope === 'branch_user' || isSecuredBranchRoute
+    const hasTenant = isBranchPortal
+      ? Boolean(branchSlug && restaurantId && portalKey)
+      : Boolean(slug && restaurantId)
+
+    const restaurantBase = hasTenant
+      ? isBranchPortal
+        ? branchPortalBase(restaurantId, portalKey, branchSlug)
+        : restaurantPortalBase(slug, restaurantId)
+      : ''
 
     return {
       slug,
       restaurantId,
+      branchSlug,
+      portalKey,
+      isBranchPortal,
       hasTenant,
-      restaurantBase: hasTenant ? restaurantPortalBase(slug, restaurantId) : '',
-      kitchenBase: hasTenant ? kitchenPortalBase(slug, restaurantId) : '',
-      cashierBase: hasTenant ? cashierPortalBase(slug, restaurantId) : '',
-      employeeBase: hasTenant ? employeePortalBase(slug, restaurantId) : '',
-      waiterBase: hasTenant ? waiterPortalBase(slug, restaurantId) : '',
+      restaurantBase,
+      kitchenBase: hasTenant && !isBranchPortal ? kitchenPortalBase(slug, restaurantId) : '',
+      cashierBase: hasTenant && !isBranchPortal ? cashierPortalBase(slug, restaurantId) : '',
+      employeeBase: hasTenant && !isBranchPortal ? employeePortalBase(slug, restaurantId) : '',
+      waiterBase: hasTenant && !isBranchPortal ? waiterPortalBase(slug, restaurantId) : '',
     }
-  }, [slugParam, ridParam, user])
+  }, [params.slug, params.restaurantId, params.portalKey, params.branchSlug, user])
 }

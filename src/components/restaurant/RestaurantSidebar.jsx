@@ -61,6 +61,7 @@ const NAV_GROUPS = [
     label: 'Business',
     items: [
       { segment: 'employees', icon: FiUsers, label: 'Employees' },
+      { segment: 'branches', icon: FiMapPin, label: 'Branches' },
       { segment: 'kyc', icon: FiShield, label: 'KYC' },
       { segment: 'subscription', icon: FiCreditCard, label: 'Subscription' },
     ],
@@ -106,6 +107,7 @@ function featureKeyForSegment(segment) {
   // House-account approvals are independent of the QR "customer orders" plan flag.
   if (root === 'credit-customers') return null
   if (root === 'employees') return 'employees'
+  if (root === 'branches') return 'accountSettings'
   if (root === 'tickets') return 'supportTickets'
   if (root === 'logs') return 'activityLogs'
   if (root === 'settings') return 'accountSettings'

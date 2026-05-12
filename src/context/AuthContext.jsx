@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import api from '../services/api'
-import { defaultPortalPathForUser } from '../utils/tenantPaths'
+import { defaultPortalPathForUser, branchPortalBase } from '../utils/tenantPaths'
 import {
   readInitialAuthToken,
   getAuthUserRaw,
@@ -10,6 +10,7 @@ import {
   setAuthSession,
   clearAuthSession,
 } from '../utils/authStorage'
+import { clearBranchSelection, setBranchPortalContext } from '../utils/branchStorage'
 
 /** Log out authenticated dashboard users after this much inactivity (visible tab) or hidden tab time */
 const SESSION_IDLE_MS = 60 * 60 * 1000 // 1 hour
@@ -42,12 +43,15 @@ export const AuthProvider = ({ children }) => {
     if (loginRole === undefined && options.idleTimeout && user) {
       if (user.role === 'super_admin' || user.role === 'admin') loginRole = 'platform'
       else if (user.scope === 'employee') loginRole = 'employee'
+      else if (user.scope === 'branch_user') loginRole = 'branch'
       else if (user.role === 'restaurant') loginRole = 'restaurant'
     }
 
     try {
       if (user?.scope === 'employee') {
         await api.post('/restaurant/employees/logout', {}, { skipErrorToast: true })
+      } else if (user?.scope === 'branch_user') {
+        await api.post('/restaurant/branch-auth/logout', {}, { skipErrorToast: true })
       } else if (user?.role === 'restaurant') {
         await api.post('/restaurant/auth/logout', {}, { skipErrorToast: true })
       } else if (user?.role === 'super_admin' || user?.role === 'admin') {
@@ -58,6 +62,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     clearAuthSession()
+    clearBranchSelection()
     setToken(null)
     setUser(null)
     if (options.idleTimeout) {
@@ -66,9 +71,11 @@ export const AuthProvider = ({ children }) => {
       toast.success('Logged out successfully')
     }
     const loginPath =
-      loginRole === 'platform' || loginRole === 'restaurant' || loginRole === 'employee'
-        ? `/login?role=${loginRole}`
-        : '/login'
+      loginRole === 'branch'
+        ? '/branch/login'
+        : loginRole === 'platform' || loginRole === 'restaurant' || loginRole === 'employee'
+          ? `/login?role=${loginRole}`
+          : '/login'
     navigate(loginPath)
   }, [navigate, user])
 
@@ -151,16 +158,23 @@ export const AuthProvider = ({ children }) => {
       if (!newToken || !rawUser) {
         throw new Error('Invalid response structure from server')
       }
-      
+
+      if (role === 'restaurant') {
+        clearBranchSelection()
+      }
+      if (role === 'employee') {
+        clearBranchSelection()
+      }
+
       setAuthSession(newToken, JSON.stringify(authUser))
       // Always start authenticated sessions in light mode.
       localStorage.setItem(THEME_KEY, 'light')
       document.documentElement.classList.remove('dark')
-      
+
       // Update state
       setToken(newToken)
       setUser(authUser)
-      
+
       toast.success(response.data?.message || `Welcome ${authUser.name || email}!`)
 
       if (authUser.role === 'restaurant') {
@@ -208,6 +222,41 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const loginBranch = async (restaurantId, portalKey, branchSlug, username, password) => {
+    try {
+      const response = await api.post('/restaurant/branch-auth/login', {
+        restaurantId: String(restaurantId).trim(),
+        portalKey: String(portalKey).trim(),
+        branchSlug: String(branchSlug).trim().toLowerCase(),
+        username: username.trim(),
+        password,
+      })
+      const { token: newToken, user: userData } = response.data.data || {}
+      const authUser = { ...userData, scope: 'branch_user' }
+      if (!newToken || !userData) {
+        throw new Error('Invalid response structure from server')
+      }
+      setAuthSession(newToken, JSON.stringify(authUser))
+      localStorage.setItem(THEME_KEY, 'light')
+      document.documentElement.classList.remove('dark')
+      if (authUser.branchId) setBranchPortalContext(authUser.branchId)
+      setToken(newToken)
+      setUser(authUser)
+      toast.success(response.data?.message || 'Welcome')
+      navigate(
+        `${branchPortalBase(authUser.restaurantId, authUser.branchPortalKey, authUser.branchSlug)}/dashboard`,
+        { replace: true },
+      )
+      return { success: true }
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || error.message || 'Login failed'
+      if (!error.__toastShown) {
+        toast.error(errorMsg)
+      }
+      return { success: false, error: errorMsg }
+    }
+  }
+
   const loginWithGoogle = async (credential) => {
     try {
       const response = await api.post('/restaurant/auth/google', { credential })
@@ -221,6 +270,7 @@ export const AuthProvider = ({ children }) => {
       setAuthSession(newToken, JSON.stringify(authUser))
       localStorage.setItem(THEME_KEY, 'light')
       document.documentElement.classList.remove('dark')
+      clearBranchSelection()
       setToken(newToken)
       setUser(authUser)
 
@@ -252,7 +302,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, loginWithGoogle, logout, mergeUser }}>
+    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, loginBranch, loginWithGoogle, logout, mergeUser }}>
       {children}
     </AuthContext.Provider>
   )

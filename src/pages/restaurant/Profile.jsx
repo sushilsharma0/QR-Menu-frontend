@@ -7,16 +7,30 @@ import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import { useAuth } from '../../hooks/useAuth'
+import { useNavigate } from 'react-router-dom'
+import { clearAuthSession } from '../../utils/authStorage'
 
 const Profile = () => {
   const [loading, setLoading] = useState(false)
   const { user } = useAuth()
+  const navigate = useNavigate()
   const { register, handleSubmit, watch, formState: { errors } } = useForm()
   const newPassword = watch('newPassword')
 
   const onSubmit = async (data) => {
     try {
       setLoading(true)
+      if (user?.scope === 'branch_user') {
+        await api.post('/restaurant/branch-auth/change-password', {
+          currentPassword: data.currentPassword,
+          newPassword: data.newPassword,
+        })
+        toast.success('Password updated. Please sign in again.')
+        clearAuthSession()
+        navigate('/branch/login', { replace: true })
+        window.location.reload()
+        return
+      }
       await api.post('/restaurant/auth/change-password', {
         currentPassword: data.currentPassword,
         newPassword: data.newPassword
@@ -33,7 +47,11 @@ const Profile = () => {
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
         <h1 className="text-2xl font-black text-gray-900 dark:text-gray-100">Profile & Security</h1>
-        <p className="mt-1 text-gray-500 dark:text-gray-400">Review your restaurant account and update your password.</p>
+        <p className="mt-1 text-gray-500 dark:text-gray-400">
+          {user?.scope === 'branch_user'
+            ? 'Branch login — update your password. Other settings are managed by head office.'
+            : 'Review your restaurant account and update your password.'}
+        </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
