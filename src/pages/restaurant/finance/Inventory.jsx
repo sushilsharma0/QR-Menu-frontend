@@ -69,6 +69,7 @@ const emptyItem = {
 const emptyMovement = { inventoryItemId: '', type: 'stock_in', quantity: 0, reason: '', referenceNumber: '' }
 const emptySupplier = { name: '', phone: '', address: '', panVat: '', paymentDue: 0, notes: '' }
 const emptyPurchase = { inventoryItemId: '', supplierId: '', quantity: 0, unitCost: 0, paymentStatus: 'paid', supplierBillNumber: '', notes: '' }
+const emptyPurchaseEdit = { _id: '', quantity: 0, unitCost: 0, paymentStatus: 'paid', supplierBillNumber: '', notes: '', supplierId: '' }
 const emptyPo = { supplierId: '', supplier: '', inventoryItemId: '', quantity: 0, unitCost: 0, expectedDate: '', notes: '' }
 
 const statusTone = (item) => {
@@ -115,6 +116,7 @@ const Inventory = () => {
   const [movementForm, setMovementForm] = useState(emptyMovement)
   const [supplierForm, setSupplierForm] = useState(emptySupplier)
   const [purchaseForm, setPurchaseForm] = useState(emptyPurchase)
+  const [purchaseEdit, setPurchaseEdit] = useState(null)
   const [poForm, setPoForm] = useState(emptyPo)
   const [loading, setLoading] = useState(false)
 
@@ -272,6 +274,63 @@ const Inventory = () => {
       loadAll()
     } catch (e2) {
       toast.error(e2.response?.data?.message || 'Failed to record purchase')
+    }
+  }
+
+  const beginEditPurchase = (purchase) => {
+    setPurchaseEdit({
+      _id: purchase._id,
+      itemName: purchase.inventoryItemId?.name || 'Purchase',
+      unit: purchase.inventoryItemId?.unit || '',
+      quantity: Number(purchase.quantity || 0),
+      unitCost: Number(purchase.unitCost || 0),
+      paymentStatus: purchase.paymentStatus || 'paid',
+      supplierBillNumber: purchase.supplierBillNumber || '',
+      notes: purchase.notes || '',
+      supplierId: purchase.supplierId?._id || purchase.supplierId || '',
+    })
+  }
+
+  const saveEditPurchase = async (e) => {
+    e.preventDefault()
+    if (!purchaseEdit?._id) return
+    if (Number(purchaseEdit.quantity) <= 0) {
+      toast.error('Quantity must be greater than 0')
+      return
+    }
+    try {
+      await api.patch(`/restaurant/inventory/purchases/${purchaseEdit._id}`, {
+        quantity: Number(purchaseEdit.quantity),
+        unitCost: Number(purchaseEdit.unitCost),
+        paymentStatus: purchaseEdit.paymentStatus,
+        supplierBillNumber: purchaseEdit.supplierBillNumber,
+        notes: purchaseEdit.notes,
+        supplierId: purchaseEdit.supplierId || null,
+      })
+      toast.success('Purchase updated — stock adjusted')
+      setPurchaseEdit(null)
+      loadAll()
+    } catch (e2) {
+      toast.error(e2.response?.data?.message || 'Failed to update purchase')
+    }
+  }
+
+  const deletePurchase = async (purchase) => {
+    const itemName = purchase.inventoryItemId?.name || 'this purchase'
+    const qty = Number(purchase.quantity || 0)
+    const unit = purchase.inventoryItemId?.unit || ''
+    if (!window.confirm(
+      `Delete this purchase?\n\nThis will reverse ${qty} ${unit} from "${itemName}" stock. ` +
+      `Use this only to undo a mistaken entry.`,
+    )) {
+      return
+    }
+    try {
+      await api.delete(`/restaurant/inventory/purchases/${purchase._id}`)
+      toast.success('Purchase deleted and stock reversed')
+      loadAll()
+    } catch (e2) {
+      toast.error(e2.response?.data?.message || 'Failed to delete purchase')
     }
   }
 
@@ -573,9 +632,118 @@ const Inventory = () => {
           </FinancePanel>
 
           <FinancePanel title="Purchase history" className="xl:col-span-2">
+            {purchaseEdit && (
+              <form
+                onSubmit={saveEditPurchase}
+                className="mb-4 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                      Editing purchase
+                    </p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {purchaseEdit.itemName}
+                      {purchaseEdit.unit ? ` (${purchaseEdit.unit})` : ''}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPurchaseEdit(null)}
+                    className="text-xs font-semibold text-gray-500 hover:text-gray-800"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <Input
+                    label="Quantity"
+                    type="number"
+                    step="any"
+                    min="0"
+                    value={purchaseEdit.quantity}
+                    onChange={(e) =>
+                      setPurchaseEdit((s) => ({ ...s, quantity: e.target.value }))
+                    }
+                  />
+                  <Input
+                    label="Unit cost"
+                    type="number"
+                    step="any"
+                    min="0"
+                    value={purchaseEdit.unitCost}
+                    onChange={(e) =>
+                      setPurchaseEdit((s) => ({ ...s, unitCost: e.target.value }))
+                    }
+                  />
+                  <Input
+                    label="Bill number"
+                    value={purchaseEdit.supplierBillNumber}
+                    onChange={(e) =>
+                      setPurchaseEdit((s) => ({ ...s, supplierBillNumber: e.target.value }))
+                    }
+                  />
+                  <Select
+                    label="Payment status"
+                    value={purchaseEdit.paymentStatus}
+                    onValueChange={(value) =>
+                      setPurchaseEdit((s) => ({ ...s, paymentStatus: value }))
+                    }
+                    options={[
+                      { label: 'Paid', value: 'paid' },
+                      { label: 'Partial', value: 'partial' },
+                      { label: 'Pending', value: 'pending' },
+                    ]}
+                  />
+                </div>
+                <Input
+                  label="Notes"
+                  value={purchaseEdit.notes}
+                  onChange={(e) =>
+                    setPurchaseEdit((s) => ({ ...s, notes: e.target.value }))
+                  }
+                />
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="secondary" onClick={() => setPurchaseEdit(null)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">Save changes</Button>
+                </div>
+              </form>
+            )}
+
             <div className="space-y-2">
               {purchases.map((purchase) => (
-                <FinanceRow key={purchase._id} title={purchase.inventoryItemId?.name || 'Purchase'} meta={`${formatDate(purchase.purchasedAt)} | ${purchase.quantity} ${purchase.inventoryItemId?.unit || ''} | ${purchase.supplierId?.name || purchase.supplier || 'Supplier'}`} amount={money(purchase.totalCost)} status={purchase.paymentStatus} />
+                <FinanceRow
+                  key={purchase._id}
+                  title={purchase.inventoryItemId?.name || 'Purchase'}
+                  meta={`${formatDate(purchase.purchasedAt)} | ${purchase.quantity} ${
+                    purchase.inventoryItemId?.unit || ''
+                  } | ${purchase.supplierId?.name || purchase.supplier || 'Supplier'}`}
+                  amount={money(purchase.totalCost)}
+                  status={purchase.paymentStatus}
+                  action={
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => beginEditPurchase(purchase)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => deletePurchase(purchase)}
+                        className="text-red-600 hover:bg-red-50"
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  }
+                />
               ))}
               {purchases.length === 0 && <EmptyState>No purchases recorded yet.</EmptyState>}
             </div>

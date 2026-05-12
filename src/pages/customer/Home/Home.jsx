@@ -365,7 +365,17 @@ export default function Home() {
             </p>
             <h1 className="text-4xl font-black tracking-tight">{restaurantInfo?.name || restaurantDisplayName}</h1>
             <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-white/85">
-              {restaurantInfo?.description || "Browse, order, and track your food directly from this table."}
+              {(() => {
+                const clean = (s) => {
+                  const v = typeof s === "string" ? s.trim() : "";
+                  return !v || v.toLowerCase() === "undefined" || v.toLowerCase() === "null" ? "" : v;
+                };
+                return (
+                  clean(restaurantInfo?.tagline) ||
+                  clean(restaurantInfo?.description) ||
+                  "Browse, order, and track your food directly from this table."
+                );
+              })()}
             </p>
           </div>
         </div>

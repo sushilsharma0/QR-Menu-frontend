@@ -12,8 +12,20 @@ import {
   searchRecipeInventory,
 } from "../../services/api";
 
-/** Must match server `InventoryItem.INVENTORY_UNITS` */
-export const RECIPE_UNITS = ["kg", "gram", "liter", "piece", "packet", "bottle", "other"];
+/** Must match server `InventoryItem.INVENTORY_UNITS` — same set so any
+ *  inventory item can be used in a recipe regardless of how it's stocked. */
+export const RECIPE_UNITS = [
+  "kg",
+  "gram",
+  "liter",
+  "ml",
+  "piece",
+  "packet",
+  "bottle",
+  "carton",
+  "box",
+  "other",
+];
 
 function newRowKey() {
   return `r-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -161,7 +173,18 @@ export default function MenuRecipeModal({ isOpen, onClose, menuItem, onSaved }) 
       onSaved?.();
       onClose();
     } catch (e) {
-      toast.error(e.response?.data?.message || "Could not save recipe");
+      // The server returns 422 with { errors: [{ field, message }, …] } when
+      // a line fails validation (e.g. unit mismatch with the inventory item).
+      // Surface the first specific message so the admin knows which row to fix.
+      const data = e.response?.data || {};
+      const fieldErr = Array.isArray(data.errors) && data.errors[0]?.message;
+      const codeHint =
+        data.code === "unit_mismatch"
+          ? " — recipe unit can't be converted to how the inventory item is stored."
+          : data.code === "unit_must_match_inventory"
+          ? " — when inventory unit is \"other\", the recipe unit must also be \"other\"."
+          : "";
+      toast.error((fieldErr || data.message || "Could not save recipe") + codeHint);
     } finally {
       setSaving(false);
     }

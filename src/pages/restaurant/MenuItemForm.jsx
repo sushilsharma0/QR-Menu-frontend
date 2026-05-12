@@ -9,6 +9,28 @@ import Input from '../../components/common/Input'
 import Card from '../../components/common/Card'
 import Textarea from '../../components/common/Textarea'
 
+const DIETARY_TAG_OPTIONS = [
+  { value: 'veg', label: 'Veg', color: 'green' },
+  { value: 'egg', label: 'Egg', color: 'amber' },
+  { value: 'chicken', label: 'Chicken', color: 'orange' },
+  { value: 'mutton', label: 'Mutton', color: 'red' },
+  { value: 'buff', label: 'Buff', color: 'rose' },
+  { value: 'pork', label: 'Pork', color: 'pink' },
+  { value: 'fish', label: 'Fish', color: 'blue' },
+  { value: 'seafood', label: 'Seafood', color: 'cyan' },
+]
+
+const TAG_COLOR_CLASS = {
+  green: 'bg-green-50 text-green-700 border-green-300 ring-green-300',
+  amber: 'bg-amber-50 text-amber-700 border-amber-300 ring-amber-300',
+  orange: 'bg-orange-50 text-orange-700 border-orange-300 ring-orange-300',
+  red: 'bg-red-50 text-red-700 border-red-300 ring-red-300',
+  rose: 'bg-rose-50 text-rose-700 border-rose-300 ring-rose-300',
+  pink: 'bg-pink-50 text-pink-700 border-pink-300 ring-pink-300',
+  blue: 'bg-blue-50 text-blue-700 border-blue-300 ring-blue-300',
+  cyan: 'bg-cyan-50 text-cyan-700 border-cyan-300 ring-cyan-300',
+}
+
 const MenuItemForm = () => {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -17,7 +39,26 @@ const MenuItemForm = () => {
   const [categories, setCategories] = useState([])
   const [imagePreview, setImagePreview] = useState(null)
   const [selectedFile, setSelectedFile] = useState(null)
+  const [dietaryTags, setDietaryTags] = useState([])
+  const [nutrition, setNutrition] = useState({
+    calories: '',
+    protein: '',
+    carbs: '',
+    fat: '',
+    fiber: '',
+  })
   const { register, handleSubmit, setValue, formState: { errors } } = useForm()
+
+  const handleNutritionChange = (field) => (e) => {
+    const v = e.target.value
+    setNutrition((prev) => ({ ...prev, [field]: v }))
+  }
+
+  const toggleDietaryTag = (value) => {
+    setDietaryTags((prev) =>
+      prev.includes(value) ? prev.filter((t) => t !== value) : [...prev, value]
+    )
+  }
 
   useEffect(() => {
     fetchCategories()
@@ -51,6 +92,15 @@ const MenuItemForm = () => {
       setValue('isVegetarian', item.isVegetarian)
       setValue('isSpicy', item.isSpicy)
       setValue('isAvailable', item.isAvailable)
+      setDietaryTags(Array.isArray(item.dietaryTags) ? item.dietaryTags : [])
+      const n = item.nutrition || {}
+      setNutrition({
+        calories: n.calories ?? '',
+        protein: n.protein ?? '',
+        carbs: n.carbs ?? '',
+        fat: n.fat ?? '',
+        fiber: n.fiber ?? '',
+      })
       if (item.image) setImagePreview(item.image)
     } catch (error) {
       toast.error('Failed to fetch menu item')
@@ -74,6 +124,17 @@ const MenuItemForm = () => {
       if (data.isVegetarian) formData.append('isVegetarian', data.isVegetarian)
       if (data.isSpicy) formData.append('isSpicy', data.isSpicy)
       if (data.isAvailable) formData.append('isAvailable', data.isAvailable)
+      // Always send tags (so an empty array clears them server-side)
+      formData.append('dietaryTags', JSON.stringify(dietaryTags))
+
+      // Nutrition: keep only numeric fields, send as JSON so the server can
+      // tell "field cleared" from "field unchanged".
+      const cleanNutrition = Object.fromEntries(
+        Object.entries(nutrition)
+          .map(([k, v]) => [k, v === '' || v == null ? null : Number(v)])
+          .filter(([, v]) => v !== null && Number.isFinite(v) && v >= 0)
+      )
+      formData.append('nutrition', JSON.stringify(cleanNutrition))
 
       // Append image file if selected
       if (selectedFile) {
@@ -210,6 +271,86 @@ const MenuItemForm = () => {
                 className="w-full"
               />
             )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Type tags
+              <span className="ml-2 text-xs text-gray-400">
+                (Customers filter the menu using these — pick all that apply)
+              </span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {DIETARY_TAG_OPTIONS.map((opt) => {
+                const active = dietaryTags.includes(opt.value)
+                const palette = TAG_COLOR_CLASS[opt.color] || TAG_COLOR_CLASS.green
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => toggleDietaryTag(opt.value)}
+                    className={`px-3 py-1.5 rounded-full border text-sm font-semibold transition-all ${
+                      active
+                        ? `${palette} ring-2`
+                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Nutrition (per serving)
+              <span className="ml-2 text-xs text-gray-400">
+                Optional — leave blank to hide the panel on the customer detail page.
+              </span>
+            </label>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <Input
+                label="Calories (kcal)"
+                type="number"
+                min="0"
+                placeholder="420"
+                value={nutrition.calories}
+                onChange={handleNutritionChange('calories')}
+              />
+              <Input
+                label="Protein (g)"
+                type="number"
+                min="0"
+                placeholder="18"
+                value={nutrition.protein}
+                onChange={handleNutritionChange('protein')}
+              />
+              <Input
+                label="Carbs (g)"
+                type="number"
+                min="0"
+                placeholder="52"
+                value={nutrition.carbs}
+                onChange={handleNutritionChange('carbs')}
+              />
+              <Input
+                label="Fat (g)"
+                type="number"
+                min="0"
+                placeholder="16"
+                value={nutrition.fat}
+                onChange={handleNutritionChange('fat')}
+              />
+              <Input
+                label="Fiber (g)"
+                type="number"
+                min="0"
+                placeholder="3"
+                value={nutrition.fiber}
+                onChange={handleNutritionChange('fiber')}
+              />
+            </div>
           </div>
 
           <div className="flex gap-4">

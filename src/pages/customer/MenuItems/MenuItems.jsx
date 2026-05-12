@@ -21,6 +21,18 @@ import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
 
 
 
+const TYPE_CHIPS = [
+  { id: "all", label: "All", dot: "bg-gray-700", active: "bg-gray-900 text-white border-gray-900" },
+  { id: "veg", label: "Veg", dot: "bg-green-500", active: "bg-green-500 text-white border-green-500" },
+  { id: "egg", label: "Egg", dot: "bg-amber-400", active: "bg-amber-500 text-white border-amber-500" },
+  { id: "chicken", label: "Chicken", dot: "bg-orange-500", active: "bg-orange-500 text-white border-orange-500" },
+  { id: "mutton", label: "Mutton", dot: "bg-red-500", active: "bg-red-500 text-white border-red-500" },
+  { id: "buff", label: "Buff", dot: "bg-rose-500", active: "bg-rose-500 text-white border-rose-500" },
+  { id: "pork", label: "Pork", dot: "bg-pink-500", active: "bg-pink-500 text-white border-pink-500" },
+  { id: "fish", label: "Fish", dot: "bg-blue-500", active: "bg-blue-500 text-white border-blue-500" },
+  { id: "seafood", label: "Seafood", dot: "bg-cyan-500", active: "bg-cyan-500 text-white border-cyan-500" },
+];
+
 const MenuItems = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
@@ -33,7 +45,12 @@ const MenuItems = () => {
     sort: "popular",
     priceRange: "all",
     dietary: "",
+    type: "all",
   });
+
+  const setTypeChip = (typeId) => {
+    setActiveFilters((prev) => ({ ...prev, type: typeId || "all" }));
+  };
   const navigate = useNavigate();
   const { toasts, removeToast, success, error } = useToast();
 
@@ -97,14 +114,19 @@ const MenuItems = () => {
       default:
         matchesPrice = true;
     }
-    // ✅ ADD THIS ABOVE return
     const matchesDietary =
       !activeFilters.dietary ||
       (activeFilters.dietary === "vegetarian" && item.tag === "Veg") ||
       (activeFilters.dietary === "vegan" && item.tag === "Veg");
 
-    // ✅ UPDATE return
-    return matchesName && matchesType && matchesPrice && matchesDietary;
+    // Match against the admin-set dietaryTags (veg / chicken / mutton / buff…).
+    // Tab-style single-select: "all" disables the filter, any other value must
+    // appear in the item's dietaryTags array.
+    const selectedType = activeFilters.type || "all";
+    const itemTags = Array.isArray(item.dietaryTags) ? item.dietaryTags : [];
+    const matchesType2 = selectedType === "all" || itemTags.includes(selectedType);
+
+    return matchesName && matchesType && matchesPrice && matchesDietary && matchesType2;
   });
 
   // Sort items based on active sort filter
@@ -210,7 +232,8 @@ const MenuItems = () => {
             <SlidersHorizontal size={20} className="text-gray-700" />
             {(activeFilters.sort !== "popular" ||
               activeFilters.priceRange !== "all" ||
-              activeFilters.dietary !== "") && (
+              activeFilters.dietary !== "" ||
+              (activeFilters.type && activeFilters.type !== "all")) && (
               <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-orange-500 rounded-full border-2 border-white"></span>
             )}
           </FramerMotion.motion.button>
@@ -276,6 +299,37 @@ const MenuItems = () => {
         </div>
       </div>
 
+      {/* Type chips (admin-set tags: All / Veg / Chicken / Mutton / Buff…) */}
+      <div className="px-6 mb-4">
+        <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {TYPE_CHIPS.map((chip) => {
+            const active = (activeFilters.type || "all") === chip.id;
+            return (
+              <button
+                key={chip.id}
+                type="button"
+                onClick={() => setTypeChip(chip.id)}
+                aria-pressed={active}
+                className={`flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                  active
+                    ? `${chip.active} shadow-sm scale-[1.03]`
+                    : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                }`}
+              >
+                {chip.id !== "all" && (
+                  <span
+                    className={`w-2.5 h-2.5 rounded-full ${
+                      active ? "bg-white/90" : chip.dot
+                    }`}
+                  />
+                )}
+                {chip.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Items List */}
       <div className="px-6 mt-4 mb-7 space-y-6">
         {sortedItems.length === 0 ? (
@@ -313,6 +367,7 @@ const MenuItems = () => {
                       sort: "popular",
                       priceRange: "all",
                       dietary: "",
+                      type: "all",
                     });
                     setFoodType("all");
                   }}

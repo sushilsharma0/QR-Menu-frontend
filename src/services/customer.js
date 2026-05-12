@@ -358,18 +358,41 @@ export const getRestaurantPublicProfile = async (restaurantSlug) => {
   return response?.data?.data || null
 }
 
+const cleanText = (value) => {
+  if (typeof value !== 'string') return ''
+  const v = value.trim()
+  if (!v) return ''
+  const lower = v.toLowerCase()
+  if (lower === 'undefined' || lower === 'null') return ''
+  return v
+}
+
 // Helper functions for customer flow
+<<<<<<< HEAD
+export const getRestaurantInfo = async (restaurantSlug) => {
+  // Public menu gives base fields; public profile gives the admin-managed
+  // About fields (tagline, gallery, hours…). We merge both so the customer
+  // Home page can display the tagline the admin set in the admin panel.
+  const [menuRes, profile] = await Promise.all([
+    getRestaurantMenu(restaurantSlug),
+    getRestaurantPublicProfile(restaurantSlug).catch(() => null),
+  ])
+  const menuRestaurant = menuRes?.data?.restaurant || {}
+  const about = profile?.about || {}
+=======
 export const getRestaurantInfo = async (restaurantSlug, qrToken = null) => {
   const menu = await getRestaurantMenu(restaurantSlug, qrToken)
+>>>>>>> d0d4d9d0e5ddc22de7ed601f0d54b7f39ce48965
   return {
-    id: menu.data.restaurant?.id,
-    name: menu.data.restaurant?.name,
-    logo: menu.data.restaurant?.logo,
-    backgroundPhoto: menu.data.restaurant?.backgroundPhoto,
-    description: menu.data.restaurant?.description,
-    currency: menu.data.restaurant?.currency || 'Rs.',
-    openingTime: menu.data.restaurant?.openingTime,
-    closingTime: menu.data.restaurant?.closingTime,
+    id: menuRestaurant.id || profile?.id,
+    name: menuRestaurant.name || profile?.name,
+    logo: menuRestaurant.logo || profile?.logo,
+    backgroundPhoto: menuRestaurant.backgroundPhoto || profile?.backgroundPhoto,
+    description: cleanText(menuRestaurant.description) || cleanText(profile?.description),
+    tagline: cleanText(about.tagline),
+    currency: menuRestaurant.currency || profile?.currency || 'Rs.',
+    openingTime: menuRestaurant.openingTime || profile?.openingTime,
+    closingTime: menuRestaurant.closingTime || profile?.closingTime,
   }
 }
 
