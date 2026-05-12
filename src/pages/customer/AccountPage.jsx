@@ -130,16 +130,18 @@ const AccountPage = () => {
           );
         })}
 
-        <button
-          type="button"
-          className="mt-4 flex w-full items-center gap-4 p-4 text-red-500 opacity-90 hover:opacity-100"
-          onClick={exitSession}
-        >
-          <div className="rounded-xl bg-red-50 p-2.5 dark:bg-red-900/20">
-            <LogOut size={20} />
-          </div>
-          <span className="text-sm font-bold">Clear guest session</span>
-        </button>
+        {customerId && (
+          <button
+            type="button"
+            className="mt-4 flex w-full items-center gap-4 p-4 text-red-500 opacity-90 hover:opacity-100"
+            onClick={exitSession}
+          >
+            <div className="rounded-xl bg-red-50 p-2.5 dark:bg-red-900/20">
+              <LogOut size={20} />
+            </div>
+            <span className="text-sm font-bold">End Session</span>
+          </button>
+        )}
       </div>
 
       <Feedback isOpen={showFeedback} onClose={() => setShowFeedback(false)} />

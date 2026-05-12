@@ -27,6 +27,9 @@ import {
   ensureGuestSession,
   claimCustomerIdentity,
   requestCustomerIdentityOtp,
+  requestCustomerPasswordReset,
+  resetCustomerPassword,
+  verifyCustomerPasswordResetOtp,
   getStoredCustomerId,
   getCustomerIdentity,
   getRestaurantInfo,
@@ -256,6 +259,56 @@ export default function Home() {
     }
   };
 
+  const handleRequestPasswordReset = async ({ email }) => {
+    const cleanEmail = String(email || "").trim();
+    if (!cleanEmail) {
+      toast.error("Enter your email first.");
+      throw new Error("Email is required");
+    }
+
+    let activeGuestId = guestIdLocal;
+    if (!activeGuestId) {
+      try {
+        const session = await ensureGuestSession(token);
+        activeGuestId = session.guestId || "";
+        setGuestIdLocal(activeGuestId);
+      } catch {
+        toast.error("Session not ready yet. Please try again.");
+        throw new Error("Guest session is not ready");
+      }
+    }
+
+    if (!activeGuestId) {
+      toast.error("Session not ready yet. Please try again.");
+      throw new Error("Guest session is not ready");
+    }
+
+    await requestCustomerPasswordReset({ qrToken: token, guestId: activeGuestId, email: cleanEmail });
+    toast.success("Reset OTP sent to your email.");
+  };
+
+  const handleResetPassword = async ({ email, otp, newPassword }) => {
+    if (!guestIdLocal) return;
+    try {
+      await resetCustomerPassword({ qrToken: token, guestId: guestIdLocal, email, otp, newPassword });
+      toast.success("Password reset. You can login now.");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Could not reset password");
+      throw err;
+    }
+  };
+
+  const handleVerifyPasswordResetOtp = async ({ email, otp }) => {
+    if (!guestIdLocal) return;
+    try {
+      await verifyCustomerPasswordResetOtp({ qrToken: token, guestId: guestIdLocal, email, otp });
+      toast.success("OTP verified. Enter your new password.");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Invalid reset OTP");
+      throw err;
+    }
+  };
+
   const handleEndSession = () => {
     localStorage.removeItem("customer_guest_id_v1");
     localStorage.removeItem("customer_identity_id_v1");
@@ -443,6 +496,9 @@ export default function Home() {
           rewardPoints={loyaltyPoints}
           onRequestOtp={handleRequestCustomerOtp}
           onCreateId={handleCreateCustomerId}
+          onRequestPasswordReset={handleRequestPasswordReset}
+          onVerifyPasswordResetOtp={handleVerifyPasswordResetOtp}
+          onResetPassword={handleResetPassword}
           onEndSession={handleEndSession}
           defaultOpenAuth={profileDefaultOpenAuth}
           initialMode={profileInitialMode}

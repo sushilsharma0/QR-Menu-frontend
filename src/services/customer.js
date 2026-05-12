@@ -216,6 +216,57 @@ export const getCustomerIdentity = async ({ qrToken, guestId, customerId = getSt
   return data
 }
 
+export const updateCustomerIdentityProfile = async ({ qrToken, guestId, customerId = getStoredCustomerId(), name, phone = '', email = '' }) => {
+  const response = await api.patch('/customer/identity/profile', {
+    qrToken,
+    guestId,
+    customerId,
+    name,
+    phone,
+    email,
+  })
+  const data = response?.data?.data || {}
+  if (data.customer) localStorage.setItem(CUSTOMER_PROFILE_STORAGE_KEY, JSON.stringify(data.customer))
+  return data
+}
+
+export const changeCustomerIdentityPassword = async ({ qrToken, guestId, customerId = getStoredCustomerId(), currentPassword, newPassword }) => {
+  const response = await api.post('/customer/identity/change-password', {
+    qrToken,
+    guestId,
+    customerId,
+    currentPassword,
+    newPassword,
+  })
+  return response?.data?.data || {}
+}
+
+export const requestCustomerPasswordReset = async ({ qrToken, guestId, email }) => {
+  const response = await api.post('/customer/identity/forgot-password', { qrToken, guestId, email })
+  return response?.data?.data || {}
+}
+
+export const resetCustomerPassword = async ({ qrToken, guestId, email, otp, newPassword }) => {
+  const response = await api.post('/customer/identity/reset-password', {
+    qrToken,
+    guestId,
+    email,
+    otp,
+    newPassword,
+  })
+  return response?.data?.data || {}
+}
+
+export const verifyCustomerPasswordResetOtp = async ({ qrToken, guestId, email, otp }) => {
+  const response = await api.post('/customer/identity/verify-reset-otp', {
+    qrToken,
+    guestId,
+    email,
+    otp,
+  })
+  return response?.data?.data || {}
+}
+
 export const getStoredCustomerOrders = async ({ qrToken }) => {
   const tokens = getStoredOrderTokens(qrToken)
   if (!tokens.length) return []
@@ -350,6 +401,11 @@ export default {
   requestCustomerIdentityOtp,
   claimCustomerIdentity,
   getCustomerIdentity,
+  updateCustomerIdentityProfile,
+  changeCustomerIdentityPassword,
+  requestCustomerPasswordReset,
+  resetCustomerPassword,
+  verifyCustomerPasswordResetOtp,
   addItemToGuestCart,
   getGuestCart,
   updateGuestCartItem,
