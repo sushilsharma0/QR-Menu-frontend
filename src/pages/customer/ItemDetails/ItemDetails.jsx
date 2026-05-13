@@ -10,7 +10,6 @@ import {
   Clock,
   Flame,
   ShoppingCart,
-  Check,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
@@ -18,8 +17,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import api from "../../../services/api";
 import { useToast } from "../../../hooks/useToast";
 import { ToastContainer } from "../../../components/common/ToastContainer";
-import { addItemToGuestCart, ensureGuestSession } from "../../../services/customer";
 import Navigation from "../../../components/customer/Navigation";
+import CartDrawer from "../../../components/customer/CartDrawer";
+import { useCustomerCart } from "../../../context/CustomerCartContext";
 import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
 
 const ItemDetails = () => {
@@ -31,8 +31,14 @@ const ItemDetails = () => {
   const [cookingInstructions, setCookingInstructions] = useState("");
   const [isFavorite, setIsFavorite] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
 
   const { toasts, removeToast, success, error } = useToast();
+  const { addItem, hydrate, openDrawer } = useCustomerCart();
+
+  useEffect(() => {
+    if (token) hydrate(token);
+  }, [token, hydrate]);
 
   const [item, setItem] = useState({
     price: 0,
@@ -139,8 +145,9 @@ const ItemDetails = () => {
   };
 
   const handleAddToCart = async () => {
+    if (!item?._id || isAdding) return;
     try {
-      const session = await ensureGuestSession(token);
+      setIsAdding(true);
       const customizations = Object.entries(selections).map(([name, value]) => ({
         name,
         value,
@@ -148,19 +155,27 @@ const ItemDetails = () => {
       const addOnLabels = customizations
         .filter((c) => /add|extra|topping/i.test(c.name))
         .map((c) => c.value);
-      await addItemToGuestCart({
-        guestId: session.guestId,
-        qrToken: token,
-        menuItemId: item._id,
+
+      await addItem(item, {
         quantity,
         cookingInstructions: cookingInstructions.slice(0, 500),
         customizations,
         addOns: addOnLabels,
+        // Pop the bottom-sheet cart drawer right after adding so the
+        // customer can see what's in their cart and decide whether to
+        // continue browsing or check out. The previous flow auto-fired
+        // navigate(-1) ~280ms after adding which made the floating cart
+        // bar appear and immediately vanish with the page transition,
+        // leaving the customer unsure whether anything was added.
+        openDrawer: true,
       });
+
       success(`${item.name} added to cart`);
     } catch (err) {
       console.error(err);
       error("Failed to add item to cart");
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -177,7 +192,7 @@ const ItemDetails = () => {
   }, [slug, token]);
 
   return (
-    <div className="min-h-screen bg-[#fafaf7] pb-36">
+    <div className="min-h-screen bg-[#fafaf7] pb-44">
       {/* Hero Image */}
       <div className="relative h-[45vh] w-full">
         <img
@@ -464,39 +479,36 @@ const ItemDetails = () => {
       </div>
 
       {/* Sticky Button */}
-      <div className="fixed bottom-[5.5rem] left-0 right-0 z-[85] border-t border-gray-100 bg-white/95 p-4 pb-5 backdrop-blur">
-        <button
+      <div
+        style={{ bottom: "calc(5rem + env(safe-area-inset-bottom, 0px))" }}
+        className="fixed inset-x-0 z-[85] border-t border-gray-100 bg-white/95 p-4 pb-3 pt-3 backdrop-blur-lg"
+      >
+        <FramerMotion.motion.button
           onClick={handleAddToCart}
-          className="flex w-full items-center justify-between rounded-2xl bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-4 shadow-lg shadow-primary-900/25"
+          disabled={isAdding}
+          whileTap={{ scale: 0.97 }}
+          className="flex w-full items-center justify-between rounded-2xl bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-4 shadow-lg shadow-primary-900/25 transition disabled:opacity-70"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
               <ShoppingCart size={20} className="text-white" />
             </div>
-
             <div className="text-left">
-              <span className="text-white font-bold block">
-                Add to Cart
+              <span className="block font-black text-white">
+                {isAdding ? "Adding..." : "Add to Cart"}
               </span>
-
-              <span className="text-white/80 text-xs">
-                {quantity} item
-                {quantity > 1 ? "s" : ""}
+              <span className="text-xs text-white/80">
+                {quantity} item{quantity > 1 ? "s" : ""}
               </span>
             </div>
           </div>
-
-          <span className="text-white font-bold text-lg">
-            Rs. {lineTotal()}
-          </span>
-        </button>
+          <span className="text-lg font-black text-white">Rs. {lineTotal()}</span>
+        </FramerMotion.motion.button>
       </div>
 
       <Navigation />
-      <ToastContainer
-        toasts={toasts}
-        removeToast={removeToast}
-      />
+      <CartDrawer />
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );
 };

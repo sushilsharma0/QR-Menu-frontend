@@ -6,6 +6,7 @@ import { Toaster } from 'react-hot-toast'
 import App from './App'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
+import { CustomerCartProvider } from './context/CustomerCartContext'
 import { SocketProvider } from './context/SocketContext'
 import { ThemeProvider } from './context/ThemeContext'
 import './index.css'
@@ -32,7 +33,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <AuthProvider>
             <SocketProvider>
               <CartProvider>
-                <App />
+                <CustomerCartProvider>
+                  <App />
                 <Toaster
                   position="top-right"
                   containerClassName="!top-4 !right-4"
@@ -66,6 +68,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                     },
                   }}
                 />
+                </CustomerCartProvider>
               </CartProvider>
             </SocketProvider>
           </AuthProvider>

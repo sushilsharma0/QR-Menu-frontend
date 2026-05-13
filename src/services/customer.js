@@ -78,7 +78,28 @@ export const rememberCustomerOrderToken = (tableQrToken, orderQrToken) => {
   localStorage.setItem(ORDER_TOKENS_STORAGE_KEY, JSON.stringify(tokenMap))
 }
 
-export const ensureGuestSession = async (qrToken) => {
+// Concurrent / repeat callers (Cart page mount, context hydrate, ItemDetails
+// hydrate firing in the same paint) used to spam POST /customer/guest/session
+// — which trips the server rate limiter. Two layers of protection:
+//   1. an in-flight Map keyed by qrToken so duplicate calls share one Promise.
+//   2. a small TTL cache (default 30s) so back-to-back screen mounts skip the
+//      network entirely.
+const _sessionInFlight = new Map()
+const _sessionCache = new Map() // qrToken -> { at, data }
+const SESSION_CACHE_TTL_MS = 30_000
+
+export const ensureGuestSession = async (qrToken, { force = false } = {}) => {
+  const key = String(qrToken || '')
+
+  if (!force) {
+    const cached = _sessionCache.get(key)
+    if (cached && Date.now() - cached.at < SESSION_CACHE_TTL_MS) {
+      return cached.data
+    }
+    const inflight = _sessionInFlight.get(key)
+    if (inflight) return inflight
+  }
+
   const existingGuestId = getStoredGuestId()
   const buildPayload = (guestId) => ({
     qrToken,
@@ -91,25 +112,50 @@ export const ensureGuestSession = async (qrToken) => {
     },
   })
 
-  let response
-  try {
-    response = await api.post('/customer/guest/session', buildPayload(existingGuestId))
-  } catch (err) {
-    // If persisted guest id becomes invalid/stale, retry once with a fresh session.
-    if (existingGuestId) {
-      localStorage.removeItem(GUEST_ID_STORAGE_KEY)
-      response = await api.post('/customer/guest/session', buildPayload(''))
-    } else {
-      throw err
+  const run = (async () => {
+    let response
+    try {
+      response = await api.post('/customer/guest/session', buildPayload(existingGuestId), { skipErrorToast: true })
+    } catch (err) {
+      // If persisted guest id becomes invalid/stale, retry once with a fresh session.
+      if (existingGuestId) {
+        localStorage.removeItem(GUEST_ID_STORAGE_KEY)
+        try {
+          response = await api.post('/customer/guest/session', buildPayload(''), { skipErrorToast: true })
+        } catch (innerErr) {
+          throw innerErr
+        }
+      } else {
+        throw err
+      }
     }
+
+    const data = response?.data?.data || {}
+    if (data.guestId) {
+      localStorage.setItem(GUEST_ID_STORAGE_KEY, data.guestId)
+    }
+    const count = (data?.cart?.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
+    setCartItemCount(count)
+    _sessionCache.set(key, { at: Date.now(), data })
+    return data
+  })()
+
+  _sessionInFlight.set(key, run)
+  try {
+    return await run
+  } finally {
+    _sessionInFlight.delete(key)
   }
-  const data = response?.data?.data || {}
-  if (data.guestId) {
-    localStorage.setItem(GUEST_ID_STORAGE_KEY, data.guestId)
+}
+
+export const invalidateGuestSession = (qrToken) => {
+  if (qrToken) {
+    _sessionCache.delete(String(qrToken))
+    _sessionInFlight.delete(String(qrToken))
+  } else {
+    _sessionCache.clear()
+    _sessionInFlight.clear()
   }
-  const count = (data?.cart?.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
-  setCartItemCount(count)
-  return data
 }
 
 export const addItemToGuestCart = async ({

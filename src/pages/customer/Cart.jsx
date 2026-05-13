@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Trash2,
@@ -10,38 +10,62 @@ import {
   User,
   Phone,
   Mail,
+  Check,
+  Receipt,
+  Sparkles,
+  ArrowRight,
+  PackageOpen,
+  History,
+  RotateCw,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
+
 import api from "../../services/api";
 import { getParsedAuthUser } from "../../utils/authStorage";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../../components/common/ToastContainer";
 import {
-  clearGuestCart,
-  ensureGuestSession,
   getCustomerIdentity,
-  getGuestCart,
   getDiningInsights,
+  getGuestOrders,
+  getStoredCustomerOrders,
   getStoredCustomerProfile,
   rememberCustomerOrderToken,
-  removeGuestCartItem,
-  updateGuestCartItem,
   addItemToGuestCart,
 } from "../../services/customer";
 import Navigation from "../../components/customer/Navigation";
 import { rememberCustomerPortal } from "../../utils/customerPortalContext";
+import { useCustomerCart } from "../../context/CustomerCartContext";
+
+const STEPS = [
+  { id: "review", label: "Review" },
+  { id: "details", label: "Details" },
+  { id: "confirm", label: "Confirm" },
+];
 
 const Cart = () => {
   const navigate = useNavigate();
   const { slug, token } = useParams();
-  const [cartItems, setCartItems] = useState([]);
+  const {
+    items,
+    totals,
+    guestId,
+    hydrate,
+    increment,
+    decrement,
+    removeLine,
+    clear,
+  } = useCustomerCart();
+
+  const [step, setStep] = useState("review");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [promoCode, setPromoCode] = useState("");
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [applyingPromo, setApplyingPromo] = useState(false);
-  const [guestId, setGuestId] = useState("");
   const [customerDetails, setCustomerDetails] = useState({
     name: "",
     phone: "",
@@ -49,130 +73,154 @@ const Cart = () => {
   });
   const [orderAgainLines, setOrderAgainLines] = useState([]);
   const [reorderBusy, setReorderBusy] = useState(false);
+  const [pastOrders, setPastOrders] = useState([]);
+  const [reorderingId, setReorderingId] = useState(null);
+  const [successOrder, setSuccessOrder] = useState(null);
+
   const { toasts, removeToast, success, error, warning } = useToast();
-
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const session = await ensureGuestSession(token);
-        setGuestId(session.guestId);
-        const savedDetails = JSON.parse(localStorage.getItem(`guest_details_${session.guestId}`) || "{}");
-        const storedProfile = getStoredCustomerProfile();
-        let identityProfile = storedProfile;
-        try {
-          const identity = await getCustomerIdentity({ guestId: session.guestId, qrToken: token });
-          identityProfile = identity?.customer || storedProfile;
-        } catch {
-          identityProfile = storedProfile;
-        }
-        setCustomerDetails({
-          name: identityProfile?.name || savedDetails.name || "",
-          phone: identityProfile?.phone || savedDetails.phone || "",
-          email: identityProfile?.email || savedDetails.email || "",
-        });
-        const cart = await getGuestCart({ guestId: session.guestId, qrToken: token });
-        const normalized = (cart.items || []).map((item) => ({
-          lineId: item._id ? String(item._id) : null,
-          menuItemId: item.menuItem?._id || item.menuItem,
-          name: item.menuItem?.name || "Item",
-          image: item.menuItem?.image || "",
-          price: item.price,
-          quantity: item.quantity,
-          note: item.notes || "",
-          cookingInstructions: item.cookingInstructions || "",
-          customizations: item.customizations || [],
-          addOns: item.addOns || [],
-        }));
-        setCartItems(normalized);
-
-        if (slug) {
-          const insights = await getDiningInsights({
-            restaurantSlug: slug,
-            guestId: session.guestId,
-            qrToken: token,
-          });
-          setOrderAgainLines(insights?.orderAgain || []);
-        }
-      } catch (err) {
-        console.error("Failed to load guest cart", err);
-        error("Failed to load cart");
-      }
-    };
-    init();
-  }, [token, slug]);
 
   useEffect(() => {
     if (slug && token) rememberCustomerPortal(slug, token);
   }, [slug, token]);
 
-  // Increase quantity
-  const mapCartRows = (cart) =>
-    (cart.items || []).map((item) => ({
-      lineId: item._id ? String(item._id) : null,
-      menuItemId: item.menuItem?._id || item.menuItem,
-      name: item.menuItem?.name || "Item",
-      image: item.menuItem?.image || "",
-      price: item.price,
-      quantity: item.quantity,
-      note: item.notes || "",
-      cookingInstructions: item.cookingInstructions || "",
-      customizations: item.customizations || [],
-      addOns: item.addOns || [],
-    }));
+  // 1) Hydrate the cart context once on mount. The context already calls
+  //    ensureGuestSession internally (dedup'd in services/customer.js), so we
+  //    must NOT call it again here — that's what tripped the 429 limiter.
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        await hydrate(token);
+      } catch (err) {
+        if (!cancelled) {
+          console.error("Failed to hydrate cart", err);
+          error("Failed to load cart");
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
-  const increaseQty = async (menuItemId, lineId) => {
-    const current = lineId
-      ? cartItems.find((item) => item.menuItemId === menuItemId && item.lineId === lineId)
-      : cartItems.find((item) => item.menuItemId === menuItemId);
-    if (!current || !guestId) return;
-    try {
-      const cart = await updateGuestCartItem({
-        guestId,
-        qrToken: token,
-        menuItemId,
-        lineId: current.lineId || undefined,
-        quantity: current.quantity + 1,
-      });
-      setCartItems(mapCartRows(cart));
-    } catch (err) {
-      error("Failed to update item quantity");
+  // 2) Once the context exposes a guestId, fetch saved customer details +
+  //    "order again" insights. Splitting these into a separate effect avoids
+  //    blocking the cart UI while identity / insights load.
+  useEffect(() => {
+    if (!guestId || !token) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const savedDetails = JSON.parse(
+          localStorage.getItem(`guest_details_${guestId}`) || "{}",
+        );
+        const storedProfile = getStoredCustomerProfile();
+        let identityProfile = storedProfile;
+        try {
+          const identity = await getCustomerIdentity({ guestId, qrToken: token });
+          identityProfile = identity?.customer || storedProfile;
+        } catch {
+          identityProfile = storedProfile;
+        }
+        if (cancelled) return;
+        setCustomerDetails({
+          name: identityProfile?.name || savedDetails.name || "",
+          phone: identityProfile?.phone || savedDetails.phone || "",
+          email: identityProfile?.email || savedDetails.email || "",
+        });
+      } catch (err) {
+        console.error("Failed to load customer identity", err);
+      }
+    })();
+
+    (async () => {
+      if (!slug) return;
+      try {
+        const insights = await getDiningInsights({
+          restaurantSlug: slug,
+          guestId,
+          qrToken: token,
+        });
+        if (!cancelled) setOrderAgainLines(insights?.orderAgain || []);
+      } catch (err) {
+        console.error("Failed to load dining insights", err);
+      }
+    })();
+
+    // Past orders for "re-select a previous order to reorder". We merge
+    // server-side guest orders with anything we have locally for this table
+    // QR and keep only finished orders (served / completed). That way, after
+    // the customer's previous order is done, they can re-pick it from here.
+    (async () => {
+      try {
+        const [guestOrders, storedOrders] = await Promise.all([
+          getGuestOrders({ guestId, qrToken: token }).catch(() => []),
+          getStoredCustomerOrders({ qrToken: token }).catch(() => []),
+        ]);
+        const map = new Map();
+        [...guestOrders, ...storedOrders].forEach((order) => {
+          const key = String(order?._id || order?.qrToken || "");
+          if (!key || map.has(key)) return;
+          map.set(key, order);
+        });
+        const finished = Array.from(map.values())
+          .filter((o) => ["served", "completed"].includes(o?.status))
+          .sort(
+            (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+          )
+          .slice(0, 6);
+        if (!cancelled) setPastOrders(finished);
+      } catch (err) {
+        console.error("Failed to load past orders", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [guestId, slug, token]);
+
+  const subtotal = totals.subtotal;
+  const total = Math.max(0, subtotal - promoDiscount);
+
+  const stepIndex = useMemo(
+    () => Math.max(0, STEPS.findIndex((s) => s.id === step)),
+    [step],
+  );
+
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) {
+      warning("Please enter a promo code.");
+      return;
     }
-  };
-
-  // Decrease quantity
-  const decreaseQty = async (menuItemId, lineId) => {
-    const current = lineId
-      ? cartItems.find((item) => item.menuItemId === menuItemId && item.lineId === lineId)
-      : cartItems.find((item) => item.menuItemId === menuItemId);
-    if (!current || !guestId) return;
-    try {
-      const cart = await updateGuestCartItem({
-        guestId,
-        qrToken: token,
-        menuItemId,
-        lineId: current.lineId || undefined,
-        quantity: current.quantity - 1,
-      });
-      setCartItems(mapCartRows(cart));
-    } catch (err) {
-      error("Failed to update item quantity");
+    if (items.length === 0) {
+      warning("Your cart is empty.");
+      return;
     }
-  };
 
-  // Remove item from cart
-  const removeItem = async (menuItemId, lineId) => {
-    if (!guestId) return;
     try {
-      const cart = await removeGuestCartItem({
-        guestId,
+      setApplyingPromo(true);
+      const res = await api.post("/customer/promo/validate", {
         qrToken: token,
-        menuItemId,
-        lineId: lineId || undefined,
+        code: promoCode.trim(),
+        items: items.map((item) => ({
+          menuItemId: item.menuItemId,
+          quantity: item.quantity,
+        })),
       });
-      setCartItems(mapCartRows(cart));
-      success("Item removed from cart");
+      const promo = res?.data?.data;
+      setAppliedPromo(promo);
+      setPromoDiscount(Number(promo?.discountAmount || 0));
+      success(`Promo applied: ${promo?.code}`);
     } catch (err) {
-      error("Failed to remove cart item");
+      setAppliedPromo(null);
+      setPromoDiscount(0);
+      error(err?.response?.data?.message || "Invalid promo code");
+    } finally {
+      setApplyingPromo(false);
     }
   };
 
@@ -193,8 +241,7 @@ const Cart = () => {
           addOns: line.addOns || [],
         });
       }
-      const cart = await getGuestCart({ guestId, qrToken: token });
-      setCartItems(mapCartRows(cart));
+      await hydrate(token);
       success("Previous order added to cart");
     } catch (err) {
       error(err?.response?.data?.message || "Could not reorder");
@@ -203,59 +250,92 @@ const Cart = () => {
     }
   };
 
-  // Clear entire cart
-  const clearCart = async () => {
-    if (!guestId) return;
-    try {
-      await clearGuestCart({ guestId, qrToken: token });
-      setCartItems([]);
-      success('Cart cleared successfully');
-    } catch (err) {
-      error('Failed to clear cart');
-    }
-  };
-
-  const subtotal = cartItems.reduce(
-    (acc, item) => acc + item.price * item.quantity,
-    0,
-  );
-  const total = Math.max(0, subtotal - promoDiscount);
-
-  const handleApplyPromo = async () => {
-    if (!promoCode.trim()) {
-      warning("Please enter a promo code.");
+  /**
+   * Reorder a specific past order (chosen from the history list). Walks each
+   * line and adds it back to the cart preserving customizations / cooking
+   * instructions when present, then resyncs the cart context.
+   */
+  const handleReorderPast = async (order) => {
+    if (!guestId || !order) return;
+    const lines = order?.items || [];
+    if (!lines.length) {
+      warning("This order has no items to reorder.");
       return;
     }
-    if (cartItems.length === 0) {
-      warning("Your cart is empty.");
-      return;
-    }
-
     try {
-      setApplyingPromo(true);
-      const res = await api.post("/customer/promo/validate", {
-        qrToken: token,
-        code: promoCode.trim(),
-        items: cartItems.map((item) => ({
-          menuItemId: item.menuItemId,
-          quantity: item.quantity,
-        })),
-      });
-      const promo = res?.data?.data;
-      setAppliedPromo(promo);
-      setPromoDiscount(Number(promo?.discountAmount || 0));
-      success(`Promo applied: ${promo?.code}`);
+      setReorderingId(order._id || order.qrToken);
+      let added = 0;
+      let skipped = 0;
+      for (const line of lines) {
+        const mid =
+          line.menuItemId ||
+          line.menuItem?._id ||
+          line.menuItem ||
+          line._id;
+        if (!mid) {
+          skipped += 1;
+          continue;
+        }
+        try {
+          await addItemToGuestCart({
+            guestId,
+            qrToken: token,
+            menuItemId: mid,
+            quantity: Number(line.quantity || 1),
+            cookingInstructions:
+              line.cookingInstructions || line.specialInstructions || "",
+            customizations: Array.isArray(line.customizations)
+              ? line.customizations
+              : [],
+            addOns: Array.isArray(line.addOns) ? line.addOns : [],
+          });
+          added += 1;
+        } catch (err) {
+          skipped += 1;
+          console.warn("Could not re-add line", line, err);
+        }
+      }
+      await hydrate(token);
+      if (added > 0) {
+        success(
+          skipped > 0
+            ? `Added ${added} item${added > 1 ? "s" : ""} · ${skipped} unavailable`
+            : `Added ${added} item${added > 1 ? "s" : ""} from order #${order.orderNumber || ""}`,
+        );
+      } else {
+        error("None of these items are available right now.");
+      }
     } catch (err) {
-      setAppliedPromo(null);
-      setPromoDiscount(0);
-      error(err?.response?.data?.message || "Invalid promo code");
+      error(err?.response?.data?.message || "Could not reorder");
     } finally {
-      setApplyingPromo(false);
+      setReorderingId(null);
     }
   };
 
-  const handleProceedToCheckout = async () => {
-    if (cartItems.length === 0) {
+  const goNext = () => {
+    if (step === "review") {
+      if (items.length === 0) {
+        warning("Your cart is empty.");
+        return;
+      }
+      setStep("details");
+    } else if (step === "details") {
+      if (!String(customerDetails.name || "").trim()) {
+        warning("Please enter your full name.");
+        return;
+      }
+      setStep("confirm");
+    }
+  };
+
+  const goBack = () => {
+    if (step === "confirm") setStep("details");
+    else if (step === "details") setStep("review");
+    else navigate(-1);
+  };
+
+  const handlePlaceOrder = async () => {
+    if (items.length === 0) {
       warning("Your cart is empty.");
       return;
     }
@@ -269,6 +349,7 @@ const Cart = () => {
       const finalEmail = String(customerDetails.email || dashUser?.email || "").trim();
       if (!finalName) {
         warning("Please enter your full name.");
+        setStep("details");
         setIsPlacingOrder(false);
         return;
       }
@@ -285,7 +366,7 @@ const Cart = () => {
         customerPhone: finalPhone,
         customerEmail: finalEmail,
         promoCode: appliedPromo?.code || "",
-        items: cartItems.map((item) => ({
+        items: items.map((item) => ({
           menuItemId: item.menuItemId,
           quantity: item.quantity,
           note: item.note || "",
@@ -299,17 +380,20 @@ const Cart = () => {
       const order = res?.data?.data;
       rememberCustomerOrderToken(token, order?.trackToken);
 
-      await clearGuestCart({ guestId, qrToken: token });
-      setCartItems([]);
+      await clear();
       setAppliedPromo(null);
       setPromoDiscount(0);
       setPromoCode("");
+      setSuccessOrder(order || {});
 
-      success(`Order ${order?.orderNumber || ""} sent to kitchen. You’ll pay after your food is served.`);
-
+      // Auto-navigate after success animation plays.
       setTimeout(() => {
-        navigate(order?.trackToken ? `/order/track/${order.trackToken}` : `/orders/${slug}/${token}`);
-      }, 900);
+        navigate(
+          order?.trackToken
+            ? `/order/track/${order.trackToken}`
+            : `/orders/${slug}/${token}`,
+        );
+      }, 2200);
     } catch (err) {
       const message =
         err?.response?.data?.message || "Failed to place order. Try again.";
@@ -319,237 +403,231 @@ const Cart = () => {
     }
   };
 
+  const hasItems = items.length > 0;
+  const showStickyCta = hasItems;
+
   return (
-    <div className="min-h-screen bg-[#fafaf7] pb-52 text-gray-950 dark:bg-gray-950 dark:text-gray-100">
+    <div
+      className={`min-h-screen bg-surface-50/60 text-gray-950 ${
+        showStickyCta ? "pb-48" : "pb-28"
+      }`}
+    >
       {/* Header */}
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white/95 px-5 pb-5 pt-12 backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
+      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-100 bg-white/95 px-5 pb-4 pt-12 backdrop-blur-lg">
         <button
-          className="p-2 bg-gray-50 rounded-xl hover:bg-red-300 transition-colors"
-          onClick={() => navigate(-1) || navigate("/")}
+          className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-700 transition active:bg-gray-200"
+          onClick={goBack}
+          aria-label="Back"
         >
-          <ArrowLeft size={20} className="text-gray-700" />
+          <ArrowLeft size={20} />
         </button>
         <div className="text-center">
-          <h1 className="text-lg font-black text-gray-900">Review Order</h1>
-          <p className="text-[11px] font-semibold text-gray-400">Pay after your meal — we only send this to the kitchen now</p>
+          <h1 className="text-base font-black tracking-tight">Checkout</h1>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
+            Step {stepIndex + 1} of {STEPS.length} · {STEPS[stepIndex].label}
+          </p>
         </div>
-        <button 
-          className="p-2 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors"
-          onClick={clearCart}
-        >
-          <Trash2 size={20} />
-        </button>
+        {step === "review" ? (
+          <button
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-500 transition active:bg-red-100"
+            onClick={() => items.length > 0 && clear()}
+            aria-label="Clear cart"
+          >
+            <Trash2 size={18} />
+          </button>
+        ) : (
+          <span className="h-10 w-10" />
+        )}
       </header>
 
-      {/* Cart Items */}
-      <div className="px-5 pt-5">
-        <div className="rounded-3xl bg-primary-900 p-5 text-white shadow-xl shadow-primary-900/10">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-100 text-primary-800">
-              <ChefHat size={24} />
-            </div>
-            <div>
-              <p className="text-sm font-black">Send order to kitchen</p>
-              <p className="text-xs font-semibold text-slate-300">Kitchen, cashier, and waiter dashboards update instantly.</p>
-            </div>
-          </div>
-          <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[11px] font-bold text-slate-300">
-            <span className="rounded-xl bg-white/10 px-2 py-2">1. Review</span>
-            <span className="rounded-xl bg-white/10 px-2 py-2">2. Send</span>
-            <span className="rounded-xl bg-white/10 px-2 py-2">3. Track</span>
-          </div>
+      {/* Step indicator */}
+      <div className="mx-auto mt-4 max-w-md px-5">
+        <div className="flex items-center justify-between">
+          {STEPS.map((s, idx) => {
+            const completed = idx < stepIndex;
+            const active = idx === stepIndex;
+            return (
+              <React.Fragment key={s.id}>
+                <div className="flex flex-1 flex-col items-center">
+                  <motion.div
+                    animate={{
+                      scale: active ? 1.05 : 1,
+                      backgroundColor: completed || active ? "#7a2200" : "#f1f0da",
+                      color: completed || active ? "#ffffff" : "#5c4d1d",
+                    }}
+                    transition={{ type: "spring", stiffness: 320, damping: 24 }}
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-black shadow-sm"
+                  >
+                    {completed ? <Check size={16} strokeWidth={3} /> : idx + 1}
+                  </motion.div>
+                  <span
+                    className={`mt-1.5 text-[10px] font-black uppercase tracking-wider ${
+                      active ? "text-primary-700" : "text-gray-400"
+                    }`}
+                  >
+                    {s.label}
+                  </span>
+                </div>
+                {idx < STEPS.length - 1 && (
+                  <div className="-mt-5 mx-1 h-0.5 flex-1 overflow-hidden rounded-full bg-gray-100">
+                    <motion.div
+                      initial={{ scaleX: 0 }}
+                      animate={{
+                        scaleX: idx < stepIndex ? 1 : 0,
+                        backgroundColor: "#7a2200",
+                      }}
+                      transition={{ duration: 0.35, ease: "easeInOut" }}
+                      className="h-full origin-left rounded-full"
+                    />
+                  </div>
+                )}
+              </React.Fragment>
+            );
+          })}
         </div>
       </div>
 
-      <div className="px-5 py-5 space-y-4">
-        {orderAgainLines.length > 0 && (
-          <div className="rounded-3xl border border-secondary-200 bg-secondary-50/80 p-4">
-            <p className="text-sm font-black text-gray-900">Order again</p>
-            <p className="text-xs text-gray-600 mt-1">
-              One tap adds your last order from this table with the same customizations.
-            </p>
-            <button
-              type="button"
-              disabled={reorderBusy}
-              onClick={handleOrderAgain}
-              className="mt-3 w-full rounded-2xl bg-secondary-600 py-3 text-sm font-black text-white disabled:opacity-50"
-            >
-              {reorderBusy ? "Adding…" : "Add last order to cart"}
-            </button>
-          </div>
-        )}
-        {cartItems.map((item) => (
-          <motion.div
-            layout
-            key={item.lineId || item.menuItemId}
-            className="flex items-center gap-4 rounded-3xl border border-gray-100 bg-white p-3 shadow-sm"
-          >
-            <img
-              src={item.image}
-              alt={item.name}
-              className="w-20 h-20 object-cover rounded-2xl"
-            />
-
-            <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-gray-800 text-sm">{item.name}</h3>
-              <p className="text-orange-500 font-bold text-sm mt-1">
-                Rs. {item.price}
-              </p>
-              {(item.customizations || []).length > 0 && (
-                <p className="text-[11px] text-gray-500 mt-1">
-                  {(item.customizations || [])
-                    .map((c) => `${c.name || c.group}: ${c.value}`)
-                    .join(" · ")}
-                </p>
-              )}
-              {item.cookingInstructions ? (
-                <p className="text-[11px] text-amber-700 mt-0.5">
-                  Note: {item.cookingInstructions}
-                </p>
-              ) : null}
-            </div>
-
-            <div className="flex items-center gap-3 bg-gray-50 p-1 rounded-xl border border-gray-100">
-              <button
-                onClick={() => decreaseQty(item.menuItemId, item.lineId)}
-                className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-gray-400 active:scale-90"
-              >
-                <Minus size={14} />
-              </button>
-              <span className="text-sm font-bold w-4 text-center">
-                {item.quantity}
-              </span>
-              <button
-                onClick={() => increaseQty(item.menuItemId, item.lineId)}
-                className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-gray-700 active:scale-90"
-              >
-                <Plus size={14} />
-              </button>
-            </div>
-            
-            <button
-              onClick={() => removeItem(item.menuItemId, item.lineId)}
-              className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            >
-              <Trash2 size={18} />
-            </button>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Bill Details */}
-      <div className="mx-5 mt-3 space-y-3 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={promoCode}
-            onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-            placeholder="Enter promo code"
-            className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm"
-          />
-          <button
-            onClick={handleApplyPromo}
-            disabled={applyingPromo}
-            className="px-4 py-2 bg-gray-900 text-white rounded-xl text-sm disabled:opacity-60"
-          >
-            {applyingPromo ? "Applying..." : "Apply"}
-          </button>
-        </div>
-        {appliedPromo && (
-          <div className="text-xs text-green-600 font-medium">
-            Applied {appliedPromo.code}: -Rs. {promoDiscount}
-          </div>
-        )}
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-400">Subtotal</span>
-          <span className="text-gray-800 font-medium">Rs. {subtotal}</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-400">Promo Discount</span>
-          <span className="text-green-600 font-medium">- Rs. {promoDiscount}</span>
-        </div>
-        <div className="h-px bg-dashed border-t border-dashed border-gray-200 my-2"></div>
-        <div className="flex justify-between items-center">
-          <span className="font-bold text-gray-800">Total</span>
-          <span className="text-xl font-black text-orange-500">
-            Rs. {total}
-          </span>
-        </div>
-      </div>
-
-      {/* Customer Details */}
-      <div className="mx-5 mt-6 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-        <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-400">
-          Customer Details
-        </h3>
-        <div className="space-y-3">
-          <label className="relative block">
-            <User size={18} className="absolute left-3 top-3.5 text-gray-400" />
-            <input
-              value={customerDetails.name}
-              onChange={(e) => setCustomerDetails((prev) => ({ ...prev, name: e.target.value }))}
-              placeholder="Full name"
-              className="w-full rounded-2xl border border-gray-100 bg-gray-50 py-3 pl-10 pr-3 text-sm font-semibold outline-none focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-100"
-            />
-          </label>
-          <label className="relative block">
-            <Phone size={18} className="absolute left-3 top-3.5 text-gray-400" />
-            <input
-              value={customerDetails.phone}
-              onChange={(e) => setCustomerDetails((prev) => ({ ...prev, phone: e.target.value }))}
-              placeholder="Phone number"
-              className="w-full rounded-2xl border border-gray-100 bg-gray-50 py-3 pl-10 pr-3 text-sm font-semibold outline-none focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-100"
-            />
-          </label>
-          <label className="relative block">
-            <Mail size={18} className="absolute left-3 top-3.5 text-gray-400" />
-            <input
-              type="email"
-              value={customerDetails.email}
-              onChange={(e) => setCustomerDetails((prev) => ({ ...prev, email: e.target.value }))}
-              placeholder="Email optional"
-              className="w-full rounded-2xl border border-gray-100 bg-gray-50 py-3 pl-10 pr-3 text-sm font-semibold outline-none focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-100"
-            />
-          </label>
-        </div>
-      </div>
-
-      <div className="mx-5 mt-6 rounded-3xl border border-primary-100 bg-primary-50/60 p-4 dark:border-primary-900/40 dark:bg-primary-950/20">
-        <p className="text-xs font-bold leading-relaxed text-primary-900 dark:text-primary-200">
-          <ShieldCheck className="mb-1 inline-block h-4 w-4 align-middle text-primary-600" />{" "}
-          After your food is served, this app will ask how you want to pay (cash, online, split cash/online, or house credit).
-        </p>
-      </div>
-
-      {/* Checkout Button */}
-      <div className="fixed bottom-[5.5rem] left-0 right-0 z-[85] border-t border-gray-100 bg-white/95 p-5 shadow-[0_-10px_24px_rgba(15,23,42,0.08)] backdrop-blur">
-        <div className="mb-3 flex items-center justify-center gap-2 text-[11px] font-bold text-gray-500">
-          <ShieldCheck size={14} className="text-emerald-600" />
-          Track prep live — payment comes after you&apos;re served.
-        </div>
-        <button
-          onClick={handleProceedToCheckout}
-          disabled={isPlacingOrder || cartItems.length === 0}
-          className="w-full bg-primary-600 hover:bg-primary-700 py-4 rounded-2xl text-white font-black text-base shadow-xl shadow-primary-900/20 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={step}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.22 }}
+          className="pt-5"
         >
-          {isPlacingOrder ? "Sending to kitchen..." : <>Send Order to Kitchen <Send size={18} /></>}
-        </button>
-      </div>
+          {step === "review" && (
+            <ReviewStep
+              items={items}
+              orderAgainLines={orderAgainLines}
+              reorderBusy={reorderBusy}
+              onReorder={handleOrderAgain}
+              pastOrders={pastOrders}
+              reorderingId={reorderingId}
+              onReorderPast={handleReorderPast}
+              onIncrement={increment}
+              onDecrement={decrement}
+              onRemove={removeLine}
+              promoCode={promoCode}
+              setPromoCode={setPromoCode}
+              onApplyPromo={handleApplyPromo}
+              applyingPromo={applyingPromo}
+              appliedPromo={appliedPromo}
+              promoDiscount={promoDiscount}
+              subtotal={subtotal}
+              total={total}
+              onBrowse={() => navigate(`/menu/${slug}/${token}`)}
+            />
+          )}
 
+          {step === "details" && (
+            <DetailsStep
+              customerDetails={customerDetails}
+              setCustomerDetails={setCustomerDetails}
+              subtotal={subtotal}
+              total={total}
+              promoDiscount={promoDiscount}
+            />
+          )}
+
+          {step === "confirm" && (
+            <ConfirmStep
+              items={items}
+              customerDetails={customerDetails}
+              subtotal={subtotal}
+              total={total}
+              promoDiscount={promoDiscount}
+              appliedPromo={appliedPromo}
+            />
+          )}
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Sticky CTA — only when the cart has items. An empty cart already
+          surfaces a "Browse menu" CTA in its empty-state card, so we don't
+          want a second, disabled "Continue" button hanging at the bottom. */}
       <AnimatePresence>
-        {isPlacingOrder && (
+        {showStickyCta && (
+          <motion.div
+            key="cart-sticky-cta"
+            initial={{ y: 24, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 24, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 320, damping: 28 }}
+            style={{ bottom: "calc(5rem + env(safe-area-inset-bottom, 0px))" }}
+            className="fixed inset-x-0 z-[85] border-t border-gray-100 bg-white/95 px-4 pb-2.5 pt-2.5 backdrop-blur-xl shadow-[0_-8px_24px_-12px_rgba(15,23,42,0.18)]"
+          >
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                  {totals.count} item{totals.count > 1 ? "s" : ""}
+                  {promoDiscount > 0 ? " · promo applied" : ""}
+                </p>
+                <p className="text-[17px] font-black leading-tight text-gray-900">
+                  Rs. {Number(total || 0).toFixed(0)}
+                </p>
+              </div>
+
+              {step === "confirm" ? (
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handlePlaceOrder}
+                  disabled={isPlacingOrder}
+                  className="inline-flex items-center gap-1.5 rounded-2xl bg-primary-700 px-5 py-2.5 text-sm font-black text-white shadow-md shadow-primary-900/25 transition active:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isPlacingOrder ? "Sending…" : "Send to kitchen"}
+                  {!isPlacingOrder && <Send size={15} />}
+                </motion.button>
+              ) : (
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={goNext}
+                  className="inline-flex items-center gap-1.5 rounded-2xl bg-primary-700 px-5 py-2.5 text-sm font-black text-white shadow-md shadow-primary-900/25 transition active:bg-primary-800"
+                >
+                  {step === "review" ? "Continue" : "Review"}
+                  <ArrowRight size={15} />
+                </motion.button>
+              )}
+            </div>
+            <p className="mt-1.5 flex items-center justify-center gap-1 text-[10px] font-bold text-emerald-700">
+              <ShieldCheck size={11} />
+              Pay after your food is served
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Success overlay */}
+      <AnimatePresence>
+        {successOrder && (
+          <SuccessOverlay order={successOrder} />
+        )}
+      </AnimatePresence>
+
+      {/* Sending-to-kitchen modal */}
+      <AnimatePresence>
+        {isPlacingOrder && !successOrder && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-6 backdrop-blur-sm"
+            className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/60 p-6 backdrop-blur-sm"
           >
-            <motion.div initial={{ y: 20, scale: 0.96 }} animate={{ y: 0, scale: 1 }} exit={{ y: 20, scale: 0.96 }} className="w-full max-w-xs rounded-3xl bg-white p-6 text-center shadow-2xl">
+            <motion.div
+              initial={{ y: 20, scale: 0.96 }}
+              animate={{ y: 0, scale: 1 }}
+              exit={{ y: 20, scale: 0.96 }}
+              className="w-full max-w-xs rounded-3xl bg-white p-6 text-center shadow-2xl"
+            >
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-100 text-emerald-700">
                 <ChefHat size={30} className="animate-pulse" />
               </div>
-              <h2 className="mt-4 text-xl font-black text-gray-950">Sending to kitchen</h2>
-              <p className="mt-2 text-sm leading-6 text-gray-500">Please wait while your order reaches the restaurant dashboard.</p>
+              <h2 className="mt-4 text-xl font-black text-gray-950">
+                Sending to kitchen
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-gray-500">
+                Please wait while your order reaches the restaurant.
+              </p>
             </motion.div>
           </motion.div>
         )}
@@ -560,5 +638,588 @@ const Cart = () => {
     </div>
   );
 };
+
+function ReviewStep({
+  items,
+  orderAgainLines,
+  reorderBusy,
+  onReorder,
+  pastOrders,
+  reorderingId,
+  onReorderPast,
+  onIncrement,
+  onDecrement,
+  onRemove,
+  promoCode,
+  setPromoCode,
+  onApplyPromo,
+  applyingPromo,
+  appliedPromo,
+  promoDiscount,
+  subtotal,
+  total,
+  onBrowse,
+}) {
+  return (
+    <div className="px-5 space-y-4">
+      <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-primary-700 via-primary-600 to-secondary-500 p-5 text-white shadow-xl shadow-primary-900/20">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
+            <ChefHat size={22} />
+          </div>
+          <div>
+            <p className="text-sm font-black">Send order to kitchen</p>
+            <p className="text-xs font-semibold text-white/80">
+              Pay after your food is served.
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[11px] font-black text-white/80">
+          {["1. Review", "2. Details", "3. Send"].map((label) => (
+            <span
+              key={label}
+              className="rounded-xl bg-white/10 px-2 py-2 backdrop-blur"
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {orderAgainLines.length > 0 && (
+        <div className="rounded-3xl border border-secondary-200 bg-secondary-50/80 p-4">
+          <p className="flex items-center gap-1.5 text-sm font-black text-gray-900">
+            <Sparkles size={14} className="text-secondary-600" />
+            Order again
+          </p>
+          <p className="mt-1 text-xs text-gray-600">
+            One tap adds your last order with the same customizations.
+          </p>
+          <button
+            type="button"
+            disabled={reorderBusy}
+            onClick={onReorder}
+            className="mt-3 w-full rounded-2xl bg-secondary-600 py-3 text-sm font-black text-white shadow-sm transition active:scale-95 disabled:opacity-50"
+          >
+            {reorderBusy ? "Adding..." : "Add last order to cart"}
+          </button>
+        </div>
+      )}
+
+      {pastOrders && pastOrders.length > 0 && (
+        <PastOrdersPicker
+          orders={pastOrders}
+          reorderingId={reorderingId}
+          onReorder={onReorderPast}
+          startCollapsed={items.length > 0}
+        />
+      )}
+
+      {items.length === 0 ? (
+        <div className="rounded-3xl border border-dashed border-gray-200 bg-white p-10 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-50 text-primary-600">
+            <PackageOpen size={24} />
+          </div>
+          <p className="mt-3 text-sm font-black text-gray-900">Cart is empty</p>
+          <p className="mt-1 text-xs font-semibold text-gray-400">
+            Browse the menu and add a few favourites.
+          </p>
+          <button
+            onClick={onBrowse}
+            className="mt-5 rounded-2xl bg-primary-600 px-5 py-2.5 text-xs font-black text-white shadow-md shadow-primary-900/20 transition active:scale-95"
+          >
+            Browse menu
+          </button>
+        </div>
+      ) : (
+        <ul className="space-y-3">
+          <AnimatePresence initial={false} mode="popLayout">
+            {items.map((item) => (
+              <motion.li
+                layout
+                key={item.lineId || item.menuItemId}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: 50, scale: 0.9 }}
+                transition={{ type: "spring", stiffness: 320, damping: 28 }}
+                className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm"
+              >
+                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-gray-100">
+                  {item.image ? (
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-gray-300">
+                      <PackageOpen size={20} />
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-black text-gray-900">
+                    {item.name}
+                  </p>
+                  <p className="text-xs font-black text-primary-700">
+                    Rs. {item.price}
+                  </p>
+                  {(item.customizations || []).length > 0 && (
+                    <p className="mt-0.5 line-clamp-1 text-[10px] font-semibold text-gray-500">
+                      {(item.customizations || [])
+                        .map((c) => `${c.name || c.group}: ${c.value}`)
+                        .join(" · ")}
+                    </p>
+                  )}
+                  {item.cookingInstructions ? (
+                    <p className="mt-0.5 line-clamp-1 text-[10px] font-semibold text-amber-700">
+                      Note: {item.cookingInstructions}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <div className="flex items-center gap-1.5 rounded-xl border border-primary-100 bg-primary-50/70 px-1.5 py-1">
+                    <button
+                      onClick={() => onDecrement(item.menuItemId, item.lineId)}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-primary-700 shadow-sm transition active:scale-90"
+                      aria-label="Decrease"
+                    >
+                      <Minus size={13} strokeWidth={3} />
+                    </button>
+                    <motion.span
+                      key={item.quantity}
+                      initial={{ scale: 0.85, opacity: 0.6 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 360, damping: 22 }}
+                      className="w-5 text-center text-sm font-black tabular-nums text-primary-800"
+                    >
+                      {item.quantity}
+                    </motion.span>
+                    <button
+                      onClick={() => onIncrement(item.menuItemId, item.lineId)}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary-600 text-white shadow-sm transition active:scale-90"
+                      aria-label="Increase"
+                    >
+                      <Plus size={13} strokeWidth={3} />
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => onRemove(item.menuItemId, item.lineId)}
+                    className="text-[10px] font-bold text-gray-400 transition hover:text-red-500"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </motion.li>
+            ))}
+          </AnimatePresence>
+        </ul>
+      )}
+
+      {/* Bill */}
+      {items.length > 0 && (
+        <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+              placeholder="Enter promo code"
+              className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold outline-none transition focus:border-primary-400 focus:bg-white focus:ring-2 focus:ring-primary-100"
+            />
+            <button
+              onClick={onApplyPromo}
+              disabled={applyingPromo}
+              className="rounded-xl bg-gray-950 px-4 py-2 text-sm font-black text-white transition active:scale-95 disabled:opacity-60"
+            >
+              {applyingPromo ? "Applying..." : "Apply"}
+            </button>
+          </div>
+          {appliedPromo && (
+            <div className="mt-2 flex items-center gap-1.5 text-xs font-bold text-emerald-700">
+              <Check size={12} strokeWidth={3} />
+              Applied {appliedPromo.code}: -Rs. {promoDiscount}
+            </div>
+          )}
+          <div className="mt-4 space-y-2 text-sm">
+            <Row label="Subtotal" value={`Rs. ${subtotal}`} />
+            {promoDiscount > 0 && (
+              <Row
+                label="Promo discount"
+                value={`- Rs. ${promoDiscount}`}
+                accent="text-emerald-600"
+              />
+            )}
+          </div>
+          <div className="my-3 border-t border-dashed border-gray-200" />
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-black text-gray-800">Total</span>
+            <span className="text-xl font-black text-primary-700">
+              Rs. {total}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DetailsStep({ customerDetails, setCustomerDetails, subtotal, total, promoDiscount }) {
+  return (
+    <div className="px-5 space-y-4">
+      <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+        <h3 className="text-xs font-black uppercase tracking-[0.18em] text-gray-400">
+          Customer Details
+        </h3>
+        <p className="mt-1 text-xs font-semibold text-gray-500">
+          We use this only to identify your order at the table.
+        </p>
+        <div className="mt-4 space-y-3">
+          <Field
+            icon={User}
+            value={customerDetails.name}
+            onChange={(v) => setCustomerDetails((p) => ({ ...p, name: v }))}
+            placeholder="Full name"
+            required
+          />
+          <Field
+            icon={Phone}
+            value={customerDetails.phone}
+            onChange={(v) => setCustomerDetails((p) => ({ ...p, phone: v }))}
+            placeholder="Phone number (optional)"
+            type="tel"
+          />
+          <Field
+            icon={Mail}
+            value={customerDetails.email}
+            onChange={(v) => setCustomerDetails((p) => ({ ...p, email: v }))}
+            placeholder="Email (optional)"
+            type="email"
+          />
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-primary-100 bg-primary-50/60 p-4">
+        <p className="flex items-start gap-2 text-xs font-bold leading-relaxed text-primary-900">
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary-600" />
+          After your food is served, the app will ask how you want to pay
+          (cash, online, split, or house credit).
+        </p>
+      </div>
+
+      <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+        <h3 className="flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.18em] text-gray-400">
+          <Receipt size={12} />
+          Bill summary
+        </h3>
+        <div className="mt-3 space-y-2 text-sm">
+          <Row label="Subtotal" value={`Rs. ${subtotal}`} />
+          {promoDiscount > 0 && (
+            <Row
+              label="Promo discount"
+              value={`- Rs. ${promoDiscount}`}
+              accent="text-emerald-600"
+            />
+          )}
+          <div className="my-2 border-t border-dashed border-gray-200" />
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-black text-gray-800">Total</span>
+            <span className="text-xl font-black text-primary-700">Rs. {total}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConfirmStep({ items, customerDetails, subtotal, total, promoDiscount, appliedPromo }) {
+  return (
+    <div className="px-5 space-y-4">
+      <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+        <h3 className="text-xs font-black uppercase tracking-[0.18em] text-gray-400">
+          Order summary
+        </h3>
+        <ul className="mt-3 divide-y divide-gray-100">
+          {items.map((item) => (
+            <li
+              key={item.lineId || item.menuItemId}
+              className="flex items-start justify-between gap-3 py-3"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-black text-gray-900">
+                  {item.name}{" "}
+                  <span className="text-xs font-bold text-gray-400">
+                    × {item.quantity}
+                  </span>
+                </p>
+                {(item.customizations || []).length > 0 && (
+                  <p className="mt-0.5 line-clamp-1 text-[10px] font-semibold text-gray-500">
+                    {(item.customizations || [])
+                      .map((c) => `${c.name || c.group}: ${c.value}`)
+                      .join(" · ")}
+                  </p>
+                )}
+              </div>
+              <span className="shrink-0 text-sm font-black text-gray-900">
+                Rs. {Number(item.price) * Number(item.quantity)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+        <h3 className="text-xs font-black uppercase tracking-[0.18em] text-gray-400">
+          Customer
+        </h3>
+        <div className="mt-3 space-y-1 text-sm font-bold text-gray-800">
+          <p>{customerDetails.name}</p>
+          {customerDetails.phone && (
+            <p className="text-xs font-semibold text-gray-500">{customerDetails.phone}</p>
+          )}
+          {customerDetails.email && (
+            <p className="text-xs font-semibold text-gray-500">{customerDetails.email}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+        <h3 className="text-xs font-black uppercase tracking-[0.18em] text-gray-400">
+          Total to pay later
+        </h3>
+        <div className="mt-3 space-y-2 text-sm">
+          <Row label="Subtotal" value={`Rs. ${subtotal}`} />
+          {promoDiscount > 0 && (
+            <Row
+              label={`Promo (${appliedPromo?.code || "applied"})`}
+              value={`- Rs. ${promoDiscount}`}
+              accent="text-emerald-600"
+            />
+          )}
+          <div className="my-2 border-t border-dashed border-gray-200" />
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-black text-gray-800">Total</span>
+            <span className="text-2xl font-black text-primary-700">Rs. {total}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SuccessOverlay({ order }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-gradient-to-br from-primary-900/85 via-primary-800/80 to-secondary-700/80 px-6 backdrop-blur-md"
+    >
+      <motion.div
+        initial={{ scale: 0.85, opacity: 0, y: 30 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 280, damping: 22 }}
+        className="w-full max-w-sm rounded-[2rem] bg-white p-7 text-center shadow-2xl"
+      >
+        <motion.div
+          initial={{ scale: 0, rotate: -90 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ delay: 0.1, type: "spring", stiffness: 280, damping: 18 }}
+          className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-500/30"
+        >
+          <Check size={40} strokeWidth={3} />
+        </motion.div>
+        <motion.h2
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="mt-5 text-2xl font-black text-gray-950"
+        >
+          Order placed!
+        </motion.h2>
+        <motion.p
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.32 }}
+          className="mt-2 text-sm font-semibold text-gray-500"
+        >
+          Order <span className="font-black text-primary-700">#{order?.orderNumber || "—"}</span> is on its way to the kitchen.
+        </motion.p>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.45 }}
+          className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-[11px] font-black text-emerald-700"
+        >
+          <Sparkles size={12} />
+          Opening live tracking...
+        </motion.p>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/**
+ * Lets the customer pick *any* previous served/completed order and one-tap
+ * reorder it. Stays collapsed when the cart already has items (so it doesn't
+ * compete with the live cart) and stays open when the cart is empty — which
+ * is the typical "I just finished my last order, what now?" state.
+ */
+function PastOrdersPicker({ orders, reorderingId, onReorder, startCollapsed }) {
+  const [open, setOpen] = useState(!startCollapsed);
+
+  return (
+    <div className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-3"
+      >
+        <span className="flex items-center gap-2">
+          <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary-50 text-primary-700">
+            <History size={16} />
+          </span>
+          <span className="text-left">
+            <span className="block text-sm font-black text-gray-900">
+              Reorder from history
+            </span>
+            <span className="block text-[11px] font-semibold text-gray-500">
+              {orders.length} previous order{orders.length > 1 ? "s" : ""} on this table
+            </span>
+          </span>
+        </span>
+        <span className="text-gray-400">
+          {open ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+        </span>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <ul className="mt-3 flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {orders.map((order) => (
+                <PastOrderCard
+                  key={String(order._id || order.qrToken)}
+                  order={order}
+                  busy={
+                    reorderingId === order._id ||
+                    reorderingId === order.qrToken
+                  }
+                  onReorder={() => onReorder(order)}
+                />
+              ))}
+            </ul>
+            <p className="mt-3 text-[11px] font-semibold leading-relaxed text-gray-500">
+              Picking a past order adds its items to your current cart. You can edit
+              quantities before sending to the kitchen.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function PastOrderCard({ order, busy, onReorder }) {
+  const items = order?.items || [];
+  const preview = items
+    .slice(0, 3)
+    .map((it) => `${it.name} × ${it.quantity}`)
+    .join(", ");
+  const more = items.length > 3 ? ` +${items.length - 3} more` : "";
+  const when = order?.createdAt
+    ? new Date(order.createdAt).toLocaleString([], {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "";
+  const total = Number(order?.grandTotal ?? order?.totalAmount ?? 0);
+
+  return (
+    <li className="flex w-[230px] shrink-0 flex-col rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-surface-50/60 p-3 shadow-sm">
+      <div className="flex items-center justify-between">
+        <span className="rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-primary-700">
+          #{order.orderNumber || "—"}
+        </span>
+        <span
+          className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase ${
+            order.status === "completed"
+              ? "bg-emerald-50 text-emerald-700"
+              : "bg-amber-50 text-amber-700"
+          }`}
+        >
+          {order.status || "done"}
+        </span>
+      </div>
+      {when && (
+        <p className="mt-1.5 text-[10px] font-semibold text-gray-400">{when}</p>
+      )}
+      <p
+        className="mt-2 line-clamp-2 text-xs font-bold leading-snug text-gray-800"
+        title={`${preview}${more}`}
+      >
+        {preview || "Previous order"}
+        {more}
+      </p>
+      <div className="mt-auto flex items-center justify-between gap-2 pt-3">
+        <span className="text-sm font-black text-gray-900">
+          Rs. {total.toFixed(0)}
+        </span>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onReorder}
+          className="inline-flex items-center gap-1 rounded-xl bg-primary-600 px-3 py-1.5 text-[11px] font-black text-white shadow-sm transition active:scale-95 disabled:opacity-60"
+        >
+          {busy ? (
+            <>
+              <RotateCw size={12} className="animate-spin" />
+              Adding
+            </>
+          ) : (
+            <>
+              <RotateCw size={12} />
+              Reorder
+            </>
+          )}
+        </button>
+      </div>
+    </li>
+  );
+}
+
+function Field({ icon: Icon, value, onChange, placeholder, type = "text", required }) {
+  return (
+    <label className="relative block">
+      <Icon size={18} className="absolute left-3 top-3.5 text-gray-400" />
+      <input
+        type={type}
+        value={value}
+        required={required}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-2xl border border-gray-200 bg-gray-50 py-3 pl-10 pr-3 text-sm font-semibold text-gray-900 outline-none transition focus:border-primary-400 focus:bg-white focus:ring-2 focus:ring-primary-100"
+      />
+    </label>
+  );
+}
+
+function Row({ label, value, accent = "text-gray-900" }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="font-semibold text-gray-500">{label}</span>
+      <span className={`font-black ${accent}`}>{value}</span>
+    </div>
+  );
+}
 
 export default Cart;

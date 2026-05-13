@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   Bell,
@@ -12,48 +12,88 @@ import {
   ReceiptText,
   UtensilsCrossed,
   Utensils,
+  Sparkles,
+  CircleDot,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { io } from "socket.io-client";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../services/api";
 import Feedback from "../../components/customer/homepage/Feedback";
 import CustomerPostServePayment from "../../components/customer/CustomerPostServePayment";
 import Navigation from "../../components/customer/Navigation";
+import OrderTrackingFab from "../../components/customer/order/OrderTrackingFab";
+import { OrderTrackingSkeleton } from "../../components/customer/order/OrderTrackingSkeleton";
 import { getSocketOrigin } from "../../utils/runtimeConfig";
 import { rememberCustomerPortal } from "../../utils/customerPortalContext";
 import { getStoredGuestId, rememberCustomerOrderToken } from "../../services/customer";
 
-const getActiveStepIndex = (status, paymentStatus) => {
+const formatMoney = (value) => `Rs. ${Number(value || 0).toFixed(2)}`;
+
+/** 5-step customer-facing flow (maps backend statuses). */
+const TRACK_STEPS = [
+  {
+    key: "placed",
+    label: "Order placed",
+    caption: "We received your order",
+    statuses: ["pending"],
+    Icon: Sparkles,
+  },
+  {
+    key: "accepted",
+    label: "Restaurant accepted",
+    caption: "Kitchen queue updated",
+    statuses: ["confirmed"],
+    Icon: Check,
+  },
+  {
+    key: "preparing",
+    label: "Preparing food",
+    caption: "Chef team is on it",
+    statuses: ["preparing", "cooking"],
+    Icon: ChefHat,
+  },
+  {
+    key: "ready",
+    label: "Ready to serve",
+    caption: "Head to the counter or wait at table",
+    statuses: ["ready"],
+    Icon: Utensils,
+  },
+  {
+    key: "done",
+    label: "Served / completed",
+    caption: "Enjoy — pay when you are ready",
+    statuses: ["served", "completed"],
+    Icon: PackageCheck,
+  },
+];
+
+const getTrackStepIndex = (status) => {
   if (status === "cancelled") return -1;
-  if (status === "completed") return 5;
-  if (status === "served" && paymentStatus === "paid") return 5;
-  if (status === "pending" || status === "confirmed") return 0;
-  if (status === "preparing") return 1;
-  if (status === "cooking") return 2;
+  if (status === "pending") return 0;
+  if (status === "confirmed") return 1;
+  if (status === "preparing" || status === "cooking") return 2;
   if (status === "ready") return 3;
-  if (status === "served") return 4;
+  if (status === "served" || status === "completed") return 4;
   return 0;
 };
 
-const getStatusText = (order) => {
-  const status = order?.status
-  const paymentStatus = order?.paymentStatus
+const getStatusHeadline = (order) => {
+  const status = order?.status;
+  const paymentStatus = order?.paymentStatus;
   if (status === "cancelled") return "Order cancelled";
-  if (status === "completed" || (status === "served" && paymentStatus === "paid")) return "Order completed — thank you!";
-  if (status === "pending") return "Order received by the restaurant";
-  if (status === "confirmed") return "Restaurant confirmed your order";
-  if (status === "preparing") return "Kitchen is preparing your order";
-  if (status === "cooking") return "Your food is cooking now";
-  if (status === "ready") return "Your order is ready for pickup";
-  if (status === "served" && paymentStatus !== "paid" && order?.guestPaymentPreferenceAt) {
-    return "Served — your payment choice was sent to staff";
-  }
+  if (status === "completed" || (status === "served" && paymentStatus === "paid"))
+    return "Thank you — all set!";
+  if (status === "pending") return "Order received";
+  if (status === "confirmed") return "Restaurant accepted";
+  if (status === "preparing" || status === "cooking") return "Preparing your food";
+  if (status === "ready") return "Ready for you";
+  if (status === "served" && paymentStatus !== "paid" && order?.guestPaymentPreferenceAt)
+    return "Served — payment choice sent";
   if (status === "served") return "Served at your table";
-  return "Tracking your order";
+  return "Live order tracking";
 };
-
-const formatMoney = (value) => `Rs. ${Number(value || 0).toFixed(2)}`;
 
 const normalizeRealtimeOrder = (payload, current) => ({
   ...current,
@@ -80,13 +120,13 @@ const OrderTracking = () => {
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [isLive, setIsLive] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const timelineRef = useRef(null);
 
-  const fetchOrder = async () => {
+  const fetchOrder = useCallback(async () => {
     if (!qrToken) {
       setLoading(false);
       return null;
     }
-
     try {
       const res = await api.get(`/customer/order/${qrToken}`, { skipErrorToast: true });
       const nextOrder = res?.data?.data || null;
@@ -100,13 +140,13 @@ const OrderTracking = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [qrToken]);
 
   useEffect(() => {
     fetchOrder();
     const intervalId = setInterval(fetchOrder, 15000);
     return () => clearInterval(intervalId);
-  }, [qrToken]);
+  }, [fetchOrder]);
 
   useEffect(() => {
     if (!order?.orderId) return undefined;
@@ -155,9 +195,10 @@ const OrderTracking = () => {
     return () => clearTimeout(timer);
   }, [order?.paymentStatus, order?.status, order?.orderId, qrToken]);
 
-  const currentStatusIndex = getActiveStepIndex(order?.status, order?.paymentStatus);
+  const stepIndex = getTrackStepIndex(order?.status);
   const progressPct =
-    currentStatusIndex < 0 ? 0 : Math.min(100, Math.round(((currentStatusIndex + 1) / 6) * 100));
+    stepIndex < 0 ? 0 : Math.min(100, Math.round(((stepIndex + 1) / TRACK_STEPS.length) * 100));
+
   const canShowBill = order?.status === "served" || order?.status === "completed";
   const canAddMoreItems = Boolean(
     order?.tableQrToken &&
@@ -169,244 +210,379 @@ const OrderTracking = () => {
     order?.status === "served" &&
     order?.customerPaymentDeferred &&
     order?.paymentStatus !== "paid";
+
   const subtotal = Number(
     order?.subtotal ??
       order?.totalAmount ??
-      (order?.items || []).reduce((sum, item) => sum + Number(item.subtotal || Number(item.price || 0) * Number(item.quantity || 0)), 0)
+      (order?.items || []).reduce(
+        (sum, item) =>
+          sum + Number(item.subtotal || Number(item.price || 0) * Number(item.quantity || 0)),
+        0,
+      ),
   );
   const taxAmount = Number(order?.taxAmount || 0);
   const discountAmount = Number(order?.discountAmount || 0);
   const serviceChargeAmount = Number(order?.serviceChargeAmount || 0);
-  const grandTotal = Number(order?.grandTotal ?? order?.totalAmount ?? Math.max(0, subtotal + taxAmount + serviceChargeAmount - discountAmount));
+  const grandTotal = Number(
+    order?.grandTotal ??
+      order?.totalAmount ??
+      Math.max(0, subtotal + taxAmount + serviceChargeAmount - discountAmount),
+  );
+
   const estimatedPrepLabel = order?.estimatedCompletionTime
     ? `Ready around ${new Date(order.estimatedCompletionTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
     : order?.estimatedWaitTime
       ? `About ${order.estimatedWaitTime} min`
-      : "Waiting for restaurant estimate";
+      : "Estimate will appear when the kitchen confirms";
 
-  const steps = useMemo(() => {
-    const defs = [
-      { stepIndex: 0, statuses: ["pending", "confirmed"], label: "Order received", icon: Radio },
-      { stepIndex: 1, statuses: ["preparing"], label: "Preparing", icon: ChefHat },
-      { stepIndex: 2, statuses: ["cooking"], label: "Cooking", icon: Flame },
-      { stepIndex: 3, statuses: ["ready"], label: "Ready", icon: Utensils },
-      { stepIndex: 4, statuses: ["served"], label: "Served", icon: PackageCheck },
-      {
-        stepIndex: 5,
-        statuses: ["completed"],
-        label: "Completed",
-        icon: Check,
-        paymentComplete: true,
-      },
-    ];
+  const menuHref =
+    canAddMoreItems &&
+    `/menu/${order.restaurantSlug || order.restaurant?.slug}/${order.tableQrToken}`;
 
-    return defs.map((step, idx) => {
-      const historyEntry = (order?.statusHistory || []).find((entry) =>
-        step.statuses.includes(entry.status),
+  const timelineSteps = useMemo(() => {
+    if (!order) return [];
+    const cancelled = order.status === "cancelled";
+    const current = stepIndex;
+    const terminalDone =
+      order.status === "completed" ||
+      (order.status === "served" && order.paymentStatus === "paid");
+
+    return TRACK_STEPS.map((def, idx) => {
+      const historyEntry = (order.statusHistory || []).find((entry) =>
+        def.statuses.includes(entry.status),
       );
-      const isCancelled = order?.status === "cancelled";
-      const isCompleted =
-        !isCancelled &&
-        currentStatusIndex >= 0 &&
-        (idx < currentStatusIndex || (currentStatusIndex === 5 && idx === 5));
-      const isActive =
-        !isCancelled && idx === currentStatusIndex && currentStatusIndex < 5;
+      const completed =
+        !cancelled &&
+        current >= 0 &&
+        (idx < current || (idx === current && terminalDone && idx === TRACK_STEPS.length - 1));
+      const active = !cancelled && idx === current && !completed;
 
-      let time = "Waiting";
+      let timeLabel = "Waiting";
       if (historyEntry?.timestamp) {
-        time = new Date(historyEntry.timestamp).toLocaleTimeString([], {
+        timeLabel = new Date(historyEntry.timestamp).toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
         });
-      } else if (idx === 5 && order?.paymentStatus === "paid") {
-        time = "Paid";
-      } else if (isCompleted) {
-        time = "Done";
+      } else if (completed) {
+        timeLabel = "Done";
+      } else if (terminalDone && idx === TRACK_STEPS.length - 1) {
+        timeLabel = "Paid";
       }
 
-      return {
-        ...step,
-        completed: isCompleted,
-        active: isActive,
-        time,
-      };
+      return { ...def, completed, active, timeLabel, idx };
     });
-  }, [currentStatusIndex, order]);
+  }, [order, stepIndex]);
+
+  const scrollToTimeline = () => {
+    timelineRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#fafaf7] text-gray-500">
-        Loading live tracking...
-      </div>
-    );
+    return <OrderTrackingSkeleton />;
   }
 
   if (!order) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#fafaf7] px-6 text-center">
-        <p className="text-gray-700 font-semibold">Order not found.</p>
-        <button onClick={() => navigate(-1)} className="mt-4 px-4 py-2 rounded-xl bg-slate-950 text-white text-sm font-semibold">
-          Go Back
+      <div className="flex min-h-screen flex-col items-center justify-center bg-surface-50/80 px-6 text-center">
+        <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gray-100 text-gray-400">
+          <ReceiptText size={36} />
+        </div>
+        <p className="mt-4 text-base font-black text-gray-900">Order not found</p>
+        <p className="mt-1 max-w-xs text-sm text-gray-500">
+          This link may have expired or the order was removed.
+        </p>
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="mt-6 rounded-2xl bg-primary-600 px-6 py-3 text-sm font-black text-white shadow-lg transition active:scale-95"
+        >
+          Go back
         </button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#fafaf7] pb-28 text-gray-950">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white/95 px-5 pb-5 pt-12 backdrop-blur">
-        <button className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors" onClick={() => navigate(-1)}>
-          <ArrowLeft size={20} className="text-gray-700" />
-        </button>
-        <div className="text-center">
-          <h1 className="text-lg font-black tracking-tight">Live Order Track</h1>
-          <p className="text-[11px] font-semibold text-gray-400">Updates as kitchen moves</p>
-        </div>
-        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${isLive ? "bg-emerald-50 text-emerald-600" : "bg-gray-50 text-gray-400"}`}>
-          <Radio size={18} className={isLive ? "animate-pulse" : ""} />
+    <div className="min-h-screen bg-gradient-to-b from-surface-50 via-white to-surface-50/90 pb-44 text-gray-950">
+      {/* Top bar */}
+      <header className="sticky top-0 z-30 border-b border-gray-100/80 bg-white/90 px-4 pb-3 pt-12 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.92 }}
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-800 transition hover:bg-gray-200"
+            onClick={() => navigate(-1)}
+            aria-label="Back"
+          >
+            <ArrowLeft size={20} />
+          </motion.button>
+          <div className="min-w-0 flex-1 text-center">
+            <h1 className="truncate text-sm font-black tracking-tight text-gray-900">
+              Track order
+            </h1>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
+              #{order.orderNumber} · Table {order.tableNumber || "—"}
+            </p>
+          </div>
+          <div
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${
+              isLive
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-amber-200 bg-amber-50 text-amber-800"
+            }`}
+            title={isLive ? "Live updates" : "Polling"}
+          >
+            <Radio size={18} className={isLive ? "animate-pulse" : ""} />
+          </div>
         </div>
       </header>
 
-      <main className="px-5 pt-5">
-        <section className="overflow-hidden rounded-[2rem] bg-primary-900 text-white shadow-xl shadow-primary-900/15">
-          <div className="p-6">
-            <div className="flex items-center gap-3">
-              {order.restaurant?.logo ? (
-                <img src={order.restaurant.logo} alt={order.restaurant.name} className="h-14 w-14 rounded-2xl object-cover" />
-              ) : (
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10">
-                  <ReceiptText size={24} />
-                </div>
-              )}
-              <div className="min-w-0">
-                <p className="truncate text-sm font-black">{order.restaurant?.name || "Restaurant"}</p>
-                <p className="text-xs font-semibold text-slate-300">Table {order.tableNumber} • Order #{order.orderNumber}</p>
-              </div>
-            </div>
+      {/* Sticky status strip */}
+      <div className="sticky top-[4.25rem] z-20 border-b border-gray-100/80 bg-white/85 px-4 py-3 backdrop-blur-lg">
+        <div className="mx-auto flex max-w-lg items-center gap-3">
+          <motion.div
+            layout
+            className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary-900 text-white shadow-md"
+          >
+            {order.restaurant?.logo ? (
+              <img
+                src={order.restaurant.logo}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <ReceiptText size={20} />
+            )}
+          </motion.div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-black text-gray-900">
+              {order.restaurant?.name || "Restaurant"}
+            </p>
+            <p className="truncate text-[11px] font-semibold text-primary-700">
+              {getStatusHeadline(order)}
+            </p>
+          </div>
+          <div className="shrink-0 text-right">
+            <p className="text-[10px] font-bold uppercase text-gray-400">Total</p>
+            <p className="text-sm font-black text-gray-900">{formatMoney(grandTotal)}</p>
+          </div>
+        </div>
+        <div className="mx-auto mt-3 max-w-lg">
+          <div className="mb-1 flex justify-between text-[10px] font-bold text-gray-500">
+            <span>Progress</span>
+            <span>{progressPct}%</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-gray-100">
+            <motion.div
+              className="h-full rounded-full bg-gradient-to-r from-primary-600 via-secondary-500 to-accent-500"
+              initial={false}
+              animate={{ width: `${progressPct}%` }}
+              transition={{ type: "spring", stiffness: 120, damping: 20 }}
+            />
+          </div>
+          {lastUpdatedAt && (
+            <p className="mt-1.5 text-center text-[10px] font-semibold text-gray-400">
+              Updated {lastUpdatedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </p>
+          )}
+        </div>
+      </div>
 
-            <div className="mt-8">
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-surface-100">Current Status</p>
-              <h2 className="mt-2 text-3xl font-black leading-tight">
-                {getStatusText(order)}
+      <main className="mx-auto max-w-lg space-y-4 px-4 pt-4">
+        {/* Hero card */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-primary-900 via-primary-800 to-secondary-700 p-6 text-white shadow-2xl shadow-primary-900/25"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/60">
+                Current status
+              </p>
+              <h2 className="mt-2 text-2xl font-black leading-tight tracking-tight">
+                {getStatusHeadline(order)}
               </h2>
-              <p className="mt-3 text-sm leading-6 text-slate-300">
+              <p className="mt-2 text-sm font-medium leading-relaxed text-white/85">
                 {order.estimatedCompletionTime
                   ? `Estimated ready around ${new Date(order.estimatedCompletionTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`
                   : order.estimatedWaitTime
-                    ? `Typical prep window: about ${order.estimatedWaitTime} minutes after confirmation.`
-                    : "The restaurant updates each stage live — stay on this screen for Socket.IO updates."}
+                    ? `Typical prep window: about ${order.estimatedWaitTime} minutes.`
+                    : "Stay on this screen — we update every stage in real time."}
               </p>
-              {order.kitchenDelayMessage ? (
-                <div className="mt-4 rounded-2xl border border-amber-300/40 bg-amber-500/15 px-4 py-3 text-sm font-semibold text-amber-100">
-                  {order.kitchenDelayMessage}
-                </div>
-              ) : null}
             </div>
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
+              <Flame size={26} className="text-attention-200" />
+            </div>
+          </div>
+          {order.kitchenDelayMessage ? (
+            <div className="mt-4 rounded-2xl border border-amber-300/40 bg-amber-500/20 px-4 py-3 text-sm font-semibold text-amber-50">
+              {order.kitchenDelayMessage}
+            </div>
+          ) : null}
+          <div className="mt-5 flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-bold backdrop-blur">
+              <CircleDot size={12} className="text-emerald-300" />
+              {order.paymentStatus === "paid" ? "Paid" : "Pay after meal"}
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-bold capitalize backdrop-blur">
+              {order.status?.replace(/_/g, " ") || "—"}
+            </span>
+          </div>
+        </motion.section>
 
-            <div className="mt-6 flex items-center justify-between rounded-2xl bg-white/10 p-4">
-              <span className="text-xs font-bold text-slate-300">Total</span>
-              <span className="text-2xl font-black">{formatMoney(grandTotal)}</span>
+        {/* ETA */}
+        <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-50 text-primary-700">
+              <Clock size={22} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+                Estimated preparation
+              </p>
+              <p className="text-sm font-black text-gray-900">{estimatedPrepLabel}</p>
             </div>
           </div>
         </section>
 
-        <section className="mt-5 grid grid-cols-1 gap-3">
-          <div className="rounded-[1.5rem] border border-gray-100 bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
-                <Clock size={20} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-black uppercase text-gray-400">Estimated preparation</p>
-                <p className="text-sm font-black text-gray-900">{estimatedPrepLabel}</p>
-              </div>
-            </div>
-          </div>
-          {canAddMoreItems && (
-            <button
-              type="button"
-              onClick={() => navigate(`/menu/${order.restaurantSlug || order.restaurant?.slug}/${order.tableQrToken}`)}
-              className="flex items-center justify-center gap-2 rounded-[1.5rem] bg-primary-600 px-5 py-4 text-sm font-black text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-700"
-            >
-              <Plus size={18} />
-              Add More Items
-              <UtensilsCrossed size={18} />
-            </button>
-          )}
-        </section>
+        {canAddMoreItems && (
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.98 }}
+            onClick={() =>
+              navigate(
+                `/menu/${order.restaurantSlug || order.restaurant?.slug}/${order.tableQrToken}`,
+              )
+            }
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary-600 to-primary-700 py-4 text-sm font-black text-white shadow-lg shadow-primary-900/25"
+          >
+            <Plus size={18} />
+            Add more items
+            <UtensilsCrossed size={18} />
+          </motion.button>
+        )}
 
-        <section className="mt-5 rounded-[2rem] border border-gray-100 bg-white p-5 shadow-sm">
+        {/* Timeline */}
+        <section
+          ref={timelineRef}
+          className="rounded-[1.75rem] border border-gray-100 bg-white p-5 shadow-sm"
+        >
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h3 className="text-base font-black">Kitchen Progress</h3>
+              <h3 className="text-base font-black text-gray-900">Order timeline</h3>
               <p className="text-xs font-semibold text-gray-400">
-                {lastUpdatedAt ? `Last update ${lastUpdatedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Waiting for update"}
+                {isLive ? "Connected — live" : "Reconnecting…"}
               </p>
             </div>
-              <span className={`rounded-full px-3 py-1 text-[11px] font-black ${isLive ? "bg-primary-50 text-primary-700" : "bg-amber-50 text-amber-700"}`}>
+            <span
+              className={`rounded-full px-3 py-1 text-[10px] font-black uppercase ${
+                isLive ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-800"
+              }`}
+            >
               {isLive ? "Live" : "Polling"}
             </span>
           </div>
 
-          <div className="mb-6">
-            <div className="flex justify-between text-[11px] font-bold text-gray-500">
-              <span>Progress</span>
-              <span>{progressPct}%</span>
-            </div>
-            <div className="mt-2 h-3 w-full overflow-hidden rounded-full bg-gray-100">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-primary-600 to-secondary-500 transition-all duration-500"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {steps.map((step, index) => {
-              const Icon = step.icon;
+          <ol className="relative space-y-0">
+            {timelineSteps.map((row, i) => {
+              const Icon = row.Icon;
+              const isLast = i === timelineSteps.length - 1;
               return (
-                <motion.div
-                  key={step.label}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className={`flex items-center gap-4 rounded-2xl border p-4 ${
-                    step.active
-                      ? "border-orange-200 bg-orange-50"
-                      : step.completed
-                        ? "border-primary-100 bg-primary-50/60"
-                        : "border-gray-100 bg-gray-50"
-                  }`}
-                >
-                  <div
-                    className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
-                      step.completed ? "bg-primary-600 text-white" : step.active ? "bg-secondary-500 text-white" : "bg-white text-gray-400"
-                    }`}
-                  >
-                    {step.completed ? <Check size={18} strokeWidth={3} /> : <Icon size={18} />}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className={`text-sm font-black ${step.completed || step.active ? "text-gray-900" : "text-gray-400"}`}>{step.label}</p>
-                    <p className="text-xs font-semibold text-gray-400">{step.time}</p>
-                  </div>
-                  {step.active && (
-                    <span className="h-2.5 w-2.5 rounded-full bg-orange-500 animate-ping" />
+                <li key={row.key} className="relative flex gap-4 pb-8 last:pb-0">
+                  {!isLast && (
+                    <span
+                      className="absolute left-[22px] top-12 h-[calc(100%-0.5rem)] w-0.5 rounded-full bg-gray-100"
+                      aria-hidden
+                    />
                   )}
-                </motion.div>
+                  <div className="relative z-10 flex shrink-0 flex-col items-center">
+                    <motion.div
+                      layout
+                      className={`flex h-11 w-11 items-center justify-center rounded-2xl border-2 shadow-sm ${
+                        row.completed
+                          ? "border-primary-600 bg-primary-600 text-white"
+                          : row.active
+                            ? "border-secondary-500 bg-secondary-500 text-white ring-4 ring-secondary-500/25"
+                            : "border-gray-200 bg-gray-50 text-gray-400"
+                      }`}
+                    >
+                      {row.completed ? (
+                        <Check size={18} strokeWidth={3} />
+                      ) : (
+                        <Icon size={18} />
+                      )}
+                    </motion.div>
+                    {row.active && (
+                      <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-secondary-400 opacity-75" />
+                        <span className="relative inline-flex h-3 w-3 rounded-full bg-secondary-500" />
+                      </span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1 pt-0.5">
+                    <p
+                      className={`text-sm font-black ${
+                        row.active || row.completed ? "text-gray-900" : "text-gray-400"
+                      }`}
+                    >
+                      {row.label}
+                    </p>
+                    <p className="text-xs font-semibold text-gray-500">{row.caption}</p>
+                    <p className="mt-1 text-[11px] font-bold text-gray-400">{row.timeLabel}</p>
+                  </div>
+                </li>
               );
             })}
-          </div>
+          </ol>
         </section>
 
-        <section className="mt-5 rounded-[2rem] border border-orange-100 bg-orange-50 p-5">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-orange-500 shadow-sm">
-              <Bell size={22} className="animate-bounce" />
+        {/* Order items */}
+        <section className="rounded-[1.75rem] border border-gray-100 bg-white p-5 shadow-sm">
+          <h3 className="text-sm font-black text-gray-900">Your order</h3>
+          <p className="text-xs font-semibold text-gray-400">
+            {order.items?.length || 0} line{(order.items?.length || 0) !== 1 ? "s" : ""}
+          </p>
+          <ul className="mt-4 divide-y divide-gray-100">
+            {(order.items || []).map((item, index) => {
+              const lineTotal = Number(
+                item.subtotal || Number(item.price || 0) * Number(item.quantity || 0),
+              );
+              return (
+                <motion.li
+                  key={`${item.name}-${index}`}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.04 }}
+                  className="flex items-start justify-between gap-3 py-3 first:pt-0"
+                >
+                  <div className="min-w-0">
+                    <p className="font-black text-gray-900">{item.name}</p>
+                    <p className="mt-0.5 text-xs font-semibold text-gray-500">
+                      {item.quantity} × {formatMoney(item.price)}
+                    </p>
+                    {item.specialInstructions ? (
+                      <p className="mt-1 text-[11px] text-gray-500">{item.specialInstructions}</p>
+                    ) : null}
+                  </div>
+                  <p className="shrink-0 text-sm font-black text-gray-900">
+                    {formatMoney(lineTotal)}
+                  </p>
+                </motion.li>
+              );
+            })}
+          </ul>
+        </section>
+
+        <section className="rounded-2xl border border-primary-100 bg-primary-50/50 p-4">
+          <div className="flex gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-primary-600 shadow-sm">
+              <Bell size={20} className="animate-bounce" />
             </div>
-            <div>
-              <p className="text-sm font-black text-gray-900">No need to ask again</p>
-              <p className="text-xs leading-5 text-gray-500">Keep this screen open. It updates when the restaurant confirms, prepares, and serves your order.</p>
-            </div>
+            <p className="text-xs font-semibold leading-relaxed text-primary-900">
+              No need to flag down staff for status — this screen refreshes when the kitchen
+              moves your order forward.
+            </p>
           </div>
         </section>
 
@@ -427,95 +603,66 @@ const OrderTracking = () => {
         )}
 
         {canShowBill && (
-          <section className="mt-5 overflow-hidden rounded-[2rem] border border-gray-100 bg-white shadow-sm">
-            <div className="bg-gray-950 px-5 py-5 text-white">
-              <div className="flex items-center justify-between gap-4">
+          <section className="overflow-hidden rounded-[1.75rem] border border-gray-200 bg-white shadow-lg">
+            <div className="bg-gradient-to-r from-gray-950 to-gray-900 px-5 py-5 text-white">
+              <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Customer Bill</p>
-                  <h3 className="mt-1 text-xl font-black">Order #{order.orderNumber}</h3>
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                    Bill preview
+                  </p>
+                  <h3 className="mt-1 text-lg font-black">Order #{order.orderNumber}</h3>
                 </div>
-                <ReceiptText size={28} className="text-surface-100" />
+                <ReceiptText size={26} className="text-surface-100" />
               </div>
-              <p className="mt-3 text-xs font-semibold text-slate-300">
-                {order.restaurant?.name || "Restaurant"} • Table {order.tableNumber || "N/A"}
+              <p className="mt-2 text-xs text-slate-400">
+                {order.restaurant?.name} · Table {order.tableNumber || "—"}
               </p>
             </div>
-
-            <div className="p-5">
-              <div className="mb-4 grid grid-cols-2 gap-3 text-xs">
-                <div className="rounded-2xl bg-gray-50 p-3">
-                  <p className="font-bold uppercase text-gray-400">Status</p>
-                  <p className="mt-1 font-black capitalize text-green-600">{order.status}</p>
-                </div>
-                <div className="rounded-2xl bg-gray-50 p-3">
-                  <p className="font-bold uppercase text-gray-400">Payment</p>
-                  <p className="mt-1 font-black capitalize text-gray-900">{order.paymentStatus || "pending"}</p>
-                  {order.paymentStatus !== "paid" && order.guestPaymentPreferenceAt ? (
-                    <p className="mt-1 text-[10px] font-semibold leading-relaxed text-gray-500">
-                      You chose{" "}
-                      <span className="font-bold text-gray-800">
-                        {order.paymentMethod === "mixed"
-                          ? `split (cash ${formatMoney(order.guestPaymentPreferenceCash)} + online ${formatMoney(order.guestPaymentPreferenceOnline)})`
-                          : order.paymentMethod || "—"}
-                      </span>
-                      . Staff will mark paid when they collect.
-                    </p>
-                  ) : null}
-                </div>
+            <div className="space-y-2 p-5 text-sm">
+              <div className="flex justify-between font-semibold text-gray-500">
+                <span>Subtotal</span>
+                <span className="font-black text-gray-900">{formatMoney(subtotal)}</span>
               </div>
-
-              <div className="overflow-hidden rounded-2xl border border-gray-100">
-                {(order.items || []).map((item, index) => {
-                  const lineTotal = Number(item.subtotal || Number(item.price || 0) * Number(item.quantity || 0));
-                  return (
-                    <div key={`${item.name}-${index}`} className="flex items-start justify-between gap-3 border-b border-gray-100 px-4 py-3 last:border-b-0">
-                      <div>
-                        <p className="text-sm font-black text-gray-900">{item.name}</p>
-                        <p className="mt-1 text-xs font-semibold text-gray-400">
-                          {item.quantity} x {formatMoney(item.price)}
-                        </p>
-                        {item.specialInstructions ? (
-                          <p className="mt-1 text-[11px] text-gray-500">{item.specialInstructions}</p>
-                        ) : null}
-                      </div>
-                      <p className="text-sm font-black text-gray-900">{formatMoney(lineTotal)}</p>
-                    </div>
-                  );
-                })}
+              <div className="flex justify-between font-semibold text-gray-500">
+                <span>Tax</span>
+                <span className="font-black text-gray-900">{formatMoney(taxAmount)}</span>
               </div>
-
-              <div className="mt-4 space-y-2 rounded-2xl bg-gray-50 p-4 text-sm">
-                <div className="flex justify-between">
-                  <span className="font-semibold text-gray-500">Subtotal</span>
-                  <span className="font-bold text-gray-900">{formatMoney(subtotal)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold text-gray-500">Tax</span>
-                  <span className="font-bold text-gray-900">{formatMoney(taxAmount)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold text-gray-500">Service charge</span>
-                  <span className="font-bold text-gray-900">{formatMoney(serviceChargeAmount)}</span>
-                </div>
-                {discountAmount > 0 && (
-                  <div className="flex justify-between">
-                    <span className="font-semibold text-gray-500">Discount</span>
-                    <span className="font-bold text-green-600">- {formatMoney(discountAmount)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between border-t border-gray-200 pt-3 text-base">
-                  <span className="font-black text-gray-900">Grand Total</span>
-                  <span className="font-black text-orange-500">{formatMoney(grandTotal)}</span>
-                </div>
+              <div className="flex justify-between font-semibold text-gray-500">
+                <span>Service</span>
+                <span className="font-black text-gray-900">{formatMoney(serviceChargeAmount)}</span>
               </div>
-
-              <p className="mt-4 text-center text-xs font-semibold text-gray-400">
-                Thank you for dining with us.
-              </p>
+              {discountAmount > 0 && (
+                <div className="flex justify-between font-semibold text-emerald-700">
+                  <span>Discount</span>
+                  <span className="font-black">− {formatMoney(discountAmount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t border-gray-100 pt-3 text-base">
+                <span className="font-black text-gray-900">Grand total</span>
+                <span className="font-black text-primary-700">{formatMoney(grandTotal)}</span>
+              </div>
+            </div>
+            <div className="border-t border-gray-100 px-5 pb-5">
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.98 }}
+                onClick={() => navigate(`/order/bill/${qrToken}`)}
+                className="w-full rounded-2xl border border-gray-200 bg-gray-50 py-3 text-sm font-black text-gray-900 transition hover:bg-gray-100"
+              >
+                Open full receipt
+              </motion.button>
             </div>
           </section>
         )}
       </main>
+
+      <OrderTrackingFab
+        qrToken={qrToken}
+        showBill={canShowBill}
+        menuHref={menuHref || undefined}
+        onScrollToTimeline={scrollToTimeline}
+      />
+
       <Feedback
         isOpen={showFeedback}
         onClose={() => setShowFeedback(false)}
