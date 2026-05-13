@@ -222,7 +222,7 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const loginBranch = async (restaurantId, portalKey, branchSlug, username, password, ownerEmail = '') => {
+  const loginBranch = async (restaurantId, portalKey, branchSlug, username, password) => {
     try {
       const response = await api.post('/restaurant/branch-auth/login', {
         restaurantId: String(restaurantId).trim(),
@@ -230,7 +230,6 @@ export const AuthProvider = ({ children }) => {
         branchSlug: String(branchSlug).trim().toLowerCase(),
         username: username.trim(),
         password,
-        ownerEmail: String(ownerEmail || '').trim(),
       })
       const { token: newToken, user: userData } = response.data.data || {}
       const authUser = { ...userData, scope: 'branch_user' }
@@ -258,13 +257,12 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const loginBranchEmail = async (identifier, restaurantId, ownerEmail, password) => {
+  const loginBranchEmail = async (identifier, restaurantId, password) => {
     try {
       const response = await api.post('/auth/login', {
         identifier: String(identifier || '').trim(),
         password,
         restaurantId: String(restaurantId || '').trim(),
-        ownerEmail: String(ownerEmail || '').trim(),
       })
       const { token: newToken, user: userData } = response.data.data || {}
       const authUser = { ...userData, scope: 'branch_user' }

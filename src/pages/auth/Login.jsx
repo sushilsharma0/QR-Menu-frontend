@@ -200,7 +200,6 @@ const Login = () => {
         await loginBranchEmail(
           data.email,
           data.restaurantIdBranch,
-          data.ownerEmailBranch || '',
           data.password,
         )
       } else if (role === 'employee') {
@@ -295,7 +294,7 @@ const Login = () => {
 
           {role === 'restaurant' && isBranchLogin && (
             <div className="mb-5 rounded-lg border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
-              Branch outlet login: enter your <strong>@branch.com</strong> username, <strong>Restaurant ID</strong>, the <strong>branch owner Gmail</strong> you verified at setup (when required), and your password.
+              Branch outlet login: enter your <strong>@branch.com</strong> username, <strong>Restaurant ID</strong>, and your password.
             </div>
           )}
 
@@ -351,15 +350,6 @@ const Login = () => {
                         required: 'Restaurant ID is required for branch login',
                       })}
                       error={errors.restaurantIdBranch?.message}
-                    />
-                    <Input
-                      label="Branch owner Gmail"
-                      icon={FiMail}
-                      type="email"
-                      autoComplete="email"
-                      placeholder="owner@gmail.com (required if your outlet uses owner verification)"
-                      {...register('ownerEmailBranch')}
-                      error={errors.ownerEmailBranch?.message}
                     />
                   </>
                 )}

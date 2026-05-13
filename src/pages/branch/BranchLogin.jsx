@@ -14,7 +14,6 @@ export default function BranchLogin() {
   const [manualPortalKey, setManualPortalKey] = useState('')
   const [manualBranchSlug, setManualBranchSlug] = useState('')
   const [username, setUsername] = useState('')
-  const [ownerGmail, setOwnerGmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -31,7 +30,7 @@ export default function BranchLogin() {
       }
       setLoading(true)
       try {
-        await loginBranchEmail(username.trim(), manualRestaurantId.trim(), ownerGmail.trim(), password)
+        await loginBranchEmail(username.trim(), manualRestaurantId.trim(), password)
       } finally {
         setLoading(false)
       }
@@ -44,7 +43,7 @@ export default function BranchLogin() {
     }
     setLoading(true)
     try {
-      await loginBranch(restaurantId, portalKey, branchSlug, username, password, ownerGmail.trim())
+      await loginBranch(restaurantId, portalKey, branchSlug, username, password)
     } finally {
       setLoading(false)
     }
@@ -98,14 +97,6 @@ export default function BranchLogin() {
             </>
           )}
           <Input label="Username or branch email" value={username} onChange={(ev) => setUsername(ev.target.value)} autoComplete="username" required />
-          <Input
-            label="Branch owner Gmail (if your outlet uses it)"
-            type="email"
-            value={ownerGmail}
-            onChange={(ev) => setOwnerGmail(ev.target.value)}
-            autoComplete="email"
-            placeholder="owner@gmail.com"
-          />
           <Input label="Password" type="password" value={password} onChange={(ev) => setPassword(ev.target.value)} autoComplete="current-password" required />
           <Button type="submit" className="w-full" loading={loading}>
             Sign in
