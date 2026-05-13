@@ -1,18 +1,17 @@
 import React, { useEffect, useState } from "react";
 import {
   BadgePlus,
-  ChefHat,
-  ClipboardList,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
   LogIn,
   Menu,
-  MessageSquare,
-  Phone,
   QrCode,
-  Radio,
-  Tag,
   User,
   Utensils,
+  UtensilsCrossed,
 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Link, useParams } from "react-router-dom";
 import SideBar from "../../../components/customer/homepage/SideBar";
 import UserProfile from "../../../components/customer/homepage/UserProfile";
@@ -62,6 +61,11 @@ export default function Home() {
   const [loyaltyPoints, setLoyaltyPoints] = useState(null);
   const [showGuestAssist, setShowGuestAssist] = useState(false);
   const [assistSending, setAssistSending] = useState(false);
+  // Inline menu state — keeps the customer on the home page while letting
+  // them peek at and then expand the full menu without a navigation.
+  const [menuCategories, setMenuCategories] = useState([]);
+  const [menuLoading, setMenuLoading] = useState(true);
+  const [menuExpanded, setMenuExpanded] = useState(false);
   const { slug, token } = useParams();
 
   const restaurantDisplayName = slug
@@ -140,6 +144,45 @@ export default function Home() {
     }
   };
 
+  // Fetch the public menu so we can show a small preview on the home page
+  // and let the customer expand it inline (with a smooth animation) instead
+  // of jumping to a separate /menu route just to glance at categories.
+  useEffect(() => {
+    if (!slug) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        setMenuLoading(true);
+        const qs = token ? `?qrToken=${encodeURIComponent(token)}` : "";
+        const res = await api.get(`/restaurant/menu/public/${slug}${qs}`);
+        const data = res?.data?.data?.menu || [];
+        if (!cancelled) setMenuCategories(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to load menu preview:", err);
+        if (!cancelled) setMenuCategories([]);
+      } finally {
+        if (!cancelled) setMenuLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, token]);
+
+  const toggleMenuExpanded = () => {
+    setMenuExpanded((v) => {
+      const next = !v;
+      // When expanding, scroll the page so the menu starts near the top —
+      // matches the "top section goes up and hides" intent of the UX.
+      if (next) {
+        requestAnimationFrame(() =>
+          window.scrollTo({ top: 0, behavior: "smooth" }),
+        );
+      }
+      return next;
+    });
+  };
+
   const fetchPromoBanners = async () => {
     try {
       if (!slug) return;
@@ -158,25 +201,6 @@ export default function Home() {
 
   const handleScanSuccess = (data) => {
     toast.success(`QR scanned: ${data}`);
-  };
-
-  const shareMenuLink = async () => {
-    const path = `/menu/${slug}/${token}`;
-    const url = `${window.location.origin}${path}`;
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: restaurantInfo?.name || "Menu",
-          text: "Order from our table menu",
-          url,
-        });
-      } else {
-        window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, "_blank");
-      }
-    } catch {
-      await navigator.clipboard?.writeText?.(url);
-      toast.success("Menu link copied");
-    }
   };
 
   const sendGuestRequest = async (requestType) => {
@@ -326,173 +350,145 @@ export default function Home() {
   return (
     <PageTransition>
       <div className="min-h-screen bg-[#fafaf7] flex flex-col items-center pb-28 font-sans text-gray-950">
-        <div
-          className="relative flex min-h-[54vh] w-full flex-col items-center justify-center overflow-hidden bg-cover bg-center p-6 text-white"
-          style={{
-            backgroundImage: `linear-gradient(180deg, rgba(15,23,42,0.28), rgba(15,23,42,0.9)), url('${heroImage}')`,
-          }}
-        >
-          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#fafaf7] to-transparent" />
-
-          <div className="absolute left-0 right-0 top-6 z-20 flex justify-between px-6">
-            <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="rounded-xl border border-white/30 bg-white/20 p-2.5 text-white backdrop-blur-md transition-all active:scale-90"
-              aria-label="Open menu"
+        {/* Top hero + table card. We collapse this whole block when the
+            customer expands the inline menu — that's the "top section goes
+            up and hides" animation the new design calls for. */}
+        <AnimatePresence initial={false}>
+          {!menuExpanded && (
+            <motion.div
+              key="home-hero-block"
+              initial={false}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -80, scale: 0.98 }}
+              transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
+              className="flex w-full flex-col items-center"
             >
-              <Menu size={20} />
-            </button>
-            <button
-              onClick={() => setIsProfileOpen(true)}
-              className="rounded-xl border border-white/30 bg-white/20 p-2.5 text-white backdrop-blur-md transition-all active:scale-90"
-              aria-label="Open profile"
-            >
-              <User size={20} />
-            </button>
-          </div>
+              {/* Compact hero — smaller min-h, tighter content, fade into bg. */}
+              <div
+                className="relative flex min-h-[32vh] w-full flex-col items-center justify-center overflow-hidden bg-cover bg-center px-6 pb-10 pt-14 text-white"
+                style={{
+                  backgroundImage: `linear-gradient(180deg, rgba(15,23,42,0.32), rgba(15,23,42,0.88)), url('${heroImage}')`,
+                }}
+              >
+                <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#fafaf7] to-transparent" />
 
-          <div className="relative z-10 text-center">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center overflow-hidden rounded-3xl border border-white/25 bg-white/20 shadow-2xl backdrop-blur-md">
-              {restaurantInfo?.logo ? (
-                <img src={restaurantInfo.logo} alt={restaurantInfo?.name || "Restaurant"} className="h-full w-full object-cover" />
-              ) : (
-                <Utensils size={34} />
+                <div className="absolute left-0 right-0 top-5 z-20 flex justify-between px-5">
+                  <button
+                    onClick={() => setIsSidebarOpen(true)}
+                    className="rounded-xl border border-white/30 bg-white/20 p-2.5 text-white backdrop-blur-md transition-all active:scale-90"
+                    aria-label="Open menu"
+                  >
+                    <Menu size={20} />
+                  </button>
+                  <button
+                    onClick={() => setIsProfileOpen(true)}
+                    className="rounded-xl border border-white/30 bg-white/20 p-2.5 text-white backdrop-blur-md transition-all active:scale-90"
+                    aria-label="Open profile"
+                  >
+                    <User size={20} />
+                  </button>
+                </div>
+
+                <div className="relative z-10 flex flex-col items-center text-center">
+                  <div className="mb-2 flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-white/25 bg-white/15 shadow-xl backdrop-blur">
+                    {restaurantInfo?.logo ? (
+                      <img src={restaurantInfo.logo} alt={restaurantInfo?.name || "Restaurant"} className="h-full w-full object-cover" />
+                    ) : (
+                      <Utensils size={22} />
+                    )}
+                  </div>
+                  <p className="mb-1.5 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-2 py-1 text-[9px] font-black uppercase tracking-[0.2em] backdrop-blur">
+                    <QrCode size={10} />
+                    QR table ordering
+                  </p>
+                  <h1 className="text-2xl font-black tracking-tight">{restaurantInfo?.name || restaurantDisplayName}</h1>
+                  <p className="mx-auto mt-1.5 max-w-[20rem] text-[11px] leading-5 text-white/80">
+                    {(() => {
+                      const clean = (s) => {
+                        const v = typeof s === "string" ? s.trim() : "";
+                        return !v || v.toLowerCase() === "undefined" || v.toLowerCase() === "null" ? "" : v;
+                      };
+                      return (
+                        clean(restaurantInfo?.tagline) ||
+                        clean(restaurantInfo?.description) ||
+                        "Order directly from your table."
+                      );
+                    })()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Slim glass info chip — replaces the heavy white card. Three
+                  segments: Table | Reward pts | Scan another. */}
+              <div className="relative -mt-6 z-10 flex w-[92%] max-w-md items-center gap-2 rounded-2xl border border-white/60 bg-white/95 p-2 shadow-[0_10px_30px_-12px_rgba(15,23,42,0.18)] backdrop-blur-xl">
+                <div className="flex flex-1 items-center gap-2 rounded-xl bg-gray-50/80 px-3 py-2">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Table</span>
+                  <span className="ml-auto text-lg font-black leading-none text-gray-950">
+                    {loading ? "--" : tableNumber.toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex flex-1 items-center gap-2 rounded-xl bg-primary-50/80 px-3 py-2">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-primary-600">Reward</span>
+                  <span className="ml-auto text-sm font-black leading-none text-primary-800">
+                    {loyaltyPoints != null ? loyaltyPoints : 0} pts
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsScannerOpen(true)}
+                  aria-label="Scan another QR"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-950 text-white shadow-sm transition active:scale-95"
+                >
+                  <QrCode size={15} />
+                </button>
+              </div>
+
+              {promoBanners.length > 0 && (
+                <div className="mt-6 w-[90%] max-w-md space-y-3">
+                  {promoBanners.slice(0, 2).map((promo) => (
+                    <div key={promo._id} className="overflow-hidden rounded-3xl border border-orange-100 bg-white p-4 shadow-sm">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-500">Today&apos;s offer</p>
+                          <h3 className="mt-1 text-base font-black text-gray-950">{promo.bannerText || promo.name}</h3>
+                          <p className="mt-1 text-xs font-semibold text-gray-500">Use code {promo.code} on checkout</p>
+                        </div>
+                        <div className="rounded-2xl px-3 py-2 text-sm font-black text-white" style={{ backgroundColor: promo.bannerColor || "#f97316" }}>
+                          {promo.discountType === "percent" ? `${promo.discountValue}%` : `Rs. ${promo.discountValue}`}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
-            </div>
-            <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3 py-2 text-[11px] font-black uppercase tracking-[0.2em] backdrop-blur">
-              <QrCode size={14} />
-              QR table ordering
-            </p>
-            <h1 className="text-4xl font-black tracking-tight">{restaurantInfo?.name || restaurantDisplayName}</h1>
-            <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-white/85">
-              {(() => {
-                const clean = (s) => {
-                  const v = typeof s === "string" ? s.trim() : "";
-                  return !v || v.toLowerCase() === "undefined" || v.toLowerCase() === "null" ? "" : v;
-                };
-                return (
-                  clean(restaurantInfo?.tagline) ||
-                  clean(restaurantInfo?.description) ||
-                  "Browse, order, and track your food directly from this table."
-                );
-              })()}
-            </p>
-          </div>
-        </div>
-
-        <div className="relative -mt-20 flex w-[90%] max-w-md flex-col items-center rounded-[2rem] border border-gray-100 bg-white p-6 text-center shadow-xl">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-gray-500">Your Table</p>
-          <h2 className="my-2 text-6xl font-black text-slate-950">{loading ? "--" : tableNumber.toUpperCase()}</h2>
-          <div className="grid w-full grid-cols-3 gap-2 rounded-2xl bg-gray-50 p-2 text-[10px] font-black text-gray-500">
-            <span className="rounded-xl bg-white py-2">Scan</span>
-            <span className="rounded-xl bg-white py-2">Order</span>
-            <span className="rounded-xl bg-white py-2">Track</span>
-          </div>
-
-          <button
-            onClick={() => setIsScannerOpen(true)}
-            className="mt-4 flex items-center gap-2 text-xs text-gray-400 transition-colors hover:text-orange-500"
-          >
-            <QrCode size={14} /> Scan another QR code
-          </button>
-          {loyaltyPoints != null && (
-            <p className="mt-3 text-sm font-bold text-primary-700">
-              Your reward points: {loyaltyPoints} pts
-            </p>
+            </motion.div>
           )}
-          <Link
-            to={`/menu/${slug}/${token}`}
-            className="mt-6 w-full rounded-2xl bg-primary-600 py-4 font-black text-white shadow-lg shadow-primary-900/20 transition-all active:scale-95"
-          >
-            View Menu
-          </Link>
-          <button
-            type="button"
-            onClick={shareMenuLink}
-            className="mt-3 w-full rounded-2xl border border-gray-200 py-3 text-sm font-black text-gray-800 transition-all active:scale-95"
-          >
-            Share menu (WhatsApp / apps)
-          </button>
-          <p className="mt-2 text-[10px] font-semibold text-gray-400">
-            Install this menu like an app: use your browser &quot;Add to Home Screen&quot; for quick reopen and offline-friendly caching (PWA).
-          </p>
-        </div>
+        </AnimatePresence>
 
-        <div className="mt-6 grid w-[90%] max-w-md grid-cols-3 gap-3">
-          {[
-            { icon: ClipboardList, label: "Choose", text: "Add dishes" },
-            { icon: ChefHat, label: "Kitchen", text: "Order sent" },
-            { icon: Radio, label: "Live", text: "Track status" },
-          ].map((step) => {
-            const Icon = step.icon;
-            return (
-              <div key={step.label} className="rounded-3xl border border-gray-100 bg-white p-4 text-center shadow-sm">
-              <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-50 text-primary-700">
-                  <Icon size={19} />
-                </div>
-                <p className="text-xs font-black text-gray-900">{step.label}</p>
-                <p className="mt-0.5 text-[10px] font-semibold text-gray-400">{step.text}</p>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="mt-6 grid w-[90%] max-w-md grid-cols-3 gap-4">
-          <button
-            type="button"
-            onClick={() => setShowGuestAssist(true)}
-            className="flex flex-col items-center justify-center rounded-2xl border border-gray-100 bg-white p-4 shadow-sm active:bg-gray-100"
-          >
-            <div className="mb-2 rounded-full bg-orange-50 p-3 text-orange-500">
-              <Phone size={20} />
-            </div>
-            <span className="text-xs font-semibold text-gray-700">Call / assist</span>
-          </button>
-
-          <button onClick={() => setShowOffers(true)} className="relative flex flex-col items-center justify-center rounded-2xl border border-gray-100 bg-white p-4 shadow-sm active:bg-gray-100">
-            {promoBanners.length > 0 && (
-              <div className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-red-500 text-[10px] font-bold text-white">
-                {promoBanners.length}
-              </div>
-            )}
-            <div className="mb-2 rounded-full bg-orange-50 p-3 text-orange-500">
-              <Tag size={20} />
-            </div>
-            <span className="text-xs font-semibold text-gray-700">Offers</span>
-          </button>
-
-          <button onClick={() => setShowFeedback(true)} className="flex flex-col items-center justify-center rounded-2xl border border-gray-100 bg-white p-4 shadow-sm active:bg-gray-100">
-            <div className="mb-2 rounded-full bg-orange-50 p-3 text-orange-500">
-              <MessageSquare size={20} />
-            </div>
-            <span className="text-xs font-semibold text-gray-700">Feedback</span>
-          </button>
-        </div>
-
-        {promoBanners.length > 0 && (
-          <div className="mt-6 w-[90%] max-w-md space-y-3">
-            {promoBanners.slice(0, 2).map((promo) => (
-              <div key={promo._id} className="overflow-hidden rounded-3xl border border-orange-100 bg-white p-4 shadow-sm">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-500">Today&apos;s offer</p>
-                    <h3 className="mt-1 text-base font-black text-gray-950">{promo.bannerText || promo.name}</h3>
-                    <p className="mt-1 text-xs font-semibold text-gray-500">Use code {promo.code} on checkout</p>
-                  </div>
-                  <div className="rounded-2xl px-3 py-2 text-sm font-black text-white" style={{ backgroundColor: promo.bannerColor || "#f97316" }}>
-                    {promo.discountType === "percent" ? `${promo.discountValue}%` : `Rs. ${promo.discountValue}`}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Inline menu list — always visible. Shows the first 3 categories
+            as a preview; tapping "View full menu" expands to the full list
+            and (via AnimatePresence above) the hero block slides up out. */}
+        <MenuPreview
+          slug={slug}
+          token={token}
+          categories={menuCategories}
+          loading={menuLoading}
+          expanded={menuExpanded}
+          onToggle={toggleMenuExpanded}
+        />
 
         <p className="mt-12 text-xs text-gray-400">
           Powered by <span className="font-bold uppercase tracking-widest text-gray-600 text-[10px]">QR Restro Nepal</span>
         </p>
 
-        <SideBar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        <SideBar
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          onCallAssist={() => setShowGuestAssist(true)}
+          onOffers={() => setShowOffers(true)}
+          onFeedback={() => setShowFeedback(true)}
+          offersCount={promoBanners.length}
+        />
         <UserProfile
           isOpen={isProfileOpen}
           onClose={() => {
@@ -595,5 +591,341 @@ export default function Home() {
         <Navigation />
       </div>
     </PageTransition>
+  );
+}
+
+/**
+ * Maps the current local hour to a "daypart" — the slot of day used to bias
+ * the featured-item picker (breakfast at 7am, lunch at noon, etc). Patterns
+ * are tested against both category names and item names so a restaurant that
+ * uses "Chiya & coffee" or "Lunch thali" surfaces at the right hour.
+ */
+function getDaypart(date = new Date()) {
+  const hour = date.getHours();
+  if (hour < 10)
+    return {
+      key: "breakfast",
+      label: "Breakfast",
+      tagline: "Start your day right",
+      patterns: /breakfast|brunch|coffee|tea|chiya|morning|set|toast|egg/i,
+    };
+  if (hour < 12)
+    return {
+      key: "brunch",
+      label: "Brunch",
+      tagline: "Mid-morning picks",
+      patterns: /brunch|breakfast|coffee|tea|chiya|set|toast|sandwich/i,
+    };
+  if (hour < 15)
+    return {
+      key: "lunch",
+      label: "Lunch",
+      tagline: "Lunchtime favourites",
+      patterns: /lunch|main|rice|noodle|momo|burger|pizza|thali|set|chowmein|biryani/i,
+    };
+  if (hour < 18)
+    return {
+      key: "snacks",
+      label: "Snacks",
+      tagline: "Easy bites for the afternoon",
+      patterns: /snack|appetizer|starter|chiya|coffee|tea|momo|chowmein|fried|chaat|samosa/i,
+    };
+  if (hour < 22)
+    return {
+      key: "dinner",
+      label: "Dinner",
+      tagline: "Dinner picks",
+      patterns: /dinner|main|special|grill|tandoor|biryani|rice|momo|pizza|burger|thali/i,
+    };
+  return {
+    key: "late",
+    label: "Late night",
+    tagline: "Late-night cravings",
+    patterns: /dessert|drink|chiya|coffee|tea|cake|sweet|cold/i,
+  };
+}
+
+/**
+ * Picks `count` items from the menu, ranked by:
+ *   1. category/name matching the current daypart (Breakfast → /breakfast|coffee/...)
+ *   2. flagged popular/featured items
+ *   3. category sort order as a stable tiebreaker
+ * Returns an empty array when the menu hasn't loaded yet.
+ */
+function pickFeaturedItems(categories, count = 4) {
+  const daypart = getDaypart();
+  const pool = [];
+  (categories || []).forEach((cat) => {
+    (cat.items || []).forEach((it) => {
+      if (it?.isAvailable === false) return;
+      const matchesDaypart =
+        daypart.patterns.test(cat?.name || "") ||
+        daypart.patterns.test(it?.name || "");
+      pool.push({
+        ...it,
+        _categoryName: cat?.name || "",
+        _categoryImage: cat?.image || null,
+        _matchesDaypart: matchesDaypart,
+      });
+    });
+  });
+
+  pool.sort((a, b) => {
+    if (a._matchesDaypart !== b._matchesDaypart)
+      return Number(b._matchesDaypart) - Number(a._matchesDaypart);
+    const aPop = a.isPopular || a.popular || a.featured ? 1 : 0;
+    const bPop = b.isPopular || b.popular || b.featured ? 1 : 0;
+    if (aPop !== bPop) return bPop - aPop;
+    return (a.name || "").localeCompare(b.name || "");
+  });
+
+  return { items: pool.slice(0, count), daypart };
+}
+
+/**
+ * Inline menu shown on the customer Home page. Two visual modes:
+ *
+ *   - collapsed: 4 featured items in a 2×2 card grid, chosen dynamically by
+ *     time of day (breakfast/lunch/snacks/dinner/late). Tapping a card opens
+ *     the item details page.
+ *   - expanded: the full categories list slides in (with the hero block
+ *     collapsing upward via AnimatePresence in the parent).
+ */
+function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
+  const FEATURED_COUNT = 4;
+  // Recompute featured items on every render — cheap enough and keeps the
+  // selection in sync if the daypart crosses an hour while the page is open.
+  const { items: featuredItems, daypart } = pickFeaturedItems(
+    categories,
+    FEATURED_COUNT,
+  );
+  const hasFeatured = featuredItems.length > 0;
+  const moreCount = expanded ? 0 : categories.length;
+
+  return (
+    <section className="mt-5 w-[92%] max-w-md">
+      <div className="mb-3 flex items-end justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-primary-700">
+            {expanded ? "Full menu" : `${daypart.label} picks`}
+          </p>
+          <h3 className="mt-1 flex items-center gap-2 text-lg font-black leading-tight text-gray-950">
+            <UtensilsCrossed size={18} className="text-primary-600" />
+            {expanded
+              ? `${categories.length} categor${categories.length === 1 ? "y" : "ies"}`
+              : daypart.tagline}
+          </h3>
+        </div>
+        {expanded && (
+          <motion.button
+            type="button"
+            onClick={onToggle}
+            whileTap={{ scale: 0.95 }}
+            className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-[11px] font-black text-gray-700 shadow-sm"
+          >
+            <ChevronUp size={14} />
+            Close
+          </motion.button>
+        )}
+      </div>
+
+      <AnimatePresence mode="wait" initial={false}>
+        {loading ? (
+          <motion.ul
+            key="skeleton"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="grid grid-cols-2 gap-3"
+          >
+            {Array.from({ length: 4 }).map((_, i) => (
+              <li
+                key={i}
+                className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm"
+              >
+                <div className="aspect-[5/4] w-full animate-pulse bg-gray-100" />
+                <div className="space-y-2 p-3">
+                  <div className="h-3 w-2/3 animate-pulse rounded-full bg-gray-100" />
+                  <div className="h-2.5 w-1/3 animate-pulse rounded-full bg-gray-100" />
+                </div>
+              </li>
+            ))}
+          </motion.ul>
+        ) : !expanded ? (
+          // Collapsed: 2×2 grid of featured items.
+          hasFeatured ? (
+            <motion.ul
+              key="featured-items"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.28 }}
+              className="grid grid-cols-2 gap-3"
+            >
+              {featuredItems.map((item, idx) => (
+                <motion.li
+                  key={item._id || item.name}
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.32,
+                    delay: idx * 0.04,
+                    ease: [0.32, 0.72, 0, 1],
+                  }}
+                >
+                  <FeaturedItemCard slug={slug} token={token} item={item} />
+                </motion.li>
+              ))}
+            </motion.ul>
+          ) : (
+            <motion.div
+              key="empty-featured"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="rounded-3xl border border-dashed border-gray-200 bg-white p-8 text-center"
+            >
+              <p className="text-sm font-black text-gray-800">Menu coming soon</p>
+              <p className="mt-1 text-xs font-semibold text-gray-400">
+                The restaurant hasn&apos;t published items yet.
+              </p>
+            </motion.div>
+          )
+        ) : (
+          // Expanded: full categories list (slides in as hero exits).
+          <motion.ul
+            key="full-categories"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
+            className="space-y-3"
+          >
+            {categories.map((cat, idx) => (
+              <motion.li
+                key={cat._id || cat.name}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.32,
+                  delay: idx * 0.04,
+                  ease: [0.32, 0.72, 0, 1],
+                }}
+              >
+                <Link
+                  to={`/item/${slug}/${token}/${cat.name}`}
+                  className="group flex items-center gap-3 rounded-3xl border border-gray-100 bg-white p-3 shadow-sm transition active:scale-[0.98] hover:border-primary-200"
+                >
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-100">
+                    {cat.image ? (
+                      <img
+                        src={cat.image}
+                        alt={cat.name}
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-gray-300">
+                        <UtensilsCrossed size={22} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-black text-gray-900">
+                      {cat.name}
+                    </p>
+                    <p className="mt-0.5 truncate text-[11px] font-semibold text-gray-400">
+                      {Array.isArray(cat.items) && cat.items.length > 0
+                        ? `${cat.items.length} item${cat.items.length > 1 ? "s" : ""}`
+                        : cat.description || "Tap to explore"}
+                    </p>
+                  </div>
+                  <div className="rounded-full bg-gray-50 p-2 text-gray-500 transition-colors group-hover:bg-primary-50 group-hover:text-primary-600">
+                    <ChevronRight size={16} />
+                  </div>
+                </Link>
+              </motion.li>
+            ))}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+
+      {(categories.length > 0 || expanded) && (
+        <motion.button
+          type="button"
+          onClick={onToggle}
+          whileTap={{ scale: 0.97 }}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-primary-200 bg-white py-3 text-sm font-black text-primary-700 shadow-sm transition active:bg-primary-50"
+        >
+          {expanded
+            ? "Show less"
+            : moreCount > 0
+              ? `View full menu · ${moreCount} categor${moreCount === 1 ? "y" : "ies"}`
+              : "View full menu"}
+          <motion.span
+            animate={
+              expanded
+                ? { rotate: 180, y: 0 }
+                : { rotate: 0, y: [0, 4, 0] }
+            }
+            transition={
+              expanded
+                ? { duration: 0.3 }
+                : { duration: 1.2, repeat: Infinity, ease: "easeInOut" }
+            }
+            className="inline-flex"
+          >
+            <ChevronDown size={18} />
+          </motion.span>
+        </motion.button>
+      )}
+    </section>
+  );
+}
+
+/**
+ * Card used in the 2×2 featured grid. Falls back to the category image when
+ * the item itself has no photo, so the grid never looks empty.
+ */
+function FeaturedItemCard({ slug, token, item }) {
+  const image = item.image || item._categoryImage || "";
+  const price = Number(item.price ?? item.basePrice ?? 0);
+  const isPopular = Boolean(item.isPopular || item.popular || item.featured);
+  return (
+    <Link
+      to={`/item-detail/${slug}/${token}/${item._id}`}
+      className="group block overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm transition active:scale-[0.97]"
+    >
+      <div className="relative aspect-[5/4] w-full overflow-hidden bg-gray-100">
+        {image ? (
+          <img
+            src={image}
+            alt={item.name}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-gray-300">
+            <UtensilsCrossed size={28} />
+          </div>
+        )}
+        {isPopular && (
+          <span className="absolute left-2 top-2 rounded-full bg-amber-400/95 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-950 shadow">
+            Popular
+          </span>
+        )}
+        <span className="absolute bottom-2 right-2 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-black text-primary-700 shadow">
+          Rs. {price.toFixed(0)}
+        </span>
+      </div>
+      <div className="p-2.5">
+        <p className="text-[9px] font-black uppercase tracking-wider text-primary-600">
+          {item._categoryName || "Featured"}
+        </p>
+        <p className="mt-0.5 line-clamp-1 text-sm font-black leading-tight text-gray-900">
+          {item.name}
+        </p>
+      </div>
+    </Link>
   );
 }

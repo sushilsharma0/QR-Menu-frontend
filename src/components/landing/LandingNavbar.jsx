@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowRight, Menu, X } from 'lucide-react'
 import BrandLogo from './BrandLogo'
 import { navItems } from './landingDefaults'
@@ -9,7 +9,7 @@ const NavLink = ({ item, onClick, isActive = false }) => (
   <a
     href={item.href}
     onClick={(event) => onClick(event, item.href)}
-    className={`rounded-full px-4 py-2 text-sm font-black transition ${
+    className={`relative rounded-full px-3 py-2 text-sm font-black transition-all duration-300 xl:px-4 ${
       isActive
         ? 'bg-white text-primary-700 shadow-sm'
         : 'text-slate-600 hover:bg-white hover:text-primary-700 hover:shadow-sm'
@@ -83,12 +83,17 @@ const LandingNavbar = () => {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 px-3 py-3 sm:px-5">
+      <motion.header
+        initial={{ y: -30, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="fixed inset-x-0 top-0 z-50 px-2 py-2 sm:px-5 sm:py-3"
+      >
         <nav
-          className={`mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center rounded-2xl border px-4 backdrop-blur-xl transition-all lg:px-5 ${
+          className={`mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center rounded-2xl border px-3 backdrop-blur-xl transition-all duration-300 sm:px-4 lg:px-5 ${
             scrolled
-              ? 'h-14 border-surface-300 bg-white/95 shadow-2xl shadow-slate-900/10'
-              : 'h-16 border-white/80 bg-white/90 shadow-xl shadow-slate-900/5'
+              ? 'h-13 border-surface-300 bg-white/95 shadow-2xl shadow-slate-900/10 sm:h-14'
+              : 'h-14 border-white/80 bg-white/90 shadow-xl shadow-slate-900/5 sm:h-16'
           }`}
         >
           <BrandLogo />
@@ -106,68 +111,116 @@ const LandingNavbar = () => {
             </div>
           </div>
 
-          <div className="hidden items-center justify-end gap-3 lg:flex">
-            <Link to="/vendor/login" className="rounded-xl px-4 py-2 text-sm font-black text-slate-700 transition hover:bg-slate-100">
+          <div className="hidden items-center justify-end gap-2 lg:flex xl:gap-3">
+            <Link
+              to="/vendor/login"
+              className="rounded-xl px-3 py-2 text-sm font-black text-slate-700 transition-all duration-300 hover:bg-slate-100 hover:text-primary-700 xl:px-4"
+            >
               Login
             </Link>
-            <Link to="/vendor/register" className="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-primary-900/20 transition hover:-translate-y-0.5 hover:bg-primary-700">
+            <Link
+              to="/vendor/register"
+              className="group inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-primary-900/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-700 hover:shadow-primary-900/30 xl:px-5"
+            >
               Start Free
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
             </Link>
           </div>
 
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="ml-auto flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-800 lg:hidden"
+            className="ml-auto flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-800 transition-all duration-300 hover:scale-105 hover:border-primary-200 hover:text-primary-700 active:scale-95 sm:h-10 sm:w-10 lg:hidden"
             aria-label="Open menu"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
         </nav>
-      </header>
+      </motion.header>
 
-      {open && (
-        <div className="fixed inset-0 z-[60] bg-slate-950/50 lg:hidden" onClick={close}>
-          <motion.aside
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            className="ml-auto flex h-full w-[min(88vw,390px)] flex-col bg-white shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-[60] bg-slate-950/55 backdrop-blur-sm lg:hidden"
+            onClick={close}
           >
-            <div className="flex h-16 items-center justify-between border-b border-slate-200 px-5">
-              <BrandLogo onClick={close} />
-              <button type="button" onClick={close} className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-slate-100" aria-label="Close menu">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="grid gap-2 p-5">
-              {navItems.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  onClick={(event) => {
-                    handleSectionNav(event, item.href)
-                    close()
-                  }}
-                  className="rounded-xl px-4 py-3 text-base font-black text-slate-800 hover:bg-slate-100"
+            <motion.aside
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              className="ml-auto flex h-full w-[min(86vw,360px)] flex-col bg-white shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex h-16 items-center justify-between border-b border-slate-200 px-4 sm:px-5">
+                <BrandLogo onClick={close} />
+                <button
+                  type="button"
+                  onClick={close}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 hover:rotate-90 hover:bg-slate-100"
+                  aria-label="Close menu"
                 >
-                  {item.label}
-                </a>
-              ))}
-            </div>
-            <div className="mt-auto grid gap-3 border-t border-slate-200 p-5">
-              <Link to="/vendor/register" onClick={close} className="rounded-xl bg-primary-600 px-5 py-3 text-center text-sm font-black text-white">
-                Register Vendor
-              </Link>
-              <Link to="/vendor/login" onClick={close} className="rounded-xl border border-slate-200 px-5 py-3 text-center text-sm font-black text-slate-700">
-                Vendor Login
-              </Link>
-            </div>
-          </motion.aside>
-        </div>
-      )}
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <motion.div
+                initial="hidden"
+                animate="show"
+                variants={{
+                  hidden: { opacity: 0 },
+                  show: { opacity: 1, transition: { staggerChildren: 0.06, delayChildren: 0.1 } },
+                }}
+                className="grid gap-1.5 overflow-y-auto p-4 sm:p-5"
+              >
+                {navItems.map((item) => (
+                  <motion.a
+                    key={item.label}
+                    variants={{
+                      hidden: { opacity: 0, x: 20 },
+                      show: { opacity: 1, x: 0, transition: { duration: 0.35 } },
+                    }}
+                    href={item.href}
+                    onClick={(event) => {
+                      handleSectionNav(event, item.href)
+                      close()
+                    }}
+                    className={`rounded-xl px-4 py-3 text-base font-black transition-all duration-200 ${
+                      activeSection === item.href
+                        ? 'bg-primary-50 text-primary-700'
+                        : 'text-slate-800 hover:bg-slate-100 hover:text-primary-700'
+                    }`}
+                  >
+                    {item.label}
+                  </motion.a>
+                ))}
+              </motion.div>
+
+              <div className="mt-auto grid gap-3 border-t border-slate-200 p-4 sm:p-5">
+                <Link
+                  to="/vendor/register"
+                  onClick={close}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-center text-sm font-black text-white shadow-lg shadow-primary-900/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-700"
+                >
+                  Register Vendor
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  to="/vendor/login"
+                  onClick={close}
+                  className="rounded-xl border border-slate-200 px-5 py-3 text-center text-sm font-black text-slate-700 transition-all duration-300 hover:border-primary-200 hover:bg-slate-50 hover:text-primary-700"
+                >
+                  Vendor Login
+                </Link>
+              </div>
+            </motion.aside>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   )
 }

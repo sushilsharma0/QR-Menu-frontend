@@ -35,11 +35,11 @@ const LandingChatPopup = () => {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`landing-chat-fab fixed bottom-5 right-5 z-[70] inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-white shadow-2xl transition hover:scale-[1.02] sm:px-5 ${themeTokens.primaryButton}`}
+        className={`landing-chat-fab landing-chat-bounce fixed bottom-4 right-4 z-[70] inline-flex items-center gap-2 rounded-2xl px-3.5 py-2.5 text-white shadow-2xl transition-all duration-300 hover:scale-[1.04] hover:shadow-primary-900/30 active:scale-95 sm:bottom-5 sm:right-5 sm:px-5 sm:py-3 ${themeTokens.primaryButton}`}
         aria-label="Open chat"
       >
-        <MessagesSquare className="h-6 w-6 shrink-0" aria-hidden />
-        <span className="text-sm font-black tracking-tight">Chat</span>
+        <MessagesSquare className="h-5 w-5 shrink-0 sm:h-6 sm:w-6" aria-hidden />
+        <span className="text-xs font-black tracking-tight sm:text-sm">Chat</span>
       </button>
 
       {open &&
