@@ -1,33 +1,100 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import {
+  DEFAULT_THEME_SETTINGS,
+  THEME_STORAGE_KEY,
+  applyThemeToDocument,
+  normalizeThemeSettings,
+  resolveMode,
+} from '../theme/themePresets'
 
-const THEME_KEY = 'qrmenu_theme'
+const LEGACY_THEME_KEY = 'qrmenu_theme'
 const ThemeContext = createContext(null)
 
-const getInitialTheme = () => {
-  const stored = localStorage.getItem(THEME_KEY)
-  if (stored === 'dark' || stored === 'light') return stored
-  return 'light'
+const readInitialTheme = () => {
+  try {
+    const stored = localStorage.getItem(THEME_STORAGE_KEY)
+    if (stored) return normalizeThemeSettings(JSON.parse(stored))
+
+    const legacy = localStorage.getItem(LEGACY_THEME_KEY)
+    if (legacy === 'dark' || legacy === 'light') {
+      return normalizeThemeSettings({
+        ...DEFAULT_THEME_SETTINGS,
+        mode: legacy,
+        darkMode: legacy === 'dark',
+      })
+    }
+  } catch {
+    // Local storage can fail in private contexts; defaults still render.
+  }
+  return normalizeThemeSettings(DEFAULT_THEME_SETTINGS)
 }
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(getInitialTheme)
+  const [themeSettings, setThemeSettings] = useState(readInitialTheme)
 
   useEffect(() => {
-    const root = document.documentElement
-    root.classList.toggle('dark', theme === 'dark')
-    localStorage.setItem(THEME_KEY, theme)
-  }, [theme])
+    applyThemeToDocument(themeSettings)
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(themeSettings))
+      localStorage.setItem(LEGACY_THEME_KEY, resolveMode(themeSettings.mode))
+    } catch {
+      // CSS variables are already applied, persistence is best-effort.
+    }
+  }, [themeSettings])
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
-  }
+  useEffect(() => {
+    const media = window.matchMedia?.('(prefers-color-scheme: dark)')
+    if (!media) return undefined
+    const handleSystemChange = () => {
+      if (themeSettings.mode === 'system') applyThemeToDocument(themeSettings)
+    }
+    media.addEventListener?.('change', handleSystemChange)
+    return () => media.removeEventListener?.('change', handleSystemChange)
+  }, [themeSettings])
 
-  const value = useMemo(() => ({
-    theme,
-    isDark: theme === 'dark',
-    setTheme,
-    toggleTheme,
-  }), [theme])
+  useEffect(() => {
+    const handleExternalTheme = (event) => {
+      if (event.detail) setThemeSettings(normalizeThemeSettings(event.detail))
+    }
+    window.addEventListener('qrmenu:theme-settings', handleExternalTheme)
+    return () => window.removeEventListener('qrmenu:theme-settings', handleExternalTheme)
+  }, [])
+
+  const updateTheme = useCallback((updates) => {
+    setThemeSettings((prev) => normalizeThemeSettings({ ...prev, ...updates }))
+  }, [])
+
+  const applyRemoteTheme = useCallback((settings) => {
+    if (!settings) return
+    setThemeSettings(normalizeThemeSettings(settings.themeSettings || settings))
+  }, [])
+
+  const resetTheme = useCallback(() => {
+    setThemeSettings(normalizeThemeSettings(DEFAULT_THEME_SETTINGS))
+  }, [])
+
+  const setTheme = useCallback((mode) => {
+    updateTheme({ mode })
+  }, [updateTheme])
+
+  const toggleTheme = useCallback(() => {
+    updateTheme({ mode: resolveMode(themeSettings.mode) === 'dark' ? 'light' : 'dark' })
+  }, [themeSettings.mode, updateTheme])
+
+  const value = useMemo(() => {
+    const resolvedTheme = resolveMode(themeSettings.mode)
+    return {
+      theme: resolvedTheme,
+      mode: themeSettings.mode,
+      isDark: resolvedTheme === 'dark',
+      themeSettings,
+      setTheme,
+      updateTheme,
+      applyRemoteTheme,
+      resetTheme,
+      toggleTheme,
+    }
+  }, [applyRemoteTheme, resetTheme, setTheme, themeSettings, toggleTheme, updateTheme])
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }

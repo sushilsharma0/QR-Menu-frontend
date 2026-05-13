@@ -15,6 +15,7 @@ import {
   FiMenu,
   FiPercent,
   FiPieChart,
+  FiSettings,
   FiShoppingBag,
   FiUsers,
   FiX,
@@ -38,6 +39,7 @@ function segmentToModuleKey(segment) {
     if (segment.includes('inventory')) return 'inventory'
     return 'accounting'
   }
+  if (root === 'settings') return 'settings'
   return 'dashboard'
 }
 
@@ -63,6 +65,11 @@ const NAV_GROUPS = [
   {
     label: 'Team',
     items: [{ segment: 'employees', icon: FiUsers, label: 'Employees' }],
+  },
+  {
+    label: 'Settings',
+    ownerOnly: true,
+    items: [{ segment: 'settings', icon: FiSettings, label: 'Appearance' }],
   },
   {
     label: 'Accounting',
@@ -178,18 +185,18 @@ function Brand({ collapsed, branchName }) {
   )
 }
 
-function SidebarContent({ collapsed, setCollapsed, pendingCount, restaurantBase, branchName, modules, onClose, isMobile, onTooltip, onTooltipLeave }) {
+function SidebarContent({ collapsed, setCollapsed, pendingCount, restaurantBase, branchName, modules, onClose, isMobile, onTooltip, onTooltipLeave, canManageTheme }) {
   const hideLabels = collapsed && !isMobile
 
   const filteredGroups = useMemo(() => {
-    return NAV_GROUPS.map((g) => ({
+    return NAV_GROUPS.filter((g) => !g.ownerOnly || canManageTheme).map((g) => ({
       ...g,
       items: g.items.filter((item) => {
         const key = segmentToModuleKey(item.segment)
         return modules[key] !== false
       }),
     })).filter((g) => g.items.length > 0)
-  }, [modules])
+  }, [canManageTheme, modules])
 
   return (
     <div className="flex h-full flex-col">
@@ -264,6 +271,7 @@ const BranchSidebar = () => {
 
   const modules = user?.enabledModules || {}
   const branchName = user?.branchName || user?.branchSlug
+  const canManageTheme = user?.role === 'branch_admin'
 
   const fetchPendingCount = async () => {
     try {
@@ -325,6 +333,7 @@ const BranchSidebar = () => {
           restaurantBase={restaurantBase}
           branchName={branchName}
           modules={modules}
+          canManageTheme={canManageTheme}
           onClose={() => setMobileOpen(false)}
           isMobile
           onTooltip={setTooltip}
@@ -344,6 +353,7 @@ const BranchSidebar = () => {
           restaurantBase={restaurantBase}
           branchName={branchName}
           modules={modules}
+          canManageTheme={canManageTheme}
           onClose={() => {}}
           isMobile={false}
           onTooltip={setTooltip}

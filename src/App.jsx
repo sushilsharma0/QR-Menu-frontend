@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
+import api from "./services/api";
+import { useTheme } from "./context/ThemeContext";
 
 // Auth Pages
 import Login from "./pages/auth/Login";
@@ -112,10 +114,38 @@ import SubscriptionPaymentCallback from "./pages/restaurant/SubscriptionPaymentC
 
 function App() {
   const { user, isLoading } = useAuth();
+  const { applyRemoteTheme } = useTheme();
+  const themeProfileLoadedFor = useRef("");
   const isEmployeeUser =
     user?.scope === "employee" ||
     ["kitchen", "cashier", "manager", "waiter"].includes(user?.role);
   const { slug: userSlug, restaurantId: userRestaurantId } = getTenantSegments(user);
+
+  useEffect(() => {
+    const key = user?.restaurantId || user?.id || "";
+    const shouldLoad =
+      user &&
+      key &&
+      (user.role === "restaurant" ||
+        user.scope === "branch_user" ||
+        user.scope === "employee" ||
+        ["kitchen", "cashier", "manager", "waiter", "accountant"].includes(user.role))
+
+    if (!shouldLoad || themeProfileLoadedFor.current === key) return;
+    themeProfileLoadedFor.current = key;
+
+    api
+      .get("/restaurant/auth/profile", { skipErrorToast: true })
+      .then((res) => {
+        const restaurant = res?.data?.data;
+        if (restaurant?.settings?.themeSettings) {
+          applyRemoteTheme(restaurant.settings.themeSettings);
+        }
+      })
+      .catch(() => {
+        themeProfileLoadedFor.current = "";
+      });
+  }, [applyRemoteTheme, user]);
 
   if (isLoading) {
     return (
@@ -231,6 +261,7 @@ function App() {
         <Route path="settings" element={<RestaurantSettings />} />
         <Route path="public-profile" element={<RestaurantPublicProfile />} />
         <Route path="profile" element={<RestaurantProfile />} />
+        <Route path="settings" element={<RestaurantSettings />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="pos" element={<PosLayout />}>
           <Route index element={<PosMain />} />

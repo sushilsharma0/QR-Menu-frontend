@@ -6,11 +6,17 @@ const CUSTOMER_PROFILE_STORAGE_KEY = 'customer_identity_profile_v1'
 const CART_COUNT_STORAGE_KEY = 'customer_cart_count_v1'
 const ORDER_TOKENS_STORAGE_KEY = 'customer_order_tokens_v1'
 
+const broadcastThemeSettings = (themeSettings) => {
+  if (!themeSettings || typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent('qrmenu:theme-settings', { detail: themeSettings }))
+}
+
 // Public Menu
 export const getRestaurantMenu = async (restaurantSlug, qrToken = null) => {
   const response = await api.get(`/restaurant/menu/public/${restaurantSlug}`, {
     params: qrToken ? { qrToken } : {},
   })
+  broadcastThemeSettings(response?.data?.data?.restaurant?.themeSettings)
   return response.data
 }
 
@@ -421,11 +427,15 @@ export const getRestaurantInfo = async (restaurantSlug, qrToken = null) => {
   ])
   const menuRestaurant = menuRes?.data?.restaurant || {}
   const about = profile?.about || {}
+  broadcastThemeSettings(menuRestaurant.themeSettings || profile?.themeSettings)
   return {
     id: menuRestaurant.id || profile?.id,
     name: menuRestaurant.name || profile?.name,
     logo: menuRestaurant.logo || profile?.logo,
     backgroundPhoto: menuRestaurant.backgroundPhoto || profile?.backgroundPhoto,
+    favicon: menuRestaurant.favicon || profile?.favicon,
+    brandBackgroundImage: menuRestaurant.brandBackgroundImage || profile?.brandBackgroundImage,
+    themeSettings: menuRestaurant.themeSettings || profile?.themeSettings,
     description: cleanText(menuRestaurant.description) || cleanText(profile?.description),
     tagline: cleanText(about.tagline),
     currency: menuRestaurant.currency || profile?.currency || 'Rs.',

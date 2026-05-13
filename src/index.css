@@ -2,13 +2,81 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-primary: #8f2800;
+  --color-secondary: #b64a26;
+  --color-accent: #756a03;
+  --color-attention: #a69b02;
+  --color-surface: #feefa5;
+  --color-primary-50: #faece8;
+  --color-primary-100: #f3d9d1;
+  --color-primary-200: #e7b2a3;
+  --color-primary-300: #db8c74;
+  --color-primary-400: #cf6646;
+  --color-primary-500: #8f2800;
+  --color-primary-600: #7a2200;
+  --color-primary-700: #641c00;
+  --color-primary-800: #4f1600;
+  --color-primary-900: #391000;
+  --color-secondary-50: #f8eeea;
+  --color-secondary-100: #f0dcd4;
+  --color-secondary-200: #e0baa8;
+  --color-secondary-300: #d1987d;
+  --color-secondary-400: #c17651;
+  --color-secondary-500: #b64a26;
+  --color-secondary-600: #9b3f20;
+  --color-secondary-700: #81351b;
+  --color-secondary-800: #662a15;
+  --color-secondary-900: #4c1f10;
+  --color-accent-50: #f1f0da;
+  --color-accent-100: #e4e1b4;
+  --color-accent-200: #d6d28f;
+  --color-accent-300: #c8c36a;
+  --color-accent-400: #bbb445;
+  --color-accent-500: #756a03;
+  --color-accent-600: #635a03;
+  --color-accent-700: #524a02;
+  --color-accent-800: #403a02;
+  --color-accent-900: #2e2a01;
+  --color-attention-50: #fbf9da;
+  --color-attention-100: #f7f2b5;
+  --color-attention-200: #f3ec8f;
+  --color-attention-300: #efe56a;
+  --color-attention-400: #ebdf45;
+  --color-attention-500: #a69b02;
+  --color-attention-600: #8e8402;
+  --color-attention-700: #766e01;
+  --color-attention-800: #5f5801;
+  --color-attention-900: #474200;
+  --color-surface-50: #fffcf1;
+  --color-surface-100: #feefa5;
+  --color-surface-200: #fbe88f;
+  --color-surface-300: #f7e079;
+  --color-surface-400: #f3d862;
+  --color-surface-500: #e7c74b;
+  --color-surface-600: #c4a83f;
+  --color-surface-700: #a18933;
+  --color-surface-800: #7e6a28;
+  --color-surface-900: #5c4d1d;
+  --color-background: #fffcf1;
+  --color-foreground: #391000;
+  --color-muted: #fff8cd;
+  --color-card: #ffffff;
+  --color-border: #efe2a6;
+  --font-app: Inter, system-ui, sans-serif;
+}
+
 @layer base {
   body {
-    @apply bg-surface-50 font-sans text-primary-900 dark:bg-gray-950 dark:text-gray-100;
+    @apply bg-app-background font-sans text-app-foreground dark:bg-gray-950 dark:text-gray-100;
+    transition: background-color 220ms ease, color 220ms ease;
   }
   
   * {
-    @apply border-surface-200;
+    @apply border-app-border;
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+    transition-duration: 180ms;
+    transition-timing-function: ease;
   }
 }
 
