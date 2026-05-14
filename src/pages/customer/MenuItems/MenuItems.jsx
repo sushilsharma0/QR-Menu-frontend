@@ -153,8 +153,8 @@ const MenuItems = () => {
 
   const handleQuickAdd = async (item) => {
     try {
-      await addItem(item, { quantity: 1 });
-      success(`${item.name} added to cart`);
+      const result = await addItem(item, { quantity: 1 });
+      if (result) success(`${item.name} added to cart`);
     } catch (err) {
       error("Could not add item. Try again.");
     }

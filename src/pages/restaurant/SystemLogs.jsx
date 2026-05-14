@@ -11,7 +11,6 @@ import {
   FiRefreshCw,
   FiSearch,
   FiShield,
-  FiUser,
 } from 'react-icons/fi'
 import api from '../../services/api'
 import Card from '../../components/common/Card'
@@ -37,15 +36,27 @@ const ACTION_OPTIONS = [
   { value: 'order_cancelled', label: 'Order cancelled' },
   { value: 'payment_received', label: 'Payment received' },
   { value: 'payment_refunded', label: 'Payment refunded' },
+  { value: 'pos_order_created', label: 'POS order created' },
+  { value: 'pos_payment', label: 'POS payment' },
+  { value: 'pos_refund', label: 'POS refund' },
+  { value: 'pos_shift_open', label: 'POS shift open' },
+  { value: 'pos_shift_close', label: 'POS shift close' },
+  { value: 'order_credit_linked', label: 'Credit linked' },
+  { value: 'branch_login', label: 'Branch login' },
+  { value: 'branch_login_failed', label: 'Branch login failed' },
+  { value: 'branch_create', label: 'Branch created' },
+  { value: 'branch_update', label: 'Branch updated' },
 ]
 
-const failedActions = new Set(['login_failed', 'validation_failed', 'forbidden_action', 'request_rejected'])
-const operationActions = new Set(['order_status_update', 'order_cancelled', 'payment_received', 'payment_refunded'])
+const failedActions = new Set(['login_failed', 'branch_login_failed', 'validation_failed', 'forbidden_action', 'request_rejected'])
+const operationActions = new Set(['order_status_update', 'order_cancelled', 'payment_received', 'payment_refunded', 'pos_order_created', 'pos_payment', 'pos_refund', 'pos_shift_open', 'pos_shift_close', 'order_credit_linked'])
 
 const actionMeta = {
   login: { label: 'Login', icon: FiCheckCircle, pill: 'bg-emerald-100 text-emerald-800', accent: 'bg-emerald-50 text-emerald-700' },
   logout: { label: 'Logout', icon: FiClock, pill: 'bg-blue-100 text-blue-800', accent: 'bg-blue-50 text-blue-700' },
   login_failed: { label: 'Login failed', icon: FiAlertCircle, pill: 'bg-red-100 text-red-800', accent: 'bg-red-50 text-red-700' },
+  branch_login: { label: 'Branch login', icon: FiCheckCircle, pill: 'bg-emerald-100 text-emerald-800', accent: 'bg-emerald-50 text-emerald-700' },
+  branch_login_failed: { label: 'Branch login failed', icon: FiAlertCircle, pill: 'bg-red-100 text-red-800', accent: 'bg-red-50 text-red-700' },
   validation_failed: { label: 'Validation failed', icon: FiLock, pill: 'bg-amber-100 text-amber-800', accent: 'bg-amber-50 text-amber-700' },
   forbidden_action: { label: 'Forbidden action', icon: FiLock, pill: 'bg-red-100 text-red-800', accent: 'bg-red-50 text-red-700' },
   request_rejected: { label: 'Request rejected', icon: FiShield, pill: 'bg-orange-100 text-orange-800', accent: 'bg-orange-50 text-orange-700' },
@@ -53,9 +64,18 @@ const actionMeta = {
   order_cancelled: { label: 'Order cancelled', icon: FiAlertCircle, pill: 'bg-red-100 text-red-800', accent: 'bg-red-50 text-red-700' },
   payment_received: { label: 'Payment received', icon: FiCheckCircle, pill: 'bg-emerald-100 text-emerald-800', accent: 'bg-emerald-50 text-emerald-700' },
   payment_refunded: { label: 'Payment refunded', icon: FiAlertCircle, pill: 'bg-orange-100 text-orange-800', accent: 'bg-orange-50 text-orange-700' },
+  pos_order_created: { label: 'POS order created', icon: FiCheckCircle, pill: 'bg-cyan-100 text-cyan-800', accent: 'bg-cyan-50 text-cyan-700' },
+  pos_payment: { label: 'POS payment', icon: FiCheckCircle, pill: 'bg-emerald-100 text-emerald-800', accent: 'bg-emerald-50 text-emerald-700' },
+  pos_refund: { label: 'POS refund', icon: FiAlertCircle, pill: 'bg-orange-100 text-orange-800', accent: 'bg-orange-50 text-orange-700' },
+  pos_shift_open: { label: 'POS shift open', icon: FiClock, pill: 'bg-blue-100 text-blue-800', accent: 'bg-blue-50 text-blue-700' },
+  pos_shift_close: { label: 'POS shift close', icon: FiClock, pill: 'bg-slate-100 text-slate-800', accent: 'bg-slate-50 text-slate-700' },
+  order_credit_linked: { label: 'Credit linked', icon: FiCheckCircle, pill: 'bg-teal-100 text-teal-800', accent: 'bg-teal-50 text-teal-700' },
+  branch_create: { label: 'Branch created', icon: FiCheckCircle, pill: 'bg-cyan-100 text-cyan-800', accent: 'bg-cyan-50 text-cyan-700' },
+  branch_update: { label: 'Branch updated', icon: FiClock, pill: 'bg-blue-100 text-blue-800', accent: 'bg-blue-50 text-blue-700' },
 }
 
 const formatAction = (action) => actionMeta[action]?.label || String(action || 'Unknown').replace(/_/g, ' ')
+const isFailedLog = (log) => failedActions.has(log?.action) || /failed|rejected|forbidden/i.test(String(log?.action || ''))
 
 const formatDate = (value) => {
   if (!value) return 'N/A'
@@ -91,12 +111,27 @@ const getOperationSummary = (log) => {
   if (log.action === 'order_cancelled') {
     return `Order ${details.orderNumber || '-'} cancelled`
   }
-  return details.orderNumber || details.receiptNo || log.resource || 'System'
+  if (log.action === 'pos_shift_open' || log.action === 'pos_shift_close') {
+    return details.shiftNo || details.sessionId || 'POS shift'
+  }
+  return details.orderNumber || details.receiptNo || details.branchName || log.resource || 'System'
 }
 
 const ActionPill = ({ action }) => {
   const meta = actionMeta[action] || actionMeta.request_rejected
   return <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${meta.pill}`}>{formatAction(action)}</span>
+}
+
+const OutcomePill = ({ log }) => {
+  const failed = isFailedLog(log)
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
+      failed ? 'bg-red-50 text-red-700 ring-1 ring-red-100' : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100'
+    }`}>
+      {failed ? <FiAlertCircle className="h-3.5 w-3.5" /> : <FiCheckCircle className="h-3.5 w-3.5" />}
+      {failed ? 'Failed' : 'Success'}
+    </span>
+  )
 }
 
 const MetricTile = ({ label, value, sub, icon: Icon, accent }) => (
@@ -117,7 +152,7 @@ const MetricTile = ({ label, value, sub, icon: Icon, accent }) => (
 const LogCard = ({ log, index }) => {
   const meta = actionMeta[log.action] || actionMeta.request_rejected
   const Icon = meta.icon
-  const failed = failedActions.has(log.action)
+  const failed = isFailedLog(log)
   const operation = operationActions.has(log.action)
 
   return (
@@ -135,11 +170,8 @@ const LogCard = ({ log, index }) => {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <ActionPill action={log.action} />
-              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                failed ? 'bg-red-50 text-red-700' : operation ? 'bg-indigo-50 text-indigo-700' : 'bg-emerald-50 text-emerald-700'
-              }`}>
-                {failed ? 'Attention' : operation ? 'Operation' : 'Success'}
-              </span>
+              <OutcomePill log={log} />
+              {operation && <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">Operation</span>}
             </div>
             <h2 className="mt-3 text-lg font-bold text-gray-950">{getActorName(log)}</h2>
             <p className="mt-1 text-sm text-gray-500">{getActorSubtext(log)}</p>
@@ -233,9 +265,9 @@ const SystemLogs = () => {
   const counts = useMemo(() => {
     return logs.reduce(
       (acc, log) => {
-        if (failedActions.has(log.action)) acc.failed += 1
-        else if (operationActions.has(log.action)) acc.operations += 1
+        if (isFailedLog(log)) acc.failed += 1
         else acc.success += 1
+        if (operationActions.has(log.action)) acc.operations += 1
         if (log.action === 'login') acc.login += 1
         if (log.action === 'logout') acc.logout += 1
         return acc
@@ -313,10 +345,10 @@ const SystemLogs = () => {
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricTile label="Matched logs" value={pagination.total || 0} sub={`${filteredLogs.length} visible on page`} icon={FiShield} accent="from-primary-600 to-secondary-500" />
+            <MetricTile label="Total activities" value={pagination.total || 0} sub={`${filteredLogs.length} visible on this page`} icon={FiShield} accent="from-primary-600 to-secondary-500" />
             <MetricTile label="Operations" value={counts.operations} sub="Orders and payments on page" icon={FiClock} accent="from-indigo-500 to-violet-500" />
-            <MetricTile label="Needs attention" value={counts.failed} sub="Failed or blocked events" icon={FiAlertCircle} accent="from-red-500 to-orange-500" />
-            <MetricTile label="Sessions" value={counts.login + counts.logout} sub={`${counts.login} login / ${counts.logout} logout`} icon={FiUser} accent="from-blue-500 to-indigo-500" />
+            <MetricTile label="Failed" value={counts.failed} sub="Failed or blocked events" icon={FiAlertCircle} accent="from-red-500 to-orange-500" />
+            <MetricTile label="Successful" value={counts.success} sub="Completed activity on page" icon={FiCheckCircle} accent="from-emerald-500 to-teal-500" />
           </div>
         </div>
       </motion.section>
@@ -406,7 +438,7 @@ const SystemLogs = () => {
           <table className="min-w-full divide-y divide-surface-200 text-sm">
             <thead className="bg-surface-50">
               <tr>
-                {['Time', 'User', 'Action', 'Role', 'Order / Receipt', 'Details'].map((header) => (
+                {['Time', 'User', 'Status', 'Action', 'Role', 'Order / Receipt', 'Details'].map((header) => (
                   <th key={header} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                     {header}
                   </th>
@@ -421,6 +453,7 @@ const SystemLogs = () => {
                     <p className="font-bold text-gray-950">{getActorName(log)}</p>
                     <p className="text-xs text-gray-500">{getActorSubtext(log)}</p>
                   </td>
+                  <td className="px-5 py-4"><OutcomePill log={log} /></td>
                   <td className="px-5 py-4"><ActionPill action={log.action} /></td>
                   <td className="px-5 py-4 capitalize text-gray-600">{log.details?.actorRole || log.details?.role || log.user?.role || 'N/A'}</td>
                   <td className="px-5 py-4 text-gray-600">{getOperationSummary(log)}</td>

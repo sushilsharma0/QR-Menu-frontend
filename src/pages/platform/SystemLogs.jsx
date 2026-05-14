@@ -1,10 +1,16 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { FiActivity, FiAlertCircle, FiCheckCircle, FiRefreshCw } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import { PlatformEmptyState, PlatformMetric, PlatformPageHeader } from '../../components/platform/PlatformUI'
+
+const isFailedLog = (log) => /failed|rejected|forbidden/i.test(String(log?.action || ''))
+const formatAction = (action) => String(action || 'Unknown').replace(/_/g, ' ')
+const getActorName = (log) => log.user?.name || log.details?.actorName || log.user?.username || log.details?.username || 'Unknown user'
+const getActorMeta = (log) => [log.user?.email || log.user?.username || log.details?.username, log.details?.actorRole || log.user?.role || log.userModel].filter(Boolean).join(' - ') || 'System activity'
+const getDetails = (log) => log.details?.message || log.details?.reason || log.details?.error || log.details?.path || log.resource || '-'
 
 const SystemLogs = () => {
   const [logs, setLogs] = useState([])
@@ -28,6 +34,29 @@ const SystemLogs = () => {
   useEffect(() => {
     fetchLogs()
   }, [statusFilter])
+
+  const counts = useMemo(() => logs.reduce(
+    (acc, log) => {
+      if (isFailedLog(log)) acc.failed += 1
+      else acc.success += 1
+      return acc
+    },
+    { success: 0, failed: 0 },
+  ), [logs])
+
+  const OutcomePill = ({ log }) => {
+    const failed = isFailedLog(log)
+    return (
+      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
+        failed
+          ? 'bg-red-50 text-red-700 ring-1 ring-red-100 dark:bg-red-950/30 dark:text-red-300 dark:ring-red-900'
+          : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-900'
+      }`}>
+        {failed ? <FiAlertCircle className="h-3.5 w-3.5" /> : <FiCheckCircle className="h-3.5 w-3.5" />}
+        {failed ? 'Failed' : 'Success'}
+      </span>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -57,8 +86,8 @@ const SystemLogs = () => {
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <PlatformMetric label="Loaded events" value={logs.length} sub="Most recent records" icon={FiActivity} accent="from-blue-500 to-indigo-500" />
-        <PlatformMetric label="Successful" value={logs.filter((log) => log.status === 'success' || log.details?.status === 'success').length} sub="Successful activity" icon={FiCheckCircle} accent="from-emerald-500 to-teal-500" />
-        <PlatformMetric label="Blocked / failed" value={logs.filter((log) => log.status === 'failed' || log.details?.status === 'failed').length} sub="Needs attention" icon={FiAlertCircle} accent="from-rose-500 to-red-500" />
+        <PlatformMetric label="Successful" value={counts.success} sub="Completed activity" icon={FiCheckCircle} accent="from-emerald-500 to-teal-500" />
+        <PlatformMetric label="Blocked / failed" value={counts.failed} sub="Needs attention" icon={FiAlertCircle} accent="from-rose-500 to-red-500" />
       </div>
 
       <Card title="Activity Timeline">
@@ -73,6 +102,7 @@ const SystemLogs = () => {
                 <tr className="text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   <th className="px-4 py-3">Time</th>
                   <th className="px-4 py-3">Actor</th>
+                  <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Action</th>
                   <th className="px-4 py-3">Restaurant</th>
                   <th className="px-4 py-3">Details</th>
@@ -86,20 +116,21 @@ const SystemLogs = () => {
                     </td>
                     <td className="px-4 py-3">
                       <div className="font-medium text-gray-900 dark:text-gray-100">
-                        {log.user?.name || log.user?.username || 'Unknown'}
+                        {getActorName(log)}
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">{log.userModel}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{getActorMeta(log)}</div>
                     </td>
+                    <td className="px-4 py-3"><OutcomePill log={log} /></td>
                     <td className="px-4 py-3">
                       <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                        {log.action}
+                        {formatAction(log.action)}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
                       {log.details?.restaurantId || '-'}
                     </td>
                     <td className="max-w-md break-words px-4 py-3 text-gray-600 dark:text-gray-300">
-                      {log.details?.message || log.details?.reason || '-'}
+                      {getDetails(log)}
                     </td>
                   </tr>
                 ))}

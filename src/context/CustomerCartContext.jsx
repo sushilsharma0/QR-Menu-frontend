@@ -67,6 +67,7 @@ export const CustomerCartProvider = ({ children }) => {
 
   const guestRef = useRef('')
   const tokenRef = useRef('')
+  const pendingAddKeysRef = useRef(new Set())
 
   useEffect(() => {
     guestRef.current = guestId
@@ -83,13 +84,10 @@ export const CustomerCartProvider = ({ children }) => {
   }, [items])
 
   useEffect(() => {
-    // Seed from localStorage so cold-loaded routes (e.g. /menu) can show the
-    // floating bar instantly. The real items hydrate on the first ensureSession.
-    const cachedCount = getCartItemCount()
-    if (cachedCount > 0 && items.length === 0) {
-      setItems((prev) => (prev.length ? prev : Array.from({ length: cachedCount }).map(() => null)))
-      // Replace placeholder with real items once hydrated.
-    }
+    // Do not seed placeholder cart rows from localStorage. The badge and cart
+    // drawer should only reflect real hydrated cart items, otherwise simply
+    // opening an item page can show a stale cart count.
+    if (getCartItemCount() > 0 && items.length === 0) setCartItemCount(0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -157,6 +155,15 @@ export const CustomerCartProvider = ({ children }) => {
         return null
       }
 
+      const addKey = JSON.stringify({
+        m: String(item?._id || ''),
+        c: customizations || [],
+        k: String(cookingInstructions || ''),
+        a: addOns || [],
+      })
+      if (pendingAddKeysRef.current.has(addKey)) return null
+      pendingAddKeysRef.current.add(addKey)
+
       const optimisticId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
       const hasCustomization =
         (customizations && customizations.length > 0) ||
@@ -219,6 +226,7 @@ export const CustomerCartProvider = ({ children }) => {
         await refresh()
         throw err
       } finally {
+        pendingAddKeysRef.current.delete(addKey)
         setPendingCount((c) => Math.max(0, c - 1))
       }
     },

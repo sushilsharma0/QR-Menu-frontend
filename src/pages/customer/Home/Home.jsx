@@ -813,7 +813,7 @@ function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
                 }}
               >
                 <Link
-                  to={`/item/${slug}/${token}/${cat.name}`}
+                  to={`/item/${slug}/${token}/${encodeURIComponent(cat.name)}`}
                   className="group flex items-center gap-3 rounded-3xl border border-gray-100 bg-white p-3 shadow-sm transition active:scale-[0.98] hover:border-primary-200"
                 >
                   <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-100">

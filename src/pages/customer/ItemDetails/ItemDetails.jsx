@@ -156,7 +156,7 @@ const ItemDetails = () => {
         .filter((c) => /add|extra|topping/i.test(c.name))
         .map((c) => c.value);
 
-      await addItem(item, {
+      const result = await addItem(item, {
         quantity,
         cookingInstructions: cookingInstructions.slice(0, 500),
         customizations,
@@ -170,7 +170,7 @@ const ItemDetails = () => {
         openDrawer: true,
       });
 
-      success(`${item.name} added to cart`);
+      if (result) success(`${item.name} added to cart`);
     } catch (err) {
       console.error(err);
       error("Failed to add item to cart");
