@@ -67,6 +67,7 @@ export const CustomerCartProvider = ({ children }) => {
 
   const guestRef = useRef('')
   const tokenRef = useRef('')
+  const hydrateRequestRef = useRef(0)
   const pendingAddKeysRef = useRef(new Set())
 
   useEffect(() => {
@@ -93,20 +94,25 @@ export const CustomerCartProvider = ({ children }) => {
 
   const hydrate = useCallback(async (qrToken) => {
     if (!qrToken) return null
+    const requestId = hydrateRequestRef.current + 1
+    hydrateRequestRef.current = requestId
     try {
       setIsLoading(true)
       const session = await ensureGuestSession(qrToken)
+      if (hydrateRequestRef.current !== requestId) return null
       const nextGuestId = session?.guestId || ''
       setGuestId(nextGuestId)
       setActiveToken(qrToken)
-      if (session?.cart) {
-        const next = mapServerCart(session.cart)
+      if (nextGuestId) {
+        const cart = await getGuestCart({ guestId: nextGuestId, qrToken })
+        if (hydrateRequestRef.current !== requestId) return null
+        const next = mapServerCart(cart)
         setItems(next)
         return next
       }
-      if (nextGuestId) {
-        const cart = await getGuestCart({ guestId: nextGuestId, qrToken })
-        const next = mapServerCart(cart)
+      if (session?.cart) {
+        const next = mapServerCart(session.cart)
+        if (hydrateRequestRef.current !== requestId) return null
         setItems(next)
         return next
       }
@@ -115,7 +121,9 @@ export const CustomerCartProvider = ({ children }) => {
       console.error('Cart hydrate failed', err)
       return null
     } finally {
-      setIsLoading(false)
+      if (hydrateRequestRef.current === requestId) {
+        setIsLoading(false)
+      }
     }
   }, [])
 

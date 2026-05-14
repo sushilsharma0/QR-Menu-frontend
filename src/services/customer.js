@@ -164,6 +164,21 @@ export const invalidateGuestSession = (qrToken) => {
   }
 }
 
+const syncCachedSessionCart = (qrToken, cart) => {
+  const key = String(qrToken || '')
+  if (!key || !cart) return
+  const cached = _sessionCache.get(key)
+  if (cached?.data) {
+    _sessionCache.set(key, {
+      at: Date.now(),
+      data: {
+        ...cached.data,
+        cart,
+      },
+    })
+  }
+}
+
 export const addItemToGuestCart = async ({
   guestId,
   qrToken,
@@ -186,6 +201,7 @@ export const addItemToGuestCart = async ({
   const cart = response?.data?.data || { items: [] }
   const count = (cart.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
   setCartItemCount(count)
+  syncCachedSessionCart(qrToken, cart)
   return cart
 }
 
@@ -194,6 +210,7 @@ export const getGuestCart = async ({ guestId, qrToken }) => {
   const cart = response?.data?.data || { items: [] }
   const count = (cart.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
   setCartItemCount(count)
+  syncCachedSessionCart(qrToken, cart)
   return cart
 }
 
@@ -207,6 +224,7 @@ export const updateGuestCartItem = async ({ guestId, qrToken, menuItemId, quanti
   const cart = response?.data?.data || { items: [] }
   const count = (cart.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
   setCartItemCount(count)
+  syncCachedSessionCart(qrToken, cart)
   return cart
 }
 
@@ -217,12 +235,14 @@ export const removeGuestCartItem = async ({ guestId, qrToken, menuItemId, lineId
   const cart = response?.data?.data || { items: [] }
   const count = (cart.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
   setCartItemCount(count)
+  syncCachedSessionCart(qrToken, cart)
   return cart
 }
 
 export const clearGuestCart = async ({ guestId, qrToken }) => {
   await api.delete(`/customer/cart/${guestId}`, { params: { qrToken } })
   setCartItemCount(0)
+  syncCachedSessionCart(qrToken, { items: [], totalAmount: 0 })
 }
 
 export const getGuestOrders = async ({ guestId, qrToken }) => {

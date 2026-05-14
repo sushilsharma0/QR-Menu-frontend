@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { forwardRef, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ShoppingBag,
@@ -493,7 +493,7 @@ function paymentMeta(paymentStatus) {
   return { label: "Unpaid", className: "bg-amber-50 text-amber-700 ring-amber-200" };
 }
 
-function OrderCard({ order, index, onTrack, onBill }) {
+const OrderCard = forwardRef(function OrderCard({ order, index, onTrack, onBill }, ref) {
   const status = statusMeta(order.status);
   const StatusIcon = status.Icon;
   const payment = paymentMeta(order.paymentStatus);
@@ -509,6 +509,7 @@ function OrderCard({ order, index, onTrack, onBill }) {
 
   return (
     <motion.div
+      ref={ref}
       layout
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
@@ -617,7 +618,7 @@ function OrderCard({ order, index, onTrack, onBill }) {
       </div>
     </motion.div>
   );
-}
+});
 
 function ProgressTimeline({ currentIndex, live }) {
   return (

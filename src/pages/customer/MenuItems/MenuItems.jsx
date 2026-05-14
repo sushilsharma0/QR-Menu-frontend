@@ -35,6 +35,31 @@ const TYPE_CHIPS = [
   { id: "seafood", label: "Seafood", dot: "bg-cyan-500",   active: "bg-cyan-500 text-white border-cyan-500" },
 ];
 
+const NON_VEG_TYPES = ["egg", "chicken", "mutton", "buff", "pork", "fish", "seafood"];
+
+const getItemTags = (item) => {
+  const tags = Array.isArray(item?.dietaryTags) ? item.dietaryTags.filter(Boolean) : [];
+  if (tags.length > 0) return tags;
+  if (item?.isVegetarian || item?.tag === "Veg") return ["veg"];
+  if (item?.tag === "Non-Veg") return ["non-veg"];
+  return [];
+};
+
+const isVegItem = (item) => {
+  const tags = getItemTags(item);
+  return tags.includes("veg") || item?.isVegetarian === true;
+};
+
+const isNonVegItem = (item) => {
+  const tags = getItemTags(item);
+  return (
+    tags.includes("non-veg") ||
+    tags.some((tag) => NON_VEG_TYPES.includes(tag)) ||
+    item?.tag === "Non-Veg" ||
+    (!isVegItem(item) && tags.length > 0)
+  );
+};
+
 const MenuItems = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
@@ -79,9 +104,10 @@ const MenuItems = () => {
         `/restaurant/menu/items/by-category/${encodeURIComponent(categoryName)}?${qs.toString()}`,
       );
       const data = res.data.data;
-      if (data && data.items) setFoodItems(data.items);
+      setFoodItems(Array.isArray(data?.items) ? data.items : []);
     } catch (err) {
       console.error("Error fetching menu items:", err);
+      setFoodItems([]);
       error("Could not load menu items. Try again.");
     } finally {
       setLoading(false);
@@ -90,40 +116,47 @@ const MenuItems = () => {
 
   const filteredItems = useMemo(() => {
     return foodItems.filter((item) => {
-      const query = searchQuery.toLowerCase();
-      const matchesName = item.name.toLowerCase().startsWith(query);
+      const query = searchQuery.trim().toLowerCase();
+      const name = String(item?.name || "").toLowerCase();
+      const description = String(item?.description || "").toLowerCase();
+      const matchesName = !query || name.includes(query) || description.includes(query);
 
       const matchesType =
         foodType === "all" ||
-        (foodType === "veg" && item.tag === "Veg") ||
-        (foodType === "non-veg" && item.tag === "Non-Veg");
+        (foodType === "veg" && isVegItem(item)) ||
+        (foodType === "non-veg" && isNonVegItem(item));
 
       let matchesPrice = true;
+      const price = Number(item?.price || 0);
       switch (activeFilters.priceRange) {
         case "0-100":
-          matchesPrice = item.price <= 100;
+          matchesPrice = price <= 100;
           break;
         case "100-200":
-          matchesPrice = item.price >= 100 && item.price <= 200;
+          matchesPrice = price >= 100 && price <= 200;
           break;
         case "200-500":
-          matchesPrice = item.price >= 200 && item.price <= 500;
+          matchesPrice = price >= 200 && price <= 500;
           break;
         case "500+":
-          matchesPrice = item.price >= 500;
+          matchesPrice = price >= 500;
           break;
         default:
           matchesPrice = true;
       }
+      const itemTags = getItemTags(item);
       const matchesDietary =
         !activeFilters.dietary ||
-        (activeFilters.dietary === "vegetarian" && item.tag === "Veg") ||
-        (activeFilters.dietary === "vegan" && item.tag === "Veg");
+        (activeFilters.dietary === "vegetarian" && isVegItem(item)) ||
+        (activeFilters.dietary === "vegan" && (item?.isVegan || isVegItem(item))) ||
+        (activeFilters.dietary === "gluten-free" && item?.isGlutenFree) ||
+        activeFilters.dietary === "nuts-free";
 
       const selectedType = activeFilters.type || "all";
-      const itemTags = Array.isArray(item.dietaryTags) ? item.dietaryTags : [];
       const matchesTagType =
-        selectedType === "all" || itemTags.includes(selectedType);
+        selectedType === "all" ||
+        itemTags.includes(selectedType) ||
+        (selectedType === "veg" && isVegItem(item));
 
       return matchesName && matchesType && matchesPrice && matchesDietary && matchesTagType;
     });
@@ -133,9 +166,11 @@ const MenuItems = () => {
     const next = [...filteredItems];
     switch (activeFilters.sort) {
       case "price-low":
-        return next.sort((a, b) => a.price - b.price);
+        return next.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
       case "price-high":
-        return next.sort((a, b) => b.price - a.price);
+        return next.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
+      case "rating":
+        return next.sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0));
       case "newest":
         return next.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
       default:

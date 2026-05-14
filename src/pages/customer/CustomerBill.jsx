@@ -43,22 +43,25 @@ const CustomerBill = () => {
   const printRootRef = useRef(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchBill = async () => {
       try {
         setLoading(true);
         const res = await api.get(`/customer/order/${qrToken}`, { skipErrorToast: true });
-        setOrder(res?.data?.data || null);
+        if (!cancelled) setOrder(res?.data?.data || null);
       } catch (err) {
         console.error("Failed to fetch bill", err);
-        setOrder(null);
+        if (!cancelled) setOrder(null);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchBill();
-    const intervalId = setInterval(fetchBill, 12000);
-    return () => clearInterval(intervalId);
+    return () => {
+      cancelled = true;
+    };
   }, [qrToken]);
 
   useEffect(() => {

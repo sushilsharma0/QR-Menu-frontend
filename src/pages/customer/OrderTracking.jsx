@@ -304,8 +304,9 @@ const OrderTracking = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-surface-50 via-white to-surface-50/90 pb-44 text-gray-950">
-      {/* Top bar */}
-      <header className="sticky top-0 z-30 border-b border-gray-100/80 bg-white/90 px-4 pb-3 pt-12 backdrop-blur-xl">
+      {/* Sticky tracking header */}
+      <div className="sticky top-0 z-40 bg-white shadow-[0_8px_24px_-22px_rgba(15,23,42,0.45)]">
+      <header className="border-b border-gray-100 bg-white px-4 pb-3 pt-12">
         <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
           <motion.button
             type="button"
@@ -337,8 +338,7 @@ const OrderTracking = () => {
         </div>
       </header>
 
-      {/* Sticky status strip */}
-      <div className="sticky top-[4.25rem] z-20 border-b border-gray-100/80 bg-white/85 px-4 py-3 backdrop-blur-lg">
+      <div className="border-b border-gray-100/80 bg-white/95 px-4 py-3 backdrop-blur-lg">
         <div className="mx-auto flex max-w-lg items-center gap-3">
           <motion.div
             layout
@@ -386,6 +386,7 @@ const OrderTracking = () => {
             </p>
           )}
         </div>
+      </div>
       </div>
 
       <main className="mx-auto max-w-lg space-y-4 px-4 pt-4">

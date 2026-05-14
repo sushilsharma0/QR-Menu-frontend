@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   Trash2,
@@ -41,6 +41,36 @@ const STEPS = [
   { id: "confirm", label: "Confirm" },
 ];
 
+function useBottomNavHidden() {
+  const [hidden, setHidden] = useState(false);
+  const lastScrollY = useRef(0);
+  const ticking = useRef(false);
+
+  useEffect(() => {
+    const onScroll = () => {
+      if (ticking.current) return;
+      ticking.current = true;
+      requestAnimationFrame(() => {
+        const y = window.scrollY || document.documentElement.scrollTop;
+        if (y < 48) {
+          setHidden(false);
+        } else if (y > lastScrollY.current + 12) {
+          setHidden(true);
+        } else if (y < lastScrollY.current - 12) {
+          setHidden(false);
+        }
+        lastScrollY.current = y;
+        ticking.current = false;
+      });
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return hidden;
+}
+
 const Cart = () => {
   const navigate = useNavigate();
   const { slug, token } = useParams();
@@ -73,6 +103,7 @@ const Cart = () => {
   const [otpSending, setOtpSending] = useState(false);
 
   const { toasts, removeToast, success, error, warning } = useToast();
+  const bottomNavHidden = useBottomNavHidden();
 
   useEffect(() => {
     if (slug && token) rememberCustomerPortal(slug, token);
@@ -305,15 +336,18 @@ const Cart = () => {
 
   const hasItems = items.length > 0;
   const showStickyCta = hasItems;
+  const bottomPaddingClass = showStickyCta
+    ? bottomNavHidden
+      ? "pb-28"
+      : "pb-48"
+    : "pb-28";
 
   return (
     <div
-      className={`min-h-screen bg-surface-50/60 text-gray-950 ${
-        showStickyCta ? "pb-48" : "pb-28"
-      }`}
+      className={`min-h-screen bg-surface-50/60 text-gray-950 transition-[padding-bottom] duration-300 ${bottomPaddingClass}`}
     >
       {/* Header */}
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-100 bg-white/95 px-5 pb-4 pt-12 backdrop-blur-lg">
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-gray-100 bg-white px-5 pb-4 pt-12 shadow-[0_8px_24px_-22px_rgba(15,23,42,0.45)]">
         <button
           className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-700 transition active:bg-gray-200"
           onClick={goBack}
@@ -341,7 +375,7 @@ const Cart = () => {
       </header>
 
       {/* Step indicator */}
-      <div className="mx-auto mt-4 max-w-md px-5">
+      <div className="mx-auto mt-5 max-w-md px-5">
         <div className="flex items-center justify-between">
           {STEPS.map((s, idx) => {
             const completed = idx < stepIndex;
@@ -463,10 +497,15 @@ const Cart = () => {
           <motion.div
             key="cart-sticky-cta"
             initial={{ y: 24, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
+            animate={{
+              y: 0,
+              opacity: 1,
+              bottom: bottomNavHidden
+                ? "calc(0.75rem + env(safe-area-inset-bottom, 0px))"
+                : "calc(5rem + env(safe-area-inset-bottom, 0px))",
+            }}
             exit={{ y: 24, opacity: 0 }}
             transition={{ type: "spring", stiffness: 320, damping: 28 }}
-            style={{ bottom: "calc(5rem + env(safe-area-inset-bottom, 0px))" }}
             className="fixed inset-x-0 z-[85] border-t border-gray-100 bg-white/95 px-4 pb-2.5 pt-2.5 backdrop-blur-xl shadow-[0_-8px_24px_-12px_rgba(15,23,42,0.18)]"
           >
             <div className="flex items-center gap-3">
