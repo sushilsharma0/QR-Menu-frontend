@@ -302,7 +302,7 @@ function RestaurantBanner({ info, totalDishes, categoryCount, loading }) {
       >
         {/* Cover image / decorative gradient */}
         <div
-          className="relative h-28 w-full overflow-hidden"
+          className="relative h-32 w-full overflow-hidden"
           style={
             hasCover
               ? {
@@ -380,9 +380,10 @@ function RestaurantBanner({ info, totalDishes, categoryCount, loading }) {
           </div>
         </div>
 
-        <div className="-mt-8 px-4 pb-4">
-          <div className="flex items-start gap-3">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-md ring-2 ring-white">
+        <div className="relative z-10 -mt-7 px-4 pb-4">
+          <div className="rounded-[1.35rem] border border-white/70 bg-white p-3 shadow-[0_14px_32px_-18px_rgba(15,23,42,0.32)] ring-1 ring-primary-100/50">
+          <div className="flex items-center gap-3">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-2 ring-white">
               {info?.logo ? (
                 <img
                   src={info.logo}
@@ -393,17 +394,17 @@ function RestaurantBanner({ info, totalDishes, categoryCount, loading }) {
                 <ChefHat size={28} className="text-primary-700" />
               )}
             </div>
-            <div className="min-w-0 flex-1 pt-9">
-              <p className="truncate text-base font-black text-gray-900">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[15px] font-black leading-tight text-gray-900">
                 {info?.name || "Restaurant menu"}
               </p>
-              <p className="mt-0.5 line-clamp-1 text-[11px] font-semibold text-gray-500">
+              <p className="mt-1 line-clamp-2 text-[11px] font-semibold leading-snug text-gray-500">
                 {tagline}
               </p>
             </div>
           </div>
 
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-3 grid grid-cols-3 gap-2">
             <StatChip
               label="Sections"
               value={loading ? "…" : categoryCount}
@@ -428,6 +429,7 @@ function RestaurantBanner({ info, totalDishes, categoryCount, loading }) {
               tone="emerald"
               small
             />
+          </div>
           </div>
         </div>
       </motion.div>
