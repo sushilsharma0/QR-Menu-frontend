@@ -46,20 +46,18 @@ export function BranchProvider({ children }) {
       const res = await api.get('/restaurant/branches', { params: { limit: 100 }, skipBranchHeader: true })
       const items = res.data?.data?.items || []
       setBranches(items)
+      const defaultOutlet = items.find((branch) => branch.isDefault)
+      const fallbackOutlet = defaultOutlet || items.find((branch) => branch.status === 'active') || items[0]
       const employeeBranchId = user?.scope === 'employee' ? user.branchId : null
+      const shouldPinToMainBranch = user?.scope !== 'employee' && user?.scope !== 'branch_user'
       const stored =
         employeeBranchId != null && String(employeeBranchId).length
           ? String(employeeBranchId)
-          : user?.scope === 'employee'
+          : shouldPinToMainBranch
             ? ''
             : getSelectedBranchId()
       const byStored = stored && items.find((branch) => String(branch._id) === String(stored))
-      const defaultOutlet = items.find((branch) => branch.isDefault)
-      const next =
-        byStored ||
-        defaultOutlet ||
-        items.find((branch) => branch.status === 'active') ||
-        items[0]
+      const next = shouldPinToMainBranch ? fallbackOutlet : byStored || fallbackOutlet
       if (next) persistSelectedBranch(next._id)
     } finally {
       setLoading(false)

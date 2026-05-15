@@ -9,6 +9,7 @@ import {
   FiCoffee,
   FiDollarSign,
   FiFileText,
+  FiHelpCircle,
   FiHome,
   FiLock,
   FiMapPin,
@@ -16,6 +17,7 @@ import {
   FiPercent,
   FiPieChart,
   FiSettings,
+  FiShield,
   FiShoppingBag,
   FiUsers,
   FiX,
@@ -40,6 +42,7 @@ function segmentToModuleKey(segment) {
     return 'accounting'
   }
   if (root === 'settings') return 'settings'
+  if (root === 'tickets' || root === 'public-profile') return null
   return 'dashboard'
 }
 
@@ -68,8 +71,11 @@ const NAV_GROUPS = [
   },
   {
     label: 'Settings',
-    ownerOnly: true,
-    items: [{ segment: 'settings', icon: FiSettings, label: 'Appearance' }],
+    items: [
+      { segment: 'tickets', icon: FiHelpCircle, label: 'Support Tickets' },
+      { segment: 'public-profile', icon: FiShield, label: 'About & Privacy' },
+      { segment: 'settings', icon: FiSettings, label: 'Branch settings' },
+    ],
   },
   {
     label: 'Accounting',

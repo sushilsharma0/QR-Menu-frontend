@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { FiX } from 'react-icons/fi'
 
 const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
@@ -23,25 +24,35 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
     full: 'max-w-6xl',
   }
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 transition-opacity bg-gray-500/75 dark:bg-black/70" onClick={onClose} />
-        
-        <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-        
-        <div className={`inline-block align-bottom bg-white dark:bg-gray-900 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle ${sizes[size]} w-full`}>
-          <div className="bg-white dark:bg-gray-900 px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
-            <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-300">
+  const modal = (
+    <div className="fixed inset-0 z-[9999] overflow-hidden">
+      <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-sm dark:bg-black/70" onClick={onClose} />
+
+      <div className="relative flex h-full items-center justify-center p-4">
+        <div className={`flex max-h-[calc(100vh-2rem)] w-full flex-col overflow-hidden rounded-3xl border border-white/70 bg-white text-left shadow-[0_30px_90px_-36px_rgba(15,23,42,0.75)] ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900 ${sizes[size]}`}>
+          <div className="flex shrink-0 items-center justify-between border-b border-gray-100 bg-gradient-to-r from-white via-primary-50/40 to-white px-6 py-4 dark:border-gray-800 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary-600 dark:text-primary-300">QR Menu SaaS</p>
+              <h3 className="mt-1 text-lg font-black text-gray-950 dark:text-gray-100">{title}</h3>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-gray-500 transition hover:bg-gray-200 hover:text-gray-700 active:scale-95 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+              aria-label="Close modal"
+            >
               <FiX className="h-5 w-5" />
             </button>
           </div>
-          {children}
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {children}
+          </div>
         </div>
       </div>
     </div>
   )
+
+  return createPortal(modal, document.body)
 }
 
 export default Modal

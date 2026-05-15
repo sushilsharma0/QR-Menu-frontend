@@ -155,8 +155,14 @@ function CreateBranchWizard({
   if (step === 1) {
     return (
       <div className="space-y-4">
-        <div className="rounded-xl border border-primary-200 bg-primary-50/60 px-4 py-3 dark:border-primary-900/50 dark:bg-primary-950/30">
-          <p className="text-xs font-black uppercase tracking-wide text-primary-800 dark:text-primary-200">Step 1 / 2 — Verify owner</p>
+        <div className="rounded-2xl border border-primary-200 bg-gradient-to-br from-primary-50 via-white to-amber-50 px-4 py-4 shadow-sm dark:border-primary-900/50 dark:from-primary-950/30 dark:via-gray-900 dark:to-gray-900">
+          <div className="mb-3 flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary-700 text-sm font-black text-white shadow-md shadow-primary-900/20">1</span>
+            <div>
+              <p className="text-xs font-black uppercase tracking-wide text-primary-800 dark:text-primary-200">Step 1 / 2 - Verify owner</p>
+              <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">Branch basics and Gmail verification</p>
+            </div>
+          </div>
           <p className="mt-1 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
             Enter branch basics and the owner&apos;s Gmail. We send a one-time code to that inbox (check spam). After you verify the code, step 2 opens for portal login, address, and modules.
           </p>
@@ -234,9 +240,14 @@ function CreateBranchWizard({
         onSubmitCreate()
       }}
     >
-      <div className="rounded-xl border border-surface-200 bg-surface-50/80 p-4 text-sm dark:border-gray-700 dark:bg-gray-800/50">
-        <p className="text-xs font-black uppercase tracking-wide text-primary-700 dark:text-primary-300">Step 2 / 2 — Branch details</p>
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Owner Gmail is already verified. Finish portal access, contact info, and modules below.</p>
+      <div className="rounded-2xl border border-surface-200 bg-gradient-to-br from-white to-surface-50 p-4 text-sm shadow-sm dark:border-gray-700 dark:from-gray-900 dark:to-gray-800/50">
+        <div className="mb-3 flex items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary-700 text-sm font-black text-white shadow-md shadow-primary-900/20">2</span>
+          <div>
+            <p className="text-xs font-black uppercase tracking-wide text-primary-700 dark:text-primary-300">Step 2 / 2 - Branch details</p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Owner Gmail is already verified. Finish portal access, contact info, and modules below.</p>
+          </div>
+        </div>
         <p className="mt-3 font-bold text-gray-900 dark:text-gray-100">Summary from step 1</p>
         <ul className="mt-2 space-y-1 text-gray-600 dark:text-gray-300">
           <li><span className="font-semibold">Branch:</span> {form.name || '—'}</li>
@@ -315,7 +326,8 @@ function CreateBranchWizard({
 }
 
 const Branches = () => {
-  const { branches, reloadBranches, selectedBranchId, setSelectedBranchId } = useBranch()
+  const { branches, reloadBranches, selectedBranch: currentBranch } = useBranch()
+  const [reportBranchId, setReportBranchId] = useState('')
   const [modalBranch, setModalBranch] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -363,8 +375,25 @@ const Branches = () => {
     setModalOpen(true)
   }
 
-  const selectedBranch = branches.find((branch) => String(branch._id) === String(selectedBranchId)) || branches[0]
+  useEffect(() => {
+    if (!branches.length) return
+    const defaultBranch = branches.find((branch) => branch.isDefault) || branches[0]
+    setReportBranchId((current) =>
+      current && branches.some((branch) => String(branch._id) === String(current))
+        ? current
+        : String(defaultBranch._id),
+    )
+  }, [branches])
+
+  const selectedBranch =
+    branches.find((branch) => String(branch._id) === String(reportBranchId)) ||
+    branches.find((branch) => branch.isDefault) ||
+    branches[0]
   const trendData = useMemo(() => analytics.trends || [], [analytics])
+  const canManageBranches = !currentBranch || currentBranch.isDefault
+  const enabledModuleList = MODULE_DEFS
+    .filter(({ key }) => selectedBranch?.isDefault || selectedBranch?.enabledModules?.[key] !== false)
+    .map(({ label }) => label)
 
   const loadAnalytics = async (branchId = selectedBranch?._id) => {
     if (!branchId) return
@@ -550,9 +579,15 @@ const Branches = () => {
           <h1 className="mt-1 text-3xl font-black text-gray-950 dark:text-gray-100">Branch Management</h1>
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Create, switch, monitor, and protect independent branch operations.</p>
         </div>
-        <Button onClick={openCreateModal}>
-          <FiPlus className="mr-2 h-4 w-4" /> Add branch
-        </Button>
+        {canManageBranches ? (
+          <Button onClick={openCreateModal}>
+            <FiPlus className="mr-2 h-4 w-4" /> Add branch
+          </Button>
+        ) : (
+          <span className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
+            Main branch permission required
+          </span>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
@@ -573,15 +608,15 @@ const Branches = () => {
                 role="button"
                 tabIndex={0}
                 key={branch._id}
-                onClick={() => setSelectedBranchId(branch._id)}
+                onClick={() => setReportBranchId(String(branch._id))}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault()
-                    setSelectedBranchId(branch._id)
+                    setReportBranchId(String(branch._id))
                   }
                 }}
                 className={`flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition hover:bg-surface-50 dark:hover:bg-gray-800 ${
-                  String(selectedBranchId) === String(branch._id) ? 'bg-primary-50/70 dark:bg-gray-800' : ''
+                  String(reportBranchId) === String(branch._id) ? 'bg-primary-50/70 dark:bg-gray-800' : ''
                 }`}
               >
                 <div className="min-w-0">
@@ -592,12 +627,12 @@ const Branches = () => {
                   <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${branch.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
                     {branch.status}
                   </span>
-                  {!branch.isDefault && (
+                  {canManageBranches && !branch.isDefault && (
                     <button type="button" onClick={(e) => { e.stopPropagation(); setModalBranch(branch); setModalOpen(true) }} className="rounded-lg p-2 text-gray-500 hover:bg-white hover:text-primary-700 dark:hover:bg-gray-900">
                       <FiEdit2 />
                     </button>
                   )}
-                  {!branch.isDefault && (
+                  {canManageBranches && !branch.isDefault && (
                     <button type="button" onClick={(e) => { e.stopPropagation(); deleteBranch(branch) }} className="rounded-lg p-2 text-gray-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30">
                       <FiTrash2 />
                     </button>
@@ -629,6 +664,65 @@ const Branches = () => {
           </div>
         </section>
       </div>
+
+      <section className="rounded-2xl border border-surface-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div className="flex flex-col gap-2 border-b border-surface-100 pb-4 dark:border-gray-800 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-wide text-primary-700 dark:text-primary-300">Report section</p>
+            <h2 className="mt-1 text-xl font-black text-gray-950 dark:text-gray-100">{selectedBranch?.name || 'Branch'} report</h2>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Selecting a branch here only changes this report. It does not switch your whole system branch.
+            </p>
+          </div>
+          <span className={`w-fit rounded-full px-3 py-1 text-xs font-bold capitalize ${selectedBranch?.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+            {selectedBranch?.status || 'unknown'}
+          </span>
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="rounded-2xl bg-surface-50 p-4 dark:bg-gray-800/50">
+            <p className="text-xs font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">Branch details</p>
+            <dl className="mt-3 space-y-2 text-sm">
+              <ReportRow label="Public ID" value={selectedBranch?.publicBranchId || selectedBranch?._id} />
+              <ReportRow label="Slug" value={selectedBranch?.slug} />
+              <ReportRow label="Manager" value={selectedBranch?.branchManagerName} />
+              <ReportRow label="Phone" value={selectedBranch?.phone} />
+              <ReportRow label="Tax number" value={selectedBranch?.taxNumber} />
+            </dl>
+          </div>
+
+          <div className="rounded-2xl bg-surface-50 p-4 dark:bg-gray-800/50">
+            <p className="text-xs font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">Location</p>
+            <dl className="mt-3 space-y-2 text-sm">
+              <ReportRow label="Address" value={selectedBranch?.address} />
+              <ReportRow label="City" value={selectedBranch?.city} />
+              <ReportRow label="State" value={selectedBranch?.state} />
+              <ReportRow label="Country" value={selectedBranch?.country} />
+            </dl>
+          </div>
+
+          <div className="rounded-2xl bg-surface-50 p-4 dark:bg-gray-800/50">
+            <p className="text-xs font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">Performance</p>
+            <dl className="mt-3 space-y-2 text-sm">
+              <ReportRow label="Revenue" value={money(summary.revenue)} />
+              <ReportRow label="Employees" value={summary.employees || 0} />
+              <ReportRow label="Inventory value" value={money(summary.inventoryValue)} />
+              <ReportRow label="Orders" value={summary.orders || summary.totalOrders || 0} />
+            </dl>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-surface-100 p-4 dark:border-gray-800">
+          <p className="text-xs font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">Enabled modules</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {enabledModuleList.map((label) => (
+              <span key={label} className="rounded-full bg-primary-50 px-3 py-1 text-xs font-bold text-primary-700 dark:bg-primary-950/30 dark:text-primary-200">
+                {label}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <section className="rounded-2xl border border-surface-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="flex items-center justify-between">
@@ -725,6 +819,17 @@ function Metric({ icon: Icon, label, value }) {
           <Icon className="h-5 w-5" />
         </div>
       </div>
+    </div>
+  )
+}
+
+function ReportRow({ label, value }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <dt className="shrink-0 text-gray-500 dark:text-gray-400">{label}</dt>
+      <dd className="min-w-0 break-words text-right font-bold text-gray-900 dark:text-gray-100">
+        {value || '-'}
+      </dd>
     </div>
   )
 }

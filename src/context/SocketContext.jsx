@@ -100,13 +100,16 @@ export const SocketProvider = ({ children }) => {
         const recipientType =
           userScope === 'employee'
             ? 'employee'
-            : userRole === 'restaurant'
+            : userScope === 'branch_user' || userRole === 'restaurant'
               ? 'restaurant'
               : userRole === 'super_admin' || userRole === 'admin'
                 ? 'platform'
                 : null
         if (recipientType) {
-          newSocket.emit('join:user', { recipientType, recipientId: userId })
+          newSocket.emit('join:user', {
+            recipientType,
+            recipientId: userScope === 'branch_user' ? resolvedRestaurantId : userId,
+          })
         }
         if (userScope === 'branch_user' && resolvedRestaurantId && branchId) {
           newSocket.emit('join:restaurant', resolvedRestaurantId)
@@ -176,13 +179,16 @@ export const SocketProvider = ({ children }) => {
         const recipientType =
           userScope === 'employee'
             ? 'employee'
-            : userRole === 'restaurant'
+            : userScope === 'branch_user' || userRole === 'restaurant'
               ? 'restaurant'
               : userRole === 'super_admin' || userRole === 'admin'
                 ? 'platform'
                 : null
         if (recipientType) {
-          newSocket.emit('join:user', { recipientType, recipientId: userId })
+          newSocket.emit('join:user', {
+            recipientType,
+            recipientId: userScope === 'branch_user' ? resolvedRestaurantId : userId,
+          })
         }
         if (userScope === 'branch_user' && resolvedRestaurantId && branchId) {
           newSocket.emit('join:restaurant', resolvedRestaurantId)
