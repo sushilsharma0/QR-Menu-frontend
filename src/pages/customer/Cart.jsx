@@ -15,8 +15,6 @@ import {
   Sparkles,
   ArrowRight,
   PackageOpen,
-  CreditCard,
-  Landmark,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
@@ -29,7 +27,6 @@ import {
   getCustomerIdentity,
   getStoredCustomerProfile,
   rememberCustomerOrderToken,
-  requestCreditCheckoutOtp,
 } from "../../services/customer";
 import Navigation from "../../components/customer/Navigation";
 import { rememberCustomerPortal } from "../../utils/customerPortalContext";
@@ -97,11 +94,6 @@ const Cart = () => {
     email: "",
   });
   const [successOrder, setSuccessOrder] = useState(null);
-  const [paymentChoice, setPaymentChoice] = useState("today");
-  const [creditEmail, setCreditEmail] = useState("");
-  const [creditOtp, setCreditOtp] = useState("");
-  const [otpSending, setOtpSending] = useState(false);
-
   const { toasts, removeToast, success, error, warning } = useToast();
   const bottomNavHidden = useBottomNavHidden();
 
@@ -153,7 +145,6 @@ const Cart = () => {
           phone: identityProfile?.phone || "",
           email: identityProfile?.email || "",
         });
-        setCreditEmail(identityProfile?.email || "");
       } catch (err) {
         console.error("Failed to load customer identity", err);
       }
@@ -217,17 +208,6 @@ const Cart = () => {
         warning("Please enter your full name.");
         return;
       }
-      setCreditEmail((current) => current || customerDetails.email || "");
-      if (paymentChoice === "credit") {
-        if (!String(creditEmail || customerDetails.email || "").trim()) {
-          warning("Enter the email approved by the restaurant.");
-          return;
-        }
-        if (!String(creditOtp || "").trim()) {
-          warning("Enter the verification code sent to your email.");
-          return;
-        }
-      }
       setStep("confirm");
     }
   };
@@ -236,27 +216,6 @@ const Cart = () => {
     if (step === "confirm") setStep("details");
     else if (step === "details") setStep("review");
     else navigate(-1);
-  };
-
-  const sendCreditOtp = async () => {
-    const emailForCredit = String(creditEmail || customerDetails.email || "").trim();
-    if (!emailForCredit) {
-      warning("Enter the email approved by the restaurant.");
-      return;
-    }
-    if (!guestId || !token) {
-      warning("Session missing. Please reopen from your table QR.");
-      return;
-    }
-    try {
-      setOtpSending(true);
-      await requestCreditCheckoutOtp({ qrToken: token, guestId, email: emailForCredit });
-      success("Verification code sent to your email.");
-    } catch (err) {
-      error(err?.response?.data?.message || "No approved house credit account found for this email.");
-    } finally {
-      setOtpSending(false);
-    }
   };
 
   const handlePlaceOrder = async () => {
@@ -281,13 +240,13 @@ const Cart = () => {
       const payload = {
         qrToken: token,
         guestId,
-        deferPayment: paymentChoice !== "credit",
-        checkoutTiming: paymentChoice === "credit" ? "credit" : "pay_now",
-        creditEmail: paymentChoice === "credit" ? String(creditEmail || finalEmail).trim() : "",
-        creditOtp: paymentChoice === "credit" ? String(creditOtp || "").trim() : "",
+        deferPayment: true,
+        checkoutTiming: "post_serve",
+        creditEmail: "",
+        creditOtp: "",
         customerName: finalName,
         customerPhone: finalPhone,
-        customerEmail: paymentChoice === "credit" ? String(creditEmail || finalEmail).trim() : finalEmail,
+        customerEmail: finalEmail,
         promoCode: appliedPromo?.code || "",
         items: items.map((item) => ({
           menuItemId: item.menuItemId,
@@ -441,36 +400,19 @@ const Cart = () => {
           )}
 
           {step === "details" && (
-            <>
-              <DetailsStep
-                customerDetails={customerDetails}
-                setCustomerDetails={setCustomerDetails}
-                subtotal={subtotal}
-                total={total}
-                promoDiscount={promoDiscount}
-              />
-              <PaymentStep
-                paymentChoice={paymentChoice}
-                setPaymentChoice={setPaymentChoice}
-                creditEmail={creditEmail}
-                setCreditEmail={setCreditEmail}
-                creditOtp={creditOtp}
-                setCreditOtp={setCreditOtp}
-                customerEmail={customerDetails.email}
-                otpSending={otpSending}
-                onSendCreditOtp={sendCreditOtp}
-                total={total}
-                onApplyCredit={() => navigate(`/credit-apply/${slug}/${token}`)}
-              />
-            </>
+            <DetailsStep
+              customerDetails={customerDetails}
+              setCustomerDetails={setCustomerDetails}
+              subtotal={subtotal}
+              total={total}
+              promoDiscount={promoDiscount}
+            />
           )}
 
           {step === "confirm" && (
             <ConfirmStep
               items={items}
               customerDetails={customerDetails}
-              paymentChoice={paymentChoice}
-              creditEmail={creditEmail}
               subtotal={subtotal}
               total={total}
               promoDiscount={promoDiscount}
@@ -841,131 +783,7 @@ function DetailsStep({ customerDetails, setCustomerDetails, subtotal, total, pro
   );
 }
 
-function PaymentStep({
-  paymentChoice,
-  setPaymentChoice,
-  creditEmail,
-  setCreditEmail,
-  creditOtp,
-  setCreditOtp,
-  customerEmail,
-  otpSending,
-  onSendCreditOtp,
-  total,
-  onApplyCredit,
-}) {
-  const creditSelected = paymentChoice === "credit";
-
-  return (
-    <div className="px-5 space-y-4">
-      <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-        <h3 className="text-xs font-black uppercase tracking-[0.18em] text-gray-400">
-          Payment option
-        </h3>
-        <p className="mt-1 text-xs font-semibold leading-relaxed text-gray-500">
-          Choose how this bill should be settled. House credit is available only after the restaurant approves your account.
-        </p>
-
-        <div className="mt-4 grid gap-3">
-          <button
-            type="button"
-            onClick={() => setPaymentChoice("today")}
-            className={`flex items-start gap-3 rounded-3xl border-2 p-4 text-left transition ${
-              paymentChoice === "today"
-                ? "border-primary-600 bg-primary-50"
-                : "border-gray-100 bg-white active:bg-gray-50"
-            }`}
-          >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-primary-700 shadow-sm">
-              <Landmark size={21} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm font-black text-gray-950">Pay today</span>
-              <span className="mt-1 block text-xs font-semibold leading-relaxed text-gray-500">
-                Send the order now. After food is served, choose cash, online, or split payment from tracking.
-              </span>
-            </span>
-            <span className={`mt-1 h-5 w-5 rounded-full border-2 ${paymentChoice === "today" ? "border-primary-600 bg-primary-600" : "border-gray-200"}`} />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setPaymentChoice("credit")}
-            className={`flex items-start gap-3 rounded-3xl border-2 p-4 text-left transition ${
-              creditSelected
-                ? "border-amber-500 bg-amber-50"
-                : "border-gray-100 bg-white active:bg-gray-50"
-            }`}
-          >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-amber-700 shadow-sm">
-              <CreditCard size={21} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm font-black text-gray-950">Pay later with house credit</span>
-              <span className="mt-1 block text-xs font-semibold leading-relaxed text-gray-500">
-                Use an approved restaurant credit account. We verify the approved email before sending the order.
-              </span>
-            </span>
-            <span className={`mt-1 h-5 w-5 rounded-full border-2 ${creditSelected ? "border-amber-500 bg-amber-500" : "border-gray-200"}`} />
-          </button>
-        </div>
-      </div>
-
-      {creditSelected && (
-        <div className="rounded-3xl border border-amber-100 bg-amber-50/80 p-5 shadow-sm">
-          <div className="flex items-start gap-3">
-            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
-            <div>
-              <h3 className="text-sm font-black text-amber-950">Verify approved account</h3>
-              <p className="mt-1 text-xs font-semibold leading-relaxed text-amber-900/80">
-                The restaurant must approve this email first. If it is not approved, request approval before choosing pay later.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4 space-y-3">
-            <Field
-              icon={Mail}
-              value={creditEmail || customerEmail || ""}
-              onChange={setCreditEmail}
-              placeholder="Approved house-credit email"
-              type="email"
-            />
-            <button
-              type="button"
-              disabled={otpSending}
-              onClick={onSendCreditOtp}
-              className="w-full rounded-2xl bg-amber-600 py-3 text-xs font-black text-white shadow-sm active:scale-[0.98] disabled:opacity-60"
-            >
-              {otpSending ? "Sending code..." : "Send verification code"}
-            </button>
-            <Field
-              icon={ShieldCheck}
-              value={creditOtp}
-              onChange={(v) => setCreditOtp(String(v || "").replace(/\D/g, "").slice(0, 6))}
-              placeholder="6-digit code"
-              inputMode="numeric"
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={onApplyCredit}
-            className="mt-4 text-xs font-black text-primary-700 underline"
-          >
-            Need approval? Apply for house credit
-          </button>
-        </div>
-      )}
-
-      <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-        <Row label="Bill total" value={`Rs. ${total}`} />
-      </div>
-    </div>
-  );
-}
-
-function ConfirmStep({ items, customerDetails, paymentChoice, creditEmail, subtotal, total, promoDiscount, appliedPromo }) {
+function ConfirmStep({ items, customerDetails, subtotal, total, promoDiscount, appliedPromo }) {
   return (
     <div className="px-5 space-y-4">
       <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
@@ -1013,22 +831,6 @@ function ConfirmStep({ items, customerDetails, paymentChoice, creditEmail, subto
           {customerDetails.email && (
             <p className="text-xs font-semibold text-gray-500">{customerDetails.email}</p>
           )}
-        </div>
-      </div>
-
-      <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-        <h3 className="text-xs font-black uppercase tracking-[0.18em] text-gray-400">
-          Payment
-        </h3>
-        <div className="mt-3 rounded-2xl bg-gray-50 p-4">
-          <p className="text-sm font-black text-gray-900">
-            {paymentChoice === "credit" ? "Pay later with house credit" : "Pay today"}
-          </p>
-          <p className="mt-1 text-xs font-semibold leading-relaxed text-gray-500">
-            {paymentChoice === "credit"
-              ? `Approved account: ${creditEmail || customerDetails.email || "verified email"}`
-              : "Payment will be completed from order tracking after the food is served."}
-          </p>
         </div>
       </div>
 

@@ -207,7 +207,7 @@ const OrderTracking = () => {
   );
   const guestIdForPay = order?.guestId || getStoredGuestId();
   const showPostServePay =
-    order?.status === "served" &&
+    ["served", "completed"].includes(order?.status) &&
     order?.customerPaymentDeferred &&
     order?.paymentStatus !== "paid";
 
