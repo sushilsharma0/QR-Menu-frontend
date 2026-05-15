@@ -469,7 +469,11 @@ const CustomerBill = () => {
             }
           }}
         />
-        <Navigation restaurantSlug={order?.restaurantSlug} tableQrToken={order?.tableQrToken} />
+        <Navigation
+          restaurantSlug={order?.restaurantSlug}
+          tableQrToken={order?.tableQrToken}
+          hidden={showFeedback}
+        />
       </div>
     </div>
   );

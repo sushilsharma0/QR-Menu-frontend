@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   BadgePlus,
+  BellRing,
   ChevronDown,
   ChevronRight,
   ChevronUp,
@@ -10,6 +11,7 @@ import {
   User,
   Utensils,
   UtensilsCrossed,
+  X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link, useParams } from "react-router-dom";
@@ -29,6 +31,7 @@ import {
   requestCustomerPasswordReset,
   resetCustomerPassword,
   verifyCustomerPasswordResetOtp,
+  clearCustomerIdentitySession,
   getStoredCustomerId,
   getCustomerIdentity,
   getRestaurantInfo,
@@ -75,9 +78,8 @@ export default function Home() {
   useEffect(() => {
     if (!slug || !token) return;
     const storedCustomerId = getStoredCustomerId();
-    const storedGuestId = localStorage.getItem("customer_guest_id_v1") || "";
     setCustomerId(storedCustomerId);
-    if (!storedCustomerId && !storedGuestId && !sessionStorage.getItem(`customer_entry_choice_${token}`)) {
+    if (!storedCustomerId && !sessionStorage.getItem(`customer_entry_choice_${token}`)) {
       setShowFirstScanChoice(true);
     }
     ensureGuestSession(token)
@@ -113,6 +115,9 @@ export default function Home() {
   };
 
   const continueAsGuest = () => {
+    clearCustomerIdentitySession();
+    setCustomerId("");
+    setCustomerProfile(null);
     sessionStorage.setItem(`customer_entry_choice_${token}`, "guest");
     setShowFirstScanChoice(false);
   };
@@ -334,8 +339,7 @@ export default function Home() {
   };
 
   const handleEndSession = () => {
-    localStorage.removeItem("customer_guest_id_v1");
-    localStorage.removeItem("customer_identity_id_v1");
+    clearCustomerIdentitySession({ includeGuest: true });
     setGuestIdLocal("");
     setCustomerId("");
     setCustomerProfile(null);
@@ -346,6 +350,20 @@ export default function Home() {
   const heroImage =
     restaurantInfo?.backgroundPhoto ||
     "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80";
+  const hideBottomNav =
+    showFeedback ||
+    showOffers ||
+    showGuestAssist ||
+    showWaiters ||
+    showPromoModal ||
+    showFirstScanChoice;
+
+  useEffect(() => {
+    document.body.style.overflow = hideBottomNav ? "hidden" : "unset";
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [hideBottomNav]);
 
   return (
     <PageTransition>
@@ -550,13 +568,45 @@ export default function Home() {
         )}
         <Waiters isOpen={showWaiters} onClose={() => setShowWaiters(false)} />
         {showGuestAssist && (
-          <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 px-4 pb-8 pt-12">
-            <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
-              <p className="text-center text-lg font-black text-gray-950">Need something?</p>
-              <p className="mt-1 text-center text-xs text-gray-500">
-                We alert the restaurant and waiter dashboards in real time.
-              </p>
-              <div className="mt-4 grid grid-cols-2 gap-2">
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowGuestAssist(false)}
+              className="fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px]"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+              className="fixed bottom-0 left-0 right-0 z-50 overflow-hidden rounded-t-3xl bg-white shadow-2xl"
+            >
+              <div className="flex justify-center pt-3">
+                <div className="h-1 w-10 rounded-full bg-gray-200" />
+              </div>
+              <div className="flex items-center justify-between px-5 pb-3 pt-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-100">
+                    <BellRing size={18} className="text-orange-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold leading-none text-gray-800">Need something?</h2>
+                    <p className="mt-0.5 text-[11px] text-gray-400">We alert the restaurant in real time</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200"
+                  onClick={() => setShowGuestAssist(false)}
+                  aria-label="Close assist"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="mx-5 h-px bg-gray-100" />
+              <div className="grid grid-cols-2 gap-2 px-5 pb-6 pt-4">
                 {[
                   { type: "call_waiter", label: "Call waiter" },
                   { type: "need_water", label: "Water" },
@@ -568,27 +618,25 @@ export default function Home() {
                     type="button"
                     disabled={assistSending}
                     onClick={() => sendGuestRequest(btn.type)}
-                    className="rounded-2xl border border-gray-200 py-3 text-sm font-bold text-gray-800 disabled:opacity-50"
+                    className="rounded-2xl border border-gray-200 bg-white py-3 text-sm font-bold text-gray-800 transition active:scale-[0.98] disabled:opacity-50"
                   >
                     {btn.label}
                   </button>
                 ))}
               </div>
-              <button
-                type="button"
-                className="mt-3 w-full rounded-2xl py-3 text-sm font-semibold text-gray-500"
-                onClick={() => setShowGuestAssist(false)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
+            </motion.div>
+          </>
         )}
         <Offers isOpen={showOffers} onClose={() => setShowOffers(false)} slug={slug} />
         <Feedback isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
         <QRScannerModal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} onScanSuccess={handleScanSuccess} />
-        <PromoCodeModal isOpen={showPromoModal} onClose={() => setShowPromoModal(false)} promos={promoBanners} />
-        <Navigation />
+        <PromoCodeModal
+          isOpen={showPromoModal}
+          onClose={() => setShowPromoModal(false)}
+          promos={promoBanners}
+          onViewAllOffers={() => setShowOffers(true)}
+        />
+        <Navigation hidden={hideBottomNav} />
       </div>
     </PageTransition>
   );

@@ -116,30 +116,36 @@ const FilterSidebar = ({ isOpen, onClose, onApply, currentFilters }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/50 z-40"
+            className="fixed inset-0 z-40 bg-black/45 backdrop-blur-[2px]"
           />
 
-          {/* Sidebar - Half Screen */}
+          {/* Sidebar */}
           <motion.div
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 h-full max-w-sm bg-white z-50 shadow-xl flex flex-col"
+            initial={{ x: "108%", opacity: 0.7, scale: 0.98 }}
+            animate={{ x: 0, opacity: 1, scale: 1 }}
+            exit={{ x: "108%", opacity: 0, scale: 0.98 }}
+            transition={{ type: "spring", damping: 28, stiffness: 260, mass: 0.9 }}
+            className="fixed right-0 top-0 z-50 flex h-full w-[70vw] min-w-[17rem] max-w-md flex-col overflow-hidden rounded-l-[2rem] bg-white shadow-[-24px_0_60px_-28px_rgba(15,23,42,0.55)] ring-1 ring-black/5"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-5 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-800">Filters</h2>
+            <div className="flex items-center justify-between border-b border-gray-100 bg-white/95 px-5 py-5 backdrop-blur">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-500">
+                  Refine menu
+                </p>
+                <h2 className="mt-0.5 text-lg font-black text-gray-900">Filters</h2>
+              </div>
               <button
                 onClick={onClose}
-                className="p-2 bg-gray-100 rounded-full"
+                className="rounded-full bg-gray-100 p-2 transition active:scale-90"
+                aria-label="Close filters"
               >
                 <X size={18} className="text-gray-600" />
               </button>
             </div>
 
             {/* Filter Options */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+            <div className="flex-1 space-y-6 overflow-y-auto px-5 py-4">
               {/* Sort By */}
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">
@@ -247,7 +253,7 @@ const FilterSidebar = ({ isOpen, onClose, onApply, currentFilters }) => {
             </div>
 
             {/* Footer Actions */}
-            <div className="px-5 py-4 border-t border-gray-100 space-y-3">
+            <div className="space-y-3 border-t border-gray-100 bg-white/95 px-5 py-4 backdrop-blur">
               <button
                 onClick={handleApply}
                 className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition-colors"

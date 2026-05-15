@@ -35,8 +35,6 @@ const TYPE_CHIPS = [
   { id: "seafood", label: "Seafood", dot: "bg-cyan-500",   active: "bg-cyan-500 text-white border-cyan-500" },
 ];
 
-const NON_VEG_TYPES = ["egg", "chicken", "mutton", "buff", "pork", "fish", "seafood"];
-
 const getItemTags = (item) => {
   const tags = Array.isArray(item?.dietaryTags) ? item.dietaryTags.filter(Boolean) : [];
   if (tags.length > 0) return tags;
@@ -50,20 +48,9 @@ const isVegItem = (item) => {
   return tags.includes("veg") || item?.isVegetarian === true;
 };
 
-const isNonVegItem = (item) => {
-  const tags = getItemTags(item);
-  return (
-    tags.includes("non-veg") ||
-    tags.some((tag) => NON_VEG_TYPES.includes(tag)) ||
-    item?.tag === "Non-Veg" ||
-    (!isVegItem(item) && tags.length > 0)
-  );
-};
-
 const MenuItems = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
-  const [foodType, setFoodType] = useState("all");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [foodItems, setFoodItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -121,11 +108,6 @@ const MenuItems = () => {
       const description = String(item?.description || "").toLowerCase();
       const matchesName = !query || name.includes(query) || description.includes(query);
 
-      const matchesType =
-        foodType === "all" ||
-        (foodType === "veg" && isVegItem(item)) ||
-        (foodType === "non-veg" && isNonVegItem(item));
-
       let matchesPrice = true;
       const price = Number(item?.price || 0);
       switch (activeFilters.priceRange) {
@@ -158,9 +140,9 @@ const MenuItems = () => {
         itemTags.includes(selectedType) ||
         (selectedType === "veg" && isVegItem(item));
 
-      return matchesName && matchesType && matchesPrice && matchesDietary && matchesTagType;
+      return matchesName && matchesPrice && matchesDietary && matchesTagType;
     });
-  }, [foodItems, searchQuery, foodType, activeFilters]);
+  }, [foodItems, searchQuery, activeFilters]);
 
   const sortedItems = useMemo(() => {
     const next = [...filteredItems];
@@ -296,35 +278,8 @@ const MenuItems = () => {
         </div>
       </header>
 
-      {/* Veg / Non-Veg toggle */}
-      <div className="px-4 pt-4">
-        <div className="mx-auto flex max-w-md items-center justify-between rounded-full bg-gray-100 p-1">
-          {[
-            { id: "all", label: "All" },
-            { id: "veg", label: "Veg", color: "text-emerald-600", dot: "bg-emerald-500" },
-            { id: "non-veg", label: "Non-Veg", color: "text-red-600", dot: "bg-red-500" },
-          ].map((opt) => {
-            const active = foodType === opt.id;
-            return (
-              <button
-                key={opt.id}
-                onClick={() => setFoodType(opt.id)}
-                className={`relative flex-1 rounded-full px-3 py-2 text-xs font-bold transition ${
-                  active ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
-                }`}
-              >
-                <span className="flex items-center justify-center gap-1.5">
-                  {opt.dot && <span className={`h-2 w-2 rounded-full ${opt.dot}`} />}
-                  {opt.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Dietary chips */}
-      <div className="px-4 pt-3">
+      <div className="px-4 pt-4">
         <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {TYPE_CHIPS.map((chip) => {
             const active = (activeFilters.type || "all") === chip.id;
@@ -360,7 +315,6 @@ const MenuItems = () => {
             onClearSearch={() => setSearchQuery("")}
             onClearFilters={() => {
               setActiveFilters({ sort: "popular", priceRange: "all", dietary: "", type: "all" });
-              setFoodType("all");
             }}
           />
         ) : (
@@ -457,8 +411,8 @@ const MenuItems = () => {
         )}
       </div>
 
-      <ViewCartBtn />
-      <Navigation />
+      <ViewCartBtn hidden={isFilterOpen} />
+      <Navigation hidden={isFilterOpen} />
       <CartDrawer />
 
       <FilterSidebar

@@ -12,7 +12,7 @@ import { useCustomerCart } from "../../context/CustomerCartContext";
  * 1500ms polling). It also briefly pulses when a new item is added so the
  * customer gets an obvious confirmation that their tap worked.
  */
-export default function ViewCartBtn({ offset = "5.25rem" }) {
+export default function ViewCartBtn({ offset = "5.25rem", hidden = false }) {
   const { totals, openDrawer, lastAddedAt } = useCustomerCart();
   const [pulse, setPulse] = useState(false);
 
@@ -25,7 +25,7 @@ export default function ViewCartBtn({ offset = "5.25rem" }) {
 
   return (
     <AnimatePresence>
-      {totals.count > 0 && (
+      {totals.count > 0 && !hidden && (
         <motion.div
           key="floating-cart-bar"
           initial={{ y: 80, opacity: 0 }}

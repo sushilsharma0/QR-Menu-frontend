@@ -89,8 +89,6 @@ const MenuItemForm = () => {
       setValue('originalPrice', item.originalPrice)
       setValue('preparationTime', item.preparationTime)
       setValue('taxRate', item.taxRate)
-      setValue('isVegetarian', item.isVegetarian)
-      setValue('isSpicy', item.isSpicy)
       setValue('isAvailable', item.isAvailable)
       setDietaryTags(Array.isArray(item.dietaryTags) ? item.dietaryTags : [])
       const n = item.nutrition || {}
@@ -121,8 +119,8 @@ const MenuItemForm = () => {
       if (data.originalPrice) formData.append('originalPrice', data.originalPrice)
       if (data.preparationTime) formData.append('preparationTime', data.preparationTime)
       if (data.taxRate) formData.append('taxRate', data.taxRate)
-      if (data.isVegetarian) formData.append('isVegetarian', data.isVegetarian)
-      if (data.isSpicy) formData.append('isSpicy', data.isSpicy)
+      formData.append('isVegetarian', 'false')
+      formData.append('isSpicy', 'false')
       if (data.isAvailable) formData.append('isAvailable', data.isAvailable)
       // Always send tags (so an empty array clears them server-side)
       formData.append('dietaryTags', JSON.stringify(dietaryTags))
@@ -354,14 +352,6 @@ const MenuItemForm = () => {
           </div>
 
           <div className="flex gap-4">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" {...register('isVegetarian')} className="w-4 h-4" />
-              <span className="text-sm text-gray-700">Vegetarian</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input type="checkbox" {...register('isSpicy')} className="w-4 h-4" />
-              <span className="text-sm text-gray-700">Spicy</span>
-            </label>
             <label className="flex items-center gap-2">
               <input type="checkbox" {...register('isAvailable')} className="w-4 h-4" defaultChecked />
               <span className="text-sm text-gray-700">Available</span>

@@ -131,17 +131,14 @@ const Cart = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  // 2) Once the context exposes a guestId, fetch saved customer details.
-  //    Splitting this into a separate effect avoids blocking the cart UI.
+  // 2) Once the context exposes a guestId, fetch profile details only for an
+  //    authenticated customer ID. Guest checkout fields stay blank.
   useEffect(() => {
     if (!guestId || !token) return;
     let cancelled = false;
 
     (async () => {
       try {
-        const savedDetails = JSON.parse(
-          localStorage.getItem(`guest_details_${guestId}`) || "{}",
-        );
         const storedProfile = getStoredCustomerProfile();
         let identityProfile = storedProfile;
         try {
@@ -152,11 +149,11 @@ const Cart = () => {
         }
         if (cancelled) return;
         setCustomerDetails({
-          name: identityProfile?.name || savedDetails.name || "",
-          phone: identityProfile?.phone || savedDetails.phone || "",
-          email: identityProfile?.email || savedDetails.email || "",
+          name: identityProfile?.name || "",
+          phone: identityProfile?.phone || "",
+          email: identityProfile?.email || "",
         });
-        setCreditEmail(identityProfile?.email || savedDetails.email || "");
+        setCreditEmail(identityProfile?.email || "");
       } catch (err) {
         console.error("Failed to load customer identity", err);
       }
@@ -281,11 +278,6 @@ const Cart = () => {
         setIsPlacingOrder(false);
         return;
       }
-      localStorage.setItem(
-        `guest_details_${guestId}`,
-        JSON.stringify({ name: finalName, phone: finalPhone, email: finalEmail }),
-      );
-
       const payload = {
         qrToken: token,
         guestId,

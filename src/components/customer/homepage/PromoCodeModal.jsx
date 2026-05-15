@@ -99,7 +99,7 @@ function PromoCardModal({ promo }) {
 
 /* ── Main Modal ── */
 
-export default function PromoCodeModal({ isOpen, onClose, promos = [] }) {
+export default function PromoCodeModal({ isOpen, onClose, promos = [], onViewAllOffers }) {
   const [showOffers, setShowOffers] = useState(false);
   const { slug } = useParams();
 
@@ -114,7 +114,11 @@ export default function PromoCodeModal({ isOpen, onClose, promos = [] }) {
   // ── "View All Offers" — close this modal and open Offers
   const handleViewAllOffers = () => {
     onClose();           // close PromoCodeModal via parent state
-    setShowOffers(true); // open Offers independently
+    if (onViewAllOffers) {
+      onViewAllOffers();
+    } else {
+      setShowOffers(true); // open Offers independently when no parent owns it
+    }
   };
 
   return (

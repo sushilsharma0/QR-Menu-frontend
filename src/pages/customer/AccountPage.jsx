@@ -17,20 +17,32 @@ import Navigation from '../../components/customer/Navigation';
 import Feedback from '../../components/customer/homepage/Feedback';
 import { rememberCustomerPortal } from '../../utils/customerPortalContext';
 import toast from 'react-hot-toast';
-import { ensureGuestSession, getCustomerIdentity, getStoredCustomerId, getStoredCustomerProfile } from '../../services/customer';
+import {
+  clearCustomerIdentitySession,
+  ensureGuestSession,
+  getCustomerIdentity,
+  getRestaurantInfo,
+  getStoredCustomerId,
+  getStoredCustomerProfile,
+} from '../../services/customer';
 
 const AccountPage = () => {
   const { slug, token } = useParams();
   const [showFeedback, setShowFeedback] = useState(false);
+  const [guestId, setGuestId] = useState('');
   const [customerId, setCustomerId] = useState(getStoredCustomerId());
   const [customer, setCustomer] = useState(getStoredCustomerProfile());
   const [loyalty, setLoyalty] = useState(null);
+  const [restaurantInfo, setRestaurantInfo] = useState(null);
 
   useEffect(() => {
     if (slug && token) rememberCustomerPortal(slug, token);
     if (!token) return;
     ensureGuestSession(token)
-      .then((session) => getCustomerIdentity({ guestId: session.guestId, qrToken: token }))
+      .then((session) => {
+        setGuestId(session.guestId || '');
+        return getCustomerIdentity({ guestId: session.guestId, qrToken: token });
+      })
       .then((identity) => {
         if (!identity) return;
         setCustomerId(identity.customerId || '');
@@ -40,6 +52,13 @@ const AccountPage = () => {
       .catch(() => {});
   }, [slug, token]);
 
+  useEffect(() => {
+    if (!slug) return;
+    getRestaurantInfo(slug, token)
+      .then(setRestaurantInfo)
+      .catch(() => setRestaurantInfo(null));
+  }, [slug, token]);
+
   const homePath = slug && token ? `/home/${slug}/${token}` : '/';
   const ordersPath = slug && token ? `/orders/${slug}/${token}` : '/';
   const menuPath = slug && token ? `/menu/${slug}/${token}` : '/';
@@ -47,6 +66,8 @@ const AccountPage = () => {
   const privacyPath = slug && token ? `/privacy/${slug}/${token}` : '/';
   const settingsPath = slug && token ? `/settings/${slug}/${token}` : '/';
   const creditApplyPath = slug && token ? `/credit-apply/${slug}/${token}` : '/';
+  const restaurantName =
+    restaurantInfo?.name || (slug ? decodeURIComponent(slug).replace(/-/g, ' ') : 'Restaurant');
 
   const menuItems = [
     { to: homePath, icon: User, label: 'Table home', color: 'text-primary-600', bg: 'bg-primary-50' },
@@ -62,11 +83,13 @@ const AccountPage = () => {
 
   const exitSession = () => {
     try {
-      localStorage.removeItem('customer_guest_id_v1');
-      localStorage.removeItem('customer_identity_id_v1');
-      localStorage.removeItem('customer_identity_profile_v1');
+      clearCustomerIdentitySession({ includeGuest: true });
       sessionStorage.removeItem('customer_portal_slug');
       sessionStorage.removeItem('customer_portal_table_token');
+      setGuestId('');
+      setCustomerId('');
+      setCustomer({});
+      setLoyalty(null);
       toast.success('Session cleared on this device');
     } catch {
       toast.error('Could not clear storage');
@@ -75,27 +98,38 @@ const AccountPage = () => {
 
   return (
     <div className="min-h-screen bg-[#fafaf7] pb-28 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
-      <header className="sticky top-0 z-10 border-b border-gray-100 bg-white/95 px-6 pb-6 pt-12 text-center backdrop-blur dark:border-gray-800 dark:bg-gray-950/95">
-        <h1 className="text-xl font-black tracking-tight text-gray-800 dark:text-gray-100">More</h1>
-        <p className="mt-1 text-[11px] font-semibold text-gray-400">Shortcuts & account</p>
-      </header>
+      <section className="relative min-h-[20rem] overflow-hidden text-white">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.72), rgba(57,16,0,0.7) 48%, rgba(250,250,247,1) 100%), url('${restaurantInfo?.backgroundPhoto || restaurantInfo?.brandBackgroundImage || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80"}')`,
+          }}
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(255,255,255,0.12),transparent_34%)]" />
+        <div className="relative flex flex-col items-center px-6 pb-8 pt-12 text-center">
+          <div className="rounded-2xl bg-black/38 px-5 py-2 shadow-lg backdrop-blur-[2px] ring-1 ring-white/15">
+            <h1 className="text-2xl font-black tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]">More</h1>
+            <p className="mt-1 text-[11px] font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">Shortcuts & account</p>
+          </div>
 
-      <div className="flex flex-col items-center px-6 py-8">
-        <div className="mb-3 flex h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-primary-50 text-primary-600 shadow-sm dark:border-gray-800">
-          <User size={40} />
-        </div>
-        <h2 className="font-bold text-gray-800 dark:text-gray-100">{customer?.name || customerId || 'Guest'}</h2>
-        <p className="mt-1 text-[10px] font-medium text-gray-400">
-          {customer?.email || (slug ? decodeURIComponent(slug).replace(/-/g, ' ') : 'Restaurant')}
-        </p>
-        {customerId && (
-          <p className="mt-2 rounded-full bg-primary-50 px-3 py-1 text-[10px] font-black text-primary-700">
-            {customerId} {loyalty ? `- ${loyalty.points || 0} pts` : ''}
+          <div className="mt-12 flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-white/95 text-primary-700 shadow-[0_18px_45px_rgba(57,16,0,0.28)] ring-4 ring-white/25">
+            <User size={42} />
+          </div>
+          <h2 className="mt-3 max-w-full break-all rounded-full bg-black/45 px-5 py-1.5 text-center text-lg font-black text-white shadow-lg backdrop-blur-[2px] ring-1 ring-white/15 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">
+            {customer?.name || customerId || guestId || 'Guest'}
+          </h2>
+          <p className="mt-1 rounded-full bg-black/38 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-[2px] ring-1 ring-white/10 drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
+            {customer?.email || (guestId ? 'Guest ID' : restaurantName)}
           </p>
-        )}
-      </div>
+          {customerId && (
+            <p className="mt-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-black text-primary-700 shadow-sm">
+              {customerId} {loyalty ? `- ${loyalty.points || 0} pts` : ''}
+            </p>
+          )}
+        </div>
+      </section>
 
-      <div className="space-y-2 px-6">
+      <div className="-mt-6 space-y-2 px-6">
         {menuItems.map((item, index) => {
           const Inner = (
             <>
@@ -145,7 +179,7 @@ const AccountPage = () => {
       </div>
 
       <Feedback isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
-      <Navigation />
+      <Navigation hidden={showFeedback} />
     </div>
   );
 };
