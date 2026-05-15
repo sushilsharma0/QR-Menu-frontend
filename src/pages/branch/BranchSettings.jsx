@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import { FiCheck, FiImage, FiRefreshCw, FiSun, FiMoon, FiUpload } from 'react-icons/fi'
 import api from '../../services/api'
 import Button from '../../components/common/Button'

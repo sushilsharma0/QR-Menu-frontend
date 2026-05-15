@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import { FiRotateCcw } from 'react-icons/fi'
 import { postPosRefund } from '../../../services/posApi'
 import { usePosAccess } from '../../../hooks/usePosAccess'

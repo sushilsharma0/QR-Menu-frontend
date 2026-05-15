@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import { useSocket } from './useSocket'
 
 const SETTINGS_KEY = 'qrmenu_notification_settings'

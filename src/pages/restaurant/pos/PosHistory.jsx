@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import {
   FiCalendar,
   FiCheckCircle,

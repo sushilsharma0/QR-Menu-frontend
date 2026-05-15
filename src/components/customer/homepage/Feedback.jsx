@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X, Star, Send, ThumbsUp, ThumbsDown, Meh, CheckCircle } from 'lucide-react'
 import { useParams } from 'react-router-dom'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import api from '../../../services/api'
 import { ensureGuestSession, getStoredGuestId } from '../../../services/customer'
 

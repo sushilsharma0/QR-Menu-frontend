@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FiCheck, FiClock, FiRefreshCw, FiUsers, FiZap } from 'react-icons/fi'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import api from '../../services/api'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'

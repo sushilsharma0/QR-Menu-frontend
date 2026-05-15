@@ -5,7 +5,7 @@ import {
   Smartphone, Mail, LogOut, X,
 } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import Navigation from '../../../components/customer/Navigation'
 import { rememberCustomerPortal } from '../../../utils/customerPortalContext'
 import {

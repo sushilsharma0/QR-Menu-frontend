@@ -13,7 +13,7 @@ import {
   FiTrendingUp,
 } from 'react-icons/fi'
 import { BarChart, Bar, CartesianGrid, ComposedChart, PieChart, Pie, Cell, Line, Legend, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import api from '../../../services/api'
 import Button from '../../../components/common/Button'
 import { EmptyState, FinanceChartBox, FinanceMetric, FinancePageHeader, FinancePanel, FinanceTooltip } from './FinanceUI'

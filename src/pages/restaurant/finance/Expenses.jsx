@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { FiCreditCard, FiPieChart, FiPlus, FiTrash2 } from 'react-icons/fi'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import api from '../../../services/api'
 import Button from '../../../components/common/Button'
 import Input from '../../../components/common/Input'

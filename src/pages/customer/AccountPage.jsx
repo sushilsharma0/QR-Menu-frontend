@@ -16,7 +16,7 @@ import { Link, useParams } from 'react-router-dom';
 import Navigation from '../../components/customer/Navigation';
 import Feedback from '../../components/customer/homepage/Feedback';
 import { rememberCustomerPortal } from '../../utils/customerPortalContext';
-import toast from 'react-hot-toast';
+import toast from '@utils/toast';
 import {
   clearCustomerIdentitySession,
   ensureGuestSession,

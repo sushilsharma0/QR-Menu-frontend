@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useSearchParams } from 'react-router-dom'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import { FiCalendar, FiCreditCard, FiFilter, FiGrid, FiList, FiPlus, FiPrinter, FiSearch } from 'react-icons/fi'
 import api from '../../../services/api'
 import { postPosPayment } from '../../../services/posApi'

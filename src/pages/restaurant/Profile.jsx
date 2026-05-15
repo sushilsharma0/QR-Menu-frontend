@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import { FiLock, FiMail, FiShield, FiUser } from 'react-icons/fi'
 import api from '../../services/api'
 import Card from '../../components/common/Card'

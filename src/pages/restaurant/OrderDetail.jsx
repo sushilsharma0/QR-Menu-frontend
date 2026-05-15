@@ -17,7 +17,7 @@ import {
   FiX,
   FiExternalLink,
 } from 'react-icons/fi'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import api from '../../services/api'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'

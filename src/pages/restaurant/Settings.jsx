@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import { FiCheck, FiImage, FiMoon, FiRefreshCw, FiSun, FiUpload, FiX, FiEye } from 'react-icons/fi'
 import api from '../../services/api'
 import Card from '../../components/common/Card'

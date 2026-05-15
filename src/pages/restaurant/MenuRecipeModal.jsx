@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FiSave, FiSearch, FiTrash2 } from "react-icons/fi";
-import toast from "react-hot-toast";
+import toast from "@utils/toast";
 import Modal from "../../components/common/Modal";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";

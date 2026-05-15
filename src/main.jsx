@@ -53,6 +53,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                       fontWeight: 600,
                       fontSize: "0.9rem",
                       maxWidth: "min(92vw, 380px)",
+                      whiteSpace: "pre-line",
                     },
                     success: {
                       iconTheme: { primary: "#7a2200", secondary: "#fffcf1" },

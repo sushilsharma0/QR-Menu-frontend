@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import { FiArrowLeft, FiPlus, FiSearch, FiTrash2 } from 'react-icons/fi'
 import api from '../../services/api'
 import Card from '../../components/common/Card'

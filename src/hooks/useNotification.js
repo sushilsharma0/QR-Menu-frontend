@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import { useSocket } from './useSocket'
 import {
   getNotifications,

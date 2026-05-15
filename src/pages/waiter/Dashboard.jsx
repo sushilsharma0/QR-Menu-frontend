@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FiActivity, FiClipboard, FiGrid, FiPlusCircle, FiRefreshCw, FiUsers } from 'react-icons/fi'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import api from '../../services/api'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { useSocket } from '../../hooks/useSocket'

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { FiArrowLeft, FiBarChart2, FiEdit2, FiMapPin, FiPlus, FiRefreshCw, FiTrash2, FiUsers } from 'react-icons/fi'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import api from '../../services/api'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'

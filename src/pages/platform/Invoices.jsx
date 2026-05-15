@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { FiClipboard, FiCreditCard, FiFileText, FiRefreshCw, FiSearch } from 'react-icons/fi'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import Card from '../../components/common/Card'
 import Table from '../../components/common/Table'
 import Input from '../../components/common/Input'

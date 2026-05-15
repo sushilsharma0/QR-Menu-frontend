@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import { motion } from 'framer-motion'
 import {
   FiArrowLeft,

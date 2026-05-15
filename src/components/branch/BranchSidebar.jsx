@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import {
   FiBarChart2,
   FiBookOpen,

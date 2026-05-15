@@ -38,7 +38,7 @@ import {
   getGuestLoyalty,
   postGuestTableRequest,
 } from "../../../services/customer";
-import toast from "react-hot-toast";
+import toast from "@utils/toast";
 import Navigation from "../../../components/customer/Navigation";
 import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
 
