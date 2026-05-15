@@ -670,7 +670,7 @@ const OrderTracking = () => {
         qrToken={qrToken}
         onSubmitted={() => {
           if (order?.restaurantSlug && order?.tableQrToken) {
-            navigate(`/home/${order.restaurantSlug}/${order.tableQrToken}`);
+            navigate(`/menu/${order.restaurantSlug}/${order.tableQrToken}`);
           }
         }}
       />
