@@ -1,6 +1,22 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { FiArrowLeft, FiBarChart2, FiEdit2, FiMapPin, FiPlus, FiRefreshCw, FiTrash2, FiUsers } from 'react-icons/fi'
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { FiAlertTriangle, FiArrowLeft, FiBarChart2, FiBox, FiClock, FiCreditCard, FiEdit2, FiMapPin, FiPieChart, FiPlus, FiRefreshCw, FiShoppingBag, FiTrash2, FiUsers } from 'react-icons/fi'
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ComposedChart,
+  Legend,
+  Line,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import toast from '@utils/toast'
 import api from '../../services/api'
 import Button from '../../components/common/Button'
@@ -24,6 +40,15 @@ const MODULE_DEFS = [
   { key: 'promotions', label: 'Promotions' },
   { key: 'employees', label: 'Staff' },
 ]
+
+const CHART_COLORS = ['#8f2800', '#14b8a6', '#7c3aed', '#f97316', '#0f766e', '#dc2626', '#64748b', '#ca8a04']
+
+const prettyLabel = (value) =>
+  String(value || 'unknown')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+
+const asArray = (value) => (Array.isArray(value) ? value : [])
 
 const emptyForm = {
   name: '',
@@ -570,6 +595,62 @@ const Branches = () => {
   }
 
   const summary = analytics.summary || {}
+  const reportModel = useMemo(() => {
+    const breakdowns = analytics.breakdowns || {}
+    const trends = asArray(analytics.trends).map((row) => ({
+      date: row._id,
+      revenue: Number(row.revenue || 0),
+      orders: Number(row.orders || 0),
+    }))
+    const status = asArray(breakdowns.status).map((row) => ({
+      name: prettyLabel(row._id),
+      orders: Number(row.orders || 0),
+      revenue: Number(row.revenue || 0),
+    }))
+    const payment = asArray(breakdowns.payment).map((row) => ({
+      name: prettyLabel(row._id),
+      orders: Number(row.orders || 0),
+      revenue: Number(row.revenue || 0),
+    }))
+    const channel = asArray(breakdowns.channel).map((row) => ({
+      name: prettyLabel(row._id),
+      orders: Number(row.orders || 0),
+      revenue: Number(row.revenue || 0),
+    }))
+    const hourly = asArray(breakdowns.hourly).map((row) => ({
+      hour: `${String(row._id).padStart(2, '0')}:00`,
+      orders: Number(row.orders || 0),
+      revenue: Number(row.revenue || 0),
+    }))
+    const topItems = asArray(breakdowns.topItems).map((row) => ({
+      name: row._id || 'Item',
+      quantity: Number(row.quantity || 0),
+      revenue: Number(row.revenue || 0),
+      orders: Number(row.orders || 0),
+    }))
+    const expenseCategories = asArray(breakdowns.expenseCategories).map((row) => ({
+      name: prettyLabel(row._id),
+      amount: Number(row.amount || 0),
+      entries: Number(row.entries || 0),
+    }))
+    const inventoryCategories = asArray(breakdowns.inventoryCategories).map((row) => ({
+      name: prettyLabel(row._id),
+      value: Number(row.value || 0),
+      items: Number(row.items || 0),
+    }))
+    return {
+      trends,
+      status,
+      payment,
+      channel,
+      hourly,
+      topItems,
+      expenseCategories,
+      inventoryCategories,
+      lowStockItems: asArray(breakdowns.lowStockItems),
+      recentOrders: asArray(breakdowns.recentOrders),
+    }
+  }, [analytics])
 
   return (
     <div className="space-y-6">
@@ -669,9 +750,9 @@ const Branches = () => {
         <div className="flex flex-col gap-2 border-b border-surface-100 pb-4 dark:border-gray-800 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-xs font-black uppercase tracking-wide text-primary-700 dark:text-primary-300">Report section</p>
-            <h2 className="mt-1 text-xl font-black text-gray-950 dark:text-gray-100">{selectedBranch?.name || 'Branch'} report</h2>
+            <h2 className="mt-1 text-xl font-black text-gray-950 dark:text-gray-100">{selectedBranch?.name || 'Branch'} detailed report</h2>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Selecting a branch here only changes this report. It does not switch your whole system branch.
+              Selecting a branch here only changes this report. It does not switch your whole system branch or header data.
             </p>
           </div>
           <span className={`w-fit rounded-full px-3 py-1 text-xs font-bold capitalize ${selectedBranch?.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
@@ -705,11 +786,175 @@ const Branches = () => {
             <p className="text-xs font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">Performance</p>
             <dl className="mt-3 space-y-2 text-sm">
               <ReportRow label="Revenue" value={money(summary.revenue)} />
+              <ReportRow label="Expenses" value={money(summary.expenses)} />
+              <ReportRow label="Net profit" value={money(summary.netProfit)} />
+              <ReportRow label="Average order" value={money(summary.averageOrderValue)} />
               <ReportRow label="Employees" value={summary.employees || 0} />
               <ReportRow label="Inventory value" value={money(summary.inventoryValue)} />
-              <ReportRow label="Orders" value={summary.orders || summary.totalOrders || 0} />
+              <ReportRow label="Orders" value={summary.customerOrders || summary.totalOrders || 0} />
+              <ReportRow label="Low stock items" value={summary.lowStockItems || 0} />
             </dl>
           </div>
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <Metric icon={FiShoppingBag} label="Customer orders" value={summary.customerOrders || summary.totalOrders || 0} />
+          <Metric icon={FiCreditCard} label="Avg order value" value={money(summary.averageOrderValue)} />
+          <Metric icon={FiAlertTriangle} label="Low stock" value={summary.lowStockItems || 0} />
+          <Metric icon={FiBox} label="Inventory items" value={summary.inventoryItems || 0} />
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-2">
+          <ChartPanel title="Revenue and order trend" subtitle="Last 30 sales days" empty={reportModel.trends.length === 0}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={reportModel.trends} margin={{ top: 12, right: 16, left: 0, bottom: 0 }}>
+                <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" vertical={false} />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 11 }} />
+                <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 11 }} />
+                <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 11 }} />
+                <Tooltip formatter={(value, name) => (name === 'Revenue' ? money(value) : value)} />
+                <Legend />
+                <Area yAxisId="left" type="monotone" dataKey="revenue" name="Revenue" fill="#f6d8c9" stroke="#8f2800" strokeWidth={2} />
+                <Line yAxisId="right" type="monotone" dataKey="orders" name="Orders" stroke="#14b8a6" strokeWidth={3} dot={false} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </ChartPanel>
+
+          <ChartPanel title="Hourly demand" subtitle="Orders by hour" empty={reportModel.hourly.length === 0}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={reportModel.hourly} margin={{ top: 12, right: 16, left: 0, bottom: 0 }}>
+                <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" vertical={false} />
+                <XAxis dataKey="hour" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 11 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 11 }} />
+                <Tooltip formatter={(value, name) => (name === 'revenue' ? money(value) : value)} />
+                <Area type="monotone" dataKey="orders" name="Orders" fill="#ccfbf1" stroke="#14b8a6" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </ChartPanel>
+
+          <ChartPanel title="Order status mix" subtitle="Operational state" empty={reportModel.status.length === 0}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={reportModel.status} dataKey="orders" nameKey="name" innerRadius={62} outerRadius={104} paddingAngle={3}>
+                  {reportModel.status.map((entry, index) => <Cell key={entry.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />)}
+                </Pie>
+                <Tooltip formatter={(value) => `${value} orders`} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </ChartPanel>
+
+          <ChartPanel title="Payment status" subtitle="Paid vs unpaid bill value" empty={reportModel.payment.length === 0}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={reportModel.payment} margin={{ top: 12, right: 16, left: 0, bottom: 0 }}>
+                <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" vertical={false} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 11 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 11 }} />
+                <Tooltip formatter={(value, name) => (name === 'Revenue' ? money(value) : value)} />
+                <Bar dataKey="revenue" name="Revenue" fill="#7c3aed" radius={[10, 10, 4, 4]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartPanel>
+
+          <ChartPanel title="Order channels" subtitle="Source of customer activity" empty={reportModel.channel.length === 0}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={reportModel.channel} layout="vertical" margin={{ top: 12, right: 16, left: 42, bottom: 0 }}>
+                <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" horizontal={false} />
+                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 11 }} />
+                <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 11 }} width={90} />
+                <Tooltip formatter={(value, name) => (name === 'Revenue' ? money(value) : value)} />
+                <Bar dataKey="orders" name="Orders" fill="#f97316" radius={[0, 10, 10, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartPanel>
+
+          <ChartPanel title="Top selling items" subtitle="Quantity and revenue" empty={reportModel.topItems.length === 0}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={reportModel.topItems} layout="vertical" margin={{ top: 12, right: 18, left: 56, bottom: 0 }}>
+                <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" horizontal={false} />
+                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 11 }} />
+                <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 11 }} width={112} />
+                <Tooltip formatter={(value, name) => (name === 'Revenue' ? money(value) : value)} />
+                <Bar dataKey="revenue" name="Revenue" fill="#0f766e" radius={[0, 10, 10, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartPanel>
+
+          <ChartPanel title="Expense categories" subtitle="Where money is spent" empty={reportModel.expenseCategories.length === 0}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={reportModel.expenseCategories} dataKey="amount" nameKey="name" innerRadius={62} outerRadius={104} paddingAngle={3}>
+                  {reportModel.expenseCategories.map((entry, index) => <Cell key={entry.name} fill={CHART_COLORS[(index + 2) % CHART_COLORS.length]} />)}
+                </Pie>
+                <Tooltip formatter={(value) => money(value)} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </ChartPanel>
+
+          <ChartPanel title="Inventory value" subtitle="Stock value by category" empty={reportModel.inventoryCategories.length === 0}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={reportModel.inventoryCategories} margin={{ top: 12, right: 16, left: 0, bottom: 0 }}>
+                <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" vertical={false} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 11 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 11 }} />
+                <Tooltip formatter={(value) => money(value)} />
+                <Bar dataKey="value" name="Value" fill="#ca8a04" radius={[10, 10, 4, 4]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartPanel>
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-2">
+          <ReportTable title="Recent orders" icon={FiClock}>
+            {reportModel.recentOrders.length === 0 ? (
+              <EmptyReportText>No recent orders for this branch.</EmptyReportText>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="text-xs uppercase tracking-wide text-gray-400">
+                    <tr>
+                      <th className="px-3 py-2">Order</th>
+                      <th className="px-3 py-2">Customer</th>
+                      <th className="px-3 py-2">Status</th>
+                      <th className="px-3 py-2 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-surface-100 dark:divide-gray-800">
+                    {reportModel.recentOrders.map((order) => (
+                      <tr key={order._id}>
+                        <td className="px-3 py-3 font-bold text-gray-950 dark:text-gray-100">#{order.orderNumber}</td>
+                        <td className="px-3 py-3 text-gray-600 dark:text-gray-300">{order.customerName || 'Guest'}</td>
+                        <td className="px-3 py-3"><StatusBadge value={order.status} /></td>
+                        <td className="px-3 py-3 text-right font-bold text-primary-700">{money(order.grandTotal)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </ReportTable>
+
+          <ReportTable title="Low stock watch" icon={FiAlertTriangle}>
+            {reportModel.lowStockItems.length === 0 ? (
+              <EmptyReportText>No low-stock items found.</EmptyReportText>
+            ) : (
+              <div className="space-y-3">
+                {reportModel.lowStockItems.map((item) => (
+                  <div key={item._id} className="flex items-center justify-between gap-4 rounded-2xl bg-surface-50 px-4 py-3 dark:bg-gray-800/60">
+                    <div className="min-w-0">
+                      <p className="truncate font-black text-gray-950 dark:text-gray-100">{item.name}</p>
+                      <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{prettyLabel(item.category)} · Min {item.minimumStock || 0} {item.unit}</p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="text-sm font-black text-amber-700">{Number(item.quantity || 0)} {item.unit}</p>
+                      <p className="text-xs text-gray-400">{money(Number(item.quantity || 0) * Number(item.costPerUnit || 0))}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ReportTable>
         </div>
 
         <div className="mt-4 rounded-2xl border border-surface-100 p-4 dark:border-gray-800">
@@ -821,6 +1066,68 @@ function Metric({ icon: Icon, label, value }) {
       </div>
     </div>
   )
+}
+
+function ChartPanel({ title, subtitle, empty, children }) {
+  return (
+    <div className="rounded-2xl border border-surface-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-black text-gray-950 dark:text-gray-100">{title}</h3>
+          {subtitle ? <p className="mt-1 text-xs font-semibold text-gray-400">{subtitle}</p> : null}
+        </div>
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-700 dark:bg-primary-950/30 dark:text-primary-200">
+          <FiPieChart className="h-4 w-4" />
+        </div>
+      </div>
+      <div className="mt-4 h-72">
+        {empty ? (
+          <div className="flex h-full flex-col items-center justify-center rounded-2xl bg-surface-50 text-center dark:bg-gray-800/50">
+            <FiBarChart2 className="h-7 w-7 text-primary-600" />
+            <p className="mt-2 text-sm font-black text-gray-900 dark:text-gray-100">No chart data yet</p>
+            <p className="mt-1 max-w-xs text-xs text-gray-500">This chart fills when this branch has matching records.</p>
+          </div>
+        ) : (
+          children
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ReportTable({ title, icon: Icon, children }) {
+  return (
+    <div className="rounded-2xl border border-surface-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <div className="mb-3 flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-50 text-primary-700 dark:bg-primary-950/30 dark:text-primary-200">
+          <Icon className="h-4 w-4" />
+        </div>
+        <h3 className="text-sm font-black text-gray-950 dark:text-gray-100">{title}</h3>
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function EmptyReportText({ children }) {
+  return (
+    <div className="rounded-2xl bg-surface-50 px-4 py-6 text-center text-sm font-semibold text-gray-500 dark:bg-gray-800/50 dark:text-gray-400">
+      {children}
+    </div>
+  )
+}
+
+function StatusBadge({ value }) {
+  const status = String(value || 'unknown')
+  const className =
+    status === 'served' || status === 'completed'
+      ? 'bg-emerald-50 text-emerald-700'
+      : status === 'cancelled'
+        ? 'bg-red-50 text-red-700'
+        : status === 'pending'
+          ? 'bg-amber-50 text-amber-700'
+          : 'bg-blue-50 text-blue-700'
+  return <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${className}`}>{prettyLabel(status)}</span>
 }
 
 function ReportRow({ label, value }) {
