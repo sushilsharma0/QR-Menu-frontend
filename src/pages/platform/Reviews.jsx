@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import { FiRefreshCw, FiStar } from 'react-icons/fi'
 import api from '../../services/api'
 import Card from '../../components/common/Card'

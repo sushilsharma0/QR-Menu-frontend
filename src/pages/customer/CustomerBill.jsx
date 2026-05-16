@@ -465,11 +465,15 @@ const CustomerBill = () => {
           qrToken={qrToken}
           onSubmitted={() => {
             if (order?.restaurantSlug && order?.tableQrToken) {
-              navigate(`/home/${order.restaurantSlug}/${order.tableQrToken}`);
+              navigate(`/menu/${order.restaurantSlug}/${order.tableQrToken}`);
             }
           }}
         />
-        <Navigation restaurantSlug={order?.restaurantSlug} tableQrToken={order?.tableQrToken} />
+        <Navigation
+          restaurantSlug={order?.restaurantSlug}
+          tableQrToken={order?.tableQrToken}
+          hidden={showFeedback}
+        />
       </div>
     </div>
   );

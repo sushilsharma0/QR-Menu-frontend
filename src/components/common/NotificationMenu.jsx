@@ -11,6 +11,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import {
   cashierPortalBase,
+  branchPortalBase,
   employeePortalBase,
   getTenantSegments,
   kitchenPortalBase,
@@ -33,6 +34,8 @@ const NotificationMenu = () => {
   let notificationsPath = '/notifications'
   if (user?.role === 'super_admin' || user?.role === 'admin') {
     notificationsPath = '/platform/notifications'
+  } else if (user?.scope === 'branch_user') {
+    notificationsPath = `${branchPortalBase(user?.restaurantId, user?.branchPortalKey, user?.branchSlug)}/notifications`
   } else if (user?.role === 'restaurant') {
     notificationsPath = `${restaurantPortalBase(slug, restaurantId)}/notifications`
   } else if (user?.scope === 'employee' && user?.role === 'kitchen') {

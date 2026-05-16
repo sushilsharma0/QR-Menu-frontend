@@ -1,24 +1,30 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import { useSocket } from './useSocket'
 import {
   getNotifications,
   markAllNotificationsRead,
   markNotificationRead,
 } from '../services/api'
+import { useAuth } from './useAuth'
 
 const useNotification = () => {
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const seenRealtimeIdsRef = useRef(new Set())
   const { socket } = useSocket()
+  const { user } = useAuth()
+  const branchScopeId =
+    (user?.scope === 'branch_user' || user?.scope === 'employee') && user?.branchId
+      ? String(user.branchId)
+      : ''
 
   const fetchNotifications = useCallback(async () => {
     const res = await getNotifications({ page: 1, limit: 50 })
     const payload = res?.data?.data || {}
     setNotifications(payload.notifications || [])
     setUnreadCount(payload.unreadCount || 0)
-  }, [])
+  }, [branchScopeId])
 
   useEffect(() => {
     fetchNotifications().catch(() => undefined)
@@ -28,6 +34,8 @@ const useNotification = () => {
     if (!socket) return
 
     const handleNewNotification = (data) => {
+      const notificationBranchId = data?.branchId || data?.metadata?.branchId
+      if (branchScopeId && String(notificationBranchId || '') !== branchScopeId) return
       const id = data?._id || data?.id
       if (id && seenRealtimeIdsRef.current.has(String(id))) return
       if (id) {
@@ -41,7 +49,8 @@ const useNotification = () => {
       }
     }
 
-    const handleRead = ({ notificationId }) => {
+    const handleRead = ({ notificationId, branchId }) => {
+      if (branchScopeId && String(branchId || '') !== branchScopeId) return
       setNotifications((prev) =>
         prev.map((n) =>
           String(n._id) === String(notificationId)
@@ -52,7 +61,8 @@ const useNotification = () => {
       setUnreadCount((prev) => Math.max(0, prev - 1))
     }
 
-    const handleAllRead = () => {
+    const handleAllRead = ({ branchId } = {}) => {
+      if (branchScopeId && String(branchId || '') !== branchScopeId) return
       setNotifications((prev) =>
         prev.map((n) => ({ ...n, isRead: true, readAt: n.readAt || new Date().toISOString() }))
       )
@@ -70,7 +80,7 @@ const useNotification = () => {
       socket.off('notification:read', handleRead)
       socket.off('notification:all-read', handleAllRead)
     }
-  }, [socket])
+  }, [branchScopeId, socket])
 
   const markAsRead = useCallback(async (notificationId) => {
     await markNotificationRead(notificationId)

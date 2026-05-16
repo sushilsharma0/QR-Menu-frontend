@@ -15,7 +15,7 @@ import {
   FiUsers,
   FiX,
 } from 'react-icons/fi'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import api from '../../services/api'
 import Button from '../../components/common/Button'
 import Card from '../../components/common/Card'

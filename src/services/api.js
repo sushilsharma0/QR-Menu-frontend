@@ -1,5 +1,5 @@
 import axios from 'axios'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import { getAuthToken, clearAuthSession } from '../utils/authStorage'
 import { getApiBaseUrl } from '../utils/runtimeConfig'
 import { getSelectedBranchId } from '../utils/branchStorage'

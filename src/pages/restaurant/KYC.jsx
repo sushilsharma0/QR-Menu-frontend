@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import {
   FiAlertCircle,
   FiArrowUpRight,

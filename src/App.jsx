@@ -54,6 +54,7 @@ import RestaurantPublicProfile from "./pages/restaurant/PublicProfile";
 import RestaurantPromotions from "./pages/restaurant/Promotions";
 import RestaurantBranches from "./pages/restaurant/Branches";
 import BranchLogin from "./pages/branch/BranchLogin";
+import BranchSettings from "./pages/branch/BranchSettings";
 import RestaurantSystemLogs from "./pages/restaurant/SystemLogs";
 import RestaurantTickets from "./pages/restaurant/Tickets";
 import RestaurantTicketDetail from "./pages/restaurant/TicketDetail";
@@ -304,6 +305,11 @@ function App() {
         <Route path="finance/budget" element={<FinanceBudget />} />
         <Route path="profile" element={<RestaurantProfile />} />
         <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="tickets" element={<RestaurantTickets />} />
+        <Route path="tickets/create" element={<RestaurantTicketDetail />} />
+        <Route path="tickets/:id" element={<RestaurantTicketDetail />} />
+        <Route path="public-profile" element={<RestaurantPublicProfile />} />
+        <Route path="settings" element={<BranchSettings />} />
         <Route path="pos" element={<PosLayout />}>
           <Route index element={<PosMain />} />
           <Route path="orders" element={<PosOrdersList />} />

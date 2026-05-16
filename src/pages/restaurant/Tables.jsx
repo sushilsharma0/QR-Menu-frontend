@@ -16,7 +16,7 @@ import {
   FiUsers,
 } from "react-icons/fi";
 import QRCode from "react-qr-code";
-import toast from "react-hot-toast";
+import toast from "@utils/toast";
 import api from "../../services/api";
 import { getParsedAuthUser } from "../../utils/authStorage";
 import Button from "../../components/common/Button";

@@ -48,6 +48,7 @@ function pathMatchesTab(pathname, tab, slug, token) {
 export default function Navigation({
   restaurantSlug: slugProp,
   tableQrToken: tokenProp,
+  hidden = false,
 }) {
   const location = useLocation();
   const params = useParams();
@@ -119,7 +120,7 @@ export default function Navigation({
     <motion.nav
       aria-label="Customer navigation"
       initial={false}
-      animate={{ y: navHidden ? 110 : 0 }}
+      animate={{ y: hidden || navHidden ? 110 : 0 }}
       transition={{ type: "spring", stiffness: 380, damping: 34 }}
       className="customer-bottom-nav pointer-events-none fixed bottom-0 left-0 right-0 z-[90] flex justify-center px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 md:px-4"
     >

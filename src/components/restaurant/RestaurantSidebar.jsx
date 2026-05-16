@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import {
   FiAward,
   FiBarChart2,
@@ -32,6 +32,7 @@ import api from '../../services/api'
 import { useAuth } from '../../hooks/useAuth'
 import { useSocket } from '../../hooks/useSocket'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
+import { useBranch } from '../../context/BranchContext'
 
 function staffLoginHref(restaurantId, staff) {
   const q = new URLSearchParams({ role: 'employee', staff, restaurantId: String(restaurantId) })
@@ -420,6 +421,7 @@ const RestaurantSidebar = () => {
   const { user } = useAuth()
   const { socket } = useSocket()
   const { restaurantBase, restaurantId, hasTenant } = useTenantRoutes()
+  const { selectedBranchId, loading: branchesLoading } = useBranch()
   const [pendingCount, setPendingCount] = useState(0)
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -448,10 +450,17 @@ const RestaurantSidebar = () => {
 
   const fetchPendingCount = async () => {
     try {
-      const res = await api.get('/restaurant/customer-orders', { params: { status: 'pending', page: 1, limit: 1 } })
-      setPendingCount(res?.data?.data?.pagination?.total || 0)
+      const res = await api.get('/restaurant/customer-orders/stats')
+      const active = res?.data?.data?.active || {}
+      const count = Number(active.pending || 0)
+      setPendingCount(Number.isFinite(count) ? count : 0)
     } catch {
-      setPendingCount(0)
+      try {
+        const res = await api.get('/restaurant/customer-orders', { params: { status: 'pending', page: 1, limit: 1 } })
+        setPendingCount(res?.data?.data?.pagination?.total || 0)
+      } catch {
+        setPendingCount(0)
+      }
     }
   }
 
@@ -460,8 +469,9 @@ const RestaurantSidebar = () => {
       setPendingCount(0)
       return
     }
+    if (branchesLoading) return
     fetchPendingCount()
-  }, [billingLocked])
+  }, [billingLocked, branchesLoading, selectedBranchId])
 
   useEffect(() => {
     if (billingLocked || !socket) return undefined

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import { FiCoffee, FiMinus, FiPlus, FiSearch, FiShoppingBag, FiTrash2, FiUsers } from 'react-icons/fi'
 import api from '../../../services/api'
 import { createPosOrder } from '../../../services/posApi'

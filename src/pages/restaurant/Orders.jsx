@@ -16,7 +16,7 @@ import {
   FiTrendingUp,
   FiXCircle,
 } from 'react-icons/fi'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import api from '../../services/api'
 import Button from '../../components/common/Button'
 import Card from '../../components/common/Card'
@@ -333,8 +333,9 @@ const Orders = () => {
 
   const updateOrderStatus = async (orderId, status, estimatedWaitTime = null) => {
     try {
+      const existingOrder = orders.find((order) => order._id === orderId)
       await api.patch(`/restaurant/customer-orders/${orderId}/status`, { status, estimatedWaitTime })
-      toast.success(`Order updated to ${status}`)
+      toast.success(`Order #${existingOrder?.orderNumber || orderId} moved to ${status}`)
       fetchOrders(true)
       fetchSummary()
     } catch {

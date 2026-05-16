@@ -19,7 +19,7 @@ import {
   FiTrash2,
   FiTruck,
 } from 'react-icons/fi'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import {
   Area,
   AreaChart,

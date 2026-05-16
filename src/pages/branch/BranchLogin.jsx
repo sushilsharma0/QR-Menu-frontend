@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import { useAuth } from '../../hooks/useAuth'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'

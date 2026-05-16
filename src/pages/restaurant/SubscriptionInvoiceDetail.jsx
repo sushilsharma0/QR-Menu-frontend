@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import { getSubscriptionInvoice } from '../../services/restaurant'
 import InvoiceDocument from '../../components/billing/InvoiceDocument'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'

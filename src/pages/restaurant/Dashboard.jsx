@@ -31,12 +31,13 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import toast from "react-hot-toast";
+import toast from "@utils/toast";
 import api from "../../services/api";
 import Button from "../../components/common/Button";
 import { useSocket } from "../../hooks/useSocket";
 import useOrderAlerts from "../../hooks/useOrderAlerts";
 import { useAuth } from "../../hooks/useAuth";
+import { useBranch } from "../../context/BranchContext";
 import {
   RestaurantPageLoader,
   RestaurantStatusPill,
@@ -203,6 +204,7 @@ function SectionShell({ title, eyebrow, icon: Icon, children, actions, className
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { selectedBranchId, loading: branchesLoading } = useBranch();
   const billingLocked =
     user?.role === "restaurant" && user?.scope !== "employee" && user?.needsPlanUpgrade === true;
   const [stats, setStats] = useState(null);
@@ -264,9 +266,10 @@ const Dashboard = () => {
       setLoading(false);
       return;
     }
+    if (branchesLoading) return;
     fetchRestaurantProfile();
     fetchDashboardData();
-  }, [billingLocked]);
+  }, [billingLocked, branchesLoading, selectedBranchId]);
 
   useEffect(() => {
     if (billingLocked || !socket) return undefined;

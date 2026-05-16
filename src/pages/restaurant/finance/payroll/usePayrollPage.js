@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import api from '../../../../services/api'
 import { AuthContext } from '../../../../context/AuthContext'
 import { adPayrollMonthYearToBs } from '../../../../utils/nepaliDateFormat'

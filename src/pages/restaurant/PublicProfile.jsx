@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import {
   FiAward,
   FiHeart,
@@ -14,6 +14,7 @@ import api from '../../services/api'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
+import { useAuth } from '../../hooks/useAuth'
 
 const FEATURE_ICON_OPTIONS = [
   { value: 'Utensils', label: 'Utensils' },
@@ -83,6 +84,8 @@ const emptyPrivacy = () => ({
 })
 
 export default function PublicProfile() {
+  const { user } = useAuth()
+  const isBranchPortal = user?.scope === 'branch_user'
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [restaurant, setRestaurant] = useState(null)
@@ -98,7 +101,10 @@ export default function PublicProfile() {
   const fetchProfile = async () => {
     try {
       setLoading(true)
-      const res = await api.get('/restaurant/auth/profile')
+      const res = await api.get(
+        isBranchPortal ? '/restaurant/branches/me/public-profile' : '/restaurant/auth/profile',
+        isBranchPortal ? { skipBranchHeader: true } : undefined,
+      )
       const data = res.data?.data || {}
       setRestaurant(data)
       const a = data.about || {}
@@ -255,10 +261,11 @@ export default function PublicProfile() {
           contactAddress: privacy.contactAddress,
         }),
       )
-      await api.put('/restaurant/auth/profile', formData, {
+      await api.put(isBranchPortal ? '/restaurant/branches/me/public-profile' : '/restaurant/auth/profile', formData, {
+        ...(isBranchPortal ? { skipBranchHeader: true } : {}),
         headers: { 'Content-Type': 'multipart/form-data' },
       })
-      toast.success('Public profile saved — customers see the changes instantly')
+      toast.success(isBranchPortal ? 'Branch About & Privacy saved' : 'Public profile saved - customers see the changes instantly')
       await fetchProfile()
     } catch (err) {
       console.error(err)
@@ -271,9 +278,13 @@ export default function PublicProfile() {
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Public profile &amp; policies</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          {isBranchPortal ? 'Branch About & Privacy' : 'Public profile & policies'}
+        </h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Everything here is rendered on the customer QR portal — the &ldquo;About&rdquo; page and the &ldquo;Privacy Policy&rdquo; page.
+          {isBranchPortal
+            ? 'Manage this branch profile and customer policy content separately from the main restaurant.'
+            : 'Everything here is rendered on the customer QR portal - the About page and the Privacy Policy page.'}
         </p>
       </div>
 

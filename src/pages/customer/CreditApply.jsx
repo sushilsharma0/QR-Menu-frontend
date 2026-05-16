@@ -4,7 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import Navigation from "../../components/customer/Navigation";
 import { rememberCustomerPortal } from "../../utils/customerPortalContext";
 import { applyRestaurantCreditAccount, ensureGuestSession } from "../../services/customer";
-import toast from "react-hot-toast";
+import toast from "@utils/toast";
 
 export default function CreditApply() {
   const { slug, token } = useParams();

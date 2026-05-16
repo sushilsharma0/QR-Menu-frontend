@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
+  BellRing,
   ChevronRight,
   Menu as MenuIcon,
   X,
@@ -17,11 +18,14 @@ import PageTransition from "../../../components/customer/PageTransition";
 import Sidebar from "../../../components/customer/homepage/SideBar";
 import ViewCartBtn from "../../../components/customer/ViewCartBtn";
 import CartDrawer from "../../../components/customer/CartDrawer";
+import Offers from "../../../components/customer/homepage/Offers";
+import Feedback from "../../../components/customer/homepage/Feedback";
 import api from "../../../services/api";
 import {
   ensureGuestSession,
   getDiningInsights,
   getRestaurantInfo,
+  postGuestTableRequest,
 } from "../../../services/customer";
 import VoiceSearchButton from "../../../components/customer/VoiceSearchButton";
 import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
@@ -35,6 +39,12 @@ const MenuCategories = () => {
   const [categories, setCategories] = useState([]);
   const [restaurantInfo, setRestaurantInfo] = useState(null);
   const [insights, setInsights] = useState(null);
+  const [guestId, setGuestId] = useState("");
+  const [showOffers, setShowOffers] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [showGuestAssist, setShowGuestAssist] = useState(false);
+  const [assistSending, setAssistSending] = useState(false);
+  const [offersCount, setOffersCount] = useState(0);
 
   const { slug, token } = useParams();
   const { hydrate } = useCustomerCart();
@@ -52,6 +62,7 @@ const MenuCategories = () => {
       if (!slug || !token) return;
       try {
         const s = await ensureGuestSession(token);
+        setGuestId(s.guestId || "");
         const data = await getDiningInsights({
           restaurantSlug: slug,
           guestId: s.guestId,
@@ -64,6 +75,43 @@ const MenuCategories = () => {
     };
     run();
   }, [slug, token]);
+
+  useEffect(() => {
+    if (!slug) return;
+    api
+      .get(`/customer/offers/${slug}`, { skipErrorToast: true })
+      .then((res) => {
+        const items = Array.isArray(res?.data?.data) ? res.data.data : [];
+        const active = items.filter((promo) => {
+          if (!promo?.endAt) return true;
+          return new Date(promo.endAt) > new Date();
+        });
+        setOffersCount(active.length);
+      })
+      .catch(() => setOffersCount(0));
+  }, [slug]);
+
+  const sendGuestRequest = async (requestType) => {
+    if (!guestId || !token) return;
+    try {
+      setAssistSending(true);
+      await postGuestTableRequest({ qrToken: token, guestId, requestType });
+      setShowGuestAssist(false);
+    } catch (err) {
+      console.error("Could not send guest request", err);
+    } finally {
+      setAssistSending(false);
+    }
+  };
+
+  const overlayOpen = isSidebarOpen || showOffers || showFeedback || showGuestAssist;
+
+  useEffect(() => {
+    document.body.style.overflow = showGuestAssist ? "hidden" : "unset";
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [showGuestAssist]);
 
   useEffect(() => {
     if (slug && token) rememberCustomerPortal(slug, token);
@@ -161,13 +209,79 @@ const MenuCategories = () => {
           onClearSearch={() => setSearchQuery("")}
         />
 
-        <ViewCartBtn />
-        <Navigation />
+        <ViewCartBtn hidden={overlayOpen} />
+        <Navigation hidden={overlayOpen} />
         <CartDrawer />
         <Sidebar
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
+          onCallAssist={() => setShowGuestAssist(true)}
+          onOffers={() => setShowOffers(true)}
+          onFeedback={() => setShowFeedback(true)}
+          offersCount={offersCount}
         />
+        {showGuestAssist && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowGuestAssist(false)}
+              className="fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px]"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+              className="fixed bottom-0 left-0 right-0 z-50 overflow-hidden rounded-t-3xl bg-white shadow-2xl"
+            >
+              <div className="flex justify-center pt-3">
+                <div className="h-1 w-10 rounded-full bg-gray-200" />
+              </div>
+              <div className="flex items-center justify-between px-5 pb-3 pt-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-100">
+                    <BellRing size={18} className="text-orange-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold leading-none text-gray-800">Need something?</h2>
+                    <p className="mt-0.5 text-[11px] text-gray-400">We alert the restaurant in real time</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200"
+                  onClick={() => setShowGuestAssist(false)}
+                  aria-label="Close assist"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="mx-5 h-px bg-gray-100" />
+              <div className="grid grid-cols-2 gap-2 px-5 pb-6 pt-4">
+                {[
+                  { type: "call_waiter", label: "Call waiter" },
+                  { type: "need_water", label: "Water" },
+                  { type: "need_tissue", label: "Tissue" },
+                  { type: "need_bill", label: "Bill" },
+                ].map((btn) => (
+                  <button
+                    key={btn.type}
+                    type="button"
+                    disabled={assistSending}
+                    onClick={() => sendGuestRequest(btn.type)}
+                    className="rounded-2xl border border-gray-200 bg-white py-3 text-sm font-bold text-gray-800 transition active:scale-[0.98] disabled:opacity-50"
+                  >
+                    {btn.label}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+        <Offers isOpen={showOffers} onClose={() => setShowOffers(false)} slug={slug} />
+        <Feedback isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
       </div>
     </PageTransition>
   );

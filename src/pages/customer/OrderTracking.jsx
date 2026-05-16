@@ -207,7 +207,7 @@ const OrderTracking = () => {
   );
   const guestIdForPay = order?.guestId || getStoredGuestId();
   const showPostServePay =
-    order?.status === "served" &&
+    ["served", "completed"].includes(order?.status) &&
     order?.customerPaymentDeferred &&
     order?.paymentStatus !== "paid";
 
@@ -670,11 +670,15 @@ const OrderTracking = () => {
         qrToken={qrToken}
         onSubmitted={() => {
           if (order?.restaurantSlug && order?.tableQrToken) {
-            navigate(`/home/${order.restaurantSlug}/${order.tableQrToken}`);
+            navigate(`/menu/${order.restaurantSlug}/${order.tableQrToken}`);
           }
         }}
       />
-      <Navigation restaurantSlug={order?.restaurantSlug} tableQrToken={order?.tableQrToken} />
+      <Navigation
+        restaurantSlug={order?.restaurantSlug}
+        tableQrToken={order?.tableQrToken}
+        hidden={showFeedback}
+      />
     </div>
   );
 };

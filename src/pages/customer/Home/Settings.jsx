@@ -5,11 +5,12 @@ import {
   Smartphone, Mail, LogOut, X,
 } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import Navigation from '../../../components/customer/Navigation'
 import { rememberCustomerPortal } from '../../../utils/customerPortalContext'
 import {
   changeCustomerIdentityPassword,
+  clearCustomerIdentitySession,
   ensureGuestSession,
   getCustomerIdentity,
   getStoredCustomerId,
@@ -62,6 +63,13 @@ export default function Settings() {
     localStorage.setItem(prefKey, JSON.stringify(prefs))
   }, [prefs])
 
+  useEffect(() => {
+    document.body.style.overflow = panel ? 'hidden' : 'unset'
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [panel])
+
   const setPref = (key, value) => setPrefs((current) => ({ ...current, [key]: value }))
 
   const saveProfile = async () => {
@@ -90,9 +98,7 @@ export default function Settings() {
   }
 
   const logout = () => {
-    localStorage.removeItem('customer_guest_id_v1')
-    localStorage.removeItem('customer_identity_id_v1')
-    localStorage.removeItem('customer_identity_profile_v1')
+    clearCustomerIdentitySession({ includeGuest: true })
     toast.success('Session ended on this device')
     setGuestId('')
     setCustomerId('')

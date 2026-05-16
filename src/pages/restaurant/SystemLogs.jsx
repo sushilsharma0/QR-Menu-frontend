@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import {
   FiAlertCircle,
   FiCheckCircle,

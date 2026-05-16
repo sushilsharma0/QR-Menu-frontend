@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Navigate, useOutletContext } from 'react-router-dom'
-import toast from 'react-hot-toast'
+import toast from '@utils/toast'
 import { FiClock } from 'react-icons/fi'
 import { closePosShift, fetchPosShift, openPosShift } from '../../../services/posApi'
 import { fetchPosMeta } from '../../../services/posApi'
