@@ -618,6 +618,9 @@ export default function OrderActivityReport() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-semibold text-gray-950">#{row.orderNumber}</p>
+                    <p className="mt-1 text-xs font-semibold text-gray-500">
+                      {formatters.datetime(row.createdAt)}
+                    </p>
                     <p className="mt-1 text-xs text-gray-500">
                       {(() => {
                         const name = String(row.customerName || '').trim()
