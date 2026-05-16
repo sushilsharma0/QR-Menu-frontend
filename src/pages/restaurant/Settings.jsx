@@ -14,6 +14,7 @@ import {
   FONT_OPTIONS,
   PREDEFINED_THEMES,
   getEffectivePalette,
+  isValidHex,
   normalizeThemeSettings,
 } from '../../theme/themePresets'
 
@@ -26,6 +27,16 @@ const customPaletteFields = [
   ['background', 'Background'],
   ['text', 'Text'],
 ]
+
+const getEditablePalette = (settings) => ({
+  ...getEffectivePalette(settings),
+  ...(settings.customPalette || {}),
+})
+
+const normalizeHexEntry = (value) => {
+  const clean = String(value || '').replace(/^#/, '').replace(/[^0-9a-fA-F]/g, '').slice(0, 6)
+  return `#${clean}`
+}
 
 function ThemePaletteCard({ theme, selected, onSelect }) {
   const colors = ['primary', 'secondary', 'accent', 'attention', 'surface']
@@ -117,6 +128,7 @@ const Settings = () => {
   const [showLogoPreview, setShowLogoPreview] = useState(false)
   const [showBackgroundPreview, setShowBackgroundPreview] = useState(false)
   const [themeDraft, setThemeDraft] = useState(normalizeThemeSettings(DEFAULT_THEME_SETTINGS))
+  const [paletteInputs, setPaletteInputs] = useState(getEditablePalette(DEFAULT_THEME_SETTINGS))
   const { mergeUser } = useAuth()
   const { updateTheme, applyRemoteTheme, resetTheme } = useTheme()
   const { register, handleSubmit, setValue, formState: { errors } } = useForm()
@@ -124,6 +136,10 @@ const Settings = () => {
   useEffect(() => {
     fetchRestaurant()
   }, [])
+
+  useEffect(() => {
+    setPaletteInputs(getEditablePalette(themeDraft))
+  }, [themeDraft])
 
   const fetchRestaurant = async () => {
     try {
@@ -156,6 +172,7 @@ const Settings = () => {
       }
       const loadedTheme = normalizeThemeSettings(res.data.data.settings?.themeSettings)
       setThemeDraft(loadedTheme)
+      setPaletteInputs(getEditablePalette(loadedTheme))
       applyRemoteTheme(loadedTheme)
     } catch (error) {
       toast.error('Failed to fetch restaurant settings')
@@ -227,20 +244,53 @@ const Settings = () => {
     })
   }
 
-  const updateCustomPalette = (key, value) => {
-    updateThemeDraft({
-      activeTheme: 'custom',
-      customPalette: {
-        ...getEffectivePalette(themeDraft),
-        ...(themeDraft.customPalette || {}),
-        [key]: value,
-      },
+  const useCustomPalette = () => {
+    setThemeDraft((prev) => {
+      const next = normalizeThemeSettings({
+        ...prev,
+        activeTheme: 'custom',
+        customPalette: getEditablePalette(prev),
+      })
+      updateTheme(next)
+      return next
     })
+  }
+
+  const applyCustomPaletteColor = (key, value) => {
+    setThemeDraft((prev) => {
+      const next = normalizeThemeSettings({
+        ...prev,
+        activeTheme: 'custom',
+        customPalette: {
+          ...getEditablePalette(prev),
+          [key]: value,
+        },
+      })
+      updateTheme(next)
+      return next
+    })
+  }
+
+  const updateCustomPalette = (key, value) => {
+    const nextValue = normalizeHexEntry(value)
+    setPaletteInputs((prev) => ({ ...prev, [key]: nextValue }))
+    if (isValidHex(nextValue)) applyCustomPaletteColor(key, nextValue)
+  }
+
+  const commitCustomPalette = (key) => {
+    const currentValue = paletteInputs[key]
+    if (isValidHex(currentValue)) {
+      applyCustomPaletteColor(key, currentValue)
+      return
+    }
+    setPaletteInputs(getEditablePalette(themeDraft))
+    toast.error('Enter a valid 6-digit hex color, for example #6d28d9')
   }
 
   const resetThemeDraft = () => {
     const next = normalizeThemeSettings(DEFAULT_THEME_SETTINGS)
     setThemeDraft(next)
+    setPaletteInputs(getEditablePalette(next))
     resetTheme()
   }
 
@@ -407,26 +457,31 @@ const Settings = () => {
                     <h3 className="font-bold text-gray-900 dark:text-gray-100">Custom palette creator</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Use color pickers or hex values for custom branding.</p>
                   </div>
-                  <Button type="button" size="sm" variant="secondary" onClick={() => updateThemeDraft({ activeTheme: 'custom' })}>
+                  <Button type="button" size="sm" variant="secondary" onClick={useCustomPalette}>
                     Use custom
                   </Button>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {customPaletteFields.map(([key, label]) => {
-                    const value = (themeDraft.customPalette || getEffectivePalette(themeDraft))[key] || '#111827'
+                    const value = paletteInputs[key] || getEditablePalette(themeDraft)[key] || '#111827'
+                    const colorValue = isValidHex(value) ? value : getEditablePalette(themeDraft)[key] || '#111827'
                     return (
                       <label key={key} className="rounded-lg border border-gray-100 p-3 dark:border-gray-800">
                         <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">{label}</span>
                         <div className="flex items-center gap-2">
                           <input
                             type="color"
-                            value={value}
-                            onChange={(e) => updateCustomPalette(key, e.target.value)}
+                            value={colorValue}
+                            onChange={(e) => {
+                              setPaletteInputs((prev) => ({ ...prev, [key]: e.target.value }))
+                              applyCustomPaletteColor(key, e.target.value)
+                            }}
                             className="h-10 w-12 cursor-pointer rounded border border-gray-200 bg-white p-1 dark:border-gray-700 dark:bg-gray-900"
                           />
                           <input
                             value={value}
                             onChange={(e) => updateCustomPalette(key, e.target.value)}
+                            onBlur={() => commitCustomPalette(key)}
                             className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-800 outline-none focus:border-primary-400 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
                           />
                         </div>

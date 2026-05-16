@@ -13,6 +13,7 @@ import {
   FONT_OPTIONS,
   PREDEFINED_THEMES,
   getEffectivePalette,
+  isValidHex,
   normalizeThemeSettings,
 } from '../../theme/themePresets'
 
@@ -25,6 +26,16 @@ const paletteFields = [
   ['background', 'Background'],
   ['text', 'Text'],
 ]
+
+const getEditablePalette = (settings) => ({
+  ...getEffectivePalette(settings),
+  ...(settings.customPalette || {}),
+})
+
+const normalizeHexEntry = (value) => {
+  const clean = String(value || '').replace(/^#/, '').replace(/[^0-9a-fA-F]/g, '').slice(0, 6)
+  return `#${clean}`
+}
 
 const emptyHours = {
   monday: '',
@@ -59,6 +70,7 @@ const BranchSettings = () => {
   })
   const [hours, setHours] = useState(emptyHours)
   const [themeDraft, setThemeDraft] = useState(normalizeThemeSettings(DEFAULT_THEME_SETTINGS))
+  const [paletteInputs, setPaletteInputs] = useState(getEditablePalette(DEFAULT_THEME_SETTINGS))
   const [logoFile, setLogoFile] = useState(null)
   const [bannerFile, setBannerFile] = useState(null)
   const [logoPreview, setLogoPreview] = useState('')
@@ -88,6 +100,7 @@ const BranchSettings = () => {
       setHours({ ...emptyHours, ...(row.openingHours || {}) })
       const nextTheme = normalizeThemeSettings(row.settings?.themeSettings)
       setThemeDraft(nextTheme)
+      setPaletteInputs(getEditablePalette(nextTheme))
       applyRemoteTheme(nextTheme)
       setLogoPreview(row.logo || '')
       setBannerPreview(row.banner || row.settings?.themeSettings?.branding?.backgroundImage || '')
@@ -102,6 +115,10 @@ const BranchSettings = () => {
     loadBranch()
   }, [])
 
+  useEffect(() => {
+    setPaletteInputs(getEditablePalette(themeDraft))
+  }, [themeDraft])
+
   const setField = (key) => (event) => setForm((current) => ({ ...current, [key]: event.target.value }))
   const setHour = (key) => (event) => setHours((current) => ({ ...current, [key]: event.target.value }))
 
@@ -113,15 +130,35 @@ const BranchSettings = () => {
     })
   }
 
-  const updateCustomPalette = (key, value) => {
-    updateThemeDraft({
-      activeTheme: 'custom',
-      customPalette: {
-        ...getEffectivePalette(themeDraft),
-        ...(themeDraft.customPalette || {}),
-        [key]: value,
-      },
+  const applyCustomPaletteColor = (key, value) => {
+    setThemeDraft((current) => {
+      const next = normalizeThemeSettings({
+        ...current,
+        activeTheme: 'custom',
+        customPalette: {
+          ...getEditablePalette(current),
+          [key]: value,
+        },
+      })
+      updateTheme(next)
+      return next
     })
+  }
+
+  const updateCustomPalette = (key, value) => {
+    const nextValue = normalizeHexEntry(value)
+    setPaletteInputs((current) => ({ ...current, [key]: nextValue }))
+    if (isValidHex(nextValue)) applyCustomPaletteColor(key, nextValue)
+  }
+
+  const commitCustomPalette = (key) => {
+    const currentValue = paletteInputs[key]
+    if (isValidHex(currentValue)) {
+      applyCustomPaletteColor(key, currentValue)
+      return
+    }
+    setPaletteInputs(getEditablePalette(themeDraft))
+    toast.error('Enter a valid 6-digit hex color, for example #6d28d9')
   }
 
   const pickImage = (setter, previewSetter) => (event) => {
@@ -262,13 +299,27 @@ const BranchSettings = () => {
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {paletteFields.map(([key, label]) => {
-              const value = (themeDraft.customPalette || getEffectivePalette(themeDraft))[key] || '#111827'
+              const value = paletteInputs[key] || getEditablePalette(themeDraft)[key] || '#111827'
+              const colorValue = isValidHex(value) ? value : getEditablePalette(themeDraft)[key] || '#111827'
               return (
                 <label key={key} className="rounded-lg border border-gray-100 bg-white p-3">
                   <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500">{label}</span>
                   <div className="flex items-center gap-2">
-                    <input type="color" value={value} onChange={(e) => updateCustomPalette(key, e.target.value)} className="h-10 w-12 cursor-pointer rounded border border-gray-200 bg-white p-1" />
-                    <input value={value} onChange={(e) => updateCustomPalette(key, e.target.value)} className="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold" />
+                    <input
+                      type="color"
+                      value={colorValue}
+                      onChange={(e) => {
+                        setPaletteInputs((current) => ({ ...current, [key]: e.target.value }))
+                        applyCustomPaletteColor(key, e.target.value)
+                      }}
+                      className="h-10 w-12 cursor-pointer rounded border border-gray-200 bg-white p-1"
+                    />
+                    <input
+                      value={value}
+                      onChange={(e) => updateCustomPalette(key, e.target.value)}
+                      onBlur={() => commitCustomPalette(key)}
+                      className="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold"
+                    />
                   </div>
                 </label>
               )
