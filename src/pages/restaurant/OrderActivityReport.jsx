@@ -237,14 +237,21 @@ export default function OrderActivityReport() {
   const activeFilterCount = [from, to, appliedQ].filter(Boolean).length
   const detailsModel = useMemo(() => {
     const mapAmountBreakdown = (items = [], keyName = 'name') =>
-      items
-        .map((item) => ({
-          [keyName]: titleCase(item._id),
-          raw: item._id,
-          count: Number(item.count || item.orderCount || 0),
-          amount: Number(item.amount || item.grandTotal || 0),
-        }))
-        .filter((item) => item.count > 0 || item.amount > 0)
+      Array.from(
+        items.reduce((acc, item) => {
+          const label = titleCase(item._id)
+          const current = acc.get(label) || {
+            [keyName]: label,
+            raw: item._id,
+            count: 0,
+            amount: 0,
+          }
+          current.count += Number(item.count || item.orderCount || 0)
+          current.amount += Number(item.amount || item.grandTotal || 0)
+          acc.set(label, current)
+          return acc
+        }, new Map()).values(),
+      ).filter((item) => item.count > 0 || item.amount > 0)
 
     const topItemChart = (breakdowns.topItems || []).map((item) => ({
       name: item._id?.length > 18 ? `${item._id.slice(0, 18)}...` : item._id || 'Item',
@@ -655,7 +662,7 @@ export default function OrderActivityReport() {
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={detailsModel.status} dataKey="count" nameKey="status" innerRadius={58} outerRadius={92} paddingAngle={4}>
+                  <Pie data={detailsModel.status} dataKey="count" nameKey="status" innerRadius={58} outerRadius={92} paddingAngle={0} stroke="none">
                     {detailsModel.status.map((entry, index) => (
                       <Cell key={entry.status} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                     ))}
@@ -675,7 +682,7 @@ export default function OrderActivityReport() {
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={detailsModel.paymentStatus} dataKey="amount" nameKey="status" innerRadius={58} outerRadius={92} paddingAngle={4}>
+                  <Pie data={detailsModel.paymentStatus} dataKey="amount" nameKey="status" innerRadius={58} outerRadius={92} paddingAngle={0} stroke="none">
                     {detailsModel.paymentStatus.map((entry, index) => (
                       <Cell key={entry.status} fill={CHART_COLORS[(index + 1) % CHART_COLORS.length]} />
                     ))}
@@ -695,7 +702,7 @@ export default function OrderActivityReport() {
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={detailsModel.paymentMethod} dataKey="amount" nameKey="method" innerRadius={58} outerRadius={92} paddingAngle={4}>
+                  <Pie data={detailsModel.paymentMethod} dataKey="amount" nameKey="method" innerRadius={58} outerRadius={92} paddingAngle={0} stroke="none">
                     {detailsModel.paymentMethod.map((entry, index) => (
                       <Cell key={entry.method} fill={CHART_COLORS[(index + 2) % CHART_COLORS.length]} />
                     ))}
@@ -715,7 +722,7 @@ export default function OrderActivityReport() {
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={detailsModel.channel} dataKey="amount" nameKey="channel" innerRadius={58} outerRadius={92} paddingAngle={4}>
+                  <Pie data={detailsModel.channel} dataKey="amount" nameKey="channel" innerRadius={58} outerRadius={92} paddingAngle={0} stroke="none">
                     {detailsModel.channel.map((entry, index) => (
                       <Cell key={entry.channel} fill={CHART_COLORS[(index + 3) % CHART_COLORS.length]} />
                     ))}
