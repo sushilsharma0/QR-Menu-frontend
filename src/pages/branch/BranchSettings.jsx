@@ -12,30 +12,8 @@ import {
   DEFAULT_THEME_SETTINGS,
   FONT_OPTIONS,
   PREDEFINED_THEMES,
-  getEffectivePalette,
-  isValidHex,
   normalizeThemeSettings,
 } from '../../theme/themePresets'
-
-const paletteFields = [
-  ['primary', 'Primary'],
-  ['secondary', 'Secondary'],
-  ['accent', 'Accent'],
-  ['attention', 'Attention'],
-  ['surface', 'Surface'],
-  ['background', 'Background'],
-  ['text', 'Text'],
-]
-
-const getEditablePalette = (settings) => ({
-  ...getEffectivePalette(settings),
-  ...(settings.customPalette || {}),
-})
-
-const normalizeHexEntry = (value) => {
-  const clean = String(value || '').replace(/^#/, '').replace(/[^0-9a-fA-F]/g, '').slice(0, 6)
-  return `#${clean}`
-}
 
 const emptyHours = {
   monday: '',
@@ -52,6 +30,7 @@ const BranchSettings = () => {
   const { updateTheme, applyRemoteTheme, resetTheme } = useTheme()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [themeSaving, setThemeSaving] = useState(false)
   const [branch, setBranch] = useState(null)
   const [form, setForm] = useState({
     phone: '',
@@ -70,7 +49,6 @@ const BranchSettings = () => {
   })
   const [hours, setHours] = useState(emptyHours)
   const [themeDraft, setThemeDraft] = useState(normalizeThemeSettings(DEFAULT_THEME_SETTINGS))
-  const [paletteInputs, setPaletteInputs] = useState(getEditablePalette(DEFAULT_THEME_SETTINGS))
   const [logoFile, setLogoFile] = useState(null)
   const [bannerFile, setBannerFile] = useState(null)
   const [logoPreview, setLogoPreview] = useState('')
@@ -100,7 +78,6 @@ const BranchSettings = () => {
       setHours({ ...emptyHours, ...(row.openingHours || {}) })
       const nextTheme = normalizeThemeSettings(row.settings?.themeSettings)
       setThemeDraft(nextTheme)
-      setPaletteInputs(getEditablePalette(nextTheme))
       applyRemoteTheme(nextTheme)
       setLogoPreview(row.logo || '')
       setBannerPreview(row.banner || row.settings?.themeSettings?.branding?.backgroundImage || '')
@@ -115,50 +92,43 @@ const BranchSettings = () => {
     loadBranch()
   }, [])
 
-  useEffect(() => {
-    setPaletteInputs(getEditablePalette(themeDraft))
-  }, [themeDraft])
-
   const setField = (key) => (event) => setForm((current) => ({ ...current, [key]: event.target.value }))
   const setHour = (key) => (event) => setHours((current) => ({ ...current, [key]: event.target.value }))
 
-  const updateThemeDraft = (updates) => {
-    setThemeDraft((current) => {
-      const next = normalizeThemeSettings({ ...current, ...updates })
-      updateTheme(next)
-      return next
-    })
-  }
-
-  const applyCustomPaletteColor = (key, value) => {
-    setThemeDraft((current) => {
-      const next = normalizeThemeSettings({
-        ...current,
-        activeTheme: 'custom',
-        customPalette: {
-          ...getEditablePalette(current),
-          [key]: value,
-        },
+  const persistThemeSettings = async (nextTheme) => {
+    try {
+      setThemeSaving(true)
+      const body = new FormData()
+      body.append('themeSettings', JSON.stringify(nextTheme))
+      const res = await api.put('/restaurant/branches/me/settings', body, {
+        skipBranchHeader: true,
+        headers: { 'Content-Type': 'multipart/form-data' },
       })
-      updateTheme(next)
-      return next
-    })
-  }
-
-  const updateCustomPalette = (key, value) => {
-    const nextValue = normalizeHexEntry(value)
-    setPaletteInputs((current) => ({ ...current, [key]: nextValue }))
-    if (isValidHex(nextValue)) applyCustomPaletteColor(key, nextValue)
-  }
-
-  const commitCustomPalette = (key) => {
-    const currentValue = paletteInputs[key]
-    if (isValidHex(currentValue)) {
-      applyCustomPaletteColor(key, currentValue)
-      return
+      const updated = res.data?.data || {}
+      setBranch(updated)
+      mergeUser({
+        branchName: updated.name,
+        logo: updated.logo,
+        themeSettings: updated.settings?.themeSettings,
+      })
+      applyRemoteTheme(updated.settings?.themeSettings)
+      toast.success('Appearance saved')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to save appearance')
+    } finally {
+      setThemeSaving(false)
     }
-    setPaletteInputs(getEditablePalette(themeDraft))
-    toast.error('Enter a valid 6-digit hex color, for example #6d28d9')
+  }
+
+  const updateThemeDraft = (updates, saveInstantly = false) => {
+    const next = normalizeThemeSettings({
+      ...themeDraft,
+      ...updates,
+      ...(updates.activeTheme && updates.activeTheme !== 'custom' ? { customPalette: null } : {}),
+    })
+    setThemeDraft(next)
+    updateTheme(next)
+    if (saveInstantly) persistThemeSettings(next)
   }
 
   const pickImage = (setter, previewSetter) => (event) => {
@@ -266,7 +236,8 @@ const BranchSettings = () => {
               <button
                 key={value}
                 type="button"
-                onClick={() => updateThemeDraft({ mode: value })}
+                onClick={() => updateThemeDraft({ mode: value }, true)}
+                disabled={themeSaving}
                 className={`flex items-center justify-between rounded-lg border px-4 py-3 text-sm font-bold transition ${
                   themeDraft.mode === value ? 'border-primary-500 bg-primary-50 text-primary-800' : 'border-gray-200 bg-white text-gray-700'
                 }`}
@@ -282,7 +253,8 @@ const BranchSettings = () => {
               <button
                 key={theme.id}
                 type="button"
-                onClick={() => updateThemeDraft({ activeTheme: theme.id })}
+                onClick={() => updateThemeDraft({ activeTheme: theme.id }, true)}
+                disabled={themeSaving}
                 className={`rounded-lg border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${
                   themeDraft.activeTheme === theme.id ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-100' : 'border-gray-100 bg-white'
                 }`}
@@ -297,40 +269,17 @@ const BranchSettings = () => {
             ))}
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {paletteFields.map(([key, label]) => {
-              const value = paletteInputs[key] || getEditablePalette(themeDraft)[key] || '#111827'
-              const colorValue = isValidHex(value) ? value : getEditablePalette(themeDraft)[key] || '#111827'
-              return (
-                <label key={key} className="rounded-lg border border-gray-100 bg-white p-3">
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500">{label}</span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={colorValue}
-                      onChange={(e) => {
-                        setPaletteInputs((current) => ({ ...current, [key]: e.target.value }))
-                        applyCustomPaletteColor(key, e.target.value)
-                      }}
-                      className="h-10 w-12 cursor-pointer rounded border border-gray-200 bg-white p-1"
-                    />
-                    <input
-                      value={value}
-                      onChange={(e) => updateCustomPalette(key, e.target.value)}
-                      onBlur={() => commitCustomPalette(key)}
-                      className="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold"
-                    />
-                  </div>
-                </label>
-              )
-            })}
-          </div>
-
           <label className="block text-sm font-bold text-gray-700">
             Font family
-            <select value={themeDraft.fontFamily} onChange={(e) => updateThemeDraft({ fontFamily: e.target.value })} className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
+            <select
+              value={themeDraft.fontFamily}
+              onChange={(e) => updateThemeDraft({ fontFamily: e.target.value }, true)}
+              disabled={themeSaving}
+              className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-70"
+            >
               {FONT_OPTIONS.map((font) => <option key={font.value} value={font.value}>{font.label}</option>)}
             </select>
+            <span className="mt-2 block text-xs font-semibold text-gray-500">Font and palette choices save immediately.</span>
           </label>
         </div>
       </Card>
@@ -351,7 +300,19 @@ const BranchSettings = () => {
       </Card>
 
       <div className="sticky bottom-4 z-10 flex justify-end gap-3 rounded-2xl border border-surface-200 bg-white/95 p-3 shadow-xl backdrop-blur">
-        <Button type="button" variant="secondary" onClick={() => { resetTheme(); loadBranch() }}>Reset</Button>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => {
+            const next = normalizeThemeSettings(DEFAULT_THEME_SETTINGS)
+            setThemeDraft(next)
+            resetTheme()
+            persistThemeSettings(next)
+          }}
+          disabled={themeSaving}
+        >
+          {themeSaving ? 'Saving...' : 'Reset'}
+        </Button>
         <Button type="submit" loading={saving}>Save Branch Settings</Button>
       </div>
     </form>
