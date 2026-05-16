@@ -107,13 +107,11 @@ const MetricCard = ({ label, value, sub, icon: Icon, tone = "primary" }) => {
   );
 };
 
-const AccountCard = ({ row, active, onSelect }) => {
+const AccountCard = ({ row, active, onView }) => {
   const usage = getLimitUsage(row);
   const owed = Number(row.balanceOwed || 0);
   return (
-    <button
-      type="button"
-      onClick={onSelect}
+    <div
       className={`w-full rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:bg-gray-900 ${
         active ? "border-primary-400 ring-2 ring-primary-100 dark:ring-primary-950" : "border-surface-200 dark:border-gray-800"
       }`}
@@ -158,13 +156,19 @@ const AccountCard = ({ row, active, onSelect }) => {
           />
         </div>
       </div>
-    </button>
+
+      <Button type="button" size="sm" className="mt-4 w-full" onClick={onView}>
+        View details
+      </Button>
+    </div>
   );
 };
 
 export default function CreditCustomers() {
   const [items, setItems] = useState([]);
   const [summary, setSummary] = useState(null);
+  const [statusCounts, setStatusCounts] = useState({ pending: 0, approved: 0, rejected: 0, suspended: 0, owing: 0 });
+  const [pagination, setPagination] = useState({ page: 1, limit: 24, total: 0, pages: 1 });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -172,18 +176,31 @@ export default function CreditCustomers() {
   const [selectedId, setSelectedId] = useState("");
   const [draftLimit, setDraftLimit] = useState("");
   const [draftNotes, setDraftNotes] = useState("");
+  const [ledger, setLedger] = useState(null);
+  const [ledgerLoading, setLedgerLoading] = useState(false);
+  const [paymentForms, setPaymentForms] = useState({});
+  const [payingOrderId, setPayingOrderId] = useState("");
 
-  const load = async () => {
+  const load = async ({ keepSelected = true } = {}) => {
     try {
       setLoading(true);
       const [listRes, sumRes] = await Promise.all([
-        api.get("/restaurant/credit-customers"),
+        api.get("/restaurant/credit-customers", {
+          params: {
+            page: pagination.page,
+            limit: pagination.limit,
+            status: statusFilter,
+            q: query.trim() || undefined,
+          },
+        }),
         api.get("/restaurant/credit-customers/summary"),
       ]);
       const nextItems = listRes?.data?.data?.items || [];
       setItems(nextItems);
+      setStatusCounts(listRes?.data?.data?.statusCounts || { pending: 0, approved: 0, rejected: 0, suspended: 0, owing: 0 });
+      setPagination((prev) => ({ ...prev, ...(listRes?.data?.data?.pagination || {}) }));
       setSummary(sumRes?.data?.data || null);
-      setSelectedId((current) => current || nextItems[0]?._id || "");
+      setSelectedId((current) => (keepSelected && nextItems.some((row) => row._id === current) ? current : ""));
     } catch (e) {
       toast.error(e?.response?.data?.message || "Failed to load credit customers");
     } finally {
@@ -192,24 +209,15 @@ export default function CreditCustomers() {
   };
 
   useEffect(() => {
-    load();
-  }, []);
-
-  const filteredItems = useMemo(() => {
-    const text = query.trim().toLowerCase();
-    return items.filter((row) => {
-      const matchesStatus =
-        statusFilter === "all" ||
-        row.status === statusFilter ||
-        (statusFilter === "owing" && Number(row.balanceOwed || 0) > 0);
-      const matchesText = !text || [row.name, row.email, row.phone, row.notes].filter(Boolean).join(" ").toLowerCase().includes(text);
-      return matchesStatus && matchesText;
-    });
-  }, [items, query, statusFilter]);
+    const timer = setTimeout(() => {
+      load();
+    }, query.trim() ? 250 : 0);
+    return () => clearTimeout(timer);
+  }, [pagination.page, pagination.limit, statusFilter, query]);
 
   const selected = useMemo(() => {
-    return items.find((row) => row._id === selectedId) || filteredItems[0] || items[0] || null;
-  }, [filteredItems, items, selectedId]);
+    return items.find((row) => row._id === selectedId) || items[0] || null;
+  }, [items, selectedId]);
 
   useEffect(() => {
     if (!selected) return;
@@ -217,16 +225,30 @@ export default function CreditCustomers() {
     setDraftNotes(selected.notes || "");
   }, [selected?._id]);
 
-  const localStats = useMemo(() => {
-    return items.reduce(
-      (acc, row) => {
-        acc[row.status] = (acc[row.status] || 0) + 1;
-        if (Number(row.balanceOwed || 0) > 0) acc.owing += 1;
-        return acc;
-      },
-      { pending: 0, approved: 0, rejected: 0, suspended: 0, owing: 0 },
-    );
-  }, [items]);
+  useEffect(() => {
+    if (!selected?._id) {
+      setLedger(null);
+      return;
+    }
+    let alive = true;
+    const loadLedger = async () => {
+      try {
+        setLedgerLoading(true);
+        const res = await api.get(`/restaurant/credit-customers/${selected._id}/ledger`);
+        if (alive) setLedger(res?.data?.data || null);
+      } catch {
+        if (alive) setLedger(null);
+      } finally {
+        if (alive) setLedgerLoading(false);
+      }
+    };
+    loadLedger();
+    return () => {
+      alive = false;
+    };
+  }, [selected?._id]);
+
+  const localStats = statusCounts;
 
   const patch = async (id, body, message = "Updated") => {
     try {
@@ -252,9 +274,70 @@ export default function CreditCustomers() {
     patch(selected._id, { creditLimit: draftLimit, notes: draftNotes }, "Account details saved");
   };
 
+  const getPaymentForm = (orderId, due) =>
+    paymentForms[orderId] || { paymentMethod: "cash", amount: Number(due || 0).toFixed(2) };
+
+  const updatePaymentForm = (orderId, patchValue) => {
+    setPaymentForms((prev) => ({
+      ...prev,
+      [orderId]: {
+        ...(prev[orderId] || { paymentMethod: "cash", amount: "" }),
+        ...patchValue,
+      },
+    }));
+  };
+
+  const recordCreditPayment = async (order) => {
+    if (!selected) return;
+    const due = Math.max(0, Number(order.grandTotal || 0) - Number(order.amountPaidTotal || 0));
+    const form = getPaymentForm(order._id, due);
+    const amount = Number(form.amount) || due;
+    if (amount <= 0) return toast.error("Enter a valid payment amount");
+    if (amount - due > 0.02) return toast.error("Payment cannot exceed balance due");
+
+    try {
+      setPayingOrderId(order._id);
+      await api.post(`/restaurant/credit-customers/${selected._id}/orders/${order._id}/pay`, {
+        paymentMethod: form.paymentMethod,
+        amount,
+      });
+      toast.success(amount >= due - 0.02 ? "Credit balance marked paid" : "Credit payment recorded");
+      const [listRes, sumRes, ledgerRes] = await Promise.all([
+        api.get("/restaurant/credit-customers", {
+          params: {
+            page: pagination.page,
+            limit: pagination.limit,
+            status: statusFilter,
+            q: query.trim() || undefined,
+          },
+        }),
+        api.get("/restaurant/credit-customers/summary"),
+        api.get(`/restaurant/credit-customers/${selected._id}/ledger`),
+      ]);
+      setItems(listRes?.data?.data?.items || []);
+      setStatusCounts(listRes?.data?.data?.statusCounts || { pending: 0, approved: 0, rejected: 0, suspended: 0, owing: 0 });
+      setPagination((prev) => ({ ...prev, ...(listRes?.data?.data?.pagination || {}) }));
+      setSummary(sumRes?.data?.data || null);
+      setLedger(ledgerRes?.data?.data || null);
+    } catch (e) {
+      toast.error(e?.response?.data?.message || "Could not record payment");
+    } finally {
+      setPayingOrderId("");
+    }
+  };
+
   const selectedUsage = getLimitUsage(selected);
   const selectedOwed = Number(selected?.balanceOwed || 0);
   const selectedLimit = Number(selected?.creditLimit || 0);
+  const totalAccountCount =
+    Number(statusCounts.pending || 0) +
+    Number(statusCounts.approved || 0) +
+    Number(statusCounts.rejected || 0) +
+    Number(statusCounts.suspended || 0);
+  const filterCount = (value) => {
+    if (value === "all") return totalAccountCount;
+    return Number(statusCounts[value] || 0);
+  };
 
   return (
     <div className="restaurant-portal space-y-6">
@@ -271,7 +354,7 @@ export default function CreditCustomers() {
                 Review applications, approve credit accounts, track balances, and manage limits for customers who use pay later.
               </p>
             </div>
-            <Button type="button" variant="secondary" onClick={load} disabled={loading} className="gap-2">
+            <Button type="button" variant="secondary" onClick={() => load()} disabled={loading} className="gap-2">
               <FiRefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               Refresh
             </Button>
@@ -301,14 +384,20 @@ export default function CreditCustomers() {
                 label="Find customer"
                 placeholder="Search name, email, phone, or notes"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setPagination((prev) => ({ ...prev, page: 1 }));
+                }}
               />
               <div className="flex flex-wrap gap-2">
                 {filters.map((filter) => (
                   <button
                     key={filter.value}
                     type="button"
-                    onClick={() => setStatusFilter(filter.value)}
+                    onClick={() => {
+                      setStatusFilter(filter.value);
+                      setPagination((prev) => ({ ...prev, page: 1 }));
+                    }}
                     className={`rounded-xl px-3 py-2 text-sm font-bold transition ${
                       statusFilter === filter.value
                         ? "bg-primary-600 text-white shadow-sm"
@@ -316,6 +405,7 @@ export default function CreditCustomers() {
                     }`}
                   >
                     {filter.label}
+                    <span className="ml-1 opacity-70">({filterCount(filter.value)})</span>
                   </button>
                 ))}
               </div>
@@ -326,7 +416,7 @@ export default function CreditCustomers() {
             <div className="flex min-h-80 items-center justify-center rounded-3xl border border-surface-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
               <div className="h-12 w-12 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
             </div>
-          ) : filteredItems.length === 0 ? (
+          ) : items.length === 0 ? (
             <div className="flex min-h-80 flex-col items-center justify-center rounded-3xl border border-surface-200 bg-white px-4 text-center shadow-sm dark:border-gray-800 dark:bg-gray-900">
               <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-50 text-primary-700 dark:bg-gray-950 dark:text-primary-300">
                 <FiUser className="h-7 w-7" />
@@ -335,11 +425,48 @@ export default function CreditCustomers() {
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Try another status filter or search term.</p>
             </div>
           ) : (
-            <div className="grid gap-4 lg:grid-cols-2">
-              {filteredItems.map((row) => (
-                <AccountCard key={row._id} row={row} active={selected?._id === row._id} onSelect={() => setSelectedId(row._id)} />
-              ))}
-            </div>
+            <>
+              <div className="grid gap-4 lg:grid-cols-2">
+                {items.map((row) => (
+                  <AccountCard key={row._id} row={row} active={selected?._id === row._id} onView={() => setSelectedId(row._id)} />
+                ))}
+              </div>
+              <div className="flex flex-col gap-3 rounded-2xl border border-surface-200 bg-white p-4 text-sm shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:flex-row sm:items-center sm:justify-between">
+                <p className="font-semibold text-gray-600 dark:text-gray-300">
+                  Showing page {pagination.page} of {pagination.pages} - {pagination.total} accounts
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <select
+                    value={pagination.limit}
+                    onChange={(e) => setPagination((prev) => ({ ...prev, page: 1, limit: Number(e.target.value) || 24 }))}
+                    className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-bold text-gray-700 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200"
+                  >
+                    <option value={12}>12 / page</option>
+                    <option value={24}>24 / page</option>
+                    <option value={48}>48 / page</option>
+                    <option value={96}>96 / page</option>
+                  </select>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={pagination.page <= 1 || loading}
+                    onClick={() => setPagination((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={pagination.page >= pagination.pages || loading}
+                    onClick={() => setPagination((prev) => ({ ...prev, page: Math.min(prev.pages, prev.page + 1) }))}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            </>
           )}
         </div>
 
@@ -405,6 +532,93 @@ export default function CreditCustomers() {
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <Info label="Applied" value={formatDate(selected.createdAt)} />
                   <Info label="Approved" value={formatDate(selected.approvedAt)} />
+                </div>
+
+                <div className="rounded-2xl border border-surface-200 p-4 dark:border-gray-800">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Credit transaction history</p>
+                      <p className="mt-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        {ledgerLoading ? "Loading account activity..." : `${ledger?.summary?.orderCount || 0} credit bills tracked`}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-surface-50 px-3 py-1 text-xs font-bold text-gray-600 dark:bg-gray-950 dark:text-gray-300">
+                      Paid {money(ledger?.summary?.totalPaid || 0)}
+                    </span>
+                  </div>
+                  <div className="mt-4 max-h-72 space-y-2 overflow-y-auto pr-1">
+                    {ledgerLoading ? (
+                      <p className="rounded-xl bg-surface-50 p-3 text-sm text-gray-500 dark:bg-gray-950/50">Loading history...</p>
+                    ) : ledger?.orders?.length ? (
+                      ledger.orders.map((order) => {
+                        const due = Math.max(0, Number(order.grandTotal || 0) - Number(order.amountPaidTotal || 0));
+                        const txs = (ledger.transactions || []).filter((tx) => String(tx.customerOrder) === String(order._id));
+                        const form = getPaymentForm(order._id, due);
+                        return (
+                          <div key={order._id} className="rounded-xl bg-surface-50 p-3 text-sm dark:bg-gray-950/50">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="font-black text-gray-950 dark:text-gray-50">#{order.orderNumber}</p>
+                                <p className="text-xs font-semibold capitalize text-gray-500">{order.status} / {order.paymentStatus}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-black text-gray-950 dark:text-gray-50">{money(order.grandTotal)}</p>
+                                <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">Due {money(due)}</p>
+                              </div>
+                            </div>
+                            {txs.length > 0 && (
+                              <div className="mt-2 space-y-1 border-t border-gray-200 pt-2 dark:border-gray-800">
+                                {txs.map((tx) => (
+                                  <div key={tx._id} className="flex justify-between gap-3 text-xs text-gray-600 dark:text-gray-300">
+                                    <span className="capitalize">{tx.paymentMethod} - {tx.status}</span>
+                                    <span className="font-bold">{money(tx.amount)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {due > 0 && selected.status === "approved" && (
+                              <div className="mt-3 grid gap-2 border-t border-gray-200 pt-3 dark:border-gray-800 sm:grid-cols-[110px_1fr]">
+                                <label className="text-xs font-bold text-gray-600 dark:text-gray-300">
+                                  Method
+                                  <select
+                                    value={form.paymentMethod}
+                                    onChange={(e) => updatePaymentForm(order._id, { paymentMethod: e.target.value })}
+                                    className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-2 py-2 text-xs font-bold dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                                  >
+                                    <option value="cash">Cash</option>
+                                    <option value="online">Online</option>
+                                  </select>
+                                </label>
+                                <label className="text-xs font-bold text-gray-600 dark:text-gray-300">
+                                  Amount
+                                  <div className="mt-1 flex gap-2">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      value={form.amount}
+                                      onChange={(e) => updatePaymentForm(order._id, { amount: e.target.value })}
+                                      className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-2 py-2 text-xs font-bold dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                                    />
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      disabled={payingOrderId === order._id}
+                                      onClick={() => recordCreditPayment(order)}
+                                    >
+                                      {payingOrderId === order._id ? "Saving..." : "Mark paid"}
+                                    </Button>
+                                  </div>
+                                </label>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <p className="rounded-xl bg-surface-50 p-3 text-sm text-gray-500 dark:bg-gray-950/50">No credit bills for this customer yet.</p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-3">
