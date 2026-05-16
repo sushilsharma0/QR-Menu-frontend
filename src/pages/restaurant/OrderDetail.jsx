@@ -281,12 +281,34 @@ const OrderDetail = () => {
     order &&
     order.paymentStatus !== 'paid' &&
     order.paymentStatus !== 'failed' &&
-    ['served', 'completed'].includes(order.status)
+    ['served', 'completed'].includes(order.status) &&
+    !order.isCreditSale
 
   const canPostToNewHouseAccount = canRecordAnyPayment && !order?.isCreditSale
 
   const houseCreditManageHref =
     isCashierView && cashierBase ? `${cashierBase}/house-credit` : restaurantBase ? `${restaurantBase}/credit-customers` : ''
+
+  const renderCreditSettlementNotice = () => {
+    if (!order?.isCreditSale || order.paymentStatus === 'paid') return null
+    return (
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+        <p className="font-black">House credit bill</p>
+        <p className="mt-1 text-xs font-semibold">
+          This bill is linked to an approved credit customer. For security, payment can be recorded only from the house credit section.
+        </p>
+        {houseCreditManageHref && (
+          <Link
+            to={houseCreditManageHref}
+            className="mt-3 inline-flex items-center gap-2 rounded-xl bg-amber-600 px-3 py-2 text-xs font-black text-white hover:bg-amber-700"
+          >
+            <FiExternalLink className="h-3.5 w-3.5" />
+            Open house credit
+          </Link>
+        )}
+      </div>
+    )
+  }
 
   const renderStaffPaymentForm = (compact = false) => {
     if (!order) return null
@@ -638,7 +660,10 @@ const OrderDetail = () => {
               <p>Thank you! Visit Again.</p>
             </div>
 
-            <div className="mt-4 border-t border-dashed pt-4 text-left">{renderStaffPaymentForm(true)}</div>
+            <div className="mt-4 border-t border-dashed pt-4 text-left">
+              {renderCreditSettlementNotice()}
+              {renderStaffPaymentForm(true)}
+            </div>
           </Card>
         </div>
       </div>
@@ -797,6 +822,7 @@ const OrderDetail = () => {
                 <p className="mt-1 text-xs text-gray-500">This order is already in a final state.</p>
               </div>
             )}
+            {renderCreditSettlementNotice()}
             {showPaymentTools && renderStaffPaymentForm(false)}
           </SectionCard>
 
