@@ -62,6 +62,7 @@ const containerVariants = {
 const chartColors = ["#8f2800", "#f59e0b", "#059669", "#2563eb", "#dc2626", "#7c3aed", "#0f766e"];
 
 const paddedRevenueDomain = [0, (dataMax) => Math.max(1, Math.ceil(Number(dataMax || 0) * 1.2))];
+const paddedOrdersDomain = [0, (dataMax) => Math.max(2, Math.ceil(Number(dataMax || 0) * 1.25))];
 
 const formatPctTrend = (pct) => {
   if (pct === null || pct === undefined) return { text: "New", up: true };
@@ -904,19 +905,10 @@ const Dashboard = () => {
             {dashboardModel.hourlyOrderFlow.length > 0 ? (
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={dashboardModel.hourlyOrderFlow} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <ComposedChart data={dashboardModel.hourlyOrderFlow} margin={{ top: 24, right: 10, left: 0, bottom: 0 }}>
                     <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" vertical={false} />
                     <XAxis dataKey="hour" axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 12 }} />
-                    <YAxis yAxisId="left" allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 12 }} width={38} />
-                    <YAxis
-                      yAxisId="right"
-                      orientation="right"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: "#6b7280", fontSize: 12 }}
-                      tickFormatter={(value) => `Rs. ${Math.round(Number(value || 0) / 1000)}k`}
-                      width={58}
-                    />
+                    <YAxis yAxisId="left" domain={paddedOrdersDomain} allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 12 }} width={38} />
                     <Tooltip
                       formatter={(value, name) => [
                         name === "revenue" ? formatRestaurantCurrency(value) : value,
@@ -924,7 +916,7 @@ const Dashboard = () => {
                       ]}
                     />
                     <Bar yAxisId="left" dataKey="orders" name="Orders" fill="#f59e0b" radius={[12, 12, 4, 4]} barSize={34} />
-                    <Line yAxisId="right" type="monotone" dataKey="revenue" name="Order value" stroke="#8f2800" strokeWidth={3} dot={{ r: 4, fill: "#fff" }} />
+                    <Line yAxisId="left" type="monotone" dataKey="orders" name="Orders trend" stroke="#8f2800" strokeWidth={3} dot={{ r: 4, fill: "#fff" }} />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
@@ -1038,19 +1030,10 @@ const Dashboard = () => {
             {dashboardModel.tableActivityData.length > 0 ? (
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={dashboardModel.tableActivityData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                  <ComposedChart data={dashboardModel.tableActivityData} margin={{ top: 24, right: 16, left: 0, bottom: 0 }}>
                     <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" vertical={false} />
                     <XAxis dataKey="table" axisLine={false} tickLine={false} tick={{ fill: "#374151", fontSize: 12 }} />
-                    <YAxis yAxisId="left" allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 12 }} width={38} />
-                    <YAxis
-                      yAxisId="right"
-                      orientation="right"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: "#6b7280", fontSize: 12 }}
-                      tickFormatter={(value) => `Rs. ${Math.round(Number(value || 0) / 1000)}k`}
-                      width={58}
-                    />
+                    <YAxis yAxisId="left" domain={paddedOrdersDomain} allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 12 }} width={38} />
                     <Tooltip
                       formatter={(value, name) => [
                         name === "revenue" ? formatRestaurantCurrency(value) : value,
@@ -1058,7 +1041,7 @@ const Dashboard = () => {
                       ]}
                     />
                     <Bar yAxisId="left" dataKey="orders" name="Orders" fill="#059669" radius={[12, 12, 4, 4]} />
-                    <Line yAxisId="right" type="monotone" dataKey="revenue" name="Revenue" stroke="#8f2800" strokeWidth={3} dot={{ r: 4, fill: "#fff" }} />
+                    <Line yAxisId="left" type="monotone" dataKey="orders" name="Orders trend" stroke="#8f2800" strokeWidth={3} dot={{ r: 4, fill: "#fff" }} />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
