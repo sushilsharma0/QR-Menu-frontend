@@ -61,6 +61,8 @@ const containerVariants = {
 
 const chartColors = ["#8f2800", "#f59e0b", "#059669", "#2563eb", "#dc2626", "#7c3aed", "#0f766e"];
 
+const paddedRevenueDomain = [0, (dataMax) => Math.max(1, Math.ceil(Number(dataMax || 0) * 1.2))];
+
 const formatPctTrend = (pct) => {
   if (pct === null || pct === undefined) return { text: "New", up: true };
   const rounded = Math.round(Number(pct) * 10) / 10;
@@ -87,7 +89,7 @@ function SalesTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
 
   const revenue = payload.find((item) => item.dataKey === "revenue")?.value || 0;
-  const orders = payload.find((item) => item.dataKey === "orders")?.value || 0;
+  const orders = payload.find((item) => item.dataKey === "orders")?.value ?? payload[0]?.payload?.orders ?? 0;
 
   return (
     <div className="rounded-2xl border border-surface-200 bg-white/95 px-4 py-3 shadow-xl backdrop-blur">
@@ -638,7 +640,7 @@ const Dashboard = () => {
           {dashboardModel.hasSalesData ? (
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={salesData} margin={{ top: 12, right: 10, left: 0, bottom: 0 }}>
+                <ComposedChart data={salesData} margin={{ top: 28, right: 10, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="salesRevenueGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#8f2800" stopOpacity={0.92} />
@@ -656,19 +658,12 @@ const Dashboard = () => {
                   />
                   <YAxis
                     yAxisId="left"
+                    domain={paddedRevenueDomain}
                     axisLine={false}
                     tickLine={false}
                     tick={{ fill: "#6b7280", fontSize: 12 }}
                     tickFormatter={(value) => `Rs. ${Math.round(Number(value || 0) / 1000)}k`}
                     width={58}
-                  />
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#6b7280", fontSize: 12 }}
-                    width={34}
                   />
                   <Tooltip content={<SalesTooltip />} cursor={{ fill: "#fffcf1" }} />
                   <Bar
@@ -681,10 +676,10 @@ const Dashboard = () => {
                     animationDuration={1000}
                   />
                   <Line
-                    yAxisId="right"
+                    yAxisId="left"
                     type="monotone"
-                    dataKey="orders"
-                    name="Orders"
+                    dataKey="revenue"
+                    name="Revenue trend"
                     stroke="#059669"
                     strokeWidth={3}
                     dot={{ r: 4, strokeWidth: 2, fill: "#ffffff" }}
