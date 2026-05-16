@@ -100,11 +100,12 @@ function SalesTooltip({ active, payload, label }) {
 function ActivityTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   const row = payload[0]?.payload || {}
+  const tooltipLabel = row.status || row.method || row.channel || row.name || payload[0]?.name || label
 
   if (Object.prototype.hasOwnProperty.call(row, 'orderCount') || Object.prototype.hasOwnProperty.call(row, 'grandTotal')) {
     return (
       <div className="rounded-2xl border border-surface-200 bg-white/95 px-4 py-3 shadow-xl backdrop-blur">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{titleCase(label)}</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{titleCase(tooltipLabel)}</p>
         <div className="mt-2 space-y-1 text-sm">
           <p className="flex items-center justify-between gap-8">
             <span className="text-gray-500">Orders</span>
@@ -121,7 +122,7 @@ function ActivityTooltip({ active, payload, label }) {
 
   return (
     <div className="rounded-2xl border border-surface-200 bg-white/95 px-4 py-3 shadow-xl backdrop-blur">
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{titleCase(label)}</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{titleCase(tooltipLabel)}</p>
       <div className="mt-2 space-y-1 text-sm">
         {payload.map((item) => {
           const countLike = ['count', 'orderCount', 'quantity'].includes(item.dataKey)
