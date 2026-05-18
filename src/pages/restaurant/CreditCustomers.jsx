@@ -2,10 +2,14 @@ import React, { useEffect, useMemo, useState } from "react";
 import toast from "@utils/toast";
 import {
   FiAlertCircle,
+  FiCalendar,
   FiCheckCircle,
   FiClock,
+  FiCreditCard,
   FiDollarSign,
   FiEdit3,
+  FiFileText,
+  FiHash,
   FiMail,
   FiPhone,
   FiRefreshCw,
@@ -62,6 +66,19 @@ const formatDate = (value) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Not set";
   return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+};
+
+const formatDateTime = (value) => {
+  if (!value) return "Not set";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Not set";
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
 const getLimitUsage = (row) => {
@@ -158,8 +175,143 @@ const AccountCard = ({ row, active, onView }) => {
       </div>
 
       <Button type="button" size="sm" className="mt-4 w-full" onClick={onView}>
-        View details
+        <FiFileText className="mr-2 h-4 w-4" />
+        {active ? "Viewing details" : "View details"}
       </Button>
+    </div>
+  );
+};
+
+const DetailLine = ({ icon: Icon, label, value }) => (
+  <div className="flex items-start gap-3 rounded-2xl bg-surface-50 p-3 dark:bg-gray-950/50">
+    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-primary-700 shadow-sm dark:bg-gray-900 dark:text-primary-300">
+      <Icon className="h-4 w-4" />
+    </span>
+    <div className="min-w-0">
+      <p className="text-[11px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
+      <p className="mt-0.5 break-words text-sm font-bold text-gray-950 dark:text-gray-100">{value || "Not provided"}</p>
+    </div>
+  </div>
+);
+
+const LedgerOrderCard = ({
+  order,
+  transactions,
+  selectedStatus,
+  form,
+  paying,
+  onChangeForm,
+  onRecordPayment,
+}) => {
+  const total = Number(order.grandTotal || 0);
+  const paid = Number(order.amountPaidTotal || 0);
+  const due = Math.max(0, total - paid);
+  const canPay = due > 0 && selectedStatus === "approved";
+
+  return (
+    <div className="rounded-2xl border border-surface-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-2.5 py-1 text-xs font-black text-primary-700 dark:bg-primary-950/40 dark:text-primary-200">
+              <FiHash className="h-3.5 w-3.5" />
+              {order.orderNumber}
+            </span>
+            <span className="rounded-full bg-surface-100 px-2.5 py-1 text-xs font-bold capitalize text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+              {order.status}
+            </span>
+          </div>
+          <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
+            <FiCalendar className="h-3.5 w-3.5" />
+            {formatDateTime(order.createdAt)}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Balance</p>
+          <p className={`mt-0.5 text-lg font-black ${due > 0 ? "text-amber-700 dark:text-amber-300" : "text-emerald-700 dark:text-emerald-300"}`}>
+            {money(due)}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-3 gap-2 rounded-2xl bg-surface-50 p-3 dark:bg-gray-950/50">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Bill</p>
+          <p className="mt-1 text-sm font-black text-gray-950 dark:text-gray-100">{money(total)}</p>
+        </div>
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Paid</p>
+          <p className="mt-1 text-sm font-black text-emerald-700 dark:text-emerald-300">{money(paid)}</p>
+        </div>
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Status</p>
+          <p className="mt-1 text-sm font-black capitalize text-gray-950 dark:text-gray-100">{order.paymentStatus || "credit"}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 border-t border-surface-100 pt-4 dark:border-gray-800">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <p className="text-xs font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">Transactions</p>
+          <span className="rounded-full bg-surface-50 px-2.5 py-1 text-xs font-bold text-gray-600 dark:bg-gray-950 dark:text-gray-300">
+            {transactions.length}
+          </span>
+        </div>
+        {transactions.length ? (
+          <div className="space-y-2">
+            {transactions.map((tx) => (
+              <div key={tx._id} className="flex items-center justify-between gap-3 rounded-xl bg-surface-50 px-3 py-2 dark:bg-gray-950/50">
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-black capitalize text-gray-800 dark:text-gray-100">
+                    {tx.paymentMethod} payment
+                  </p>
+                  <p className="truncate text-[11px] font-semibold text-gray-500 dark:text-gray-400">
+                    {formatDateTime(tx.createdAt)} · {tx.status}
+                  </p>
+                </div>
+                <p className="shrink-0 text-sm font-black text-emerald-700 dark:text-emerald-300">{money(tx.amount)}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="rounded-xl bg-surface-50 px-3 py-2 text-xs font-semibold text-gray-500 dark:bg-gray-950/50 dark:text-gray-400">
+            No payments recorded against this bill yet.
+          </p>
+        )}
+      </div>
+
+      {canPay && (
+        <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50/70 p-3 dark:border-amber-900/60 dark:bg-amber-950/20">
+          <div className="grid gap-2 sm:grid-cols-[120px_1fr]">
+            <label className="text-xs font-bold text-gray-700 dark:text-gray-200">
+              Method
+              <select
+                value={form.paymentMethod}
+                onChange={(e) => onChangeForm(order._id, { paymentMethod: e.target.value })}
+                className="mt-1 w-full rounded-xl border border-amber-200 bg-white px-2 py-2 text-xs font-bold dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+              >
+                <option value="cash">Cash</option>
+                <option value="online">Online</option>
+              </select>
+            </label>
+            <label className="text-xs font-bold text-gray-700 dark:text-gray-200">
+              Payment amount
+              <div className="mt-1 flex gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.amount}
+                  onChange={(e) => onChangeForm(order._id, { amount: e.target.value })}
+                  className="min-w-0 flex-1 rounded-xl border border-amber-200 bg-white px-2 py-2 text-xs font-bold outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                />
+                <Button type="button" size="sm" disabled={paying} onClick={() => onRecordPayment(order)}>
+                  {paying ? "Saving..." : "Collect"}
+                </Button>
+              </div>
+            </label>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -375,7 +527,7 @@ export default function CreditCustomers() {
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_480px]">
         <div className="space-y-4">
           <div className="rounded-2xl border border-surface-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
             <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
@@ -470,26 +622,27 @@ export default function CreditCustomers() {
           )}
         </div>
 
-        <aside className="h-fit rounded-3xl border border-surface-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 xl:sticky xl:top-6">
+        <aside className="h-fit overflow-hidden rounded-3xl border border-surface-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:overflow-y-auto">
           {!selected ? (
-            <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">Select a customer account to view details.</div>
+            <div className="flex min-h-80 flex-col items-center justify-center p-8 text-center">
+              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-50 text-primary-700 dark:bg-gray-950 dark:text-primary-300">
+                <FiFileText className="h-7 w-7" />
+              </span>
+              <h2 className="mt-4 text-lg font-black text-gray-950 dark:text-gray-50">Select a customer</h2>
+              <p className="mt-1 max-w-xs text-sm text-gray-500 dark:text-gray-400">
+                Customer details, bills, and transactions will appear here after opening an account.
+              </p>
+            </div>
           ) : (
             <>
-              <div className="border-b border-surface-100 p-5 dark:border-gray-800">
+              <div className="border-b border-surface-100 bg-gradient-to-br from-primary-50 via-white to-amber-50 p-5 dark:border-gray-800 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <StatusPill status={selected.status} />
                     <h2 className="mt-3 truncate text-2xl font-black text-gray-950 dark:text-gray-50">{selected.name}</h2>
-                    <p className="mt-1 flex items-center gap-2 truncate text-sm text-gray-500 dark:text-gray-400">
-                      <FiMail className="shrink-0" />
-                      {selected.email}
+                    <p className="mt-1 text-sm font-semibold text-gray-600 dark:text-gray-400">
+                      {ledgerLoading ? "Loading ledger..." : `${ledger?.summary?.orderCount || 0} bills · ${ledger?.transactions?.length || 0} payments`}
                     </p>
-                    {selected.phone && (
-                      <p className="mt-1 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                        <FiPhone className="shrink-0" />
-                        {selected.phone}
-                      </p>
-                    )}
                   </div>
                   <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${statusMeta[selected.status]?.accent || statusMeta.pending.accent}`}>
                     <FiUser className="h-6 w-6" />
@@ -499,13 +652,22 @@ export default function CreditCustomers() {
 
               <div className="space-y-5 p-5">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl bg-amber-50 p-4 dark:bg-amber-950/30">
+                  <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 dark:border-amber-900/60 dark:bg-amber-950/30">
                     <p className="text-xs font-bold uppercase tracking-wide text-amber-700 dark:text-amber-300">Balance owed</p>
                     <p className="mt-2 text-2xl font-black text-amber-800 dark:text-amber-200">{money(selectedOwed)}</p>
                   </div>
-                  <div className="rounded-2xl bg-surface-50 p-4 dark:bg-gray-950/50">
+                  <div className="rounded-2xl border border-surface-200 bg-surface-50 p-4 dark:border-gray-800 dark:bg-gray-950/50">
                     <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Open bills</p>
                     <p className="mt-2 text-2xl font-black text-gray-950 dark:text-gray-50">{selected.openCreditOrders || 0}</p>
+                  </div>
+                </div>
+
+                <div className="grid gap-3">
+                  <DetailLine icon={FiMail} label="Email" value={selected.email} />
+                  <DetailLine icon={FiPhone} label="Phone" value={selected.phone} />
+                  <div className="grid grid-cols-2 gap-3">
+                    <DetailLine icon={FiCalendar} label="Applied" value={formatDate(selected.createdAt)} />
+                    <DetailLine icon={FiCheckCircle} label="Approved" value={formatDate(selected.approvedAt)} />
                   </div>
                 </div>
 
@@ -529,94 +691,55 @@ export default function CreditCustomers() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <Info label="Applied" value={formatDate(selected.createdAt)} />
-                  <Info label="Approved" value={formatDate(selected.approvedAt)} />
-                </div>
-
-                <div className="rounded-2xl border border-surface-200 p-4 dark:border-gray-800">
-                  <div className="flex items-center justify-between gap-3">
+                <div className="rounded-2xl border border-surface-200 bg-surface-50/70 p-4 dark:border-gray-800 dark:bg-gray-950/30">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Credit transaction history</p>
+                      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-gray-500">
+                        <FiCreditCard className="h-4 w-4" />
+                        Credit transaction history
+                      </p>
                       <p className="mt-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
                         {ledgerLoading ? "Loading account activity..." : `${ledger?.summary?.orderCount || 0} credit bills tracked`}
                       </p>
                     </div>
-                    <span className="rounded-full bg-surface-50 px-3 py-1 text-xs font-bold text-gray-600 dark:bg-gray-950 dark:text-gray-300">
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-gray-600 shadow-sm dark:bg-gray-900 dark:text-gray-300">
                       Paid {money(ledger?.summary?.totalPaid || 0)}
                     </span>
                   </div>
-                  <div className="mt-4 max-h-72 space-y-2 overflow-y-auto pr-1">
+                  <div className="mt-4 space-y-3">
                     {ledgerLoading ? (
-                      <p className="rounded-xl bg-surface-50 p-3 text-sm text-gray-500 dark:bg-gray-950/50">Loading history...</p>
+                      <div className="space-y-3">
+                        {[1, 2].map((key) => (
+                          <div key={key} className="rounded-2xl border border-surface-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+                            <div className="h-4 w-28 animate-pulse rounded bg-gray-200 dark:bg-gray-800" />
+                            <div className="mt-3 h-16 animate-pulse rounded-xl bg-gray-100 dark:bg-gray-800" />
+                          </div>
+                        ))}
+                      </div>
                     ) : ledger?.orders?.length ? (
                       ledger.orders.map((order) => {
                         const due = Math.max(0, Number(order.grandTotal || 0) - Number(order.amountPaidTotal || 0));
                         const txs = (ledger.transactions || []).filter((tx) => String(tx.customerOrder) === String(order._id));
                         const form = getPaymentForm(order._id, due);
                         return (
-                          <div key={order._id} className="rounded-xl bg-surface-50 p-3 text-sm dark:bg-gray-950/50">
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <p className="font-black text-gray-950 dark:text-gray-50">#{order.orderNumber}</p>
-                                <p className="text-xs font-semibold capitalize text-gray-500">{order.status} / {order.paymentStatus}</p>
-                              </div>
-                              <div className="text-right">
-                                <p className="font-black text-gray-950 dark:text-gray-50">{money(order.grandTotal)}</p>
-                                <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">Due {money(due)}</p>
-                              </div>
-                            </div>
-                            {txs.length > 0 && (
-                              <div className="mt-2 space-y-1 border-t border-gray-200 pt-2 dark:border-gray-800">
-                                {txs.map((tx) => (
-                                  <div key={tx._id} className="flex justify-between gap-3 text-xs text-gray-600 dark:text-gray-300">
-                                    <span className="capitalize">{tx.paymentMethod} - {tx.status}</span>
-                                    <span className="font-bold">{money(tx.amount)}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                            {due > 0 && selected.status === "approved" && (
-                              <div className="mt-3 grid gap-2 border-t border-gray-200 pt-3 dark:border-gray-800 sm:grid-cols-[110px_1fr]">
-                                <label className="text-xs font-bold text-gray-600 dark:text-gray-300">
-                                  Method
-                                  <select
-                                    value={form.paymentMethod}
-                                    onChange={(e) => updatePaymentForm(order._id, { paymentMethod: e.target.value })}
-                                    className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-2 py-2 text-xs font-bold dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                                  >
-                                    <option value="cash">Cash</option>
-                                    <option value="online">Online</option>
-                                  </select>
-                                </label>
-                                <label className="text-xs font-bold text-gray-600 dark:text-gray-300">
-                                  Amount
-                                  <div className="mt-1 flex gap-2">
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      step="0.01"
-                                      value={form.amount}
-                                      onChange={(e) => updatePaymentForm(order._id, { amount: e.target.value })}
-                                      className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-2 py-2 text-xs font-bold dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                                    />
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      disabled={payingOrderId === order._id}
-                                      onClick={() => recordCreditPayment(order)}
-                                    >
-                                      {payingOrderId === order._id ? "Saving..." : "Mark paid"}
-                                    </Button>
-                                  </div>
-                                </label>
-                              </div>
-                            )}
-                          </div>
+                          <LedgerOrderCard
+                            key={order._id}
+                            order={order}
+                            transactions={txs}
+                            selectedStatus={selected.status}
+                            form={form}
+                            paying={payingOrderId === order._id}
+                            onChangeForm={updatePaymentForm}
+                            onRecordPayment={recordCreditPayment}
+                          />
                         );
                       })
                     ) : (
-                      <p className="rounded-xl bg-surface-50 p-3 text-sm text-gray-500 dark:bg-gray-950/50">No credit bills for this customer yet.</p>
+                      <div className="rounded-2xl border border-dashed border-surface-300 bg-white p-6 text-center dark:border-gray-700 dark:bg-gray-900">
+                        <FiFileText className="mx-auto h-7 w-7 text-gray-400" />
+                        <p className="mt-2 text-sm font-bold text-gray-700 dark:text-gray-200">No credit bills yet</p>
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Future pay-later bills and collections will be listed here.</p>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -695,10 +818,3 @@ export default function CreditCustomers() {
     </div>
   );
 }
-
-const Info = ({ label, value }) => (
-  <div className="rounded-2xl bg-surface-50 p-3 dark:bg-gray-950/50">
-    <p className="text-[11px] font-bold uppercase tracking-wide text-gray-500">{label}</p>
-    <p className="mt-1 font-bold text-gray-950 dark:text-gray-100">{value}</p>
-  </div>
-);

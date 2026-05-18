@@ -21,6 +21,8 @@ import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import Card from '../../components/common/Card'
 
+const FILE_MAX_BYTES = 1 * 1024 * 1024
+
 const statusMeta = {
   approved: {
     label: 'Verified',
@@ -122,18 +124,32 @@ const DocumentCard = ({ label, type, url }) => {
   )
 }
 
-const FilePicker = ({ label, hint, accept, onChange }) => (
-  <div className="rounded-2xl border border-dashed border-surface-300 bg-surface-50/50 p-4">
-    <label className="block text-sm font-semibold text-gray-800">{label}</label>
-    <input
-      type="file"
-      accept={accept}
-      onChange={(e) => onChange(e.target.files?.[0] || null)}
-      className="mt-3 w-full text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-primary-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-primary-700"
-    />
-    {hint && <p className="mt-2 text-xs text-gray-500">{hint}</p>}
-  </div>
-)
+const FilePicker = ({ label, hint, accept, onChange }) => {
+  const handleChange = (event) => {
+    const file = event.target.files?.[0] || null
+    if (file && file.size > FILE_MAX_BYTES) {
+      toast.error('File must be less than 1 MB')
+      event.target.value = ''
+      onChange(null)
+      return
+    }
+    onChange(file)
+  }
+
+  return (
+    <div className="rounded-2xl border border-dashed border-surface-300 bg-surface-50/50 p-4">
+      <label className="block text-sm font-semibold text-gray-800">{label}</label>
+      <input
+        type="file"
+        accept={accept}
+        onChange={handleChange}
+        className="mt-3 w-full text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-primary-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-primary-700"
+      />
+      {hint && <p className="mt-2 text-xs text-gray-500">{hint}</p>}
+      <p className="mt-1 text-xs font-semibold text-gray-500">Max 1 MB.</p>
+    </div>
+  )
+}
 
 const KYC = () => {
   const navigate = useNavigate()
@@ -356,7 +372,7 @@ const KYC = () => {
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <FilePicker label="ID Document" hint="Clear copy of selected ID. JPG, PNG, or PDF." accept="image/*,application/pdf" onChange={(file) => setFiles((current) => ({ ...current, idDocument: file }))} />
                   <FilePicker label="PAN Document" hint="Optional tax document. JPG, PNG, or PDF." accept="image/*,application/pdf" onChange={(file) => setFiles((current) => ({ ...current, panDocument: file }))} />
-                  <FilePicker label="Profile Photo" hint="Owner or authorized person photo." accept="image/*" onChange={(file) => setFiles((current) => ({ ...current, profilePhoto: file }))} />
+                  <FilePicker label="Profile Photo" hint="Owner or authorized person photo. Square 4x4 style, recommended 512x512 px." accept="image/*" onChange={(file) => setFiles((current) => ({ ...current, profilePhoto: file }))} />
                   <FilePicker label="Business Registration Document" hint="Optional business proof. JPG, PNG, or PDF." accept="image/*,application/pdf" onChange={(file) => setFiles((current) => ({ ...current, businessRegistrationDoc: file }))} />
                   <FilePicker label="Address Proof" hint="Optional utility bill, lease, or address proof." accept="image/*,application/pdf" onChange={(file) => setFiles((current) => ({ ...current, addressProof: file }))} />
                 </div>

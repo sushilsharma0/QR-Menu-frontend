@@ -9,6 +9,7 @@ import { EmptyState, FinanceMetric, FinancePageHeader, FinancePanel, FinanceRow,
 
 const categories = ['rent', 'electricity', 'gas', 'staff_salary', 'ingredients', 'marketing', 'maintenance', 'tax', 'internet', 'water', 'fuel', 'transportation', 'equipment', 'miscellaneous']
 const manualExpenseCategories = categories.filter((c) => c !== 'staff_salary')
+const FILE_MAX_BYTES = 1 * 1024 * 1024
 
 const Expenses = () => {
   const [rows, setRows] = useState([])
@@ -23,6 +24,17 @@ const Expenses = () => {
   })
   const [receiptImage, setReceiptImage] = useState(null)
   const [saving, setSaving] = useState(false)
+
+  const handleReceiptImageChange = (event) => {
+    const file = event.target.files?.[0] || null
+    if (file && file.size > FILE_MAX_BYTES) {
+      toast.error('Receipt file must be less than 1 MB')
+      event.target.value = ''
+      setReceiptImage(null)
+      return
+    }
+    setReceiptImage(file)
+  }
 
   const load = async () => {
     try {
@@ -98,7 +110,8 @@ const Expenses = () => {
           <Input label="Description" value={form.description} onChange={(e) => setForm((s) => ({ ...s, description: e.target.value }))} />
           <div className="md:col-span-2">
             <label className="mb-1 block text-sm font-medium">Receipt Image</label>
-            <input type="file" accept="image/*,.pdf" onChange={(e) => setReceiptImage(e.target.files?.[0] || null)} />
+            <input type="file" accept="image/*,.pdf" onChange={handleReceiptImageChange} />
+            <p className="mt-1 text-xs text-gray-500">JPG, PNG, WEBP, GIF or PDF. Max 1 MB.</p>
           </div>
           <div className="md:col-span-2">
             <Button type="submit" loading={saving}>Save Expense</Button>

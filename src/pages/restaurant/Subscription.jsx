@@ -26,6 +26,8 @@ import {
   formatRestaurantDateTime,
 } from '../../components/restaurant/RestaurantUI'
 
+const FILE_MAX_BYTES = 1 * 1024 * 1024
+
 const requestStatusStyles = {
   active: 'bg-green-100 text-green-800',
   trial: 'bg-blue-100 text-blue-800',
@@ -301,6 +303,17 @@ const Subscription = () => {
     }
   }
 
+  const handleProofFileChange = (event) => {
+    const file = event.target.files?.[0] || null
+    if (file && file.size > FILE_MAX_BYTES) {
+      toast.error('Payment proof must be less than 1 MB')
+      event.target.value = ''
+      setProofFile(null)
+      return
+    }
+    setProofFile(file)
+  }
+
   const toggleAutoRenew = async () => {
     try {
       await api.patch('/restaurant/package/auto-renew', { autoRenew: !currentPlan?.autoRenew })
@@ -514,8 +527,9 @@ const Subscription = () => {
                         type="file"
                         accept="image/*,.pdf"
                         className="mt-2 text-sm"
-                        onChange={(e) => setProofFile(e.target.files?.[0] || null)}
+                        onChange={handleProofFileChange}
                       />
+                      <p className="mt-1 text-xs text-gray-500">JPG, PNG, WEBP, GIF or PDF. Max 1 MB.</p>
                       <Button className="mt-3 w-full" onClick={submitPaymentProof} loading={uploadingProof} disabled={!proofFile || !statementReferenceId.trim()}>
                         <FiUpload className="mr-2" />
                         Submit for verification

@@ -20,7 +20,16 @@ import toast from '@utils/toast'
 import api from '../../../services/api'
 import Button from '../../../components/common/Button'
 import Input from '../../../components/common/Input'
-import { FinanceChartBox, FinanceMetric, FinancePageHeader, FinancePanel, FinanceTooltip, money } from './FinanceUI'
+import {
+  FinanceChartBox,
+  FinanceMetric,
+  FinanceMetricsGrid,
+  FinancePageHeader,
+  FinancePageShell,
+  FinancePanel,
+  FinanceTooltip,
+  money,
+} from './FinanceUI'
 
 const chartColors = ['#8f2800', '#d97706', '#0f766e', '#2563eb', '#dc2626', '#7c3aed']
 
@@ -102,7 +111,7 @@ const ProfitLoss = () => {
   const trendHasMargin = trends.some((item) => Number.isFinite(Number(item.marginPercent)))
 
   return (
-    <div className="space-y-6">
+    <FinancePageShell>
       <FinancePageHeader
         title="Profit & Loss"
         subtitle="Revenue from sales reports minus all expenses. Paid payroll posts staff_salary for net pay plus employee and employer EPF. Pick a range that includes payroll payment dates."
@@ -119,19 +128,18 @@ const ProfitLoss = () => {
       </FinancePanel>
 
       {report && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
+        <FinanceMetricsGrid>
           <FinanceMetric label="Revenue" value={money(report.revenue)} icon={FiDollarSign} />
           <FinanceMetric label="Expenses" value={money(report.expenses)} icon={FiCreditCard} tone="warning" />
           <FinanceMetric label="Taxes & refunds" value={money(Number(report.taxes || 0) + Number(report.refunds || 0))} icon={FiRefreshCcw} tone="neutral" />
           <FinanceMetric label="Gross profit" value={money(report.grossProfit)} icon={FiTrendingUp} tone={Number(report.grossProfit || 0) >= 0 ? 'success' : 'danger'} />
           <FinanceMetric label="Net profit" value={money(report.netProfit)} icon={FiActivity} tone={Number(report.netProfit || 0) >= 0 ? 'success' : 'danger'} />
           <FinanceMetric label="Profit margin" value={`${Number(report.marginPercent || 0).toFixed(2)}%`} icon={FiPercent} tone={Number(report.marginPercent || 0) >= 0 ? 'success' : 'danger'} />
-        </div>
+        </FinanceMetricsGrid>
       )}
 
       <FinancePanel title="Profit trend detail">
         <FinanceChartBox empty={trends.length === 0} emptyTitle="No P&L reports yet" emptyText="Generate a report to see revenue, expenses and profit trend lines.">
-          <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={trends} margin={{ top: 14, right: 12, left: 0, bottom: 0 }}>
                 <defs>
@@ -157,14 +165,12 @@ const ProfitLoss = () => {
                 <Line type="monotone" dataKey="netProfit" name="Net Profit" stroke="#059669" strokeWidth={3} dot={{ r: 4, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 7, strokeWidth: 0, fill: '#059669' }} />
               </ComposedChart>
             </ResponsiveContainer>
-          </div>
         </FinanceChartBox>
       </FinancePanel>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 laptop:gap-5 xl:grid-cols-2">
         <FinancePanel title="Selected period breakdown">
           <FinanceChartBox empty={!reportCharts.hasBreakdown} emptyTitle="No period values yet" emptyText="Generate a P&L report to compare revenue, costs, taxes, refunds and profit.">
-            <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={reportCharts.breakdown} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
                   <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" vertical={false} />
@@ -179,13 +185,11 @@ const ProfitLoss = () => {
                   </Bar>
                 </ComposedChart>
               </ResponsiveContainer>
-            </div>
           </FinanceChartBox>
         </FinancePanel>
 
         <FinancePanel title="Revenue allocation">
           <FinanceChartBox empty={!reportCharts.hasCostMix} emptyTitle="No allocation values yet" emptyText="Positive costs and profit will appear here after a report is generated.">
-            <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={reportCharts.costMix} dataKey="value" nameKey="name" innerRadius={74} outerRadius={112} paddingAngle={3} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
@@ -197,15 +201,13 @@ const ProfitLoss = () => {
                   <Legend iconType="circle" />
                 </PieChart>
               </ResponsiveContainer>
-            </div>
           </FinanceChartBox>
         </FinancePanel>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 laptop:gap-5 xl:grid-cols-2">
         <FinancePanel title="Profit bridge">
-          <FinanceChartBox empty={!reportCharts.hasBreakdown} emptyTitle="No profit bridge yet" emptyText="Generate a P&L report to see how revenue moves through costs into profit.">
-            <div className="h-72">
+          <FinanceChartBox empty={!reportCharts.hasBreakdown} emptyTitle="No profit bridge yet" emptyText="Generate a P&L report to see how revenue moves through costs into profit." compact>
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={reportCharts.profitStack} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
                   <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" vertical={false} />
@@ -220,13 +222,11 @@ const ProfitLoss = () => {
                   <Line type="monotone" dataKey="netProfit" name="Net profit" stroke="#059669" strokeWidth={3} dot={{ r: 5, fill: '#fff', strokeWidth: 2 }} />
                 </ComposedChart>
               </ResponsiveContainer>
-            </div>
           </FinanceChartBox>
         </FinancePanel>
 
         <FinancePanel title="Margin trend">
-          <FinanceChartBox empty={!trendHasMargin} emptyTitle="No margin trend yet" emptyText="Generate reports over time to track margin movement.">
-            <div className="h-72">
+          <FinanceChartBox empty={!trendHasMargin} emptyTitle="No margin trend yet" emptyText="Generate reports over time to track margin movement." compact>
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={trends} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
                   <defs>
@@ -250,11 +250,10 @@ const ProfitLoss = () => {
                   <Area type="monotone" dataKey="marginPercent" name="Margin %" fill="url(#profitMarginGradient)" stroke="#0f766e" strokeWidth={3} dot={{ r: 4, fill: '#fff', strokeWidth: 2 }} activeDot={{ r: 7, strokeWidth: 0, fill: '#0f766e' }} />
                 </ComposedChart>
               </ResponsiveContainer>
-            </div>
           </FinanceChartBox>
         </FinancePanel>
       </div>
-    </div>
+    </FinancePageShell>
   )
 }
 

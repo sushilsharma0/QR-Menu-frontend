@@ -267,6 +267,7 @@ const Cart = () => {
       setPromoDiscount(0);
       setPromoCode("");
       setSuccessOrder(order || {});
+      success("Order sent. Please check all items before the kitchen starts preparing.", 7000);
 
       // Auto-navigate after success animation plays.
       setTimeout(() => {
@@ -896,6 +897,28 @@ function SuccessOverlay({ order }) {
         >
           Order <span className="font-black text-primary-700">#{order?.orderNumber || "—"}</span> is on its way to the kitchen.
         </motion.p>
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.38 }}
+          className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-left text-xs font-bold leading-relaxed text-amber-900"
+        >
+          Kindly check every item correctly before preparation starts. If anything is mistaken, you can edit this order for 5 minutes from the tracking screen.
+        </motion.div>
+        {order?.smsSent || order?.smsSkipped === false ? (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.42 }}
+            className={`mt-3 text-[11px] font-black ${
+              order?.smsSent ? "text-emerald-700" : "text-amber-700"
+            }`}
+          >
+            {order?.smsSent
+              ? "SMS confirmation sent to your phone."
+              : "SMS confirmation could not be sent, but your order is confirmed here."}
+          </motion.p>
+        ) : null}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

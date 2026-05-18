@@ -554,6 +554,53 @@ a {
   }
 }
 
+/*
+  13.5" laptop tuning (≈1280–1536px wide content area after sidebar).
+  Keeps finance metrics in 3 columns and compacts header/charts vertically.
+*/
+@layer components {
+  .restaurant-portal .portal-main {
+    @apply p-4 sm:p-5 lg:p-5 xl:p-6;
+  }
+
+  .restaurant-portal .portal-page {
+    @apply mx-auto w-full max-w-[1680px] space-y-4 lg:space-y-5;
+  }
+
+  .restaurant-portal .finance-metrics-grid {
+    @apply grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 3xl:grid-cols-6;
+  }
+
+  .restaurant-portal .finance-metrics-grid--4 {
+    @apply grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-2 laptop:grid-cols-4;
+  }
+
+  .restaurant-portal .finance-chart-area {
+    @apply h-60 sm:h-64 laptop:h-72 2xl:h-80;
+  }
+
+  .restaurant-portal .finance-chart-area--sm {
+    @apply h-56 sm:h-60 laptop:h-64 2xl:h-72;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1535px) {
+  .restaurant-portal .portal-header-card {
+    padding-top: 0.875rem;
+    padding-bottom: 0.875rem;
+  }
+
+  .restaurant-portal .portal-header-card h2 {
+    font-size: 1.125rem;
+    line-height: 1.5rem;
+  }
+
+  .restaurant-portal .portal-header-card .hidden.h-12 {
+    height: 2.5rem;
+    width: 2.5rem;
+  }
+}
+
 /* Apply ONLY when class is present */
 ::-webkit-scrollbar {
   width: 4px;

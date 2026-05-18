@@ -16,6 +16,23 @@ import {
   normalizeThemeSettings,
 } from '../../theme/themePresets'
 
+const IMAGE_MAX_BYTES = 1 * 1024 * 1024
+const IMAGE_SIZE_HINT = 'Max 1 MB'
+
+const COUNTRY_OPTIONS = [
+  { country: 'Nepal', currency: 'Rs.', code: 'NPR', timezone: 'Asia/Kathmandu', label: 'Nepal - Nepali Rupee (Rs.)' },
+  { country: 'India', currency: '₹', code: 'INR', timezone: 'Asia/Kolkata', label: 'India - Indian Rupee (₹)' },
+  { country: 'United States', currency: '$', code: 'USD', timezone: 'America/New_York', label: 'United States - US Dollar ($)' },
+  { country: 'United Kingdom', currency: '£', code: 'GBP', timezone: 'Europe/London', label: 'United Kingdom - Pound (£)' },
+  { country: 'Australia', currency: 'A$', code: 'AUD', timezone: 'Australia/Sydney', label: 'Australia - Australian Dollar (A$)' },
+  { country: 'Canada', currency: 'C$', code: 'CAD', timezone: 'America/Toronto', label: 'Canada - Canadian Dollar (C$)' },
+  { country: 'United Arab Emirates', currency: 'د.إ', code: 'AED', timezone: 'Asia/Dubai', label: 'UAE - Dirham (د.إ)' },
+  { country: 'Japan', currency: '¥', code: 'JPY', timezone: 'Asia/Tokyo', label: 'Japan - Yen (¥)' },
+]
+
+const currencyForCountry = (country) =>
+  COUNTRY_OPTIONS.find((option) => option.country === country) || COUNTRY_OPTIONS[0]
+
 function ThemePaletteCard({ theme, selected, onSelect }) {
   const colors = ['primary', 'secondary', 'accent', 'attention', 'surface']
   return (
@@ -109,7 +126,9 @@ const Settings = () => {
   const [themeSaving, setThemeSaving] = useState(false)
   const { mergeUser } = useAuth()
   const { updateTheme, applyRemoteTheme, resetTheme } = useTheme()
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm()
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm()
+  const selectedCountry = watch('country') || restaurant?.country || 'Nepal'
+  const selectedCurrency = watch('currency') || restaurant?.settings?.currency || currencyForCountry(selectedCountry).currency
 
   useEffect(() => {
     fetchRestaurant()
@@ -127,6 +146,9 @@ const Settings = () => {
       setValue('city', res.data.data.city)
       setValue('state', res.data.data.state)
       setValue('pincode', res.data.data.pincode)
+      setValue('country', res.data.data.country || 'Nepal')
+      setValue('currency', res.data.data.settings?.currency || currencyForCountry(res.data.data.country || 'Nepal').currency)
+      setValue('timezone', res.data.data.settings?.timezone || currencyForCountry(res.data.data.country || 'Nepal').timezone)
       setValue('description', res.data.data.description)
       setValue('openingTime', res.data.data.openingTime)
       setValue('closingTime', res.data.data.closingTime)
@@ -161,8 +183,8 @@ const Settings = () => {
       return
     }
     
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Logo must be less than 5MB')
+    if (file.size > IMAGE_MAX_BYTES) {
+      toast.error('Logo must be less than 1 MB')
       return
     }
     
@@ -181,8 +203,8 @@ const Settings = () => {
       return
     }
     
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('Background photo must be less than 10MB')
+    if (file.size > IMAGE_MAX_BYTES) {
+      toast.error('Background photo must be less than 1 MB')
       return
     }
     
@@ -192,15 +214,15 @@ const Settings = () => {
     reader.readAsDataURL(file)
   }
 
-  const handleBrandAssetChange = (setter, previewSetter, maxMb = 5) => (e) => {
+  const handleBrandAssetChange = (setter, previewSetter) => (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file')
       return
     }
-    if (file.size > maxMb * 1024 * 1024) {
-      toast.error(`Image must be less than ${maxMb}MB`)
+    if (file.size > IMAGE_MAX_BYTES) {
+      toast.error('Image must be less than 1 MB')
       return
     }
     setter(file)
@@ -225,6 +247,7 @@ const Settings = () => {
           logo: updatedRestaurant.logo,
           favicon: updatedRestaurant.favicon,
           slug: updatedRestaurant.slug,
+          country: updatedRestaurant.country,
           currency: updatedRestaurant?.settings?.currency,
           themeSettings: updatedRestaurant?.settings?.themeSettings,
         })
@@ -268,6 +291,14 @@ const Settings = () => {
     if (restaurant?.backgroundPhoto) setBackgroundPreview(restaurant.backgroundPhoto)
   }
 
+  const handleCountryChange = (event) => {
+    const country = event.target.value
+    const option = currencyForCountry(country)
+    setValue('country', option.country, { shouldDirty: true })
+    setValue('currency', option.currency, { shouldDirty: true })
+    setValue('timezone', option.timezone, { shouldDirty: true })
+  }
+
   const onSubmit = async (data) => {
     try {
       setLoading(true)
@@ -288,6 +319,9 @@ const Settings = () => {
       appendIfPresent('city', data.city)
       appendIfPresent('state', data.state)
       appendIfPresent('pincode', data.pincode)
+      appendIfPresent('country', data.country)
+      appendIfPresent('currency', data.currency)
+      appendIfPresent('timezone', data.timezone)
       appendIfPresent('description', data.description)
       appendIfPresent('openingTime', data.openingTime)
       appendIfPresent('closingTime', data.closingTime)
@@ -318,6 +352,7 @@ const Settings = () => {
           logo: updatedRestaurant.logo,
           favicon: updatedRestaurant.favicon,
           slug: updatedRestaurant.slug,
+          country: updatedRestaurant.country,
           currency: updatedRestaurant?.settings?.currency,
           themeSettings: updatedRestaurant?.settings?.themeSettings,
         })
@@ -469,15 +504,15 @@ const Settings = () => {
                 id="favicon-input"
                 label="Favicon"
                 preview={faviconPreview}
-                onChange={handleBrandAssetChange(setFaviconFile, setFaviconPreview, 2)}
-                hint="PNG, JPG, SVG or WEBP up to 2MB"
+                onChange={handleBrandAssetChange(setFaviconFile, setFaviconPreview)}
+                hint={`Square 4x4 style image, recommended 512x512 px. ${IMAGE_SIZE_HINT}.`}
               />
               <BrandUpload
                 id="brand-bg-input"
                 label="Brand background image"
                 preview={brandBackgroundPreview}
-                onChange={handleBrandAssetChange(setBrandBackgroundFile, setBrandBackgroundPreview, 10)}
-                hint="Used by themed public pages. Up to 10MB"
+                onChange={handleBrandAssetChange(setBrandBackgroundFile, setBrandBackgroundPreview)}
+                hint={`Wide banner, recommended 1920x1080 px. ${IMAGE_SIZE_HINT}.`}
               />
             </div>
 
@@ -487,48 +522,108 @@ const Settings = () => {
           </div>
         </Card>
 
-        {/* Restaurant Name - Read Only */}
         <Card title="Restaurant Information">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Restaurant Name <span className="text-xs text-gray-500 dark:text-gray-400">(Read-only - Registered from PAN)</span>
-              </label>
-              <div className="px-4 py-3 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 font-medium cursor-not-allowed">
-                {restaurant?.name || 'Loading...'}
+          <div className="space-y-6">
+            <section className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-gray-900/60">
+              <h3 className="text-sm font-black uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Basic Details</h3>
+              <div className="mt-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Restaurant Name <span className="text-xs text-gray-500 dark:text-gray-400">(Read-only - Registered from PAN)</span>
+                  </label>
+                  <div className="px-4 py-3 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 font-medium cursor-not-allowed">
+                    {restaurant?.name || 'Loading...'}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Your restaurant name is registered from your PAN and cannot be changed.
+                  </p>
+                </div>
+                <Input
+                  label="Description"
+                  placeholder="Brief description of your restaurant"
+                  {...register('description')}
+                />
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Your restaurant name is registered from your PAN and cannot be changed
-              </p>
-            </div>
-            
-            <Input
-              label="Phone Number"
-              {...register('phone')}
-              error={errors.phone?.message}
-            />
-            <Input
-              label="Address"
-              {...register('address')}
-              error={errors.address?.message}
-            />
-            
-            <div className="grid grid-cols-2 gap-4">
-              <Input label="City" {...register('city')} />
-              <Input label="State" {...register('state')} />
-            </div>
-            
-            <Input label="Pincode" {...register('pincode')} />
-            <Input
-              label="Description"
-              placeholder="Brief description of your restaurant"
-              {...register('description')}
-            />
-            
-            <div className="grid grid-cols-2 gap-4">
-              <Input label="Opening Time" type="time" {...register('openingTime')} />
-              <Input label="Closing Time" type="time" {...register('closingTime')} />
-            </div>
+            </section>
+
+            <section className="rounded-2xl border border-gray-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+              <h3 className="text-sm font-black uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Contact & Location</h3>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <Input
+                  label="Phone Number"
+                  {...register('phone')}
+                  error={errors.phone?.message}
+                />
+                <Input label="City" {...register('city')} />
+                <div className="md:col-span-2">
+                  <Input
+                    label="Address"
+                    {...register('address')}
+                    error={errors.address?.message}
+                  />
+                </div>
+                <Input label="State" {...register('state')} />
+                <Input label="Pincode" {...register('pincode')} />
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-primary-100 bg-primary-50/50 p-4 dark:border-gray-800 dark:bg-gray-900">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-[0.16em] text-primary-700 dark:text-primary-300">Country & Currency</h3>
+                  <p className="mt-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                    Choose the restaurant country. Currency updates automatically, and you can still select a different symbol if needed.
+                  </p>
+                </div>
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-primary-700 shadow-sm dark:bg-gray-800 dark:text-primary-200">
+                  Current: {selectedCurrency}
+                </span>
+              </div>
+              <div className="mt-4 grid gap-4 md:grid-cols-3">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Country
+                  <select
+                    {...register('country')}
+                    onChange={handleCountryChange}
+                    className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                  >
+                    {COUNTRY_OPTIONS.map((option) => (
+                      <option key={option.country} value={option.country}>{option.country}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Currency
+                  <select
+                    {...register('currency')}
+                    className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                  >
+                    {COUNTRY_OPTIONS.map((option) => (
+                      <option key={option.code} value={option.currency}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Timezone
+                  <select
+                    {...register('timezone')}
+                    className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                  >
+                    {COUNTRY_OPTIONS.map((option) => (
+                      <option key={option.timezone} value={option.timezone}>{option.timezone}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-gray-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+              <h3 className="text-sm font-black uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Opening Hours</h3>
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                <Input label="Opening Time" type="time" {...register('openingTime')} />
+                <Input label="Closing Time" type="time" {...register('closingTime')} />
+              </div>
+            </section>
           </div>
         </Card>
 
@@ -536,7 +631,7 @@ const Settings = () => {
         <Card title="Profile Photo / Restaurant Logo">
           <div className="space-y-4">
             <p className="text-sm text-gray-600 dark:text-gray-300">
-              Upload your restaurant profile image. It appears in the dashboard header, profile dropdown, QR printouts, and customer-facing surfaces.
+              Upload your restaurant profile image. Use a square 4x4 style photo, recommended 512x512 px. Max 1 MB.
             </p>
             
             {/* Logo Preview */}
@@ -568,7 +663,7 @@ const Settings = () => {
                 <div className="flex flex-col items-center gap-2">
                   <FiUpload size={24} className="text-gray-400 dark:text-gray-500" />
                   <p className="text-sm font-medium text-gray-700 dark:text-gray-200">Click to upload logo</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, WEBP up to 5MB</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, WEBP. Square 512x512 px. Max 1 MB.</p>
                 </div>
               </label>
             </div>
@@ -594,7 +689,7 @@ const Settings = () => {
         <Card title="Customer Panel Background">
           <div className="space-y-4">
             <p className="text-sm text-gray-600 dark:text-gray-300">
-              Upload a background photo that will be displayed in the customer panel. Recommended size: 1920x1080px.
+              Upload a background photo that will be displayed in the customer panel. Recommended size: 1920x1080 px. Max 1 MB.
             </p>
             
             {/* Background Preview */}
@@ -626,7 +721,7 @@ const Settings = () => {
                 <div className="flex flex-col items-center gap-2">
                   <FiUpload size={24} className="text-gray-400 dark:text-gray-500" />
                   <p className="text-sm font-medium text-gray-700 dark:text-gray-200">Click to upload background photo</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, WEBP up to 10MB</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, WEBP. 1920x1080 px. Max 1 MB.</p>
                 </div>
               </label>
             </div>

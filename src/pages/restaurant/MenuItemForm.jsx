@@ -9,6 +9,8 @@ import Input from '../../components/common/Input'
 import Card from '../../components/common/Card'
 import Textarea from '../../components/common/Textarea'
 
+const IMAGE_MAX_BYTES = 1 * 1024 * 1024
+
 const DIETARY_TAG_OPTIONS = [
   { value: 'veg', label: 'Veg', color: 'green' },
   { value: 'egg', label: 'Egg', color: 'amber' },
@@ -163,6 +165,11 @@ const MenuItemForm = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0]
     if (file) {
+      if (file.size > IMAGE_MAX_BYTES) {
+        toast.error('Item image must be less than 1 MB')
+        e.target.value = ''
+        return
+      }
       console.log('File selected:', file.name, file.size)
       setSelectedFile(file)
       setImagePreview(URL.createObjectURL(file))
@@ -250,6 +257,7 @@ const MenuItemForm = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Item Image</label>
+            <p className="mb-2 text-xs text-gray-500">Recommended square food photo: 800x800 px. Max 1 MB.</p>
             {imagePreview ? (
               <div className="relative inline-block">
                 <img src={imagePreview} alt="Preview" className="mt-2 w-32 h-32 object-cover rounded-lg" />

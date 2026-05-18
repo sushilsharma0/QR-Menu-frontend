@@ -50,7 +50,7 @@ import {
 
 const UNITS = ['kg', 'gram', 'liter', 'ml', 'piece', 'packet', 'bottle', 'carton', 'box', 'other']
 const CATEGORIES = ['Vegetables', 'Meat', 'Drinks', 'Dairy', 'Frozen', 'Packaging', 'Spices', 'General']
-const TABS = ['Overview', 'Items', 'Raw use', 'Suppliers', 'Purchases', 'Transactions', 'Waste', 'Analytics']
+const TABS = ['Overview', 'Items', 'Stock update', 'Suppliers', 'Purchases', 'Transactions', 'Waste', 'Analytics']
 const chartColors = ['#8f2d0a', '#14b8a6', '#f97316', '#6366f1', '#ef4444', '#84cc16', '#0ea5e9']
 
 const emptyItem = {
@@ -70,20 +70,22 @@ const emptyItem = {
 }
 
 const emptyMovement = { inventoryItemId: '', type: 'stock_in', quantity: 0, reason: '', referenceNumber: '' }
-const emptyRawUse = { inventoryItemId: '', quantity: 0, reason: '', referenceNumber: '', ingredientsPaidFrom: 'cash' }
+const emptyRawUse = { inventoryItemId: '', action: 'used', quantity: 0, reason: '', referenceNumber: '', ingredientsPaidFrom: 'cash' }
 const emptyWaste = { inventoryItemId: '', quantity: 0, reason: '', referenceNumber: '' }
 const emptySupplier = { name: '', phone: '', address: '', panVat: '', paymentDue: 0, notes: '' }
 const emptyPurchase = { inventoryItemId: '', supplierId: '', quantity: 0, unitCost: 0, paymentStatus: 'paid', paymentSource: 'cash', supplierBillNumber: '', notes: '' }
-const emptyPurchaseEdit = { _id: '', quantity: 0, unitCost: 0, paymentStatus: 'paid', paymentSource: 'cash', supplierBillNumber: '', notes: '', supplierId: '' }
+const emptyCount = { inventoryItemId: '', actualStock: '', reason: '' }
 
 const statusTone = (item) => {
   const qty = Number(item.quantity || 0)
   const min = Number(item.minimumStock || 0)
   if (qty <= 0) return { label: 'Out of stock', cls: 'bg-gray-100 text-gray-700' }
-  if (qty <= min * 0.5) return { label: 'Critical', cls: 'bg-red-100 text-red-700' }
-  if (qty <= min) return { label: 'Low', cls: 'bg-yellow-100 text-yellow-800' }
+  if (min > 0 && qty <= min * 0.5) return { label: 'Critical', cls: 'bg-red-100 text-red-700' }
+  if (min > 0 && qty <= min) return { label: 'Low', cls: 'bg-yellow-100 text-yellow-800' }
   return { label: 'Healthy', cls: 'bg-emerald-100 text-emerald-700' }
 }
+
+const findItemById = (items, id) => items.find((x) => String(x._id) === String(id))
 
 const formatDate = (date) => (date ? new Date(date).toLocaleDateString() : '-')
 
@@ -153,23 +155,35 @@ const Inventory = () => {
   const [editingItemId, setEditingItemId] = useState(null)
   const [movementForm, setMovementForm] = useState(emptyMovement)
   const [rawUseForm, setRawUseForm] = useState(emptyRawUse)
+  const [stockUpdateEdit, setStockUpdateEdit] = useState(null)
   const [wasteForm, setWasteForm] = useState(emptyWaste)
   const [supplierForm, setSupplierForm] = useState(emptySupplier)
   const [purchaseForm, setPurchaseForm] = useState(emptyPurchase)
   const [purchaseEdit, setPurchaseEdit] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [txnDateFrom, setTxnDateFrom] = useState(() => {
+    const d = new Date()
+    d.setDate(d.getDate() - 90)
+    return d.toISOString().slice(0, 10)
+  })
+  const [txnDateTo, setTxnDateTo] = useState(() => new Date().toISOString().slice(0, 10))
+  const [countForm, setCountForm] = useState(emptyCount)
+  const [supplierEdit, setSupplierEdit] = useState(null)
+  const [wasteEdit, setWasteEdit] = useState(null)
   /** Items tab: show category, unit, qty, cost, supplier, etc. */
   const [itemFormAdvancedOpen, setItemFormAdvancedOpen] = useState(false)
 
   const loadAll = async () => {
     try {
-      const from90 = new Date()
-      from90.setDate(from90.getDate() - 90)
+      setLoading(true)
+      const fromIso = txnDateFrom ? new Date(`${txnDateFrom}T00:00:00`).toISOString() : undefined
+      const toIso = txnDateTo ? new Date(`${txnDateTo}T23:59:59`).toISOString() : undefined
       const [invRes, supplierRes, txnRes, purchaseRes, reportRes, cbRes] = await Promise.all([
         api.get('/restaurant/inventory', { params: { q: search || undefined } }),
         api.get('/restaurant/inventory/suppliers'),
         api.get('/restaurant/inventory/transactions', {
-          params: { limit: 4000, from: from90.toISOString() },
+          params: { limit: 4000, from: fromIso, to: toIso },
         }),
         api.get('/restaurant/inventory/purchases'),
         api.get('/restaurant/inventory/reports/summary'),
@@ -194,6 +208,8 @@ const Inventory = () => {
       })
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to load inventory')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -270,7 +286,10 @@ const Inventory = () => {
     return { byCategory, mostUsed, wasteTrend, expensive, movement, forecast }
   }, [items, transactions])
 
-  const lowItems = items.filter((item) => Number(item.quantity || 0) <= Number(item.minimumStock || 0))
+  const lowItems = items.filter((item) => {
+    const min = Number(item.minimumStock || 0)
+    return min > 0 && Number(item.quantity || 0) <= min
+  })
   const expiringItems = items.filter((item) => {
     if (!item.expiryDate) return false
     const expiry = new Date(item.expiryDate)
@@ -290,14 +309,36 @@ const Inventory = () => {
   const pendingSupplierDue = suppliers.reduce((sum, supplier) => sum + Number(supplier.paymentDue || 0), 0)
 
   const rawUseSelectedItem = useMemo(
-    () => items.find((x) => String(x._id) === String(rawUseForm.inventoryItemId)),
+    () => findItemById(items, rawUseForm.inventoryItemId),
     [items, rawUseForm.inventoryItemId],
+  )
+  const countSelectedItem = useMemo(
+    () => findItemById(items, countForm.inventoryItemId),
+    [items, countForm.inventoryItemId],
+  )
+  const countDiff = useMemo(() => {
+    if (!countSelectedItem || countForm.actualStock === '') return null
+    return Number(countForm.actualStock) - Number(countSelectedItem.quantity || 0)
+  }, [countForm.actualStock, countSelectedItem])
+  const wasteSelectedItem = useMemo(
+    () => findItemById(items, wasteForm.inventoryItemId),
+    [items, wasteForm.inventoryItemId],
   )
   const rawUseLineCost = useMemo(() => {
     const qty = Number(rawUseForm.quantity || 0)
     const cpu = Number(rawUseSelectedItem?.costPerUnit || 0)
     return qty * cpu
   }, [rawUseForm.quantity, rawUseSelectedItem])
+  const rawUseProjectedStock = useMemo(() => {
+    if (!rawUseSelectedItem) return null
+    const current = Number(rawUseSelectedItem.quantity || 0)
+    const qty = Number(rawUseForm.quantity || 0)
+    return rawUseForm.action === 'left' ? current + qty : Math.max(0, current - qty)
+  }, [rawUseForm.action, rawUseForm.quantity, rawUseSelectedItem])
+  const stockUpdateTransactions = useMemo(
+    () => transactions.filter((txn) => ['usage', 'stock_in'].includes(txn.type)),
+    [transactions],
+  )
 
   const saveItem = async (e) => {
     e.preventDefault()
@@ -365,7 +406,16 @@ const Inventory = () => {
       toast.error('Quantity must be greater than 0')
       return
     }
+    const mvItem = findItemById(items, movementForm.inventoryItemId)
+    if (mvItem && ['stock_out', 'usage', 'wastage'].includes(movementForm.type)) {
+      const avail = Number(mvItem.quantity || 0)
+      if (Number(movementForm.quantity) > avail) {
+        toast.error(`Only ${avail} ${mvItem.unit} available`)
+        return
+      }
+    }
     try {
+      setSubmitting(true)
       const res = await api.post('/restaurant/inventory/movements', movementForm)
       const expense = res.data?.data?.expense
       if (movementForm.type === 'usage' && expense) {
@@ -377,29 +427,59 @@ const Inventory = () => {
       loadAll()
     } catch (e2) {
       toast.error(e2.response?.data?.message || 'Failed to record movement')
+    } finally {
+      setSubmitting(false)
     }
   }
 
   const postRawUse = async (e) => {
     e.preventDefault()
     if (!rawUseForm.inventoryItemId) {
-      toast.error('Please select a raw material item')
+      toast.error('Please select an inventory item')
       return
     }
     if (Number(rawUseForm.quantity || 0) <= 0) {
       toast.error('Quantity must be greater than 0')
       return
     }
+    const isLeftStock = rawUseForm.action === 'left'
+    if (!isLeftStock && rawUseSelectedItem) {
+      const avail = Number(rawUseSelectedItem.quantity || 0)
+      if (Number(rawUseForm.quantity) > avail) {
+        toast.error(`Only ${avail} ${rawUseSelectedItem.unit} available`)
+        return
+      }
+    }
     try {
-      const res = await api.post('/restaurant/inventory/movements', {
+      setSubmitting(true)
+      const payload = {
         inventoryItemId: rawUseForm.inventoryItemId,
         quantity: Number(rawUseForm.quantity),
-        type: 'usage',
+        type: isLeftStock ? 'stock_in' : 'usage',
         reason: rawUseForm.reason,
         referenceNumber: rawUseForm.referenceNumber,
-        syncIngredientsExpense: true,
-        ingredientsPaidFrom: rawUseForm.ingredientsPaidFrom,
-      })
+        leftStockReturn: isLeftStock,
+        offsetLatestUsage: isLeftStock,
+        syncIngredientsExpense: !isLeftStock,
+      }
+      if (!isLeftStock) payload.ingredientsPaidFrom = rawUseForm.ingredientsPaidFrom
+      const res = await api.post('/restaurant/inventory/movements', payload)
+      if (isLeftStock) {
+        const correctedUsageQty = Number(res.data?.data?.correctedUsageQty || 0)
+        const stockInQty = Number(res.data?.data?.stockInQty || 0)
+        if (correctedUsageQty > 0) {
+          toast.success(
+            stockInQty > 0
+              ? 'Left stock added; past used quantity corrected where possible'
+              : 'Left stock added and past used quantity corrected',
+          )
+        } else {
+          toast.success('Left stock added back to inventory')
+        }
+        setRawUseForm(emptyRawUse)
+        loadAll()
+        return
+      }
       if (res.data?.data?.expense) {
         toast.success('Usage saved — stock reduced and cost posted to Expenses (ingredients)')
       } else {
@@ -408,7 +488,94 @@ const Inventory = () => {
       setRawUseForm(emptyRawUse)
       loadAll()
     } catch (e2) {
-      toast.error(e2.response?.data?.message || 'Failed to record raw material use')
+      toast.error(e2.response?.data?.message || 'Failed to save stock update')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const postPhysicalCount = async (e) => {
+    e.preventDefault()
+    if (!countForm.inventoryItemId) {
+      toast.error('Select an item for physical count')
+      return
+    }
+    if (countForm.actualStock === '' || !Number.isFinite(Number(countForm.actualStock))) {
+      toast.error('Enter the actual counted quantity')
+      return
+    }
+    const item = countSelectedItem
+    if (!item) return
+    const actual = Number(countForm.actualStock)
+    const current = Number(item.quantity || 0)
+    const diff = actual - current
+    if (diff === 0) {
+      toast.success('Counted stock matches system — no adjustment needed')
+      return
+    }
+    try {
+      setSubmitting(true)
+      await api.post('/restaurant/inventory/movements', {
+        inventoryItemId: countForm.inventoryItemId,
+        quantity: Math.abs(diff),
+        type: 'adjustment',
+        direction: diff > 0 ? 'increase' : 'decrease',
+        reason: countForm.reason || `Physical count: system ${current} → actual ${actual}`,
+      })
+      toast.success(`Stock adjusted by ${diff > 0 ? '+' : ''}${diff} ${item.unit}`)
+      setCountForm(emptyCount)
+      loadAll()
+    } catch (e2) {
+      toast.error(e2.response?.data?.message || 'Failed to save physical count')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const beginEditStockUpdate = (txn) => {
+    setStockUpdateEdit({
+      _id: txn._id,
+      type: txn.type,
+      itemName: txn.inventoryItemId?.name || 'Inventory item',
+      unit: txn.inventoryItemId?.unit || '',
+      quantity: Number(txn.quantity || 0),
+      reason: txn.note || '',
+      referenceNumber: txn.referenceNumber || '',
+      ingredientsPaidFrom: 'cash',
+    })
+  }
+
+  const saveStockUpdateEdit = async (e) => {
+    e.preventDefault()
+    if (!stockUpdateEdit?._id) return
+    if (Number(stockUpdateEdit.quantity || 0) <= 0) {
+      toast.error('Quantity must be greater than 0')
+      return
+    }
+    try {
+      await api.patch(`/restaurant/inventory/movements/${stockUpdateEdit._id}`, {
+        quantity: Number(stockUpdateEdit.quantity),
+        reason: stockUpdateEdit.reason,
+        referenceNumber: stockUpdateEdit.referenceNumber,
+        ingredientsPaidFrom: stockUpdateEdit.ingredientsPaidFrom,
+      })
+      toast.success('Stock update corrected')
+      setStockUpdateEdit(null)
+      loadAll()
+    } catch (e2) {
+      toast.error(e2.response?.data?.message || 'Failed to update stock entry')
+    }
+  }
+
+  const deleteStockUpdate = async (txn) => {
+    if (!window.confirm(`Delete this stock update for "${txn.inventoryItemId?.name || 'item'}"? Stock will be restored or reversed.`)) return
+    try {
+      await api.delete(`/restaurant/inventory/movements/${txn._id}`)
+      toast.success('Stock update deleted')
+      if (stockUpdateEdit?._id === txn._id) setStockUpdateEdit(null)
+      loadAll()
+    } catch (e2) {
+      toast.error(e2.response?.data?.message || 'Failed to delete stock entry')
     }
   }
 
@@ -422,37 +589,141 @@ const Inventory = () => {
       toast.error('Quantity must be greater than 0')
       return
     }
+    if (wasteSelectedItem) {
+      const avail = Number(wasteSelectedItem.quantity || 0)
+      if (Number(wasteForm.quantity) > avail) {
+        toast.error(`Only ${avail} ${wasteSelectedItem.unit} available — cannot waste more than stock`)
+        return
+      }
+    }
     try {
-      await api.post('/restaurant/inventory/movements', {
+      setSubmitting(true)
+      const res = await api.post('/restaurant/inventory/movements', {
         inventoryItemId: wasteForm.inventoryItemId,
         quantity: Number(wasteForm.quantity),
         type: 'wastage',
         reason: wasteForm.reason,
         referenceNumber: wasteForm.referenceNumber,
+        syncWastageExpense: true,
       })
-      toast.success('Waste recorded — stock reduced')
+      if (res.data?.data?.expense) {
+        toast.success('Waste recorded — stock reduced and expense posted')
+      } else {
+        toast.success('Waste recorded — stock reduced')
+      }
       setWasteForm(emptyWaste)
       loadAll()
     } catch (e2) {
       toast.error(e2.response?.data?.message || 'Failed to record waste')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const beginEditWaste = (txn) => {
+    setWasteEdit({
+      _id: txn._id,
+      itemName: txn.inventoryItemId?.name || 'Item',
+      unit: txn.inventoryItemId?.unit || '',
+      quantity: Number(txn.quantity || 0),
+      reason: txn.note || '',
+      referenceNumber: txn.referenceNumber || '',
+    })
+  }
+
+  const saveWasteEdit = async (e) => {
+    e.preventDefault()
+    if (!wasteEdit?._id) return
+    if (Number(wasteEdit.quantity || 0) <= 0) {
+      toast.error('Quantity must be greater than 0')
+      return
+    }
+    try {
+      setSubmitting(true)
+      await api.patch(`/restaurant/inventory/movements/${wasteEdit._id}`, {
+        quantity: Number(wasteEdit.quantity),
+        reason: wasteEdit.reason,
+        referenceNumber: wasteEdit.referenceNumber,
+      })
+      toast.success('Waste entry updated')
+      setWasteEdit(null)
+      loadAll()
+    } catch (e2) {
+      toast.error(e2.response?.data?.message || 'Failed to update waste entry')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const deleteWaste = async (txn) => {
+    if (!window.confirm(`Delete this waste entry for "${txn.inventoryItemId?.name || 'item'}"? Stock will be restored.`)) return
+    try {
+      setSubmitting(true)
+      await api.delete(`/restaurant/inventory/movements/${txn._id}`)
+      toast.success('Waste entry deleted — stock restored')
+      if (wasteEdit?._id === txn._id) setWasteEdit(null)
+      loadAll()
+    } catch (e2) {
+      toast.error(e2.response?.data?.message || 'Failed to delete waste entry')
+    } finally {
+      setSubmitting(false)
     }
   }
 
   const saveSupplier = async (e) => {
     e.preventDefault()
     try {
-      await api.post('/restaurant/inventory/suppliers', supplierForm)
-      toast.success('Supplier saved')
+      setSubmitting(true)
+      if (supplierEdit?._id) {
+        await api.patch(`/restaurant/inventory/suppliers/${supplierEdit._id}`, supplierForm)
+        toast.success('Supplier updated')
+        setSupplierEdit(null)
+      } else {
+        await api.post('/restaurant/inventory/suppliers', supplierForm)
+        toast.success('Supplier saved')
+      }
       setSupplierForm(emptySupplier)
       loadAll()
     } catch (e2) {
       toast.error(e2.response?.data?.message || 'Failed to save supplier')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const beginEditSupplier = (supplier) => {
+    setSupplierEdit({ _id: supplier._id })
+    setSupplierForm({
+      name: supplier.name || '',
+      phone: supplier.phone || '',
+      address: supplier.address || '',
+      panVat: supplier.panVat || '',
+      paymentDue: Number(supplier.paymentDue || 0),
+      notes: supplier.notes || '',
+    })
+  }
+
+  const deleteSupplier = async (supplier) => {
+    if (!window.confirm(`Delete supplier "${supplier.name}"?`)) return
+    try {
+      setSubmitting(true)
+      await api.delete(`/restaurant/inventory/suppliers/${supplier._id}`)
+      toast.success('Supplier removed')
+      if (supplierEdit?._id === supplier._id) {
+        setSupplierEdit(null)
+        setSupplierForm(emptySupplier)
+      }
+      loadAll()
+    } catch (e2) {
+      toast.error(e2.response?.data?.message || 'Failed to delete supplier')
+    } finally {
+      setSubmitting(false)
     }
   }
 
   const savePurchase = async (e) => {
     e.preventDefault()
-    const item = items.find((x) => x._id === purchaseForm.inventoryItemId)
+    const item = findItemById(items, purchaseForm.inventoryItemId)
     if (!purchaseForm.inventoryItemId) {
       toast.error('Please select an inventory item')
       return
@@ -462,15 +733,18 @@ const Inventory = () => {
       return
     }
     try {
+      setSubmitting(true)
       await api.post('/restaurant/inventory/purchases', {
         ...purchaseForm,
         unitCost: Number(purchaseForm.unitCost || item?.costPerUnit || 0),
       })
-      toast.success('Purchase recorded and stock increased')
+      toast.success('Purchase recorded — stock increased and average cost updated')
       setPurchaseForm(emptyPurchase)
       loadAll()
     } catch (e2) {
       toast.error(e2.response?.data?.message || 'Failed to record purchase')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -527,6 +801,7 @@ const Inventory = () => {
       return
     }
     try {
+      setSubmitting(true)
       await api.patch(`/restaurant/inventory/purchases/${purchaseEdit._id}`, {
         quantity: Number(purchaseEdit.quantity),
         unitCost: Number(purchaseEdit.unitCost),
@@ -541,6 +816,8 @@ const Inventory = () => {
       loadAll()
     } catch (e2) {
       toast.error(e2.response?.data?.message || 'Failed to update purchase')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -555,11 +832,14 @@ const Inventory = () => {
       return
     }
     try {
+      setSubmitting(true)
       await api.delete(`/restaurant/inventory/purchases/${purchase._id}`)
       toast.success('Purchase deleted and stock reversed')
       loadAll()
     } catch (e2) {
       toast.error(e2.response?.data?.message || 'Failed to delete purchase')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -572,16 +852,17 @@ const Inventory = () => {
     Cost: txn.totalCost,
     Reference: txn.referenceNumber || '',
     Note: txn.note || '',
+    RecordedBy: txn.createdByName || '',
   })))
 
   return (
     <div className="space-y-6">
       <FinancePageHeader
         title="Inventory Control"
-        subtitle="Stock purchases, manual raw-material use (COGS), waste, and valuation. Record kitchen consumption under Raw use — that lowers quantity on hand and posts an ingredients expense for Profit & Loss."
+        subtitle="Stock purchases, kitchen stock updates, waste, and valuation. Use Stock update to reduce inventory for items used in production or add leftover stock back after prep."
         actions={
           <>
-            <Button type="button" variant="secondary" onClick={loadAll}><FiActivity className="mr-1" /> Refresh</Button>
+            <Button type="button" variant="secondary" onClick={loadAll} loading={loading}><FiActivity className="mr-1" /> Refresh</Button>
             <Button type="button" variant="secondary" onClick={exportItems}><FiDownload className="mr-1" /> Export CSV</Button>
             <Button type="button" onClick={() => window.print()}><FiPrinter className="mr-1" /> Print Report</Button>
           </>
@@ -605,9 +886,10 @@ const Inventory = () => {
       </div>
 
       {activeTab !== 'Items' && (
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-7">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
         <FinanceMetric label="Stock value" value={money(summary.valuation)} icon={FiPackage} />
         <FinanceMetric label="Low stock" value={summary.lowStock} icon={FiAlertTriangle} tone="danger" />
+        <FinanceMetric label="Dead stock" value={summary.deadStock} icon={FiArchive} tone="neutral" />
         <FinanceMetric label="Expiring soon" value={summary.expiringSoon} icon={FiCalendar} tone="warning" />
         <FinanceMetric label="Waste cost" value={money(wasteCost)} icon={FiArchive} tone="danger" />
         <FinanceMetric label="Supplier due" value={money(pendingSupplierDue)} icon={FiTruck} tone="neutral" />
@@ -621,7 +903,7 @@ const Inventory = () => {
           <FinancePanel title="Cash & bank (running balances)">
             <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
               Set your opening figures here, then the app moves money when you record a <strong>paid</strong> stock purchase (choose cash or bank on the Purchases tab),
-              add a paid expense (cash vs card/bank/UPI), pay payroll, or post raw-material use with a paid-from choice. Pending supplier bills do not change these balances until marked paid.
+              add a paid expense (cash vs card/bank/UPI), pay payroll, or post used stock with a paid-from choice. Pending supplier bills do not change these balances until marked paid.
             </p>
             <form onSubmit={saveCashBookOpening} className="grid grid-cols-1 gap-3 md:grid-cols-3">
               <Input
@@ -644,7 +926,10 @@ const Inventory = () => {
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <FinancePanel title="Stock alerts" className="xl:col-span-2">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {[...lowItems, ...expiringItems].slice(0, 8).map((item) => {
+              {[
+                ...lowItems,
+                ...expiringItems.filter((item) => !lowItems.some((l) => String(l._id) === String(item._id))),
+              ].slice(0, 8).map((item) => {
                 const tone = statusTone(item)
                 return (
                   <div key={`${item._id}-${item.expiryDate || 'stock'}`} className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4">
@@ -678,7 +963,7 @@ const Inventory = () => {
               ))}
               {analytics.forecast.length === 0 && (
                 <EmptyState>
-                  Forecast uses usage, waste, and stock-out in the last 30 days (loaded from your transaction history). Log Raw use or Waste
+                  Forecast uses usage, waste, and stock-out in the last 30 days (loaded from your transaction history). Log Stock update or Waste
                   to see projections.
                 </EmptyState>
               )}
@@ -865,15 +1150,18 @@ const Inventory = () => {
         </div>
       )}
 
-      {activeTab === 'Raw use' && (
+      {activeTab === 'Stock update' && (
         <div className="flex flex-col gap-6">
-          <FinancePanel title="Record raw material use">
+          <FinancePanel title="Stock update">
             <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
-              Choose an inventory item and how much you used. Stock goes down by that amount. Cost is quantity × <strong>cost per unit</strong> on the item; the same value is posted as an <strong>ingredients</strong> expense so Profit & Loss matches your sell-side COGS.
+              Record used kitchen stock to decrease inventory, or add left stock back when prep quantity remains.
+            </p>
+            <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
+              Used stock goes down and posts ingredient expense. Left stock adds back to the selected item and corrects the latest used quantity where possible.
             </p>
             <form onSubmit={postRawUse} className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Select
-                label="Raw material (inventory item)"
+                label="Inventory item"
                 placeholder="Select item"
                 value={rawUseForm.inventoryItemId || ''}
                 onValueChange={(value) => setRawUseForm((s) => ({ ...s, inventoryItemId: value }))}
@@ -884,23 +1172,34 @@ const Inventory = () => {
                   value: String(i._id),
                 }))}
               />
+              <Select
+                label="Update type"
+                value={rawUseForm.action || 'used'}
+                onValueChange={(value) => setRawUseForm((s) => ({ ...s, action: value }))}
+                options={[
+                  { value: 'used', label: 'Used item - decrease stock' },
+                  { value: 'left', label: 'Left item - add back stock' },
+                ]}
+              />
               <Input
-                label="Quantity used"
+                label={rawUseForm.action === 'left' ? 'Left quantity to add' : 'Used quantity'}
                 type="number"
                 min={0}
                 step="any"
                 value={rawUseForm.quantity || ''}
                 onChange={(e) => setRawUseForm((s) => ({ ...s, quantity: Number(e.target.value) }))}
               />
-              <Select
-                label="Ingredient cost paid from"
-                value={rawUseForm.ingredientsPaidFrom || 'cash'}
-                onValueChange={(value) => setRawUseForm((s) => ({ ...s, ingredientsPaidFrom: value }))}
-                options={[
-                  { value: 'cash', label: 'Cash' },
-                  { value: 'bank', label: 'Bank' },
-                ]}
-              />
+              {rawUseForm.action !== 'left' && (
+                <Select
+                  label="Ingredient cost paid from"
+                  value={rawUseForm.ingredientsPaidFrom || 'cash'}
+                  onValueChange={(value) => setRawUseForm((s) => ({ ...s, ingredientsPaidFrom: value }))}
+                  options={[
+                    { value: 'cash', label: 'Cash' },
+                    { value: 'bank', label: 'Bank' },
+                  ]}
+                />
+              )}
               <Input label="Reference (optional)" value={rawUseForm.referenceNumber} onChange={(e) => setRawUseForm((s) => ({ ...s, referenceNumber: e.target.value }))} />
               <Input label="Note (optional)" value={rawUseForm.reason} onChange={(e) => setRawUseForm((s) => ({ ...s, reason: e.target.value }))} />
               <div className="md:col-span-2 lg:col-span-3">
@@ -908,25 +1207,104 @@ const Inventory = () => {
                   <p className="font-semibold text-gray-900 dark:text-gray-100">Line cost (for expense)</p>
                   <p className="mt-1 text-gray-600 dark:text-gray-400">
                     {rawUseSelectedItem
-                      ? `${Number(rawUseForm.quantity || 0)} ${rawUseSelectedItem.unit} × ${money(rawUseSelectedItem.costPerUnit)} = ${money(rawUseLineCost)}`
+                      ? rawUseForm.action === 'left'
+                        ? 'No expense for left stock.'
+                        : `${Number(rawUseForm.quantity || 0)} ${rawUseSelectedItem.unit} × ${money(rawUseSelectedItem.costPerUnit)} = ${money(rawUseLineCost)}`
                       : 'Select an item to preview.'}
                   </p>
                 </div>
               </div>
+              {rawUseSelectedItem && (
+                <div className="md:col-span-2 lg:col-span-3">
+                  <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
+                    Current stock: {rawUseSelectedItem.quantity} {rawUseSelectedItem.unit} | After update: {rawUseProjectedStock} {rawUseSelectedItem.unit}
+                  </div>
+                </div>
+              )}
               <div className="flex flex-wrap items-end gap-3 md:col-span-2 lg:col-span-3">
-                <Button type="submit">Save use and post COGS</Button>
+                <Button type="submit" loading={submitting}>{rawUseForm.action === 'left' ? 'Add left stock' : 'Save used stock'}</Button>
               </div>
             </form>
           </FinancePanel>
-          <FinancePanel title="Recent usage (COGS)">
-            <TransactionTable transactions={transactions.filter((txn) => txn.type === 'usage')} />
+
+          <FinancePanel title="Physical stock count">
+            <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
+              Enter the quantity you counted on the shelf. The system compares it to current stock and posts an adjustment automatically.
+            </p>
+            <form onSubmit={postPhysicalCount} className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <Select
+                label="Inventory item"
+                placeholder="Select item"
+                value={countForm.inventoryItemId || ''}
+                onValueChange={(value) => setCountForm((s) => ({ ...s, inventoryItemId: value }))}
+                searchable
+                options={items.map((i) => ({
+                  label: `${i.name} (system: ${i.quantity} ${i.unit})`,
+                  value: String(i._id),
+                }))}
+              />
+              <Input
+                label="Actual counted quantity"
+                type="number"
+                min={0}
+                step="any"
+                value={countForm.actualStock}
+                onChange={(e) => setCountForm((s) => ({ ...s, actualStock: e.target.value }))}
+              />
+              <Input label="Reason (optional)" value={countForm.reason} onChange={(e) => setCountForm((s) => ({ ...s, reason: e.target.value }))} />
+              {countSelectedItem && countDiff !== null && (
+                <div className="md:col-span-2 lg:col-span-3 rounded-xl border border-primary-100 bg-primary-50/60 px-3 py-2 text-sm font-semibold text-primary-900 dark:border-primary-900 dark:bg-primary-950/30 dark:text-primary-200">
+                  System: {countSelectedItem.quantity} {countSelectedItem.unit} → Counted: {countForm.actualStock} {countSelectedItem.unit}
+                  {' '}| Difference: {countDiff > 0 ? '+' : ''}{countDiff} {countSelectedItem.unit}
+                </div>
+              )}
+              <div className="md:col-span-2 lg:col-span-3">
+                <Button type="submit" loading={submitting}>Apply count adjustment</Button>
+              </div>
+            </form>
+          </FinancePanel>
+
+          <FinancePanel title="Recent stock updates">
+            {stockUpdateEdit && (
+              <form onSubmit={saveStockUpdateEdit} className="mb-4 rounded-2xl border border-primary-100 bg-primary-50/60 p-4 dark:border-primary-900 dark:bg-primary-950/20">
+                <div className="grid gap-3 md:grid-cols-3">
+                  <Input label="Item" value={stockUpdateEdit.itemName} disabled />
+                  <Input
+                    label={`Quantity (${stockUpdateEdit.unit || 'unit'})`}
+                    type="number"
+                    min={0}
+                    step="any"
+                    value={stockUpdateEdit.quantity || ''}
+                    onChange={(e) => setStockUpdateEdit((s) => ({ ...s, quantity: Number(e.target.value) }))}
+                  />
+                  {stockUpdateEdit.type === 'usage' && (
+                    <Select
+                      label="Ingredient cost paid from"
+                      value={stockUpdateEdit.ingredientsPaidFrom || 'cash'}
+                      onValueChange={(value) => setStockUpdateEdit((s) => ({ ...s, ingredientsPaidFrom: value }))}
+                      options={[
+                        { value: 'cash', label: 'Cash' },
+                        { value: 'bank', label: 'Bank' },
+                      ]}
+                    />
+                  )}
+                  <Input label="Reference" value={stockUpdateEdit.referenceNumber} onChange={(e) => setStockUpdateEdit((s) => ({ ...s, referenceNumber: e.target.value }))} />
+                  <Input label="Note" value={stockUpdateEdit.reason} onChange={(e) => setStockUpdateEdit((s) => ({ ...s, reason: e.target.value }))} />
+                </div>
+                <div className="mt-3 flex flex-wrap justify-end gap-2">
+                  <Button type="button" variant="secondary" onClick={() => setStockUpdateEdit(null)}>Cancel</Button>
+                  <Button type="submit">Update mistake</Button>
+                </div>
+              </form>
+            )}
+            <TransactionTable transactions={stockUpdateTransactions} onEdit={beginEditStockUpdate} onDelete={deleteStockUpdate} editableTypes={['usage', 'stock_in']} />
           </FinancePanel>
         </div>
       )}
 
       {activeTab === 'Suppliers' && (
         <div className="flex flex-col gap-6">
-          <FinancePanel title="Add supplier">
+          <FinancePanel title={supplierEdit ? 'Edit supplier' : 'Add supplier'}>
             <form onSubmit={saveSupplier} className="space-y-3">
               <Input label="Name" value={supplierForm.name} onChange={(e) => setSupplierForm((s) => ({ ...s, name: e.target.value }))} required />
               <Input label="Phone" value={supplierForm.phone} onChange={(e) => setSupplierForm((s) => ({ ...s, phone: e.target.value }))} />
@@ -934,11 +1312,18 @@ const Inventory = () => {
               <Input label="PAN/VAT" value={supplierForm.panVat} onChange={(e) => setSupplierForm((s) => ({ ...s, panVat: e.target.value }))} />
               <Input label="Payment due" type="number" value={supplierForm.paymentDue} onChange={(e) => setSupplierForm((s) => ({ ...s, paymentDue: Number(e.target.value) }))} />
               <Input label="Notes" value={supplierForm.notes} onChange={(e) => setSupplierForm((s) => ({ ...s, notes: e.target.value }))} />
-              <Button type="submit">Save Supplier</Button>
+              <div className="flex flex-wrap gap-2">
+                <Button type="submit" loading={submitting}>{supplierEdit ? 'Update supplier' : 'Save supplier'}</Button>
+                {supplierEdit && (
+                  <Button type="button" variant="secondary" onClick={() => { setSupplierEdit(null); setSupplierForm(emptySupplier) }}>
+                    Cancel
+                  </Button>
+                )}
+              </div>
             </form>
           </FinancePanel>
           <FinancePanel title="Supplier directory">
-            <SuppliersListTable suppliers={suppliers} />
+            <SuppliersListTable suppliers={suppliers} onEdit={beginEditSupplier} onDelete={deleteSupplier} />
           </FinancePanel>
         </div>
       )}
@@ -1119,7 +1504,7 @@ const Inventory = () => {
                 options={[
                   { label: 'Add Stock', value: 'stock_in' },
                   { label: 'Remove Stock', value: 'stock_out' },
-                  { label: 'Raw material use (COGS)', value: 'usage' },
+                  { label: 'Used stock (COGS)', value: 'usage' },
                   { label: 'Wastage / Damage', value: 'wastage' },
                 ]}
               />
@@ -1127,12 +1512,24 @@ const Inventory = () => {
               <Input label="Reference" value={movementForm.referenceNumber} onChange={(e) => setMovementForm((s) => ({ ...s, referenceNumber: e.target.value }))} />
               <Input label="Reason / notes" value={movementForm.reason} onChange={(e) => setMovementForm((s) => ({ ...s, reason: e.target.value }))} />
               <div className="flex items-end md:col-span-2 lg:col-span-3">
-                <Button type="submit">{movementForm.type === 'stock_in' ? 'Add Stock' : 'Remove Stock'}</Button>
+                <Button type="submit" loading={submitting}>
+                  {movementForm.type === 'stock_in' && 'Add stock'}
+                  {movementForm.type === 'stock_out' && 'Remove stock'}
+                  {movementForm.type === 'usage' && 'Record usage'}
+                  {movementForm.type === 'wastage' && 'Record waste'}
+                </Button>
               </div>
             </form>
           </FinancePanel>
 
           <FinancePanel title="Transaction history" actions={<Button type="button" variant="secondary" onClick={exportTransactions}><FiDownload className="mr-1" /> Export</Button>}>
+            <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
+              <Input label="From date" type="date" value={txnDateFrom} onChange={(e) => setTxnDateFrom(e.target.value)} />
+              <Input label="To date" type="date" value={txnDateTo} onChange={(e) => setTxnDateTo(e.target.value)} />
+              <div className="flex items-end">
+                <Button type="button" variant="secondary" onClick={loadAll} loading={loading}>Apply filter</Button>
+              </div>
+            </div>
             <TransactionTable transactions={transactions} />
           </FinancePanel>
         </div>
@@ -1140,7 +1537,7 @@ const Inventory = () => {
 
       {activeTab === 'Waste' && (
         <>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
             <FinanceMetric label="Waste cost (loaded period)" value={money(wasteCost)} icon={FiArchive} tone="danger" />
             <FinanceMetric label="Waste entries" value={transactions.filter((txn) => txn.type === 'wastage').length} icon={FiFileText} tone="warning" />
             <FinanceMetric label="Pending bills" value={report?.purchases?.pendingBills || 0} icon={FiTruck} tone="neutral" />
@@ -1148,7 +1545,7 @@ const Inventory = () => {
           <div className="flex flex-col gap-6">
             <FinancePanel title="Record waste / damage">
             <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
-              Log spoilage, prep mistakes, or breakage. Stock is reduced by the amount you enter. This does not post an ingredients expense (unlike Raw use); it shows in waste analytics only.
+              Log spoilage, prep mistakes, or breakage. Stock is reduced immediately and a miscellaneous expense is posted for P&amp;L when the item has a cost per unit.
             </p>
             <form onSubmit={postWaste} className="space-y-3">
               <Select
@@ -1173,11 +1570,41 @@ const Inventory = () => {
               />
               <Input label="Reference (optional)" value={wasteForm.referenceNumber} onChange={(e) => setWasteForm((s) => ({ ...s, referenceNumber: e.target.value }))} />
               <Input label="Note (optional)" value={wasteForm.reason} onChange={(e) => setWasteForm((s) => ({ ...s, reason: e.target.value }))} />
-              <Button type="submit">Record waste</Button>
+              {wasteSelectedItem && Number(wasteForm.quantity) > 0 && (
+                <div className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                  On hand: {wasteSelectedItem.quantity} {wasteSelectedItem.unit}
+                  {' '}| Line cost: {money(Number(wasteForm.quantity) * Number(wasteSelectedItem.costPerUnit || 0))}
+                </div>
+              )}
+              <Button type="submit" loading={submitting}>Record waste</Button>
             </form>
           </FinancePanel>
           <FinancePanel title="Waste history">
-            <TransactionTable transactions={transactions.filter((txn) => txn.type === 'wastage')} />
+            {wasteEdit && (
+              <form onSubmit={saveWasteEdit} className="mb-4 rounded-2xl border border-red-100 bg-red-50/60 p-4 space-y-3">
+                <Input label="Item" value={wasteEdit.itemName} disabled />
+                <Input
+                  label={`Quantity (${wasteEdit.unit})`}
+                  type="number"
+                  min={0}
+                  step="any"
+                  value={wasteEdit.quantity}
+                  onChange={(e) => setWasteEdit((s) => ({ ...s, quantity: Number(e.target.value) }))}
+                />
+                <Input label="Reference" value={wasteEdit.referenceNumber} onChange={(e) => setWasteEdit((s) => ({ ...s, referenceNumber: e.target.value }))} />
+                <Input label="Note" value={wasteEdit.reason} onChange={(e) => setWasteEdit((s) => ({ ...s, reason: e.target.value }))} />
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="secondary" onClick={() => setWasteEdit(null)}>Cancel</Button>
+                  <Button type="submit" loading={submitting}>Save changes</Button>
+                </div>
+              </form>
+            )}
+            <TransactionTable
+              transactions={transactions.filter((txn) => txn.type === 'wastage')}
+              onEdit={beginEditWaste}
+              onDelete={deleteWaste}
+              editableTypes={['wastage']}
+            />
           </FinancePanel>
           </div>
         </>
@@ -1218,6 +1645,18 @@ const Inventory = () => {
                 <Area type="monotone" dataKey="in" name="Stock in" stroke="#14b8a6" fill="#99f6e4" />
                 <Area type="monotone" dataKey="out" name="Stock out" stroke="#f97316" fill="#fed7aa" />
               </AreaChart>
+            </ResponsiveContainer>
+          </ChartPanel>
+
+          <ChartPanel title="Waste cost by item" empty={!analytics.wasteTrend.length}>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={analytics.wasteTrend}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip content={<FinanceTooltip />} />
+                <Bar dataKey="cost" name="Waste cost" fill="#ef4444" radius={[10, 10, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </ChartPanel>
 
@@ -1299,7 +1738,7 @@ function InventoryItemsTable({ items, onEdit, onRemove }) {
   )
 }
 
-function SuppliersListTable({ suppliers }) {
+function SuppliersListTable({ suppliers, onEdit, onDelete }) {
   if (!suppliers.length) {
     return <EmptyState>No suppliers saved yet.</EmptyState>
   }
@@ -1314,6 +1753,7 @@ function SuppliersListTable({ suppliers }) {
             <th className="px-4 py-3">Address</th>
             <th className="px-4 py-3 text-right">Due</th>
             <th className="px-4 py-3">Status</th>
+            {(onEdit || onDelete) && <th className="px-4 py-3 text-right">Actions</th>}
           </tr>
         </thead>
         <tbody>
@@ -1335,6 +1775,22 @@ function SuppliersListTable({ suppliers }) {
                   {Number(s.paymentDue || 0) > 0 ? 'Due' : 'Clear'}
                 </span>
               </td>
+              {(onEdit || onDelete) && (
+                <td className="px-4 py-3 text-right">
+                  <div className="flex justify-end gap-2">
+                    {onEdit && (
+                      <Button type="button" size="sm" variant="secondary" onClick={() => onEdit(s)}>
+                        <FiEdit2 className="mr-1" /> Edit
+                      </Button>
+                    )}
+                    {onDelete && (
+                      <Button type="button" size="sm" variant="ghost" onClick={() => onDelete(s)} className="text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40">
+                        <FiTrash2 className="mr-1" /> Delete
+                      </Button>
+                    )}
+                  </div>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -1402,7 +1858,7 @@ function PurchaseHistoryListTable({ purchases, onEdit, onDelete }) {
   )
 }
 
-function TransactionTable({ transactions }) {
+function TransactionTable({ transactions, onEdit, onDelete, editableTypes = [] }) {
   if (!transactions.length) {
     return (
       <div className="rounded-xl border border-dashed border-surface-200 bg-surface-50/50 py-12 dark:border-gray-700 dark:bg-gray-900/40">
@@ -1420,7 +1876,8 @@ function TransactionTable({ transactions }) {
             <th className="px-4 py-3">Action</th>
             <th className="px-4 py-3">Qty</th>
             <th className="px-4 py-3">Cost</th>
-            <th className="px-4 py-3">User / Note</th>
+            <th className="px-4 py-3">Recorded by / Note</th>
+            {(onEdit || onDelete) && <th className="px-4 py-3 text-right">Actions</th>}
           </tr>
         </thead>
         <tbody>
@@ -1433,7 +1890,30 @@ function TransactionTable({ transactions }) {
               </td>
               <td className="px-4 py-3 tabular-nums text-gray-800 dark:text-gray-200">{txn.quantity} {txn.inventoryItemId?.unit || ''}</td>
               <td className="px-4 py-3 font-bold text-primary-800 dark:text-primary-300">{money(txn.totalCost)}</td>
-              <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{txn.note || txn.referenceNumber || '-'}</td>
+              <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
+                <span className="block font-semibold text-gray-700 dark:text-gray-300">{txn.createdByName || '—'}</span>
+                <span className="text-xs">{txn.note || txn.referenceNumber || '—'}</span>
+              </td>
+              {(onEdit || onDelete) && (
+                <td className="px-4 py-3 text-right">
+                  {editableTypes.includes(txn.type) ? (
+                    <div className="flex justify-end gap-2">
+                      {onEdit && (
+                        <Button type="button" size="sm" variant="secondary" onClick={() => onEdit(txn)}>
+                          <FiEdit2 className="mr-1" /> Edit
+                        </Button>
+                      )}
+                      {onDelete && (
+                        <Button type="button" size="sm" variant="ghost" onClick={() => onDelete(txn)} className="text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40">
+                          <FiTrash2 className="mr-1" /> Delete
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-xs font-semibold text-gray-400">Locked</span>
+                  )}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

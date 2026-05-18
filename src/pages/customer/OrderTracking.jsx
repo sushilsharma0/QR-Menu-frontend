@@ -14,6 +14,9 @@ import {
   Utensils,
   Sparkles,
   CircleDot,
+  Edit3,
+  X,
+  Save,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { io } from "socket.io-client";
@@ -27,6 +30,7 @@ import { OrderTrackingSkeleton } from "../../components/customer/order/OrderTrac
 import { getSocketOrigin } from "../../utils/runtimeConfig";
 import { rememberCustomerPortal } from "../../utils/customerPortalContext";
 import { getStoredGuestId, rememberCustomerOrderToken } from "../../services/customer";
+import toast from "../../utils/toast";
 
 const formatMoney = (value) => `Rs. ${Number(value || 0).toFixed(2)}`;
 
@@ -110,6 +114,9 @@ const normalizeRealtimeOrder = (payload, current) => ({
   guestPaymentPreferenceCash: payload?.guestPaymentPreferenceCash ?? current?.guestPaymentPreferenceCash,
   guestPaymentPreferenceOnline: payload?.guestPaymentPreferenceOnline ?? current?.guestPaymentPreferenceOnline,
   customerPaymentDeferred: payload?.customerPaymentDeferred ?? current?.customerPaymentDeferred,
+  canEdit: payload?.canEdit ?? current?.canEdit,
+  editDeadline: payload?.editDeadline ?? current?.editDeadline,
+  editSecondsRemaining: payload?.editSecondsRemaining ?? current?.editSecondsRemaining,
 });
 
 const OrderTracking = () => {
@@ -120,6 +127,8 @@ const OrderTracking = () => {
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [isLive, setIsLive] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showEditOrder, setShowEditOrder] = useState(false);
+  const [editSecondsRemaining, setEditSecondsRemaining] = useState(0);
   const timelineRef = useRef(null);
 
   const fetchOrder = useCallback(async () => {
@@ -182,6 +191,22 @@ const OrderTracking = () => {
   }, [order?.restaurantSlug, order?.tableQrToken, qrToken]);
 
   useEffect(() => {
+    if (!order?.editDeadline) {
+      setEditSecondsRemaining(Number(order?.editSecondsRemaining || 0));
+      return undefined;
+    }
+
+    const tick = () => {
+      const deadline = new Date(order.editDeadline).getTime();
+      setEditSecondsRemaining(Math.max(0, Math.floor((deadline - Date.now()) / 1000)));
+    };
+
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [order?.editDeadline, order?.editSecondsRemaining]);
+
+  useEffect(() => {
     const paid = order?.paymentStatus === "paid";
     const done =
       order?.status === "completed" || (order?.status === "served" && paid);
@@ -205,6 +230,7 @@ const OrderTracking = () => {
       (order?.restaurantSlug || order?.restaurant?.slug) &&
       !["served", "completed", "cancelled"].includes(order?.status),
   );
+  const canEditOrder = Boolean(order?.canEdit && editSecondsRemaining > 0);
   const guestIdForPay = order?.guestId || getStoredGuestId();
   const showPostServePay =
     ["served", "completed"].includes(order?.status) &&
@@ -275,6 +301,14 @@ const OrderTracking = () => {
 
   const scrollToTimeline = () => {
     timelineRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const handleOrderEdited = (updatedOrder) => {
+    setOrder((current) => normalizeRealtimeOrder(updatedOrder, current));
+    setLastUpdatedAt(new Date());
+    setShowEditOrder(false);
+    toast.success("Order updated. Kitchen has been notified.");
+    fetchOrder();
   };
 
   if (loading) {
@@ -462,6 +496,30 @@ const OrderTracking = () => {
             Add more items
             <UtensilsCrossed size={18} />
           </motion.button>
+        )}
+
+        {canEditOrder && (
+          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-amber-700 shadow-sm">
+                <Edit3 size={20} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-black text-amber-950">Check your items now</p>
+                <p className="mt-1 text-xs font-bold leading-relaxed text-amber-800">
+                  Mistake in the order? You can update quantities for the next {Math.floor(editSecondsRemaining / 60)}:{String(editSecondsRemaining % 60).padStart(2, "0")} before preparation starts.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowEditOrder(true)}
+                  className="mt-3 inline-flex items-center gap-2 rounded-xl bg-amber-700 px-4 py-2 text-xs font-black text-white shadow-sm transition active:scale-95"
+                >
+                  <Edit3 size={14} />
+                  Edit order
+                </button>
+              </div>
+            </div>
+          </section>
         )}
 
         {/* Timeline */}
@@ -674,6 +732,14 @@ const OrderTracking = () => {
           }
         }}
       />
+      <EditOrderModal
+        open={showEditOrder}
+        order={order}
+        guestId={guestIdForPay}
+        editSecondsRemaining={editSecondsRemaining}
+        onClose={() => setShowEditOrder(false)}
+        onSaved={handleOrderEdited}
+      />
       <Navigation
         restaurantSlug={order?.restaurantSlug}
         tableQrToken={order?.tableQrToken}
@@ -682,5 +748,213 @@ const OrderTracking = () => {
     </div>
   );
 };
+
+function EditOrderModal({ open, order, guestId, editSecondsRemaining, onClose, onSaved }) {
+  const [draftItems, setDraftItems] = useState([]);
+  const [menuItems, setMenuItems] = useState([]);
+  const [loadingMenu, setLoadingMenu] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setDraftItems(
+      (order?.items || []).map((item, index) => ({
+        itemId: item._id || item.menuItem || `${item.name}-${index}`,
+        menuItemId: item.menuItem?._id || item.menuItem || "",
+        name: item.name || "Item",
+        price: Number(item.price || 0),
+        quantity: Number(item.quantity || 1),
+      })),
+    );
+  }, [open, order?.items]);
+
+  useEffect(() => {
+    if (!open || !order?.restaurantSlug || !order?.tableQrToken) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoadingMenu(true);
+        const res = await api.get(`/restaurant/menu/public/${order.restaurantSlug}`, {
+          params: { qrToken: order.tableQrToken },
+          skipErrorToast: true,
+        });
+        if (cancelled) return;
+        const flatItems = (res?.data?.data?.menu || [])
+          .flatMap((category) => category.items || [])
+          .filter((item) => item?._id && item?.name);
+        setMenuItems(flatItems);
+      } catch (err) {
+        console.error("Failed to load menu for edit", err);
+        setMenuItems([]);
+      } finally {
+        if (!cancelled) setLoadingMenu(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, order?.restaurantSlug, order?.tableQrToken]);
+
+  if (!open) return null;
+
+  const setQuantity = (itemId, quantity) => {
+    setDraftItems((current) =>
+      current.map((item) =>
+        item.itemId === itemId ? { ...item, quantity: Math.max(0, Math.min(99, quantity)) } : item,
+      ),
+    );
+  };
+
+  const replaceMenuItem = (itemId, menuItemId) => {
+    const selected = menuItems.find((item) => String(item._id) === String(menuItemId));
+    if (!selected) return;
+    setDraftItems((current) =>
+      current.map((item) =>
+        item.itemId === itemId
+          ? {
+              ...item,
+              menuItemId: selected._id,
+              name: selected.name,
+              price: Number(selected.price || 0),
+            }
+          : item,
+      ),
+    );
+  };
+
+  const activeItems = draftItems.filter((item) => Number(item.quantity || 0) > 0);
+  const total = activeItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  const save = async () => {
+    if (!activeItems.length) {
+      toast.error("Keep at least one item, or ask staff to cancel the order.");
+      return;
+    }
+    try {
+      setSaving(true);
+      const res = await api.patch(`/customer/order/${order.qrToken}/items`, {
+        guestId,
+        items: draftItems.map((item) => ({
+          itemId: item.itemId,
+          menuItemId: item.menuItemId,
+          quantity: item.quantity,
+        })),
+      });
+      onSaved(res?.data?.data || {});
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Could not update order");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[120] flex items-end bg-slate-950/60 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6"
+      >
+        <motion.div
+          initial={{ y: 32, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 32, opacity: 0 }}
+          className="max-h-[88vh] w-full overflow-hidden rounded-t-[2rem] bg-white shadow-2xl sm:max-w-lg sm:rounded-[2rem]"
+        >
+          <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+            <div>
+              <p className="text-base font-black text-gray-950">Edit order</p>
+              <p className="text-xs font-bold text-amber-700">
+                Time left {Math.floor(editSecondsRemaining / 60)}:{String(editSecondsRemaining % 60).padStart(2, "0")}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-700"
+              aria-label="Close"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          <div className="max-h-[56vh] overflow-y-auto px-5 py-4">
+            <p className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold leading-relaxed text-amber-900">
+              Please check all order items correctly before the kitchen starts preparing. You can change a mistaken item to another available menu item.
+            </p>
+            <ul className="divide-y divide-gray-100">
+              {draftItems.map((item) => (
+                <li key={item.itemId} className="flex flex-col gap-3 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-black text-gray-900">{item.name}</p>
+                    <p className="text-xs font-bold text-gray-500">Rs. {item.price}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2 rounded-xl border border-primary-100 bg-primary-50 px-2 py-1">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(item.itemId, item.quantity - 1)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-primary-700 shadow-sm"
+                      aria-label={`Decrease ${item.name}`}
+                    >
+                      -
+                    </button>
+                    <span className="w-6 text-center text-sm font-black tabular-nums text-primary-900">
+                      {item.quantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(item.itemId, item.quantity + 1)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-700 text-white shadow-sm"
+                      aria-label={`Increase ${item.name}`}
+                    >
+                      +
+                    </button>
+                  </div>
+                  </div>
+                  <label className="block">
+                    <span className="mb-1 block text-[10px] font-black uppercase tracking-wider text-gray-400">
+                      Change menu item
+                    </span>
+                    <select
+                      value={item.menuItemId}
+                      disabled={loadingMenu || !menuItems.length}
+                      onChange={(event) => replaceMenuItem(item.itemId, event.target.value)}
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-gray-900 outline-none focus:border-primary-400 focus:bg-white disabled:opacity-60"
+                    >
+                      <option value={item.menuItemId}>{loadingMenu ? "Loading menu..." : item.name}</option>
+                      {menuItems.map((menuItem) => (
+                        <option key={menuItem._id} value={menuItem._id}>
+                          {menuItem.name} - Rs. {Number(menuItem.price || 0).toFixed(0)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="border-t border-gray-100 bg-white px-5 py-4">
+            <div className="mb-3 flex items-center justify-between text-sm">
+              <span className="font-bold text-gray-500">Updated subtotal</span>
+              <span className="font-black text-gray-950">Rs. {total.toFixed(2)}</span>
+            </div>
+            <button
+              type="button"
+              onClick={save}
+              disabled={saving || editSecondsRemaining <= 0}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-700 py-3 text-sm font-black text-white shadow-lg shadow-primary-900/20 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Save size={16} />
+              {saving ? "Saving..." : "Save changes"}
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
 
 export default OrderTracking;

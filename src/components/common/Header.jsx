@@ -88,14 +88,14 @@ const Header = () => {
 
   return (
     <header className="relative z-30 border-b border-surface-200 bg-white/90 px-4 pb-4 pt-20 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/92 md:px-6 md:pt-16 lg:pt-4">
-      <div className="flex flex-col gap-4 rounded-3xl border border-surface-200 bg-gradient-to-r from-white via-surface-50 to-primary-50 px-4 py-4 shadow-sm dark:border-gray-800 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 lg:flex-row lg:items-center lg:justify-between">
+      <div className="portal-header-card flex flex-col gap-3 rounded-2xl border border-surface-200 bg-gradient-to-r from-white via-surface-50 to-primary-50 px-4 py-3 shadow-sm dark:border-gray-800 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 lg:flex-row lg:items-center lg:justify-between lg:gap-4 xl:rounded-3xl xl:py-4">
         <div className="flex min-w-0 items-center gap-4">
           <div className="hidden h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-600 to-secondary-500 text-white shadow-md sm:flex">
             <FiZap className="h-6 w-6" />
           </div>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="truncate text-xl font-black tracking-tight text-gray-950 dark:text-gray-100">
+              <h2 className="truncate text-lg font-black tracking-tight text-gray-950 dark:text-gray-100 xl:text-xl">
                 Welcome back, {user?.name?.split(' ')[0] || 'User'}!
               </h2>
               <span className="rounded-full bg-primary-100 px-2.5 py-1 text-xs font-bold capitalize text-primary-700 dark:bg-gray-800 dark:text-primary-300">

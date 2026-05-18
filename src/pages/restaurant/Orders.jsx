@@ -266,12 +266,12 @@ const Orders = () => {
     if (!socket) return undefined
 
     const handleNewOrder = (order) => {
-      toast.success(`New order #${order.orderNumber} received`)
+      toast.success(`New order #${order.orderNumber} received. Kindly check all items before preparing.`, { duration: 7000 })
       fetchOrders(true)
       fetchSummary()
     }
     const handleOrderUpdate = (order) => {
-      toast(`Order #${order.orderNumber} moved to ${order.status}`)
+      toast(`Order #${order.orderNumber} updated. Check items before preparing.`)
       fetchOrders(true)
       fetchSummary()
     }

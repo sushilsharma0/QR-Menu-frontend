@@ -8,6 +8,8 @@ import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import Card from '../../components/common/Card'
 
+const IMAGE_MAX_BYTES = 1 * 1024 * 1024
+
 const EmployeeForm = () => {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -52,6 +54,11 @@ const EmployeeForm = () => {
   const onPhotoChange = (event) => {
     const file = event.target.files?.[0]
     if (!file) return
+    if (file.size > IMAGE_MAX_BYTES) {
+      toast.error('Employee photo must be less than 1 MB')
+      event.target.value = ''
+      return
+    }
     setPhotoFile(file)
     setPhotoPreview(URL.createObjectURL(file))
   }
@@ -109,7 +116,7 @@ const EmployeeForm = () => {
             </div>
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700">Employee Photo</label>
-              <p className="mb-2 text-xs text-gray-500">Shown in restaurant employee cards.</p>
+              <p className="mb-2 text-xs text-gray-500">Shown in restaurant employee cards. Square 4x4 style, recommended 512x512 px. Max 1 MB.</p>
               <input
                 type="file"
                 accept="image/*"

@@ -47,7 +47,7 @@ const RestaurantLayout = () => {
       <RestaurantSidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-6 dark:bg-gray-950">
+        <main className="portal-main flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950">
           <RestaurantTrialKycBanner />
           {main}
         </main>

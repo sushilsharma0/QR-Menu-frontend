@@ -15,6 +15,8 @@ import {
   normalizeThemeSettings,
 } from '../../theme/themePresets'
 
+const IMAGE_MAX_BYTES = 1 * 1024 * 1024
+
 const emptyHours = {
   monday: '',
   tuesday: '',
@@ -138,8 +140,8 @@ const BranchSettings = () => {
       toast.error('Please select an image file')
       return
     }
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('Image must be less than 10MB')
+    if (file.size > IMAGE_MAX_BYTES) {
+      toast.error('Image must be less than 1 MB')
       return
     }
     setter(file)
@@ -220,8 +222,8 @@ const BranchSettings = () => {
 
       <Card title="Branch Branding" icon={FiImage}>
         <div className="grid gap-4 md:grid-cols-2">
-          <ImageUpload id="branch-logo" label="Branch logo" preview={logoPreview} onChange={pickImage(setLogoFile, setLogoPreview)} />
-          <ImageUpload id="branch-banner" label="Branch banner" preview={bannerPreview} onChange={pickImage(setBannerFile, setBannerPreview)} wide />
+          <ImageUpload id="branch-logo" label="Branch logo" preview={logoPreview} onChange={pickImage(setLogoFile, setLogoPreview)} hint="Square 4x4 style image, recommended 512x512 px. Max 1 MB." />
+          <ImageUpload id="branch-banner" label="Branch banner" preview={bannerPreview} onChange={pickImage(setBannerFile, setBannerPreview)} hint="Wide banner, recommended 1920x1080 px. Max 1 MB." wide />
         </div>
       </Card>
 
@@ -319,10 +321,11 @@ const BranchSettings = () => {
   )
 }
 
-function ImageUpload({ id, label, preview, onChange, wide }) {
+function ImageUpload({ id, label, preview, onChange, hint, wide }) {
   return (
     <div className="rounded-2xl border border-surface-200 bg-white p-4">
       <p className="font-black text-gray-950">{label}</p>
+      {hint && <p className="mt-1 text-xs font-semibold text-gray-500">{hint}</p>}
       {preview && (
         <div className={`mt-3 overflow-hidden rounded-xl border border-gray-100 bg-gray-50 ${wide ? 'h-32' : 'h-28 w-28'}`}>
           <img src={preview} alt={label} className="h-full w-full object-cover" />

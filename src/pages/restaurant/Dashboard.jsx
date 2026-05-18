@@ -1112,12 +1112,12 @@ const Dashboard = () => {
         </SectionShell>
       </div>
 
-      {stats?.lowStockItemsList && stats.lowStockItemsList.length > 0 && (
+      {stats?.lowStockItems && stats.lowStockItems.length > 0 && (
         <SectionShell title="Low Stock Alert" eyebrow="Inventory attention" icon={FiAlertCircle}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {stats.lowStockItemsList.map((item, idx) => (
+            {stats.lowStockItems.map((item, idx) => (
               <motion.div
-                key={`${item.name}-${idx}`}
+                key={item._id || `${item.name}-${idx}`}
                 variants={cardVariants}
                 initial="hidden"
                 animate="visible"
@@ -1126,9 +1126,9 @@ const Dashboard = () => {
               >
                 <p className="font-bold text-gray-950">{item.name}</p>
                 <p className="mt-2 text-sm font-semibold text-red-700">
-                  Only {item.currentStock} {item.unit} left
+                  Only {item.quantity} {item.unit} left
                 </p>
-                <p className="mt-1 text-xs text-gray-500">Minimum stock: {item.minStock}</p>
+                <p className="mt-1 text-xs text-gray-500">Minimum stock: {item.minimumStock}</p>
               </motion.div>
             ))}
           </div>

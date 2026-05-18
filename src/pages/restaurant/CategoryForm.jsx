@@ -8,6 +8,8 @@ import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import Card from '../../components/common/Card'
 
+const IMAGE_MAX_BYTES = 1 * 1024 * 1024
+
 const CategoryForm = () => {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -71,6 +73,11 @@ const CategoryForm = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0]
     if (file) {
+      if (file.size > IMAGE_MAX_BYTES) {
+        toast.error('Category image must be less than 1 MB')
+        e.target.value = ''
+        return
+      }
       console.log('File selected:', file.name, file.size)
       setSelectedFile(file)
       setImagePreview(URL.createObjectURL(file))
@@ -165,7 +172,7 @@ const CategoryForm = () => {
                       </label>
                       <p className="pl-1">or drag and drop</p>
                     </div>
-                    <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
+                    <p className="text-xs text-gray-500">PNG, JPG, GIF. Recommended 800x600 px. Max 1 MB.</p>
                   </>
                 )}
               </div>

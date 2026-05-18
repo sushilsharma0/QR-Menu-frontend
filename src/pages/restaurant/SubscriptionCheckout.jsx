@@ -23,6 +23,8 @@ import {
   formatRestaurantDateTime,
 } from '../../components/restaurant/RestaurantUI'
 
+const FILE_MAX_BYTES = 1 * 1024 * 1024
+
 const paymentStatusStyles = {
   pending: 'bg-yellow-100 text-yellow-800',
   paid: 'bg-blue-100 text-blue-800',
@@ -148,6 +150,17 @@ const SubscriptionCheckout = () => {
     } finally {
       setManualSubmitting(false)
     }
+  }
+
+  const handleManualProofChange = (event) => {
+    const file = event.target.files?.[0] || null
+    if (file && file.size > FILE_MAX_BYTES) {
+      toast.error('Payment proof must be less than 1 MB')
+      event.target.value = ''
+      setManualProof(null)
+      return
+    }
+    setManualProof(file)
   }
 
   if (loading) return <RestaurantPageLoader />
@@ -324,10 +337,11 @@ const SubscriptionCheckout = () => {
                 <input
                   type="file"
                   accept=".jpg,.jpeg,.png,.webp,.gif,.pdf"
-                  onChange={(e) => setManualProof(e.target.files?.[0] || null)}
+                  onChange={handleManualProofChange}
                   className="w-full rounded-xl border border-surface-300 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary-100 file:px-3 file:py-1.5 file:font-semibold file:text-primary-700"
                   disabled={isLocked || manualSubmitting}
                 />
+                <p className="text-xs text-gray-500">JPG, PNG, WEBP, GIF or PDF. Max 1 MB.</p>
                 <Button
                   type="button"
                   variant="secondary"

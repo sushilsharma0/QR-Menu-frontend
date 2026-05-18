@@ -13,6 +13,8 @@ import { PlatformPageHeader } from '../../components/platform/PlatformUI'
 import { useAuth } from '../../hooks/useAuth'
 import { LANDING_THEMES } from '../../components/landing/landingThemePresets'
 
+const IMAGE_MAX_BYTES = 1 * 1024 * 1024
+
 const Settings = () => {
   const { user } = useAuth()
   const isSuperAdmin = user?.role === 'super_admin'
@@ -249,6 +251,17 @@ const Settings = () => {
     }
   }
 
+  const handleManualQrFileChange = (event) => {
+    const file = event.target.files?.[0] || null
+    if (file && file.size > IMAGE_MAX_BYTES) {
+      toast.error('QR code image must be less than 1 MB')
+      event.target.value = ''
+      setManualQrFile(null)
+      return
+    }
+    setManualQrFile(file)
+  }
+
   const feedbackPanel = (
     <>
       <div className="grid gap-3 sm:grid-cols-3">
@@ -401,7 +414,8 @@ const Settings = () => {
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">QR code image</label>
-                <input type="file" accept="image/*" className="text-sm" onChange={(e) => setManualQrFile(e.target.files?.[0] || null)} />
+                <input type="file" accept="image/*" className="text-sm" onChange={handleManualQrFileChange} />
+                <p className="mt-1 text-xs text-gray-500">Square QR image, recommended 800x800 px. Max 1 MB.</p>
                 {manualQrPreview ? (
                   <a href={manualQrPreview} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm text-primary-600 underline dark:text-primary-400">View current QR</a>
                 ) : (

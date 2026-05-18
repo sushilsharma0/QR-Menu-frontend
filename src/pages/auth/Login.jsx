@@ -229,7 +229,7 @@ const Login = () => {
             <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-950 text-white dark:bg-white dark:text-gray-950">
               <FiGrid className="h-5 w-5" />
             </span>
-            QR Menu SaaS
+            QR Restro Nepal
           </Link>
 
           <div>
