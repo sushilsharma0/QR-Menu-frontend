@@ -61,10 +61,10 @@ export const joinEmployeeRoom = (employeeId) => {
   }
 }
 
-export const joinOrderRoom = (orderId) => {
+export const joinOrderRoom = (orderId, orderToken = null) => {
   const socket = getSocket()
   if (socket && orderId) {
-    socket.emit('join:order', orderId)
+    socket.emit('join:order', orderToken ? { orderId, orderToken } : orderId)
     console.log('Joined order room:', orderId)
   }
 }
