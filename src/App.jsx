@@ -48,6 +48,7 @@ import RestaurantSubscription from "./pages/restaurant/Subscription";
 import RestaurantSubscriptionCheckout from "./pages/restaurant/SubscriptionCheckout";
 import RestaurantSubscriptionInvoiceDetail from "./pages/restaurant/SubscriptionInvoiceDetail";
 import RestaurantSettings from "./pages/restaurant/Settings";
+import RestaurantActiveDevices from "./pages/restaurant/ActiveDevices";
 import RestaurantCreditCustomers from "./pages/restaurant/CreditCustomers";
 import RestaurantProfile from "./pages/restaurant/Profile";
 import RestaurantPublicProfile from "./pages/restaurant/PublicProfile";
@@ -263,6 +264,7 @@ function App() {
         <Route path="public-profile" element={<RestaurantPublicProfile />} />
         <Route path="profile" element={<RestaurantProfile />} />
         <Route path="settings" element={<RestaurantSettings />} />
+        <Route path="security" element={<RestaurantActiveDevices />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="pos" element={<PosLayout />}>
           <Route index element={<PosMain />} />

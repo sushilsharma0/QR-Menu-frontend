@@ -1,10 +1,23 @@
 import api from './api'
 import {
   setAuthSession,
+  setRestaurantSessionSecrets,
   clearAuthSession,
   getAuthToken,
   getAuthUserRaw,
+  requestBrowserLocation,
 } from '../utils/authStorage'
+
+const captureRestaurantSessionLocation = async () => {
+  try {
+    const location = await requestBrowserLocation()
+    await api.patch('/restaurant/auth/sessions/current/location', location, {
+      skipErrorToast: true,
+    })
+  } catch {
+    // Location access is optional; ignore denied or unavailable permissions.
+  }
+}
 
 // Platform Auth
 export const platformLogin = async (email, password) => {
@@ -55,6 +68,11 @@ export const restaurantLogin = async (email, password) => {
       response.data.data.token,
       payload ? JSON.stringify({ ...payload, scope: 'restaurant' }) : null,
     )
+    setRestaurantSessionSecrets({
+      refreshToken: response.data.data.refreshToken,
+      sessionId: response.data.data.session?.id,
+    })
+    captureRestaurantSessionLocation()
   }
   return response.data
 }

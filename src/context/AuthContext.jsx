@@ -8,7 +8,9 @@ import {
   getAuthUserRaw,
   getAuthToken,
   setAuthSession,
+  setRestaurantSessionSecrets,
   clearAuthSession,
+  requestBrowserLocation,
 } from '../utils/authStorage'
 import { clearBranchSelection, setBranchPortalContext } from '../utils/branchStorage'
 
@@ -23,6 +25,17 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(readInitialAuthToken)
   const [isLoading, setIsLoading] = useState(true)
   const isAuthenticated = Boolean(token && user)
+
+  const captureRestaurantSessionLocation = async () => {
+    try {
+      const location = await requestBrowserLocation()
+      await api.patch('/restaurant/auth/sessions/current/location', location, {
+        skipErrorToast: true,
+      })
+    } catch {
+      // Location permission is optional. The session remains valid if the user denies it.
+    }
+  }
 
   useEffect(() => {
     const storedUser = getAuthUserRaw()
@@ -166,6 +179,13 @@ export const AuthProvider = ({ children }) => {
       }
 
       setAuthSession(newToken, JSON.stringify(authUser))
+      if (role === 'restaurant') {
+        setRestaurantSessionSecrets({
+          refreshToken: response.data.data.refreshToken,
+          sessionId: response.data.data.session?.id,
+        })
+        captureRestaurantSessionLocation()
+      }
 
       // Update state
       setToken(newToken)
@@ -293,6 +313,11 @@ export const AuthProvider = ({ children }) => {
       }
 
       setAuthSession(newToken, JSON.stringify(authUser))
+      setRestaurantSessionSecrets({
+        refreshToken: response.data.data.refreshToken,
+        sessionId: response.data.data.session?.id,
+      })
+      captureRestaurantSessionLocation()
       clearBranchSelection()
       setToken(newToken)
       setUser(authUser)

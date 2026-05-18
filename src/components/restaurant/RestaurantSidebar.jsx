@@ -84,6 +84,7 @@ const NAV_GROUPS = [
     items: [
       { segment: 'tickets', icon: FiHelpCircle, label: 'Support Tickets' },
       { segment: 'logs', icon: FiTerminal, label: 'Audit Logs' },
+      { segment: 'security', icon: FiShield, label: 'Active Devices' },
       { segment: 'public-profile', icon: FiFileText, label: 'About & Privacy' },
       { segment: 'settings', icon: FiSettings, label: 'Settings' },
     ],
@@ -112,6 +113,7 @@ function featureKeyForSegment(segment) {
   if (root === 'branches') return 'accountSettings'
   if (root === 'tickets') return 'supportTickets'
   if (root === 'logs') return 'activityLogs'
+  if (root === 'security') return null
   if (root === 'settings') return 'accountSettings'
   if (root === 'finance') return 'analytics'
   return null
@@ -119,7 +121,7 @@ function featureKeyForSegment(segment) {
 
 function isNavUnlockedWhenBillingLocked(segment) {
   const root = segment.split('/')[0]
-  return root === 'subscription' || root === 'kyc'
+  return root === 'subscription' || root === 'kyc' || root === 'security'
 }
 
 function NavItem({

@@ -1,6 +1,18 @@
 import axios from 'axios'
 import toast from '@utils/toast'
-import { getAuthToken, clearAuthSession } from '../utils/authStorage'
+import {
+  getAuthToken,
+  setAuthSession,
+  clearAuthSession,
+  getAuthUserRaw,
+  getOrCreateDeviceId,
+  getDeviceFingerprint,
+  getDeviceMetadata,
+  getCachedGeoLocation,
+  getRefreshToken,
+  getSessionId,
+  setRestaurantSessionSecrets,
+} from '../utils/authStorage'
 import { getApiBaseUrl } from '../utils/runtimeConfig'
 import { getSelectedBranchId } from '../utils/branchStorage'
 
@@ -37,6 +49,16 @@ api.interceptors.request.use(
     if (branchId) {
       config.headers['X-Branch-Id'] = branchId
     }
+    config.headers['X-Device-Id'] = getOrCreateDeviceId()
+    config.headers['X-Device-Fingerprint'] = getDeviceFingerprint()
+    const deviceMetadata = getDeviceMetadata()
+    config.headers['X-Device-Timezone'] = deviceMetadata.timezone
+    config.headers['X-Device-Screen'] = deviceMetadata.screen
+    const cachedLocation = getCachedGeoLocation()
+    if (cachedLocation?.latitude && cachedLocation?.longitude) {
+      config.headers['X-Geo-Latitude'] = String(cachedLocation.latitude)
+      config.headers['X-Geo-Longitude'] = String(cachedLocation.longitude)
+    }
     // Don't set Content-Type for FormData - let browser set it with boundary
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type']
@@ -49,7 +71,7 @@ api.interceptors.request.use(
 // Response interceptor
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const status = error.response?.status
     const message = error.response?.data?.message || error.message || 'Request failed'
     const errorCode = error.response?.data?.errors?.code
@@ -60,6 +82,36 @@ api.interceptors.response.use(
       requestUrl.includes('/restaurant/employees/login') ||
       requestUrl.includes('/restaurant/branch-auth/login')
     const shouldSkipToast = Boolean(error.config?.skipErrorToast)
+
+    const canRefreshRestaurantSession =
+      status === 401 &&
+      !error.config?._retry &&
+      !requestUrl.includes('/restaurant/auth/refresh') &&
+      getRefreshToken() &&
+      getSessionId()
+
+    if (canRefreshRestaurantSession) {
+      try {
+        error.config._retry = true
+        const refreshResponse = await api.post('/restaurant/auth/refresh', {
+          refreshToken: getRefreshToken(),
+          sessionId: getSessionId(),
+        }, { skipErrorToast: true })
+        const data = refreshResponse.data?.data || {}
+        const currentUserRaw = getAuthUserRaw()
+        const currentUser = currentUserRaw ? JSON.parse(currentUserRaw) : null
+        const nextUser = data.user ? { ...data.user, scope: 'restaurant' } : currentUser
+        setAuthSession(data.token, nextUser ? JSON.stringify(nextUser) : currentUserRaw)
+        setRestaurantSessionSecrets({
+          refreshToken: data.refreshToken,
+          sessionId: data.session?.id || getSessionId(),
+        })
+        error.config.headers.Authorization = `Bearer ${data.token}`
+        return api(error.config)
+      } catch {
+        // Fall through to normal logout handling.
+      }
+    }
 
     if (status === 401 && !isLoginRequest) {
       // Caller can opt out of the global redirect/toast UX (e.g. callback
@@ -167,6 +219,21 @@ export const changeRestaurantPassword = (data) =>
 
 export const verifyRestaurantPassword = (password) =>
   api.post('/restaurant/auth/verify-password', { password })
+
+export const getRestaurantSessions = () =>
+  api.get('/restaurant/auth/sessions')
+
+export const getRestaurantLoginHistory = () =>
+  api.get('/restaurant/auth/login-history')
+
+export const revokeRestaurantSession = (sessionId) =>
+  api.delete(`/restaurant/auth/sessions/${sessionId}`)
+
+export const revokeOtherRestaurantSessions = () =>
+  api.post('/restaurant/auth/sessions/revoke-others')
+
+export const updateCurrentRestaurantSessionLocation = (location) =>
+  api.patch('/restaurant/auth/sessions/current/location', location)
 
 // Employee Auth
 export const employeeLogin = (username, password, restaurantId) => 
