@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "security:audit": "npm audit --audit-level=high",
+    "security:scan": "node ../scripts/security/secret-scan.js && node ../scripts/security/dependency-policy.js && node ../scripts/security/static-analysis.js"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.12.2",
