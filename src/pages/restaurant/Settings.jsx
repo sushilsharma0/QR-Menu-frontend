@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import toast from '@utils/toast'
-import { FiCheck, FiImage, FiMoon, FiRefreshCw, FiSun, FiUpload, FiX, FiEye } from 'react-icons/fi'
+import { FiArchive, FiCheck, FiDatabase, FiDownload, FiEye, FiImage, FiMoon, FiRefreshCw, FiSun, FiTrash2, FiUpload, FiX } from 'react-icons/fi'
 import api from '../../services/api'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
@@ -124,6 +124,13 @@ const Settings = () => {
   const [showBackgroundPreview, setShowBackgroundPreview] = useState(false)
   const [themeDraft, setThemeDraft] = useState(normalizeThemeSettings(DEFAULT_THEME_SETTINGS))
   const [themeSaving, setThemeSaving] = useState(false)
+  const [backupBusy, setBackupBusy] = useState(false)
+  const [backupHistory, setBackupHistory] = useState([])
+  const [backupSchedules, setBackupSchedules] = useState([])
+  const [restorePreview, setRestorePreview] = useState(null)
+  const [restoreFile, setRestoreFile] = useState(null)
+  const [restoreMode, setRestoreMode] = useState('merge')
+  const [backupSections, setBackupSections] = useState(['menu', 'tables', 'inventory', 'employees', 'accounting', 'payroll', 'settings'])
   const { mergeUser } = useAuth()
   const { updateTheme, applyRemoteTheme, resetTheme } = useTheme()
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm()
@@ -132,6 +139,7 @@ const Settings = () => {
 
   useEffect(() => {
     fetchRestaurant()
+    fetchBackupHistory()
   }, [])
 
   const fetchRestaurant = async () => {
@@ -382,8 +390,135 @@ const Settings = () => {
     }
   }
 
+  const fetchBackupHistory = async () => {
+    try {
+      const res = await api.get('/restaurant/backup/history')
+      setBackupHistory(res.data?.data?.backups || [])
+      setBackupSchedules(res.data?.data?.schedules || [])
+    } catch {
+      // Settings page can still load if backup access is disabled for the role.
+    }
+  }
+
+  const createBackup = async (type = 'full') => {
+    try {
+      setBackupBusy(true)
+      const res = await api.post('/restaurant/backup/create', {
+        type,
+        sections: type === 'partial' ? backupSections : [],
+      })
+      toast.success('Backup created')
+      await fetchBackupHistory()
+      const id = res.data?.data?.backup?._id
+      if (id) downloadBackup(id)
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to create backup')
+    } finally {
+      setBackupBusy(false)
+    }
+  }
+
+  const downloadBackup = async (id) => {
+    try {
+      const res = await api.get(`/restaurant/backup/download/${id}`, { responseType: 'blob' })
+      const blobUrl = window.URL.createObjectURL(new Blob([res.data]))
+      const link = document.createElement('a')
+      link.href = blobUrl
+      link.download = `backup-${id}.qrbak`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(blobUrl)
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to download backup')
+    }
+  }
+
+  const deleteBackup = async (id) => {
+    if (!window.confirm('Delete this encrypted backup?')) return
+    try {
+      await api.delete(`/restaurant/backup/${id}`)
+      toast.success('Backup deleted')
+      fetchBackupHistory()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete backup')
+    }
+  }
+
+  const saveBackupSchedule = async (frequency) => {
+    try {
+      setBackupBusy(true)
+      await api.post('/restaurant/backup/schedule', {
+        frequency,
+        backupType: 'snapshot',
+        sections: backupSections,
+        isActive: true,
+      })
+      toast.success('Backup schedule saved')
+      fetchBackupHistory()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to save schedule')
+    } finally {
+      setBackupBusy(false)
+    }
+  }
+
+  const previewRestore = async () => {
+    if (!restoreFile) return toast.error('Choose a .qrbak file first')
+    try {
+      setBackupBusy(true)
+      const form = new FormData()
+      form.append('backup', restoreFile)
+      form.append('previewOnly', 'true')
+      form.append('mode', restoreMode)
+      const res = await api.post('/restaurant/backup/restore', form)
+      setRestorePreview(res.data?.data)
+      toast.success('Restore preview ready')
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to preview restore')
+    } finally {
+      setBackupBusy(false)
+    }
+  }
+
+  const runRestore = async () => {
+    if (!restoreFile) return toast.error('Choose a .qrbak file first')
+    if (!restorePreview) return toast.error('Preview the backup before restoring')
+    if (!window.confirm(`Restore backup using ${restoreMode} mode?`)) return
+    try {
+      setBackupBusy(true)
+      const form = new FormData()
+      form.append('backup', restoreFile)
+      form.append('mode', restoreMode)
+      await api.post('/restaurant/backup/restore', form)
+      toast.success('Restore completed')
+      setRestorePreview(null)
+      setRestoreFile(null)
+      fetchBackupHistory()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Restore failed')
+    } finally {
+      setBackupBusy(false)
+    }
+  }
+
+  const toggleBackupSection = (section) => {
+    setBackupSections((prev) =>
+      prev.includes(section) ? prev.filter((item) => item !== section) : [...prev, section],
+    )
+  }
+
+  const formatBackupSize = (bytes = 0) => {
+    const size = Number(bytes || 0)
+    if (size >= 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(1)} MB`
+    return `${Math.max(1, Math.round(size / 1024))} KB`
+  }
+
+  const latestBackup = backupHistory[0]
+  const completedBackups = backupHistory.filter((backup) => backup.status === 'completed').length
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Restaurant Settings</h1>
         <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your restaurant profile, header photo, and customer-facing branding</p>
@@ -391,6 +526,220 @@ const Settings = () => {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <NotificationSettingsPanel />
+
+        <Card
+          title="Backup & Restore"
+          icon={FiDatabase}
+          actions={
+            <Button type="button" variant="outline" size="sm" onClick={fetchBackupHistory} disabled={backupBusy}>
+              <FiRefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+          }
+        >
+          <div className="space-y-6">
+            <div className="grid gap-3 md:grid-cols-3">
+              {[
+                { label: 'Backups', value: completedBackups },
+                { label: 'Last backup', value: latestBackup ? new Date(latestBackup.createdAt).toLocaleDateString() : 'None' },
+                { label: 'Schedules', value: backupSchedules.filter((schedule) => schedule.isActive).length },
+              ].map((item) => (
+                <div key={item.label} className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-gray-400">{item.label}</p>
+                  <p className="mt-2 text-xl font-black text-gray-950 dark:text-gray-100">{item.value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+              <section className="space-y-5">
+                <div>
+                  <div className="flex flex-wrap gap-3">
+                    <Button type="button" onClick={() => createBackup('full')} disabled={backupBusy}>
+                      <FiArchive className="mr-2 h-4 w-4" />
+                      Full Backup
+                    </Button>
+                    <Button type="button" variant="secondary" onClick={() => createBackup('partial')} disabled={backupBusy}>
+                      Partial Backup
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => createBackup('incremental')} disabled={backupBusy}>
+                      Incremental
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-gray-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-black uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Backup Sections</p>
+                    <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-black text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                      {backupSections.length} selected
+                    </span>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                    {['menu', 'tables', 'inventory', 'employees', 'accounting', 'payroll', 'settings', 'promotions', 'analytics', 'logs'].map((section) => (
+                      <button
+                        key={section}
+                        type="button"
+                        onClick={() => toggleBackupSection(section)}
+                        className={`min-h-11 rounded-lg border px-3 text-sm font-bold capitalize transition hover:-translate-y-0.5 ${
+                          backupSections.includes(section)
+                            ? 'border-primary-500 bg-primary-50 text-primary-800 shadow-sm dark:bg-gray-800 dark:text-gray-100'
+                            : 'border-gray-200 bg-white text-gray-600 hover:border-primary-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300'
+                        }`}
+                      >
+                        {section}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-gray-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="font-bold text-gray-900 dark:text-gray-100">Scheduled Backups</p>
+                      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        {backupSchedules.length ? `${backupSchedules.length} schedule${backupSchedules.length === 1 ? '' : 's'} configured` : 'No active backup schedule'}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {['daily', 'weekly', 'monthly'].map((frequency) => (
+                        <Button key={frequency} type="button" size="sm" variant="outline" onClick={() => saveBackupSchedule(frequency)} disabled={backupBusy}>
+                          {frequency}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  {backupSchedules.length > 0 && (
+                    <div className="mt-4 divide-y divide-gray-100 rounded-lg border border-gray-100 dark:divide-gray-800 dark:border-gray-800">
+                      {backupSchedules.map((schedule) => (
+                        <div key={schedule._id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                          <span className="font-bold capitalize text-gray-800 dark:text-gray-100">{schedule.frequency}</span>
+                          <span className="text-right text-gray-500 dark:text-gray-400">{new Date(schedule.nextRunAt).toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              <section className="rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-950">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-bold text-gray-900 dark:text-gray-100">Restore Backup</p>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{restoreFile ? restoreFile.name : 'No backup file selected'}</p>
+                  </div>
+                  {restorePreview && (
+                    <span className="rounded-full bg-accent-50 px-3 py-1 text-xs font-black text-accent-700 dark:bg-gray-800 dark:text-accent-300">
+                      Previewed
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-5 space-y-3">
+                  <input
+                    id="restore-backup-input"
+                    type="file"
+                    accept=".qrbak,application/octet-stream"
+                    onChange={(e) => {
+                      setRestoreFile(e.target.files?.[0] || null)
+                      setRestorePreview(null)
+                    }}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="restore-backup-input"
+                    className="flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-white px-4 py-5 text-center transition hover:border-primary-300 dark:border-gray-700 dark:bg-gray-900"
+                  >
+                    <FiUpload className="h-6 w-6 text-primary-600" />
+                    <span className="mt-2 text-sm font-bold text-gray-900 dark:text-gray-100">Choose encrypted backup</span>
+                    <span className="mt-1 max-w-full truncate text-xs text-gray-500 dark:text-gray-400">{restoreFile?.name || '.qrbak'}</span>
+                  </label>
+
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">
+                    Restore mode
+                    <select
+                      value={restoreMode}
+                      onChange={(e) => {
+                        setRestoreMode(e.target.value)
+                        setRestorePreview(null)
+                      }}
+                      className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                    >
+                      <option value="merge">Merge</option>
+                      <option value="replace">Replace</option>
+                      <option value="create_new_branch">Create new branch</option>
+                    </select>
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button type="button" variant="outline" onClick={previewRestore} disabled={backupBusy}>Preview</Button>
+                    <Button type="button" onClick={runRestore} disabled={backupBusy || !restorePreview}>Restore</Button>
+                  </div>
+                </div>
+
+                {restorePreview && (
+                  <div className="mt-5 rounded-lg border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
+                    <p className="text-xs font-black uppercase tracking-[0.16em] text-gray-400">Preview</p>
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                      {Object.entries(restorePreview.counts || {}).slice(0, 10).map(([key, count]) => (
+                        <div key={key} className="flex items-center justify-between gap-2 rounded-md bg-gray-50 px-2 py-1.5 dark:bg-gray-950">
+                          <span className="truncate capitalize text-gray-600 dark:text-gray-300">{key}</span>
+                          <span className="font-black text-gray-900 dark:text-gray-100">{count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </section>
+            </div>
+
+            <div className="overflow-hidden rounded-lg border border-gray-100 dark:border-gray-800">
+              <table className="min-w-full divide-y divide-gray-100 text-sm dark:divide-gray-800">
+                <thead className="bg-gray-50 text-left text-xs font-black uppercase tracking-wider text-gray-500 dark:bg-gray-900 dark:text-gray-400">
+                  <tr>
+                    <th className="px-4 py-3">Type</th>
+                    <th className="px-4 py-3">Created</th>
+                    <th className="px-4 py-3">Size</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-950">
+                  {backupHistory.length === 0 ? (
+                    <tr><td colSpan="5" className="px-4 py-6 text-center text-gray-500">No backups yet.</td></tr>
+                  ) : backupHistory.map((backup) => (
+                    <tr key={backup._id} className="transition hover:bg-gray-50 dark:hover:bg-gray-900">
+                      <td className="px-4 py-3 font-bold capitalize text-gray-900 dark:text-gray-100">{backup.type}</td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{new Date(backup.createdAt).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{formatBackupSize(backup.size)}</td>
+                      <td className="px-4 py-3">
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-black capitalize ${
+                          backup.status === 'completed'
+                            ? 'bg-accent-50 text-accent-700 dark:bg-gray-800 dark:text-accent-300'
+                            : backup.status === 'failed'
+                              ? 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-200'
+                              : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
+                        }`}>
+                          {backup.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-2">
+                          <button type="button" onClick={() => downloadBackup(backup._id)} className="rounded-lg p-2 text-primary-700 hover:bg-primary-50 dark:text-primary-300 dark:hover:bg-gray-800">
+                            <FiDownload />
+                          </button>
+                          <button type="button" onClick={() => deleteBackup(backup._id)} className="rounded-lg p-2 text-red-600 hover:bg-red-50 dark:hover:bg-gray-800">
+                            <FiTrash2 />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </Card>
 
         <Card
           title="Appearance - Theme Customization"

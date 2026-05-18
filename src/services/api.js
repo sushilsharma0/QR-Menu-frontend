@@ -546,10 +546,10 @@ export const getUnreadNotificationCount = () =>
   api.get('/notifications/unread-count')
 
 export const markNotificationRead = (id) =>
-  api.patch(`/notifications/${id}/read`)
+  api.patch(`/notifications/${id}/read`, {})
 
 export const markAllNotificationsRead = () =>
-  api.patch('/notifications/read-all')
+  api.patch('/notifications/read-all', {})
 
 // Restaurant Dashboard
 export const getRestaurantDashboardStats = () => 

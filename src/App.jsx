@@ -26,6 +26,7 @@ import PlatformInvoices from "./pages/platform/Invoices";
 import PlatformInvoiceDetail from "./pages/platform/InvoiceDetail";
 import PlatformSubscriptionActivity from "./pages/platform/SubscriptionActivity";
 import PlatformSystemLogs from "./pages/platform/SystemLogs";
+import PlatformSecurityOperations from "./pages/platform/SecurityOperations";
 import PlatformTickets from "./pages/platform/Tickets";
 import PlatformTicketDetail from "./pages/platform/TicketDetail";
 import PlatformSubscriptionPayments from "./pages/platform/SubscriptionPayments";
@@ -214,6 +215,7 @@ function App() {
         <Route path="/platform/tickets" element={<PlatformTickets />} />
         <Route path="/platform/tickets/:id" element={<PlatformTicketDetail />} />
         <Route path="/platform/logs" element={<PlatformSystemLogs />} />
+        <Route path="/platform/security" element={<PlatformSecurityOperations />} />
         <Route path="/platform/settings" element={<PlatformSettings />} />
         <Route path="/platform/invoices" element={<PlatformInvoices />} />
         <Route path="/platform/invoices/:id" element={<PlatformInvoiceDetail />} />

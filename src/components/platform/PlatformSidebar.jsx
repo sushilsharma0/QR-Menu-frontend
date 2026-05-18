@@ -56,6 +56,7 @@ const NAV_GROUPS = [
     label: 'System',
     items: [
       { path: '/platform/admins', icon: FiShield, label: 'Admins' },
+      { path: '/platform/security', icon: FiShield, label: 'Security Ops' },
       { path: '/platform/logs', icon: FiTerminal, label: 'System Logs' },
       { path: '/platform/settings', icon: FiSettings, label: 'Settings' },
     ],
