@@ -6,6 +6,7 @@ const CUSTOMER_PROFILE_STORAGE_KEY = 'customer_identity_profile_v1'
 const CUSTOMER_AUTH_STORAGE_KEY = 'customer_identity_auth_v1'
 const CART_COUNT_STORAGE_KEY = 'customer_cart_count_v1'
 const ORDER_TOKENS_STORAGE_KEY = 'customer_order_tokens_v1'
+const GUEST_SESSION_STORAGE_KEY = 'customer_guest_sessions_v1'
 
 const broadcastThemeSettings = (themeSettings) => {
   if (!themeSettings || typeof window === 'undefined') return
@@ -29,7 +30,7 @@ export const verifyTableQR = async (token) => {
 
 // Customer Order
 export const placeOrder = async (orderData) => {
-  const response = await api.post('/restaurant/customer-orders', orderData)
+  const response = await api.post('/restaurant/customer-orders', withGuestSessionBody(orderData?.qrToken, orderData))
   return response.data
 }
 
@@ -44,6 +45,57 @@ export const getOrderStatus = async (orderId) => {
 }
 
 export const getStoredGuestId = () => localStorage.getItem(GUEST_ID_STORAGE_KEY) || ''
+const readStoredGuestSessionMap = () => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(GUEST_SESSION_STORAGE_KEY) || '{}')
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+const getStoredGuestSessionToken = (qrToken) => {
+  const map = readStoredGuestSessionMap()
+  const row = qrToken ? map[String(qrToken)] : null
+  if (row?.guestSessionToken) return row.guestSessionToken
+  const recent = Object.values(map)
+    .filter((entry) => entry?.guestSessionToken)
+    .sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0))[0]
+  return recent?.guestSessionToken || ''
+}
+
+const rememberGuestSession = (qrToken, data = {}) => {
+  if (!qrToken || !data?.guestSessionToken) return
+  const map = readStoredGuestSessionMap()
+  map[String(qrToken)] = {
+    guestId: data.guestId || '',
+    guestSessionToken: data.guestSessionToken,
+    guestSessionExpiresAt: data.guestSessionExpiresAt || null,
+    updatedAt: Date.now(),
+  }
+  localStorage.setItem(GUEST_SESSION_STORAGE_KEY, JSON.stringify(map))
+}
+
+const clearGuestSession = (qrToken = null) => {
+  if (!qrToken) {
+    localStorage.removeItem(GUEST_SESSION_STORAGE_KEY)
+    return
+  }
+  const map = readStoredGuestSessionMap()
+  delete map[String(qrToken)]
+  localStorage.setItem(GUEST_SESSION_STORAGE_KEY, JSON.stringify(map))
+}
+
+const withGuestSessionBody = (qrToken, body = {}) => ({
+  ...body,
+  guestSessionToken: getStoredGuestSessionToken(qrToken) || undefined,
+})
+
+const withGuestSessionParams = (qrToken, params = {}) => ({
+  ...params,
+  guestSessionToken: getStoredGuestSessionToken(qrToken) || undefined,
+})
+
 export const isCustomerIdentityAuthenticated = () => localStorage.getItem(CUSTOMER_AUTH_STORAGE_KEY) === 'true'
 export const getStoredCustomerId = () => (
   isCustomerIdentityAuthenticated() ? localStorage.getItem(CUSTOMER_ID_STORAGE_KEY) || '' : ''
@@ -58,7 +110,10 @@ export const getStoredCustomerProfile = () => {
 }
 
 export const clearCustomerIdentitySession = ({ includeGuest = false } = {}) => {
-  if (includeGuest) localStorage.removeItem(GUEST_ID_STORAGE_KEY)
+  if (includeGuest) {
+    localStorage.removeItem(GUEST_ID_STORAGE_KEY)
+    clearGuestSession()
+  }
   localStorage.removeItem(CUSTOMER_ID_STORAGE_KEY)
   localStorage.removeItem(CUSTOMER_PROFILE_STORAGE_KEY)
   localStorage.removeItem(CUSTOMER_AUTH_STORAGE_KEY)
@@ -122,6 +177,7 @@ export const ensureGuestSession = async (qrToken, { force = false } = {}) => {
   const buildPayload = (guestId) => ({
     qrToken,
     guestId: guestId || undefined,
+    guestSessionToken: getStoredGuestSessionToken(qrToken) || undefined,
     deviceInfo: {
       userAgent: navigator.userAgent || '',
       platform: navigator.platform || '',
@@ -138,6 +194,7 @@ export const ensureGuestSession = async (qrToken, { force = false } = {}) => {
       // If persisted guest id becomes invalid/stale, retry once with a fresh session.
       if (existingGuestId) {
         localStorage.removeItem(GUEST_ID_STORAGE_KEY)
+        clearGuestSession(qrToken)
         try {
           response = await api.post('/customer/guest/session', buildPayload(''), { skipErrorToast: true })
         } catch (innerErr) {
@@ -152,6 +209,7 @@ export const ensureGuestSession = async (qrToken, { force = false } = {}) => {
     if (data.guestId) {
       localStorage.setItem(GUEST_ID_STORAGE_KEY, data.guestId)
     }
+    rememberGuestSession(qrToken, data)
     const count = (data?.cart?.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
     setCartItemCount(count)
     _sessionCache.set(key, { at: Date.now(), data })
@@ -202,13 +260,15 @@ export const addItemToGuestCart = async ({
   addOns = [],
 }) => {
   const response = await api.post(`/customer/cart/${guestId}/items`, {
-    qrToken,
-    menuItemId,
-    quantity,
-    notes,
-    cookingInstructions,
-    customizations,
-    addOns,
+    ...withGuestSessionBody(qrToken, {
+      qrToken,
+      menuItemId,
+      quantity,
+      notes,
+      cookingInstructions,
+      customizations,
+      addOns,
+    }),
   })
   const cart = response?.data?.data || { items: [] }
   const count = (cart.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
@@ -218,7 +278,7 @@ export const addItemToGuestCart = async ({
 }
 
 export const getGuestCart = async ({ guestId, qrToken }) => {
-  const response = await api.get(`/customer/cart/${guestId}`, { params: { qrToken } })
+  const response = await api.get(`/customer/cart/${guestId}`, { params: withGuestSessionParams(qrToken, { qrToken }) })
   const cart = response?.data?.data || { items: [] }
   const count = (cart.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
   setCartItemCount(count)
@@ -228,10 +288,12 @@ export const getGuestCart = async ({ guestId, qrToken }) => {
 
 export const updateGuestCartItem = async ({ guestId, qrToken, menuItemId, quantity, notes, lineId }) => {
   const response = await api.patch(`/customer/cart/${guestId}/items/${menuItemId}`, {
-    qrToken,
-    quantity,
-    notes,
-    lineId,
+    ...withGuestSessionBody(qrToken, {
+      qrToken,
+      quantity,
+      notes,
+      lineId,
+    }),
   })
   const cart = response?.data?.data || { items: [] }
   const count = (cart.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
@@ -241,7 +303,7 @@ export const updateGuestCartItem = async ({ guestId, qrToken, menuItemId, quanti
 }
 
 export const removeGuestCartItem = async ({ guestId, qrToken, menuItemId, lineId }) => {
-  const params = { qrToken }
+  const params = withGuestSessionParams(qrToken, { qrToken })
   if (lineId) params.lineId = lineId
   const response = await api.delete(`/customer/cart/${guestId}/items/${menuItemId}`, { params })
   const cart = response?.data?.data || { items: [] }
@@ -252,28 +314,28 @@ export const removeGuestCartItem = async ({ guestId, qrToken, menuItemId, lineId
 }
 
 export const clearGuestCart = async ({ guestId, qrToken }) => {
-  await api.delete(`/customer/cart/${guestId}`, { params: { qrToken } })
+  await api.delete(`/customer/cart/${guestId}`, { params: withGuestSessionParams(qrToken, { qrToken }) })
   setCartItemCount(0)
   syncCachedSessionCart(qrToken, { items: [], totalAmount: 0 })
 }
 
 export const getGuestOrders = async ({ guestId, qrToken }) => {
-  const response = await api.get(`/customer/orders/${guestId}`, { params: { qrToken } })
+  const response = await api.get(`/customer/orders/${guestId}`, { params: withGuestSessionParams(qrToken, { qrToken }) })
   return response?.data?.data?.orders || []
 }
 
 export const requestCustomerIdentityOtp = async ({ qrToken, guestId, email }) => {
-  const response = await api.post('/customer/identity/request-otp', {
+  const response = await api.post('/customer/identity/request-otp', withGuestSessionBody(qrToken, {
     qrToken,
     guestId,
     email,
     purpose: 'signup',
-  })
+  }))
   return response?.data?.data || {}
 }
 
 export const claimCustomerIdentity = async ({ qrToken, guestId, name, phone = '', email = '', otp = '', password = '', purpose = 'signup' }) => {
-  const response = await api.post('/customer/identity/claim', {
+  const response = await api.post('/customer/identity/claim', withGuestSessionBody(qrToken, {
     qrToken,
     guestId,
     name,
@@ -282,7 +344,7 @@ export const claimCustomerIdentity = async ({ qrToken, guestId, name, phone = ''
     otp,
     password,
     purpose,
-  })
+  }))
   const data = response?.data?.data || {}
   if (data.guestId) localStorage.setItem(GUEST_ID_STORAGE_KEY, data.guestId)
   if (data.customerId) {
@@ -296,7 +358,7 @@ export const claimCustomerIdentity = async ({ qrToken, guestId, name, phone = ''
 export const getCustomerIdentity = async ({ qrToken, guestId, customerId = getStoredCustomerId() }) => {
   if (!qrToken || !guestId || !customerId || !isCustomerIdentityAuthenticated()) return null
   const response = await api.get('/customer/identity/me', {
-    params: { qrToken, guestId, customerId },
+    params: withGuestSessionParams(qrToken, { qrToken, guestId, customerId }),
     skipErrorToast: true,
   })
   const data = response?.data?.data || null
@@ -309,53 +371,53 @@ export const getCustomerIdentity = async ({ qrToken, guestId, customerId = getSt
 }
 
 export const updateCustomerIdentityProfile = async ({ qrToken, guestId, customerId = getStoredCustomerId(), name, phone = '', email = '' }) => {
-  const response = await api.patch('/customer/identity/profile', {
+  const response = await api.patch('/customer/identity/profile', withGuestSessionBody(qrToken, {
     qrToken,
     guestId,
     customerId,
     name,
     phone,
     email,
-  })
+  }))
   const data = response?.data?.data || {}
   if (data.customer) localStorage.setItem(CUSTOMER_PROFILE_STORAGE_KEY, JSON.stringify(data.customer))
   return data
 }
 
 export const changeCustomerIdentityPassword = async ({ qrToken, guestId, customerId = getStoredCustomerId(), currentPassword, newPassword }) => {
-  const response = await api.post('/customer/identity/change-password', {
+  const response = await api.post('/customer/identity/change-password', withGuestSessionBody(qrToken, {
     qrToken,
     guestId,
     customerId,
     currentPassword,
     newPassword,
-  })
+  }))
   return response?.data?.data || {}
 }
 
 export const requestCustomerPasswordReset = async ({ qrToken, guestId, email }) => {
-  const response = await api.post('/customer/identity/forgot-password', { qrToken, guestId, email })
+  const response = await api.post('/customer/identity/forgot-password', withGuestSessionBody(qrToken, { qrToken, guestId, email }))
   return response?.data?.data || {}
 }
 
 export const resetCustomerPassword = async ({ qrToken, guestId, email, otp, newPassword }) => {
-  const response = await api.post('/customer/identity/reset-password', {
+  const response = await api.post('/customer/identity/reset-password', withGuestSessionBody(qrToken, {
     qrToken,
     guestId,
     email,
     otp,
     newPassword,
-  })
+  }))
   return response?.data?.data || {}
 }
 
 export const verifyCustomerPasswordResetOtp = async ({ qrToken, guestId, email, otp }) => {
-  const response = await api.post('/customer/identity/verify-reset-otp', {
+  const response = await api.post('/customer/identity/verify-reset-otp', withGuestSessionBody(qrToken, {
     qrToken,
     guestId,
     email,
     otp,
-  })
+  }))
   return response?.data?.data || {}
 }
 
@@ -395,47 +457,47 @@ export const getStoredCustomerOrders = async ({ qrToken }) => {
 }
 
 export const applyRestaurantCreditAccount = async ({ qrToken, guestId, name, email, phone = '' }) => {
-  const response = await api.post('/customer/credit/apply', {
+  const response = await api.post('/customer/credit/apply', withGuestSessionBody(qrToken, {
     qrToken,
     guestId,
     name,
     email,
     phone,
-  })
+  }))
   return response.data
 }
 
 export const requestCreditCheckoutOtp = async ({ qrToken, guestId, email }) => {
-  const response = await api.post('/customer/credit/request-otp', { qrToken, guestId, email })
+  const response = await api.post('/customer/credit/request-otp', withGuestSessionBody(qrToken, { qrToken, guestId, email }))
   return response.data
 }
 
 /** After serve: finalize pay-now / house credit for deferred QR checkouts */
 export const submitPostServeOrderPayment = async (payload) => {
   const { qrToken, ...body } = payload
-  const response = await api.post(`/customer/order/${qrToken}/pay`, body)
+  const response = await api.post(`/customer/order/${qrToken}/pay`, withGuestSessionBody(qrToken, body))
   return response.data
 }
 
 export const postGuestTableRequest = async ({ qrToken, guestId, requestType, message = '' }) => {
-  const response = await api.post('/customer/table-request', {
+  const response = await api.post('/customer/table-request', withGuestSessionBody(qrToken, {
     qrToken,
     guestId,
     requestType,
     message,
-  })
+  }))
   return response?.data
 }
 
 export const getDiningInsights = async ({ restaurantSlug, guestId, qrToken }) => {
   const response = await api.get(`/customer/dining-insights/${restaurantSlug}`, {
-    params: { guestId, qrToken },
+    params: withGuestSessionParams(qrToken, { guestId, qrToken }),
   })
   return response?.data?.data || null
 }
 
 export const getGuestLoyalty = async ({ guestId, qrToken }) => {
-  const response = await api.get(`/customer/loyalty/${guestId}`, { params: { qrToken } })
+  const response = await api.get(`/customer/loyalty/${guestId}`, { params: withGuestSessionParams(qrToken, { qrToken }) })
   return response?.data?.data || { points: 0, lifetimePoints: 0 }
 }
 

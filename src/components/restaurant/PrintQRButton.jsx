@@ -10,6 +10,30 @@ const escapeHtml = (value) =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 
+const cleanPrintableText = (value, fallback = "") => {
+  if (value === undefined || value === null) return fallback;
+  const text = String(value).trim();
+  if (!text) return fallback;
+  const lower = text.toLowerCase();
+  if (lower === "undefined" || lower === "null") return fallback;
+  return text;
+};
+
+const shortDisplayUrl = (value) => {
+  const text = cleanPrintableText(value);
+  if (!text) return "";
+  try {
+    const url = new URL(text);
+    const parts = url.pathname.split("/").filter(Boolean);
+    if (parts.length >= 2) {
+      return `${url.origin}/${parts.slice(0, -1).join("/")}/...`;
+    }
+    return url.origin;
+  } catch {
+    return text.length > 70 ? `${text.slice(0, 67)}...` : text;
+  }
+};
+
 const PrintQRButton = ({ qrModal, qrUrl, restaurant }) => {
   const [qrRestaurant, setQrRestaurant] = useState(null);
 
@@ -31,15 +55,21 @@ const PrintQRButton = ({ qrModal, qrUrl, restaurant }) => {
   const printableData = useMemo(() => {
     const table = qrModal.table || {};
     return {
-      restaurantName:
-        restaurant?.name || qrRestaurant?.restaurantName || table.restaurantName || "Restaurant",
-      restaurantLogo:
-        restaurant?.logo || qrRestaurant?.restaurantLogo || table.restaurantLogo || "",
-      restaurantTagline:
-        restaurant?.tagline || restaurant?.description || "Scan, choose, and order from your table",
-      tableNumber: table.tableNumber || "N/A",
-      qrCode: table.qrCode || "",
-      qrUrl: qrUrl || "",
+      restaurantName: cleanPrintableText(
+        restaurant?.name || qrRestaurant?.restaurantName || table.restaurantName,
+        "Restaurant"
+      ),
+      restaurantLogo: cleanPrintableText(
+        restaurant?.logo || qrRestaurant?.restaurantLogo || table.restaurantLogo
+      ),
+      restaurantTagline: cleanPrintableText(
+        restaurant?.tagline || restaurant?.description || qrRestaurant?.restaurantTagline,
+        "Scan, choose, and order from your table"
+      ),
+      tableNumber: cleanPrintableText(table.tableNumber, "N/A"),
+      qrCode: cleanPrintableText(table.qrCode),
+      qrUrl: cleanPrintableText(qrUrl),
+      qrUrlDisplay: shortDisplayUrl(qrUrl),
     };
   }, [qrModal.table, qrRestaurant, qrUrl, restaurant]);
 
@@ -215,7 +245,7 @@ const PrintQRButton = ({ qrModal, qrUrl, restaurant }) => {
           <div class="footer">
             <div class="feature">Digital Menu</div>
             <div class="feature">Instant Ordering</div>
-            <p class="url">${escapeHtml(printableData.qrUrl)}</p>
+            ${printableData.qrUrlDisplay ? `<p class="url">${escapeHtml(printableData.qrUrlDisplay)}</p>` : ""}
           </div>
         </div>
       </body>
