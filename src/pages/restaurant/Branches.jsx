@@ -880,7 +880,11 @@ const Branches = () => {
       const res = await api.post('/restaurant/branches', payload, { skipBranchHeader: true })
       const cred = res.data?.data?.credentials
       if (cred) setCredentials(cred)
-      toast.success('Branch created')
+      if (res.data?.data?.credentialsEmailSent) {
+        toast.success('Branch created. Login credentials were emailed to the owner.')
+      } else {
+        toast.success('Branch created')
+      }
       closeModal()
       await reloadBranches()
     } catch (e) {

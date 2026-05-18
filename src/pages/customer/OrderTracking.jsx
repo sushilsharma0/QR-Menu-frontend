@@ -168,7 +168,7 @@ const OrderTracking = () => {
 
     socket.on("connect", () => {
       setIsLive(true);
-      socket.emit("join:order", order.orderId);
+      socket.emit("join:order", { orderId: order.orderId, orderToken: qrToken });
     });
 
     socket.on("disconnect", () => setIsLive(false));
@@ -182,7 +182,7 @@ const OrderTracking = () => {
       socket.disconnect();
       setIsLive(false);
     };
-  }, [order?.orderId]);
+  }, [order?.orderId, qrToken]);
 
   useEffect(() => {
     if (!order?.restaurantSlug || !order?.tableQrToken) return;

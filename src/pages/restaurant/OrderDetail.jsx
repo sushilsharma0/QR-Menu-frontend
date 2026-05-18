@@ -84,6 +84,23 @@ function getOrderCustomerLabel(order) {
   return name || order?.guestId || 'Guest'
 }
 
+const escapeHtml = (value = '') =>
+  String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+
+const safeImageUrl = (value = '') => {
+  try {
+    const url = new URL(String(value || ''), window.location.origin)
+    return ['http:', 'https:', 'data:'].includes(url.protocol) ? escapeHtml(url.href) : ''
+  } catch {
+    return ''
+  }
+}
+
 const OrderDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -460,6 +477,7 @@ const OrderDetail = () => {
     const restaurantName = order?.restaurant?.name || restaurant?.name || 'Restaurant'
     const restaurantLogo = order?.restaurant?.logo || restaurant?.logo
     const restaurantAddress = restaurant?.address || 'Kathmandu, Nepal'
+    const safeLogo = safeImageUrl(restaurantLogo)
     const printWindow = window.open('', '_blank')
     printWindow.document.write(`
       <html>
@@ -481,30 +499,30 @@ const OrderDetail = () => {
         </head>
         <body>
           <div class="center">
-            ${restaurantLogo ? `<img class="logo" src="${restaurantLogo}" alt="Logo" />` : ''}
-            <div class="title">${restaurantName}</div>
-            <div class="subtitle">${restaurantAddress}</div>
+            ${safeLogo ? `<img class="logo" src="${safeLogo}" alt="Logo" />` : ''}
+            <div class="title">${escapeHtml(restaurantName)}</div>
+            <div class="subtitle">${escapeHtml(restaurantAddress)}</div>
             <div class="subtitle">PAN: 123456789</div>
             <div class="subtitle">TAX INVOICE</div>
           </div>
           <div class="divider"></div>
-          <div class="row"><span>Bill No:</span><span>${order?.orderNumber}</span></div>
-          <div class="row"><span>Date:</span><span>${billDate}</span></div>
-          <div class="row"><span>Table:</span><span>${order?.table?.tableNumber || 'N/A'}</span></div>
-          <div class="row"><span>Customer:</span><span>${getOrderCustomerLabel(order)}</span></div>
-          <div class="row"><span>Payment:</span><span>${paymentMethod}</span></div>
+          <div class="row"><span>Bill No:</span><span>${escapeHtml(order?.orderNumber)}</span></div>
+          <div class="row"><span>Date:</span><span>${escapeHtml(billDate)}</span></div>
+          <div class="row"><span>Table:</span><span>${escapeHtml(order?.table?.tableNumber || 'N/A')}</span></div>
+          <div class="row"><span>Customer:</span><span>${escapeHtml(getOrderCustomerLabel(order))}</span></div>
+          <div class="row"><span>Payment:</span><span>${escapeHtml(paymentMethod)}</span></div>
           <div class="divider"></div>
           <div class="row head"><span>Particular</span><span>Amt</span></div>
           ${order?.items?.map(item => `
             <div class="item">
-              <div>${item.name}</div>
-              <div class="row"><span>${item.quantity} x ${cur} ${Number(item.price || 0).toFixed(2)}</span><span>${cur} ${Number(item.price * item.quantity).toFixed(2)}</span></div>
+              <div>${escapeHtml(item.name)}</div>
+              <div class="row"><span>${escapeHtml(item.quantity)} x ${escapeHtml(cur)} ${Number(item.price || 0).toFixed(2)}</span><span>${escapeHtml(cur)} ${Number(item.price * item.quantity).toFixed(2)}</span></div>
             </div>
           `).join('')}
           <div class="divider"></div>
-          <div class="row"><span>Sub Total</span><span>${cur} ${subtotal.toFixed(2)}</span></div>
-          <div class="row"><span>VAT</span><span>${cur} ${vat.toFixed(2)}</span></div>
-          <div class="row total"><span>Grand Total</span><span>${cur} ${grandTotal.toFixed(2)}</span></div>
+          <div class="row"><span>Sub Total</span><span>${escapeHtml(cur)} ${subtotal.toFixed(2)}</span></div>
+          <div class="row"><span>VAT</span><span>${escapeHtml(cur)} ${vat.toFixed(2)}</span></div>
+          <div class="row total"><span>Grand Total</span><span>${escapeHtml(cur)} ${grandTotal.toFixed(2)}</span></div>
           <div class="divider"></div>
           <p class="footer">Thank you. Visit Again!</p>
         </body>
