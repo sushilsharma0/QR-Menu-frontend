@@ -2,10 +2,24 @@ export const THEME_STORAGE_KEY = 'qrmenu_theme_settings'
 
 export const FONT_OPTIONS = [
   { label: 'Inter', value: 'Inter, system-ui, sans-serif' },
+  { label: 'System UI', value: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
+  { label: 'Arial', value: 'Arial, Helvetica, sans-serif' },
+  { label: 'Helvetica', value: 'Helvetica, Arial, sans-serif' },
+  { label: 'Roboto', value: 'Roboto, Inter, system-ui, sans-serif' },
+  { label: 'Open Sans', value: '"Open Sans", Inter, system-ui, sans-serif' },
+  { label: 'Lato', value: 'Lato, Inter, system-ui, sans-serif' },
   { label: 'Poppins', value: 'Poppins, Inter, system-ui, sans-serif' },
   { label: 'DM Sans', value: '"DM Sans", Inter, system-ui, sans-serif' },
   { label: 'Montserrat', value: 'Montserrat, Inter, system-ui, sans-serif' },
+  { label: 'Nunito', value: 'Nunito, Inter, system-ui, sans-serif' },
+  { label: 'Raleway', value: 'Raleway, Inter, system-ui, sans-serif' },
+  { label: 'Ubuntu', value: 'Ubuntu, Inter, system-ui, sans-serif' },
+  { label: 'Merriweather', value: 'Merriweather, Georgia, serif' },
+  { label: 'Georgia', value: 'Georgia, "Times New Roman", serif' },
+  { label: 'Times New Roman', value: '"Times New Roman", Times, serif' },
   { label: 'Playfair Display', value: '"Playfair Display", Georgia, serif' },
+  { label: 'Courier New', value: '"Courier New", Courier, monospace' },
+  { label: 'Fira Code', value: '"Fira Code", "Courier New", monospace' },
 ]
 
 export const PREDEFINED_THEMES = [
@@ -158,7 +172,9 @@ export const getThemeById = (themeId) =>
 
 export const normalizeThemeSettings = (settings = {}) => {
   const raw = settings?.themeSettings || settings || {}
-  const activeTheme = raw.activeTheme || DEFAULT_THEME_SETTINGS.activeTheme
+  const activeTheme = PREDEFINED_THEMES.some((theme) => theme.id === raw.activeTheme)
+    ? raw.activeTheme
+    : DEFAULT_THEME_SETTINGS.activeTheme
   const mode = raw.mode || (raw.darkMode ? 'dark' : 'light')
   const fontFamily = FONT_OPTIONS.some((font) => font.value === raw.fontFamily)
     ? raw.fontFamily

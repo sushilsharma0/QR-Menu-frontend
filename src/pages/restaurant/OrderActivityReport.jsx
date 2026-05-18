@@ -47,6 +47,8 @@ import { formatters } from '../../utils/formatters'
 import { DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
 
 const CHART_COLORS = ['#8f2800', '#f59e0b', '#059669', '#2563eb', '#dc2626', '#7c3aed', '#0f766e']
+const paddedMoneyDomain = [0, (dataMax) => Math.max(1, Math.ceil(Number(dataMax || 0) * 1.2))]
+const paddedCountDomain = [0, (dataMax) => Math.max(2, Math.ceil(Number(dataMax || 0) * 1.25))]
 
 function defaultToDate() {
   return formatDateInputValue(new Date())
@@ -74,8 +76,9 @@ function titleCase(value) {
 function SalesTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
 
-  const sales = payload.find((item) => item.dataKey === 'grandTotal')?.value || 0
-  const orders = payload.find((item) => item.dataKey === 'orderCount')?.value || 0
+  const row = payload[0]?.payload || {}
+  const sales = Number(row.grandTotal || 0)
+  const orders = Number(row.orderCount || 0)
 
   return (
     <div className="rounded-2xl border border-surface-200 bg-white/95 px-4 py-3 shadow-xl backdrop-blur">
@@ -96,10 +99,30 @@ function SalesTooltip({ active, payload, label }) {
 
 function ActivityTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
+  const row = payload[0]?.payload || {}
+  const tooltipLabel = row.status || row.method || row.channel || row.name || payload[0]?.name || label
+
+  if (Object.prototype.hasOwnProperty.call(row, 'orderCount') || Object.prototype.hasOwnProperty.call(row, 'grandTotal')) {
+    return (
+      <div className="rounded-2xl border border-surface-200 bg-white/95 px-4 py-3 shadow-xl backdrop-blur">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{titleCase(tooltipLabel)}</p>
+        <div className="mt-2 space-y-1 text-sm">
+          <p className="flex items-center justify-between gap-8">
+            <span className="text-gray-500">Orders</span>
+            <span className="font-bold text-primary-700">{Number(row.orderCount || 0).toLocaleString('en-IN')}</span>
+          </p>
+          <p className="flex items-center justify-between gap-8">
+            <span className="text-gray-500">Sales</span>
+            <span className="font-bold text-primary-700">{formatRestaurantCurrency(row.grandTotal || 0)}</span>
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="rounded-2xl border border-surface-200 bg-white/95 px-4 py-3 shadow-xl backdrop-blur">
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{titleCase(label)}</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{titleCase(tooltipLabel)}</p>
       <div className="mt-2 space-y-1 text-sm">
         {payload.map((item) => {
           const countLike = ['count', 'orderCount', 'quantity'].includes(item.dataKey)
@@ -214,14 +237,21 @@ export default function OrderActivityReport() {
   const activeFilterCount = [from, to, appliedQ].filter(Boolean).length
   const detailsModel = useMemo(() => {
     const mapAmountBreakdown = (items = [], keyName = 'name') =>
-      items
-        .map((item) => ({
-          [keyName]: titleCase(item._id),
-          raw: item._id,
-          count: Number(item.count || item.orderCount || 0),
-          amount: Number(item.amount || item.grandTotal || 0),
-        }))
-        .filter((item) => item.count > 0 || item.amount > 0)
+      Array.from(
+        items.reduce((acc, item) => {
+          const label = titleCase(item._id)
+          const current = acc.get(label) || {
+            [keyName]: label,
+            raw: item._id,
+            count: 0,
+            amount: 0,
+          }
+          current.count += Number(item.count || item.orderCount || 0)
+          current.amount += Number(item.amount || item.grandTotal || 0)
+          acc.set(label, current)
+          return acc
+        }, new Map()).values(),
+      ).filter((item) => item.count > 0 || item.amount > 0)
 
     const topItemChart = (breakdowns.topItems || []).map((item) => ({
       name: item._id?.length > 18 ? `${item._id.slice(0, 18)}...` : item._id || 'Item',
@@ -520,7 +550,7 @@ export default function OrderActivityReport() {
             {hasChartData ? (
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={chartData} margin={{ top: 12, right: 10, left: 0, bottom: 0 }}>
+                  <ComposedChart data={chartData} margin={{ top: 24, right: 10, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id="activitySalesGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#8f2800" stopOpacity={0.92} />
@@ -542,25 +572,19 @@ export default function OrderActivityReport() {
                     />
                     <YAxis
                       yAxisId="sales"
+                      domain={paddedMoneyDomain}
                       axisLine={false}
                       tickLine={false}
                       tick={{ fill: '#6b7280', fontSize: 12 }}
                       tickFormatter={(value) => `${DEFAULT_CURRENCY_SYMBOL}${Math.round(Number(value || 0) / 1000)}k`}
                       width={56}
                     />
-                    <YAxis
-                      yAxisId="orders"
-                      orientation="right"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: '#6b7280', fontSize: 12 }}
-                      width={34}
-                    />
                     <Tooltip content={<SalesTooltip />} cursor={{ fill: '#fffcf1' }} />
                     <Area
-                      yAxisId="orders"
+                      yAxisId="sales"
                       type="monotone"
-                      dataKey="orderCount"
+                      dataKey="grandTotal"
+                      name="Sales trend"
                       fill="url(#activityAreaGradient)"
                       stroke="#10b981"
                       strokeWidth={3}
@@ -602,6 +626,9 @@ export default function OrderActivityReport() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-semibold text-gray-950">#{row.orderNumber}</p>
+                    <p className="mt-1 text-xs font-semibold text-gray-500">
+                      {formatters.datetime(row.createdAt)}
+                    </p>
                     <p className="mt-1 text-xs text-gray-500">
                       {(() => {
                         const name = String(row.customerName || '').trim()
@@ -635,7 +662,7 @@ export default function OrderActivityReport() {
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={detailsModel.status} dataKey="count" nameKey="status" innerRadius={58} outerRadius={92} paddingAngle={4}>
+                  <Pie data={detailsModel.status} dataKey="count" nameKey="status" innerRadius={58} outerRadius={92} paddingAngle={0} stroke="none">
                     {detailsModel.status.map((entry, index) => (
                       <Cell key={entry.status} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                     ))}
@@ -655,7 +682,7 @@ export default function OrderActivityReport() {
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={detailsModel.paymentStatus} dataKey="amount" nameKey="status" innerRadius={58} outerRadius={92} paddingAngle={4}>
+                  <Pie data={detailsModel.paymentStatus} dataKey="amount" nameKey="status" innerRadius={58} outerRadius={92} paddingAngle={0} stroke="none">
                     {detailsModel.paymentStatus.map((entry, index) => (
                       <Cell key={entry.status} fill={CHART_COLORS[(index + 1) % CHART_COLORS.length]} />
                     ))}
@@ -675,7 +702,7 @@ export default function OrderActivityReport() {
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={detailsModel.paymentMethod} dataKey="amount" nameKey="method" innerRadius={58} outerRadius={92} paddingAngle={4}>
+                  <Pie data={detailsModel.paymentMethod} dataKey="amount" nameKey="method" innerRadius={58} outerRadius={92} paddingAngle={0} stroke="none">
                     {detailsModel.paymentMethod.map((entry, index) => (
                       <Cell key={entry.method} fill={CHART_COLORS[(index + 2) % CHART_COLORS.length]} />
                     ))}
@@ -695,7 +722,7 @@ export default function OrderActivityReport() {
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={detailsModel.channel} dataKey="amount" nameKey="channel" innerRadius={58} outerRadius={92} paddingAngle={4}>
+                  <Pie data={detailsModel.channel} dataKey="amount" nameKey="channel" innerRadius={58} outerRadius={92} paddingAngle={0} stroke="none">
                     {detailsModel.channel.map((entry, index) => (
                       <Cell key={entry.channel} fill={CHART_COLORS[(index + 3) % CHART_COLORS.length]} />
                     ))}
@@ -716,22 +743,13 @@ export default function OrderActivityReport() {
           {detailsModel.hourlyChart.length > 0 ? (
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={detailsModel.hourlyChart} margin={{ top: 12, right: 10, left: 0, bottom: 0 }}>
+                <ComposedChart data={detailsModel.hourlyChart} margin={{ top: 24, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" vertical={false} />
                   <XAxis dataKey="hour" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} />
-                  <YAxis yAxisId="orders" allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} width={36} />
-                  <YAxis
-                    yAxisId="sales"
-                    orientation="right"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#6b7280', fontSize: 12 }}
-                    tickFormatter={(value) => `${DEFAULT_CURRENCY_SYMBOL}${Math.round(Number(value || 0) / 1000)}k`}
-                    width={56}
-                  />
+                  <YAxis yAxisId="orders" domain={paddedCountDomain} allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} width={36} />
                   <Tooltip content={<ActivityTooltip />} cursor={{ fill: '#fffcf1' }} />
                   <Bar yAxisId="orders" dataKey="orderCount" name="Orders" fill="#059669" radius={[10, 10, 4, 4]} barSize={32} />
-                  <Area yAxisId="sales" type="monotone" dataKey="grandTotal" name="Sales" fill="#8f280033" stroke="#8f2800" strokeWidth={3} />
+                  <Area yAxisId="orders" type="monotone" dataKey="orderCount" name="Orders trend" fill="#8f280033" stroke="#8f2800" strokeWidth={3} />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
@@ -744,22 +762,13 @@ export default function OrderActivityReport() {
           {detailsModel.tableChart.length > 0 ? (
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={detailsModel.tableChart} margin={{ top: 12, right: 10, left: 0, bottom: 0 }}>
+                <ComposedChart data={detailsModel.tableChart} margin={{ top: 24, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid stroke="#f1e8dc" strokeDasharray="4 6" vertical={false} />
                   <XAxis dataKey="table" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} />
-                  <YAxis yAxisId="orders" allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} width={36} />
-                  <YAxis
-                    yAxisId="sales"
-                    orientation="right"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#6b7280', fontSize: 12 }}
-                    tickFormatter={(value) => `${DEFAULT_CURRENCY_SYMBOL}${Math.round(Number(value || 0) / 1000)}k`}
-                    width={56}
-                  />
+                  <YAxis yAxisId="orders" domain={paddedCountDomain} allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} width={36} />
                   <Tooltip content={<ActivityTooltip />} cursor={{ fill: '#fffcf1' }} />
                   <Bar yAxisId="orders" dataKey="orderCount" name="Orders" fill="#2563eb" radius={[10, 10, 4, 4]} barSize={34} />
-                  <Area yAxisId="sales" type="monotone" dataKey="grandTotal" name="Sales" fill="#f59e0b33" stroke="#f59e0b" strokeWidth={3} />
+                  <Area yAxisId="orders" type="monotone" dataKey="orderCount" name="Orders trend" fill="#f59e0b33" stroke="#f59e0b" strokeWidth={3} />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>

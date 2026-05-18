@@ -13,19 +13,8 @@ import {
   DEFAULT_THEME_SETTINGS,
   FONT_OPTIONS,
   PREDEFINED_THEMES,
-  getEffectivePalette,
   normalizeThemeSettings,
 } from '../../theme/themePresets'
-
-const customPaletteFields = [
-  ['primary', 'Primary'],
-  ['secondary', 'Secondary'],
-  ['accent', 'Accent'],
-  ['attention', 'Attention'],
-  ['surface', 'Surface'],
-  ['background', 'Background'],
-  ['text', 'Text'],
-]
 
 function ThemePaletteCard({ theme, selected, onSelect }) {
   const colors = ['primary', 'secondary', 'accent', 'attention', 'surface']
@@ -117,6 +106,7 @@ const Settings = () => {
   const [showLogoPreview, setShowLogoPreview] = useState(false)
   const [showBackgroundPreview, setShowBackgroundPreview] = useState(false)
   const [themeDraft, setThemeDraft] = useState(normalizeThemeSettings(DEFAULT_THEME_SETTINGS))
+  const [themeSaving, setThemeSaving] = useState(false)
   const { mergeUser } = useAuth()
   const { updateTheme, applyRemoteTheme, resetTheme } = useTheme()
   const { register, handleSubmit, setValue, formState: { errors } } = useForm()
@@ -219,29 +209,51 @@ const Settings = () => {
     reader.readAsDataURL(file)
   }
 
-  const updateThemeDraft = (updates) => {
-    setThemeDraft((prev) => {
-      const next = normalizeThemeSettings({ ...prev, ...updates })
-      updateTheme(next)
-      return next
-    })
+  const persistThemeSettings = async (nextTheme) => {
+    try {
+      setThemeSaving(true)
+      const formData = new FormData()
+      formData.append('themeSettings', JSON.stringify(nextTheme))
+      const response = await api.put('/restaurant/auth/profile', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      const updatedRestaurant = response.data?.data
+      if (updatedRestaurant) {
+        mergeUser({
+          name: updatedRestaurant.name,
+          phone: updatedRestaurant.phone,
+          logo: updatedRestaurant.logo,
+          favicon: updatedRestaurant.favicon,
+          slug: updatedRestaurant.slug,
+          currency: updatedRestaurant?.settings?.currency,
+          themeSettings: updatedRestaurant?.settings?.themeSettings,
+        })
+        applyRemoteTheme(updatedRestaurant?.settings?.themeSettings)
+      }
+      toast.success('Appearance saved')
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to save appearance')
+    } finally {
+      setThemeSaving(false)
+    }
   }
 
-  const updateCustomPalette = (key, value) => {
-    updateThemeDraft({
-      activeTheme: 'custom',
-      customPalette: {
-        ...getEffectivePalette(themeDraft),
-        ...(themeDraft.customPalette || {}),
-        [key]: value,
-      },
+  const updateThemeDraft = (updates, saveInstantly = false) => {
+    const next = normalizeThemeSettings({
+      ...themeDraft,
+      ...updates,
+      ...(updates.activeTheme && updates.activeTheme !== 'custom' ? { customPalette: null } : {}),
     })
+    setThemeDraft(next)
+    updateTheme(next)
+    if (saveInstantly) persistThemeSettings(next)
   }
 
   const resetThemeDraft = () => {
     const next = normalizeThemeSettings(DEFAULT_THEME_SETTINGS)
     setThemeDraft(next)
     resetTheme()
+    persistThemeSettings(next)
   }
 
   const clearLogo = () => {
@@ -349,9 +361,9 @@ const Settings = () => {
           title="Appearance - Theme Customization"
           icon={FiImage}
           actions={
-            <Button type="button" variant="outline" size="sm" onClick={resetThemeDraft}>
+            <Button type="button" variant="outline" size="sm" onClick={resetThemeDraft} disabled={themeSaving}>
               <FiRefreshCw className="mr-2 h-4 w-4" />
-              Reset default
+              {themeSaving ? 'Saving...' : 'Reset default'}
             </Button>
           }
         >
@@ -365,7 +377,8 @@ const Settings = () => {
                 <button
                   key={value}
                   type="button"
-                  onClick={() => updateThemeDraft({ mode: value })}
+                  onClick={() => updateThemeDraft({ mode: value }, true)}
+                  disabled={themeSaving}
                   className={`flex items-center justify-between rounded-lg border px-4 py-3 text-sm font-bold transition hover:-translate-y-0.5 ${
                     themeDraft.mode === value
                       ? 'border-primary-500 bg-primary-50 text-primary-800 shadow-sm dark:bg-gray-800 dark:text-gray-100'
@@ -394,46 +407,30 @@ const Settings = () => {
                     key={theme.id}
                     theme={theme}
                     selected={themeDraft.activeTheme === theme.id}
-                    onSelect={() => updateThemeDraft({ activeTheme: theme.id })}
+                    onSelect={() => updateThemeDraft({ activeTheme: theme.id }, true)}
                   />
                 ))}
               </div>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
               <div className="rounded-lg border border-gray-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-                <div className="mb-4 flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold text-gray-900 dark:text-gray-100">Custom palette creator</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Use color pickers or hex values for custom branding.</p>
-                  </div>
-                  <Button type="button" size="sm" variant="secondary" onClick={() => updateThemeDraft({ activeTheme: 'custom' })}>
-                    Use custom
-                  </Button>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {customPaletteFields.map(([key, label]) => {
-                    const value = (themeDraft.customPalette || getEffectivePalette(themeDraft))[key] || '#111827'
-                    return (
-                      <label key={key} className="rounded-lg border border-gray-100 p-3 dark:border-gray-800">
-                        <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">{label}</span>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="color"
-                            value={value}
-                            onChange={(e) => updateCustomPalette(key, e.target.value)}
-                            className="h-10 w-12 cursor-pointer rounded border border-gray-200 bg-white p-1 dark:border-gray-700 dark:bg-gray-900"
-                          />
-                          <input
-                            value={value}
-                            onChange={(e) => updateCustomPalette(key, e.target.value)}
-                            className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-800 outline-none focus:border-primary-400 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
-                          />
-                        </div>
-                      </label>
-                    )
-                  })}
-                </div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">
+                  Font family
+                  <select
+                    value={themeDraft.fontFamily}
+                    onChange={(e) => updateThemeDraft({ fontFamily: e.target.value }, true)}
+                    disabled={themeSaving}
+                    className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary-400 disabled:cursor-not-allowed disabled:opacity-70 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                  >
+                    {FONT_OPTIONS.map((font) => (
+                      <option key={font.value} value={font.value}>{font.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <p className="mt-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                  Font and palette choices save immediately.
+                </p>
               </div>
 
               <div className="rounded-lg border border-gray-100 bg-app-card p-4 shadow-sm dark:border-gray-800">
@@ -464,18 +461,6 @@ const Settings = () => {
                   </div>
                 </div>
 
-                <label className="mt-5 block text-sm font-bold text-gray-700 dark:text-gray-300">
-                  Font family
-                  <select
-                    value={themeDraft.fontFamily}
-                    onChange={(e) => updateThemeDraft({ fontFamily: e.target.value })}
-                    className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary-400 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
-                  >
-                    {FONT_OPTIONS.map((font) => (
-                      <option key={font.value} value={font.value}>{font.label}</option>
-                    ))}
-                  </select>
-                </label>
               </div>
             </div>
 
