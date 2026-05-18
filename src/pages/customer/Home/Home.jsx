@@ -347,9 +347,12 @@ export default function Home() {
     toast.success("Session ended on this device.");
   };
 
+  const restaurantHeroFallback =
+    "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1200&q=80";
   const heroImage =
     restaurantInfo?.backgroundPhoto ||
-    "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80";
+    restaurantInfo?.brandBackgroundImage ||
+    restaurantHeroFallback;
   const hideBottomNav =
     showFeedback ||
     showOffers ||
