@@ -396,7 +396,6 @@ const Settings = () => {
 
         {isFeatureEnabled('backup') && (
         <Card
-<<<<<<< HEAD
           title="Backup & Restore"
           icon={FiDatabase}
           actions={
@@ -612,8 +611,6 @@ const Settings = () => {
         )}
 
         <Card
-=======
->>>>>>> 20120609bbb71b2e1cf0f5ffefa5d521fd754351
           title="Appearance - Theme Customization"
           icon={FiImage}
           actions={
