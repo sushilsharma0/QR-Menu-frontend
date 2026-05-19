@@ -10,6 +10,7 @@ const USER_KEY = 'user'
 const REFRESH_TOKEN_KEY = 'refreshToken'
 const SESSION_ID_KEY = 'sessionId'
 const DEVICE_ID_KEY = 'deviceId'
+const BROWSER_DEVICE_ID_KEY = 'browserDeviceId'
 const GEO_LOCATION_KEY = 'sessionGeoLocation'
 
 export function migrateLegacyLocalStorageAuth() {
@@ -64,9 +65,22 @@ export function getSessionId() {
 }
 
 export function getOrCreateDeviceId() {
-  let deviceId = sessionStorage.getItem(DEVICE_ID_KEY)
+  let deviceId = null
+  try {
+    deviceId = localStorage.getItem(BROWSER_DEVICE_ID_KEY)
+  } catch {
+    /* ignore storage restrictions */
+  }
+  deviceId = deviceId || sessionStorage.getItem(DEVICE_ID_KEY)
   if (!deviceId) {
     deviceId = crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+  }
+  try {
+    localStorage.setItem(BROWSER_DEVICE_ID_KEY, deviceId)
+  } catch {
+    /* ignore storage restrictions */
+  }
+  if (sessionStorage.getItem(DEVICE_ID_KEY) !== deviceId) {
     sessionStorage.setItem(DEVICE_ID_KEY, deviceId)
   }
   return deviceId
