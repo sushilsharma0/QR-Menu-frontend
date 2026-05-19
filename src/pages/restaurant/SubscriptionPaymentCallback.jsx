@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FiAlertTriangle, FiCheckCircle, FiClock } from 'react-icons/fi'
 import api from '../../services/api'
 import Button from '../../components/common/Button'
+import { useAuth } from '../../hooks/useAuth'
+import { getTenantSegments, restaurantPortalBase } from '../../utils/tenantPaths'
 
 const copy = {
   processing: {
@@ -27,6 +29,8 @@ const copy = {
 
 const SubscriptionPaymentCallback = ({ gateway, failed = false }) => {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { user } = useAuth()
   const [state, setState] = useState(failed ? 'failed' : 'processing')
   const [message, setMessage] = useState('')
 
@@ -56,7 +60,14 @@ const SubscriptionPaymentCallback = ({ gateway, failed = false }) => {
               },
               requestOptions,
             )
-            throw new Error('The eSewa payment was cancelled.')
+            if (!isMounted) return
+            const { slug, restaurantId } = getTenantSegments(user)
+            if (slug && restaurantId) {
+              navigate(`${restaurantPortalBase(slug, restaurantId)}/subscription`, { replace: true })
+            } else {
+              navigate('/login?role=restaurant', { replace: true })
+            }
+            return
           } else if (failed) {
             throw new Error('The gateway returned a failed or cancelled payment.')
           } else {
@@ -98,7 +109,7 @@ const SubscriptionPaymentCallback = ({ gateway, failed = false }) => {
     return () => {
       isMounted = false
     }
-  }, [failed, gateway, location.search])
+  }, [failed, gateway, location.search, navigate, user])
 
   const view = copy[state]
   const Icon = view.icon
