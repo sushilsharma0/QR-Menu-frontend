@@ -30,9 +30,9 @@ const RestaurantTrialKycBanner = () => {
         <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <FiShield className="h-5 w-5 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium">Verify your KYC to unlock features</p>
+            <p className="font-medium">KYC verification pending</p>
             <p className="mt-1 text-amber-800">
-              Menu edits, tables, staff, and order actions stay locked until platform approves your KYC.
+              Your active trial and super-admin feature permissions decide what is available. Complete KYC when ready for compliance review.
             </p>
             <Link to={`${restaurantBase}/kyc`} className="mt-2 inline-block font-medium text-amber-950 underline">
               Go to KYC
@@ -65,7 +65,7 @@ const RestaurantTrialKycBanner = () => {
                   {trialDaysLeft === 0
                     ? 'Your trial ends today.'
                     : `${trialDaysLeft} day(s) left on your trial.`}{' '}
-                  Subscribe before it ends.
+                  Verify KYC and choose a plan before it ends.
                 </p>
               </>
             )}

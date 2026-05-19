@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import toast from '@utils/toast'
 import { useAuth } from './useAuth'
 import { useSocket } from './useSocket'
+import api from '../services/api'
 
 /**
  * Applies subscription/trial access updates pushed over the restaurant socket room.
@@ -15,7 +16,7 @@ export function useSubscriptionSync() {
       return undefined
     }
 
-    const onAccessUpdated = (payload) => {
+    const applyAccessPayload = (payload, { notify = true } = {}) => {
       if (!payload || typeof payload !== 'object') return
 
       mergeUser({
@@ -29,10 +30,17 @@ export function useSubscriptionSync() {
         accessTier: payload.accessTier,
         planEndDate: payload.planEndDate,
         planFeatureFlags: payload.planFeatureFlags,
+        planLimits: payload.planLimits,
         assignedPlanName: payload.assignedPlanName,
         showTrialWelcome: payload.showTrialWelcome,
         currentPlan: payload.currentPlan || user?.currentPlan,
       })
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('restaurant:access_updated', { detail: payload }))
+      }
+
+      if (!notify) return
 
       if (payload.needsPlanUpgrade) {
         toast.error(
@@ -42,10 +50,22 @@ export function useSubscriptionSync() {
           { duration: 6000 },
         )
       } else if (payload.hasPaidPlanActive) {
-        toast.success('Your subscription is active. Features have been unlocked.', { duration: 4500 })
+        toast.success('Restaurant feature access updated.', { duration: 4500 })
       }
     }
 
+    const refreshAccess = async () => {
+      try {
+        const res = await api.get('/restaurant/auth/access', { skipErrorToast: true })
+        applyAccessPayload(res.data?.data, { notify: false })
+      } catch {
+        // Realtime refresh is best-effort; normal API guards still enforce access.
+      }
+    }
+
+    const onAccessUpdated = (payload) => applyAccessPayload(payload)
+
+    refreshAccess()
     socket.on('subscription:access_updated', onAccessUpdated)
     return () => {
       socket.off('subscription:access_updated', onAccessUpdated)

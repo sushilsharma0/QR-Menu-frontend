@@ -9,12 +9,14 @@ import {
   FiX,
 } from 'react-icons/fi'
 import { useAuth } from '../../hooks/useAuth'
+import api from '../../services/api'
 import {
   PLATFORM_NAV_SECTIONS,
   sectionContainsPath,
 } from '../../config/platformNavConfig'
 
 const NAV_OPEN_STORAGE_KEY = 'platform-nav-sections-open'
+const COUNT_REFRESH_MS = 30000
 
 function readOpenSections() {
   try {
@@ -59,8 +61,29 @@ function isPlatformNavItemActive(item, location) {
   return pathname === base || pathname.startsWith(`${base}/`)
 }
 
-function PlatformNavItem({ item, collapsed, nested = false, onClick, onTooltip, onTooltipLeave }) {
+function formatBadge(value) {
+  const count = Number(value || 0)
+  if (count <= 0) return null
+  return count > 99 ? '99+' : String(count)
+}
+
+function Badge({ value, collapsed }) {
+  const label = formatBadge(value)
+  if (!label) return null
+  return (
+    <span
+      className={`inline-flex min-w-5 items-center justify-center rounded-full bg-primary-600 px-1.5 text-[10px] font-black leading-5 text-white shadow-sm ${
+        collapsed ? 'absolute -right-1 -top-1' : 'ml-auto'
+      }`}
+    >
+      {label}
+    </span>
+  )
+}
+
+function PlatformNavItem({ item, collapsed, nested = false, badgeCounts = {}, onClick, onTooltip, onTooltipLeave }) {
   const location = useLocation()
+  const badgeValue = item.badgeKey ? badgeCounts[item.badgeKey] : 0
   const inactiveRow =
     'text-gray-600 hover:bg-surface-50 hover:text-gray-950 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100'
 
@@ -116,7 +139,9 @@ function PlatformNavItem({ item, collapsed, nested = false, onClick, onTooltip, 
           >
             <item.icon className={nested ? 'h-4 w-4' : 'h-5 w-5'} />
           </span>
-          {!collapsed && <span className="truncate text-sm">{item.label}</span>}
+          {collapsed && <Badge value={badgeValue} collapsed />}
+          {!collapsed && <span className="min-w-0 flex-1 truncate text-sm">{item.label}</span>}
+          {!collapsed && <Badge value={badgeValue} />}
         </>
         )
       }}
@@ -131,12 +156,17 @@ function NavSection({
   isOpen,
   onToggle,
   isMobile,
+  badgeCounts,
   onClose,
   onTooltip,
   onTooltipLeave,
 }) {
   const SectionIcon = section.icon
   const firstItem = section.items[0]
+  const sectionBadge = section.items.reduce(
+    (sum, item) => sum + Number(item.badgeKey ? badgeCounts[item.badgeKey] || 0 : 0),
+    0,
+  )
 
   if (collapsed && hideLabels) {
     return (
@@ -162,6 +192,7 @@ function NavSection({
         }
       >
         <SectionIcon className="h-5 w-5" />
+        <Badge value={sectionBadge} collapsed />
       </NavLink>
     )
   }
@@ -171,6 +202,7 @@ function NavSection({
       <PlatformNavItem
         item={firstItem}
         collapsed={false}
+        badgeCounts={badgeCounts}
         onClick={isMobile ? onClose : undefined}
         onTooltip={onTooltip}
         onTooltipLeave={onTooltipLeave}
@@ -193,6 +225,7 @@ function NavSection({
         <span className="flex-1 truncate text-xs font-black uppercase tracking-[0.14em]">
           {section.label}
         </span>
+        <Badge value={sectionBadge} />
         <FiChevronDown
           className={`h-4 w-4 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />
@@ -205,6 +238,7 @@ function NavSection({
               item={item}
               collapsed={false}
               nested
+              badgeCounts={badgeCounts}
               onClick={isMobile ? onClose : undefined}
               onTooltip={onTooltip}
               onTooltipLeave={onTooltipLeave}
@@ -248,6 +282,7 @@ function SidebarContent({
   user,
   onClose,
   isMobile,
+  badgeCounts,
   onTooltip,
   onTooltipLeave,
 }) {
@@ -335,6 +370,7 @@ function SidebarContent({
               isOpen={openSections[section.id] !== false}
               onToggle={() => toggleSection(section.id)}
               isMobile={isMobile}
+              badgeCounts={badgeCounts}
               onClose={onClose}
               onTooltip={onTooltip}
               onTooltipLeave={onTooltipLeave}
@@ -396,6 +432,48 @@ const PlatformSidebar = () => {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [tooltip, setTooltip] = useState(null)
+  const [badgeCounts, setBadgeCounts] = useState({
+    kycPending: 0,
+    subscriptionRequests: 0,
+    paymentReviews: 0,
+  })
+
+  useEffect(() => {
+    if (user?.role !== 'super_admin' && user?.role !== 'admin') return undefined
+
+    let cancelled = false
+    const fetchCounts = async () => {
+      try {
+        const [kycRes, requestsRes, paymentsRes] = await Promise.all([
+          api.get('/platform/kyc/stats', { skipErrorToast: true }).catch(() => null),
+          api.get('/platform/subscriptions/requests/pending', { skipErrorToast: true }).catch(() => null),
+          api.get('/platform/subscription-payments', {
+            params: { status: 'review_queue', limit: 1 },
+            skipErrorToast: true,
+          }).catch(() => null),
+        ])
+        if (cancelled) return
+        setBadgeCounts({
+          kycPending: Number(kycRes?.data?.data?.pending || 0),
+          subscriptionRequests: Array.isArray(requestsRes?.data?.data)
+            ? requestsRes.data.data.length
+            : 0,
+          paymentReviews: Number(paymentsRes?.data?.data?.pagination?.total || 0),
+        })
+      } catch {
+        // Sidebar badges are best-effort.
+      }
+    }
+
+    fetchCounts()
+    const intervalId = window.setInterval(fetchCounts, COUNT_REFRESH_MS)
+    window.addEventListener('focus', fetchCounts)
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+      window.removeEventListener('focus', fetchCounts)
+    }
+  }, [user?.role])
 
   if (user?.role !== 'super_admin' && user?.role !== 'admin') {
     return null
@@ -405,6 +483,7 @@ const PlatformSidebar = () => {
     user,
     collapsed,
     setCollapsed,
+    badgeCounts,
     onTooltip: setTooltip,
     onTooltipLeave: () => setTooltip(null),
   }

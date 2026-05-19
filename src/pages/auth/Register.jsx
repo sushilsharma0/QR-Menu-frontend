@@ -141,7 +141,7 @@ const Register = () => {
         otp,
       })
       toast.success('Email verified. Sign in to start your free trial.')
-      toast('After login, complete KYC verification to unlock menu, POS, orders, and all features.', {
+      toast('After login, your trial and super-admin feature permissions decide what is enabled. KYC and plans are available from your account.', {
         duration: 7500,
       })
       navigate('/vendor/login')

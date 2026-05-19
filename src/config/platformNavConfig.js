@@ -30,7 +30,7 @@ export const PLATFORM_NAV_SECTIONS = [
     defaultOpen: true,
     items: [
       { path: '/platform/restaurants', icon: FiUsers, label: 'Restaurants' },
-      { path: '/platform/kyc', icon: FiFileText, label: 'KYC verification' },
+      { path: '/platform/kyc', icon: FiFileText, label: 'KYC verification', badgeKey: 'kycPending' },
     ],
   },
   {
@@ -39,9 +39,9 @@ export const PLATFORM_NAV_SECTIONS = [
     icon: FiCreditCard,
     defaultOpen: false,
     items: [
-      { path: '/platform/subscriptions', icon: FiCreditCard, label: 'Subscriptions' },
+      { path: '/platform/subscriptions', icon: FiCreditCard, label: 'Subscriptions', badgeKey: 'subscriptionRequests' },
       { path: '/platform/plan-access-settings', icon: FiSliders, label: 'Trial settings' },
-      { path: '/platform/subscription-payments', icon: FiCreditCard, label: 'Payments' },
+      { path: '/platform/subscription-payments', icon: FiCreditCard, label: 'Payments', badgeKey: 'paymentReviews' },
       { path: '/platform/invoices', icon: FiClipboard, label: 'Invoices' },
       { path: '/platform/subscription-activity', icon: FiBarChart2, label: 'Activity' },
     ],

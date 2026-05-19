@@ -16,6 +16,51 @@ import { clearBranchSelection, setBranchPortalContext } from '../utils/branchSto
 
 /** Log out authenticated dashboard users after this much inactivity (visible tab) or hidden tab time */
 const SESSION_IDLE_MS = 60 * 60 * 1000 // 1 hour
+const RESTAURANT_REMINDER_PREFIX = 'qrmenu:restaurant-daily-reminder'
+
+const daysUntil = (dateValue) => {
+  if (!dateValue) return null
+  const end = new Date(dateValue)
+  if (Number.isNaN(end.getTime())) return null
+  return Math.max(0, Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+}
+
+const restaurantReminderMessage = (authUser) => {
+  if (authUser?.role !== 'restaurant') return null
+
+  if (authUser.needsPlanUpgrade) {
+    return authUser.planEndDate && !authUser.isTrialActive
+      ? 'Your subscription has expired. Renew or choose a plan to unlock paused features.'
+      : 'Your trial has ended. Choose a plan to continue using locked features.'
+  }
+
+  const trialDaysLeft = authUser.hasPaidPlanActive ? null : daysUntil(authUser.trialEndsAt)
+  if (typeof trialDaysLeft === 'number' && trialDaysLeft <= 7) {
+    const trialText =
+      trialDaysLeft === 0
+        ? 'Your trial ends today.'
+        : `Your trial ends in ${trialDaysLeft} day(s).`
+    return `${trialText} You can verify KYC and choose a plan anytime from your account.`
+  }
+
+  if (authUser.isKYCVerified !== true) {
+    return 'Reminder: verify KYC when convenient and choose a plan before your trial ends.'
+  }
+
+  return null
+}
+
+const showRestaurantDailyReminder = (authUser) => {
+  const message = restaurantReminderMessage(authUser)
+  if (!message || typeof window === 'undefined') return
+
+  const id = authUser.id || authUser._id || authUser.email || 'restaurant'
+  const today = new Date().toISOString().slice(0, 10)
+  const key = `${RESTAURANT_REMINDER_PREFIX}:${id}:${today}`
+  if (window.localStorage.getItem(key)) return
+  window.localStorage.setItem(key, '1')
+  toast(message, { duration: 8000 })
+}
 
 export const AuthContext = createContext()
 
@@ -190,19 +235,7 @@ export const AuthProvider = ({ children }) => {
       toast.success(response.data?.message || `Welcome ${authUser.name || email}!`)
 
       if (authUser.role === 'restaurant') {
-        if (authUser.isKYCVerified !== true) {
-          toast('Verify your KYC to unlock menu, POS, orders, and all sidebar features.', {
-            duration: 7500,
-          })
-        }
-        if (authUser.needsPlanUpgrade) {
-          toast.error(
-            authUser.planEndDate && !authUser.isTrialActive
-              ? 'Your subscription has expired. Renew from Subscription to unlock features.'
-              : 'Your trial has ended. Choose a plan from Subscription to continue.',
-            { duration: 6000 },
-          )
-        }
+        showRestaurantDailyReminder(authUser)
       }
       
       // Redirect based on role
@@ -324,11 +357,7 @@ export const AuthProvider = ({ children }) => {
       setUser(authUser)
 
       toast.success(response.data?.message || 'Google sign-in successful')
-      if (authUser.isKYCVerified !== true) {
-        toast('Verify your KYC to unlock menu, POS, orders, and all sidebar features.', {
-          duration: 7500,
-        })
-      }
+      showRestaurantDailyReminder(authUser)
       navigate(defaultPortalPathForUser(authUser))
       return { success: true }
     } catch (error) {
@@ -340,7 +369,7 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const mergeUser = (updates) => {
+  const mergeUser = useCallback((updates) => {
     setUser((prev) => {
       if (!prev) return prev
       const next = { ...prev, ...updates }
@@ -348,7 +377,7 @@ export const AuthProvider = ({ children }) => {
       if (t) setAuthSession(t, JSON.stringify(next))
       return next
     })
-  }
+  }, [])
 
   return (
     <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, loginBranch, loginBranchEmail, loginWithGoogle, logout, mergeUser }}>

@@ -257,7 +257,7 @@ const SubscriptionCheckout = () => {
 
             {!user?.isKYCVerified && (
               <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-                Complete KYC verification before purchasing a subscription.
+                KYC verification is required before selecting or purchasing a subscription plan.
               </div>
             )}
 

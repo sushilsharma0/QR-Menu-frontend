@@ -233,6 +233,12 @@ const Subscription = () => {
     fetchData()
   }, [authUser?.id])
 
+  useEffect(() => {
+    const onAccessUpdated = () => fetchData(true)
+    window.addEventListener('restaurant:access_updated', onAccessUpdated)
+    return () => window.removeEventListener('restaurant:access_updated', onAccessUpdated)
+  }, [authUser?.id])
+
   const fetchData = async (quiet = false) => {
     try {
       if (quiet) setRefreshing(true)
@@ -252,6 +258,7 @@ const Subscription = () => {
           planAssignmentSource: status.planAssignmentSource,
           customPlanLabel: status.customPlanLabel,
           planFeatureFlags: status.planFeatureFlags || {},
+          planLimits: status.planLimits || {},
           assignedPlanName:
             status.planAssignmentSource === 'custom'
               ? status.customPlanLabel || 'Custom plan'
@@ -271,7 +278,7 @@ const Subscription = () => {
 
   const choosePlan = (planId) => {
     if (!authUser?.isKYCVerified) {
-      toast.error('Complete KYC verification before selecting a subscription plan.')
+      toast.error('KYC verification is required before selecting a subscription plan.')
       return
     }
     const { slug, restaurantId } = getTenantSegments(authUser)
@@ -452,11 +459,10 @@ const Subscription = () => {
               />
             )}
             {!isKYCVerified && (
-              <Notice tone="blue" icon={FiShield} title="KYC verification required">
-                Subscription selection is locked until your KYC is approved. Complete KYC first, then choose a plan.
+              <Notice tone="blue" icon={FiShield} title="KYC verification required for subscriptions">
+                You can use enabled trial features, but only KYC-verified restaurants can select or purchase a subscription plan.
               </Notice>
             )}
-
             {currentPlan?.planRequestRejectionReason && (
               <Notice tone="red" title="Previous request was rejected">
                 {currentPlan.planRequestRejectionReason}
