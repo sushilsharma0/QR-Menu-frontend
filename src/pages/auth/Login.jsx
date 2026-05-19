@@ -309,7 +309,7 @@ const Login = () => {
               <GoogleSignIn onSuccess={handleGoogleSuccess} disabled={googleLoading} />
               <div className="my-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
                 <span className="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
-                or use email
+                or use email / mobile
                 <span className="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
               </div>
             </div>
@@ -330,13 +330,13 @@ const Login = () => {
             {role === 'restaurant' && (
               <>
                 <Input
-                  label={isBranchLogin ? 'Branch username' : 'Email Address'}
+                  label={isBranchLogin ? 'Branch username' : 'Email or Mobile Number'}
                   icon={FiMail}
-                  type={isBranchLogin ? 'text' : 'email'}
+                  type="text"
                   autoComplete={isBranchLogin ? 'username' : 'email'}
-                  placeholder={isBranchLogin ? 'outletname@branch.com' : 'vendor@restaurant.com'}
+                  placeholder={isBranchLogin ? 'outletname@branch.com' : 'vendor@restaurant.com or 98XXXXXXXX'}
                   {...register('email', {
-                    required: isBranchLogin ? 'Branch username is required' : 'Email is required',
+                    required: isBranchLogin ? 'Branch username is required' : 'Email or mobile number is required',
                   })}
                   error={errors.email?.message}
                 />
