@@ -256,6 +256,7 @@ const Cart = () => {
           cookingInstructions: item.cookingInstructions || "",
           customizations: item.customizations || [],
           addOns: item.addOns || [],
+          selectedVariations: item.selectedVariations || [],
         })),
       };
 
@@ -617,6 +618,13 @@ function ReviewStep({
                   <p className="text-xs font-black text-primary-700">
                     Rs. {item.price}
                   </p>
+                  {(item.selectedVariations || []).length > 0 && (
+                    <p className="mt-0.5 line-clamp-1 text-[10px] font-semibold text-gray-500">
+                      {(item.selectedVariations || [])
+                        .map((v) => `${v.groupName}: ${v.optionName}${Number(v.quantity || 1) > 1 ? ` x${v.quantity}` : ""}`)
+                        .join(" | ")}
+                    </p>
+                  )}
                   {(item.customizations || []).length > 0 && (
                     <p className="mt-0.5 line-clamp-1 text-[10px] font-semibold text-gray-500">
                       {(item.customizations || [])

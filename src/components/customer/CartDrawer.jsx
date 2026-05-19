@@ -139,6 +139,13 @@ export default function CartDrawer() {
                           <p className="mt-0.5 text-xs font-semibold text-primary-700">
                             Rs. {item.price}
                           </p>
+                          {(item.selectedVariations || []).length > 0 && (
+                            <p className="mt-0.5 truncate text-[10px] font-semibold text-gray-500">
+                              {(item.selectedVariations || [])
+                                .map((v) => `${v.groupName}: ${v.optionName}${Number(v.quantity || 1) > 1 ? ` x${v.quantity}` : ""}`)
+                                .join(" | ")}
+                            </p>
+                          )}
                           {(item.customizations || []).length > 0 && (
                             <p className="mt-0.5 truncate text-[10px] font-semibold text-gray-400">
                               {(item.customizations || [])

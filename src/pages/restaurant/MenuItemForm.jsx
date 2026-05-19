@@ -42,6 +42,7 @@ const MenuItemForm = () => {
   const [imagePreview, setImagePreview] = useState(null)
   const [selectedFile, setSelectedFile] = useState(null)
   const [dietaryTags, setDietaryTags] = useState([])
+  const [variationGroups, setVariationGroups] = useState([])
   const [nutrition, setNutrition] = useState({
     calories: '',
     protein: '',
@@ -93,6 +94,7 @@ const MenuItemForm = () => {
       setValue('taxRate', item.taxRate)
       setValue('isAvailable', item.isAvailable)
       setDietaryTags(Array.isArray(item.dietaryTags) ? item.dietaryTags : [])
+      setVariationGroups(Array.isArray(item.variationGroups) ? item.variationGroups : [])
       const n = item.nutrition || {}
       setNutrition({
         calories: n.calories ?? '',
@@ -135,6 +137,7 @@ const MenuItemForm = () => {
           .filter(([, v]) => v !== null && Number.isFinite(v) && v >= 0)
       )
       formData.append('nutrition', JSON.stringify(cleanNutrition))
+      formData.append('variationGroups', JSON.stringify(variationGroups))
 
       // Append image file if selected
       if (selectedFile) {
@@ -176,6 +179,96 @@ const MenuItemForm = () => {
   const handleRemoveImage = () => {
     setSelectedFile(null)
     setImagePreview(null)
+  }
+
+  const addVariationGroup = () => {
+    setVariationGroups((prev) => [
+      ...prev,
+      {
+        name: 'Size',
+        type: 'size',
+        selectionType: 'single',
+        isRequired: true,
+        minSelection: 1,
+        maxSelection: 1,
+        displayType: 'chips',
+        sortOrder: prev.length,
+        isActive: true,
+        options: [
+          { name: 'Regular', additionalPrice: 0, isAvailable: true, isDefault: true },
+          { name: 'Large', additionalPrice: 100, isAvailable: true },
+        ],
+      },
+    ])
+  }
+
+  const updateVariationGroup = (index, patch) => {
+    setVariationGroups((prev) => prev.map((group, i) => (i === index ? { ...group, ...patch } : group)))
+  }
+
+  const removeVariationGroup = (index) => {
+    setVariationGroups((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const moveVariationGroup = (index, direction) => {
+    setVariationGroups((prev) => {
+      const next = [...prev]
+      const target = index + direction
+      if (target < 0 || target >= next.length) return prev
+      const [row] = next.splice(index, 1)
+      next.splice(target, 0, row)
+      return next.map((group, i) => ({ ...group, sortOrder: i }))
+    })
+  }
+
+  const addVariationOption = (groupIndex) => {
+    setVariationGroups((prev) =>
+      prev.map((group, i) =>
+        i === groupIndex
+          ? {
+              ...group,
+              options: [
+                ...(group.options || []),
+                { name: 'New option', additionalPrice: 0, isAvailable: true },
+              ],
+            }
+          : group,
+      ),
+    )
+  }
+
+  const updateVariationOption = (groupIndex, optionIndex, patch) => {
+    setVariationGroups((prev) =>
+      prev.map((group, i) =>
+        i === groupIndex
+          ? {
+              ...group,
+              options: (group.options || []).map((option, j) => {
+                if (j !== optionIndex) return option
+                const next = { ...option, ...patch }
+                if (patch.isDefault && group.selectionType === 'single') {
+                  return next
+                }
+                return next
+              }).map((option, j) =>
+                patch.isDefault && group.selectionType === 'single' && j !== optionIndex
+                  ? { ...option, isDefault: false }
+                  : option,
+              ),
+            }
+          : group,
+      ),
+    )
+  }
+
+  const removeVariationOption = (groupIndex, optionIndex) => {
+    setVariationGroups((prev) =>
+      prev.map((group, i) =>
+        i === groupIndex
+          ? { ...group, options: (group.options || []).filter((_, j) => j !== optionIndex) }
+          : group,
+      ),
+    )
   }
 
 
@@ -353,6 +446,207 @@ const MenuItemForm = () => {
                 value={nutrition.fiber}
                 onChange={handleNutritionChange('fiber')}
               />
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-sm font-bold text-gray-900">Variations and add-ons</h2>
+                <p className="text-xs text-gray-500">
+                  Build dynamic sizes, portions, volumes, toppings, spice levels, and quantity add-ons.
+                </p>
+              </div>
+              <Button type="button" size="sm" onClick={addVariationGroup}>
+                Add group
+              </Button>
+            </div>
+
+            <div className="mt-4 space-y-4">
+              {variationGroups.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-gray-300 bg-white p-4 text-sm text-gray-500">
+                  No variations. Customers will order this item at the base price.
+                </div>
+              ) : (
+                variationGroups.map((group, groupIndex) => (
+                  <div key={group._id || groupIndex} className="rounded-lg border border-gray-200 bg-white p-4">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                      <Input
+                        label="Group name"
+                        value={group.name || ''}
+                        onChange={(e) => updateVariationGroup(groupIndex, { name: e.target.value })}
+                      />
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">Type</label>
+                        <select
+                          value={group.type || 'custom'}
+                          onChange={(e) => updateVariationGroup(groupIndex, { type: e.target.value })}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500"
+                        >
+                          {['size', 'portion', 'volume', 'weight', 'pieces', 'combo', 'temperature', 'flavor', 'spice', 'crust', 'preparation', 'addon', 'topping', 'custom'].map((value) => (
+                            <option key={value} value={value}>{value}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">Selection</label>
+                        <select
+                          value={group.selectionType || 'single'}
+                          onChange={(e) => {
+                            const selectionType = e.target.value
+                            updateVariationGroup(groupIndex, {
+                              selectionType,
+                              maxSelection: selectionType === 'single' ? 1 : group.maxSelection || 99,
+                              displayType: selectionType === 'multiple' ? 'checkbox' : group.displayType || 'chips',
+                            })
+                          }}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500"
+                        >
+                          <option value="single">Single</option>
+                          <option value="multiple">Multiple</option>
+                          <option value="quantity">Quantity add-on</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">Display</label>
+                        <select
+                          value={group.displayType || 'chips'}
+                          onChange={(e) => updateVariationGroup(groupIndex, { displayType: e.target.value })}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500"
+                        >
+                          {['radio', 'dropdown', 'chips', 'cards', 'image', 'checkbox', 'toggle', 'stepper'].map((value) => (
+                            <option key={value} value={value}>{value}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-5">
+                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                        <input
+                          type="checkbox"
+                          checked={group.isRequired === true}
+                          onChange={(e) => updateVariationGroup(groupIndex, { isRequired: e.target.checked, minSelection: e.target.checked ? Math.max(1, Number(group.minSelection || 1)) : 0 })}
+                        />
+                        Required
+                      </label>
+                      <Input
+                        label="Min"
+                        type="number"
+                        min="0"
+                        value={group.minSelection ?? 0}
+                        onChange={(e) => updateVariationGroup(groupIndex, { minSelection: Number(e.target.value) })}
+                      />
+                      <Input
+                        label="Max"
+                        type="number"
+                        min="1"
+                        disabled={(group.selectionType || 'single') === 'single'}
+                        value={group.maxSelection ?? 1}
+                        onChange={(e) => updateVariationGroup(groupIndex, { maxSelection: (group.selectionType || 'single') === 'single' ? 1 : Number(e.target.value) })}
+                      />
+                      <Button type="button" variant="secondary" onClick={() => moveVariationGroup(groupIndex, -1)}>
+                        Up
+                      </Button>
+                      <Button type="button" variant="secondary" onClick={() => moveVariationGroup(groupIndex, 1)}>
+                        Down
+                      </Button>
+                    </div>
+
+                    <div className="mt-4 overflow-x-auto">
+                      <table className="min-w-full text-sm">
+                        <thead>
+                          <tr className="border-b text-left text-xs uppercase text-gray-500">
+                            <th className="py-2 pr-2">Option</th>
+                            <th className="py-2 pr-2">+ Price</th>
+                            <th className="py-2 pr-2">Discount</th>
+                            <th className="py-2 pr-2">SKU</th>
+                            <th className="py-2 pr-2">Stock</th>
+                            <th className="py-2 pr-2">Default</th>
+                            <th className="py-2 pr-2">Available</th>
+                            <th className="py-2 pr-2"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(group.options || []).map((option, optionIndex) => (
+                            <tr key={option._id || optionIndex} className="border-b border-gray-100">
+                              <td className="py-2 pr-2">
+                                <input
+                                  value={option.name || ''}
+                                  onChange={(e) => updateVariationOption(groupIndex, optionIndex, { name: e.target.value })}
+                                  className="w-36 rounded border border-gray-200 px-2 py-1"
+                                />
+                              </td>
+                              <td className="py-2 pr-2">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={option.additionalPrice ?? 0}
+                                  onChange={(e) => updateVariationOption(groupIndex, optionIndex, { additionalPrice: Number(e.target.value) })}
+                                  className="w-24 rounded border border-gray-200 px-2 py-1"
+                                />
+                              </td>
+                              <td className="py-2 pr-2">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={option.discountedPrice ?? ''}
+                                  onChange={(e) => updateVariationOption(groupIndex, optionIndex, { discountedPrice: e.target.value === '' ? null : Number(e.target.value) })}
+                                  className="w-24 rounded border border-gray-200 px-2 py-1"
+                                />
+                              </td>
+                              <td className="py-2 pr-2">
+                                <input
+                                  value={option.sku || ''}
+                                  onChange={(e) => updateVariationOption(groupIndex, optionIndex, { sku: e.target.value })}
+                                  className="w-28 rounded border border-gray-200 px-2 py-1"
+                                />
+                              </td>
+                              <td className="py-2 pr-2">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={option.stockQuantity ?? ''}
+                                  onChange={(e) => updateVariationOption(groupIndex, optionIndex, { stockQuantity: e.target.value === '' ? null : Number(e.target.value), trackInventory: e.target.value !== '' })}
+                                  className="w-24 rounded border border-gray-200 px-2 py-1"
+                                />
+                              </td>
+                              <td className="py-2 pr-2 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={option.isDefault === true}
+                                  onChange={(e) => updateVariationOption(groupIndex, optionIndex, { isDefault: e.target.checked })}
+                                />
+                              </td>
+                              <td className="py-2 pr-2 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={option.isAvailable !== false}
+                                  onChange={(e) => updateVariationOption(groupIndex, optionIndex, { isAvailable: e.target.checked })}
+                                />
+                              </td>
+                              <td className="py-2 pr-2">
+                                <button type="button" onClick={() => removeVariationOption(groupIndex, optionIndex)} className="text-xs font-bold text-red-600">
+                                  Remove
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button type="button" variant="secondary" onClick={() => addVariationOption(groupIndex)}>
+                        Add option
+                      </Button>
+                      <Button type="button" variant="danger" onClick={() => removeVariationGroup(groupIndex)}>
+                        Remove group
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 

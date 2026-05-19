@@ -49,6 +49,8 @@ const mapServerCart = (cart) => {
     cookingInstructions: item.cookingInstructions || '',
     customizations: Array.isArray(item.customizations) ? item.customizations : [],
     addOns: Array.isArray(item.addOns) ? item.addOns : [],
+    selectedVariations: Array.isArray(item.selectedVariations) ? item.selectedVariations : [],
+    priceSnapshot: item.priceSnapshot || null,
   }))
 }
 
@@ -154,6 +156,7 @@ export const CustomerCartProvider = ({ children }) => {
         cookingInstructions = '',
         customizations = [],
         addOns = [],
+        selectedVariations = [],
         openDrawer = false,
       } = options
 
@@ -167,6 +170,7 @@ export const CustomerCartProvider = ({ children }) => {
         c: customizations || [],
         k: String(cookingInstructions || ''),
         a: addOns || [],
+        v: selectedVariations || [],
       })
       if (pendingAddKeysRef.current.has(addKey)) return null
       pendingAddKeysRef.current.add(addKey)
@@ -174,6 +178,7 @@ export const CustomerCartProvider = ({ children }) => {
       const optimisticId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
       const hasCustomization =
         (customizations && customizations.length > 0) ||
+        (selectedVariations && selectedVariations.length > 0) ||
         (addOns && addOns.length > 0) ||
         Boolean(cookingInstructions)
 
@@ -203,6 +208,7 @@ export const CustomerCartProvider = ({ children }) => {
             cookingInstructions,
             customizations,
             addOns,
+            selectedVariations,
             note: '',
           },
         ]
@@ -223,6 +229,7 @@ export const CustomerCartProvider = ({ children }) => {
           cookingInstructions,
           customizations,
           addOns,
+          selectedVariations,
         })
         const next = mapServerCart(cart)
         setItems(next)
