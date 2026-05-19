@@ -103,8 +103,16 @@ const Register = () => {
   const onSubmit = async (data) => {
     try {
       setLoading(true)
-      const response = await api.post('/restaurant/auth/register', data)
+      const response = await api.post('/restaurant/auth/register', {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        password: data.password,
+        address: data.address,
+        previousEmail: pendingEmail || undefined,
+      })
       setPendingEmail(response.data?.data?.email || data.email)
+      setOtpDigits(Array(6).fill(''))
       setStep('verify')
       toast.success(response.data?.message || 'Verification code sent to your email')
       toast('Enter the code from your email to activate the vendor account.', {
@@ -325,6 +333,7 @@ const Register = () => {
             <form onSubmit={onVerify} className="space-y-5">
               <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
                 We sent a 6-digit verification code to <span className="font-semibold">{pendingEmail}</span>.
+                Wrong email? Use <span className="font-semibold">Edit details</span> to update your information and resend the code.
               </div>
 
               <div>
@@ -363,7 +372,10 @@ const Register = () => {
               <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
                 <button
                   type="button"
-                  onClick={() => setStep('details')}
+                  onClick={() => {
+                    setOtpDigits(Array(6).fill(''))
+                    setStep('details')
+                  }}
                   className="font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
                 >
                   Edit details

@@ -25,6 +25,7 @@ import {
   formatRestaurantCurrency,
   formatRestaurantDateTime,
 } from '../../components/restaurant/RestaurantUI'
+import PlanFeaturesIncluded from '../../components/restaurant/PlanFeaturesIncluded'
 
 const FILE_MAX_BYTES = 1 * 1024 * 1024
 
@@ -440,6 +441,16 @@ const Subscription = () => {
           </motion.div>
         ) : (
           <motion.div key="plans" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="space-y-6">
+            {currentPlan?.planFeatureFlags && (
+              <PlanFeaturesIncluded
+                featureFlags={currentPlan.planFeatureFlags}
+                planName={
+                  currentPlan?.planAssignmentSource === 'custom'
+                    ? currentPlan?.customPlanLabel || 'Custom plan'
+                    : currentPlan?.currentPlan?.name || 'Your plan'
+                }
+              />
+            )}
             {!isKYCVerified && (
               <Notice tone="blue" icon={FiShield} title="KYC verification required">
                 Subscription selection is locked until your KYC is approved. Complete KYC first, then choose a plan.

@@ -16,27 +16,51 @@ import {
 import { getApiBaseUrl } from '../utils/runtimeConfig'
 import { getSelectedBranchId } from '../utils/branchStorage'
 
+import { PLAN_FEATURE_LABELS } from '../constants/planFeatureMap'
+
 const API_URL = getApiBaseUrl()
-const FEATURE_LABELS = {
-  menu: 'Menu & categories',
-  orders: 'Order management',
-  customerOrders: 'QR / customer orders',
-  tables: 'Tables & QR codes',
-  employees: 'Employees',
-  promotions: 'Promotions',
-  branches: 'Branch management',
-  cashier: 'Cashier & payments',
-  analytics: 'Dashboard analytics',
-  billing: 'Subscription billing',
-  activityLogs: 'Activity logs',
-  supportTickets: 'Support tickets',
-  accountSettings: 'Account settings',
-}
+const FEATURE_LABELS = PLAN_FEATURE_LABELS
 
 const api = axios.create({
   baseURL: API_URL,
   timeout: 30000,
 })
+
+/** One in-flight refresh so parallel 401s (e.g. inventory page) do not rotate the refresh token multiple times. */
+let restaurantRefreshPromise = null
+
+async function refreshRestaurantAccessToken() {
+  const refreshToken = getRefreshToken()
+  const sessionId = getSessionId()
+  if (!refreshToken || !sessionId) {
+    throw new Error('Missing refresh session')
+  }
+
+  const refreshResponse = await api.post(
+    '/restaurant/auth/refresh',
+    { refreshToken, sessionId },
+    { skipErrorToast: true },
+  )
+  const data = refreshResponse.data?.data || {}
+  const currentUserRaw = getAuthUserRaw()
+  const currentUser = currentUserRaw ? JSON.parse(currentUserRaw) : null
+  const nextUser = data.user ? { ...data.user, scope: 'restaurant' } : currentUser
+  setAuthSession(data.token, nextUser ? JSON.stringify(nextUser) : currentUserRaw)
+  setRestaurantSessionSecrets({
+    refreshToken: data.refreshToken,
+    sessionId: data.session?.id || sessionId,
+  })
+  return data.token
+}
+
+function refreshRestaurantAccessTokenOnce() {
+  if (!restaurantRefreshPromise) {
+    restaurantRefreshPromise = refreshRestaurantAccessToken().finally(() => {
+      restaurantRefreshPromise = null
+    })
+  }
+  return restaurantRefreshPromise
+}
 
 // Request interceptor
 api.interceptors.request.use(
@@ -93,20 +117,8 @@ api.interceptors.response.use(
     if (canRefreshRestaurantSession) {
       try {
         error.config._retry = true
-        const refreshResponse = await api.post('/restaurant/auth/refresh', {
-          refreshToken: getRefreshToken(),
-          sessionId: getSessionId(),
-        }, { skipErrorToast: true })
-        const data = refreshResponse.data?.data || {}
-        const currentUserRaw = getAuthUserRaw()
-        const currentUser = currentUserRaw ? JSON.parse(currentUserRaw) : null
-        const nextUser = data.user ? { ...data.user, scope: 'restaurant' } : currentUser
-        setAuthSession(data.token, nextUser ? JSON.stringify(nextUser) : currentUserRaw)
-        setRestaurantSessionSecrets({
-          refreshToken: data.refreshToken,
-          sessionId: data.session?.id || getSessionId(),
-        })
-        error.config.headers.Authorization = `Bearer ${data.token}`
+        const newToken = await refreshRestaurantAccessTokenOnce()
+        error.config.headers.Authorization = `Bearer ${newToken}`
         return api(error.config)
       } catch {
         // Fall through to normal logout handling.
@@ -155,8 +167,11 @@ api.interceptors.response.use(
       return Promise.reject(error)
     }
     if (status === 403 && errorCode === 'TRIAL_OR_PLAN_EXPIRED') {
-      // Routing UX is handled in RestaurantLayout (correct /restaurant/:slug/:id/... paths).
-      // Avoid redirecting to invalid /restaurant/subscription and avoid toast spam on data fetches.
+      const method = String(error.config?.method || 'GET').toUpperCase()
+      if (method !== 'GET' && method !== 'HEAD' && !shouldSkipToast) {
+        toast.error(message || 'Your trial or plan has expired. Renew your subscription to make changes.')
+        error.__toastShown = true
+      }
       return Promise.reject(error)
     }
     if (status === 403 && errorCode === 'KYC_REQUIRED') {
@@ -170,7 +185,7 @@ api.interceptors.response.use(
       if (!shouldSkipToast) {
         const featureKey = error.response?.data?.errors?.feature
         const featureLabel = FEATURE_LABELS[featureKey] || 'This feature'
-        toast.error(`${featureLabel} is not included in your subscription. Contact super admin.`)
+        toast.error(`${featureLabel} is not included in your subscription plan.`)
         error.__toastShown = true
       }
       return Promise.reject(error)

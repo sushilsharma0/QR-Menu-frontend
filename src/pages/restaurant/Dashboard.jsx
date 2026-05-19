@@ -208,8 +208,6 @@ function SectionShell({ title, eyebrow, icon: Icon, children, actions, className
 const Dashboard = () => {
   const { user } = useAuth();
   const { selectedBranchId, loading: branchesLoading } = useBranch();
-  const billingLocked =
-    user?.role === "restaurant" && user?.scope !== "employee" && user?.needsPlanUpgrade === true;
   const [stats, setStats] = useState(null);
   const [salesData, setSalesData] = useState([]);
   const [popularItems, setPopularItems] = useState([]);
@@ -221,7 +219,7 @@ const Dashboard = () => {
   useOrderAlerts({
     role: "restaurant",
     onRefresh: () => {
-      if (!billingLocked) fetchDashboardData(true);
+      fetchDashboardData(true);
     },
   });
 
@@ -265,17 +263,13 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    if (billingLocked) {
-      setLoading(false);
-      return;
-    }
     if (branchesLoading) return;
     fetchRestaurantProfile();
     fetchDashboardData();
-  }, [billingLocked, branchesLoading, selectedBranchId]);
+  }, [branchesLoading, selectedBranchId]);
 
   useEffect(() => {
-    if (billingLocked || !socket) return undefined;
+    if (!socket) return undefined;
 
     const handleOrderUpdate = (order) => {
       toast(`Order #${order.orderNumber} moved to ${order.status}`);
@@ -304,7 +298,7 @@ const Dashboard = () => {
       socket.off("payment_updated", handlePaymentUpdate);
       socket.off("guest_table_request", handleGuestTableRequest);
     };
-  }, [socket, billingLocked]);
+  }, [socket]);
 
   const dashboardModel = useMemo(() => {
     const activeOrders = stats?.activeOrders || {};
@@ -395,8 +389,6 @@ const Dashboard = () => {
       weekTrend: formatPctTrend(stats?.overview?.weekVsPrevWeekPercent),
     };
   }, [popularItems, salesData, stats]);
-
-  if (billingLocked) return null;
 
   if (loading) return <RestaurantPageLoader />;
 

@@ -33,6 +33,7 @@ const CreatePlan = () => {
   const [loading, setLoading] = useState(false)
   const [billing, setBilling] = useState(null)
   const [featureOptions, setFeatureOptions] = useState([])
+  const [featureGroups, setFeatureGroups] = useState([])
   const [selectedFeatureFlags, setSelectedFeatureFlags] = useState({})
   const [limitState, setLimitState] = useState({
     maxTables: { selectValue: '0', customValue: '' },
@@ -53,7 +54,9 @@ const CreatePlan = () => {
     api.get('/platform/subscriptions/plan-feature-options')
       .then((res) => {
         const options = res.data?.data?.features || []
+        const groups = res.data?.data?.groups || []
         setFeatureOptions(options)
+        setFeatureGroups(groups)
         setSelectedFeatureFlags((prev) => {
           const next = {}
           options.forEach((opt) => {
@@ -309,7 +312,7 @@ const CreatePlan = () => {
               ))}
             </div>
             <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              These toggles decide which restaurant modules are included in this subscription plan.
+              Unchecked features are hidden in the restaurant sidebar and blocked on the API.
             </p>
           </div>
 
