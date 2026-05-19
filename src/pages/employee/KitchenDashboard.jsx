@@ -258,6 +258,18 @@ const KitchenDashboard = () => {
                     {order.items.map((item, idx) => (
                       <div key={idx} className="text-sm text-gray-700 dark:text-gray-300">
                         <span className="font-semibold">{item.quantity}x</span> {item.name}
+                        {(item.selectedVariations || []).length > 0 && (
+                          <div className="ml-5 mt-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                            {(item.selectedVariations || [])
+                              .map((v) => `${v.groupName}: ${v.optionName}${Number(v.quantity || 1) > 1 ? ` x${v.quantity}` : ''}`)
+                              .join(' | ')}
+                          </div>
+                        )}
+                        {item.cookingInstructions ? (
+                          <div className="ml-5 mt-1 rounded bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
+                            {item.cookingInstructions}
+                          </div>
+                        ) : null}
                       </div>
                     ))}
                   </div>

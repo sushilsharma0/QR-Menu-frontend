@@ -121,7 +121,10 @@ const CustomerBill = () => {
     const rows = (order.items || [])
       .map((item) => {
         const line = Number(item.subtotal || Number(item.price || 0) * Number(item.quantity || 0));
-        return `<tr><td>${escapeHtml(item.name)}</td><td>${item.quantity}</td><td>${formatMoney(line)}</td></tr>`;
+        const variations = (item.selectedVariations || [])
+          .map((v) => `${v.groupName}: ${v.optionName}${Number(v.quantity || 1) > 1 ? ` x${v.quantity}` : ""}`)
+          .join(", ");
+        return `<tr><td>${escapeHtml(item.name)}${variations ? `<br/><small>${escapeHtml(variations)}</small>` : ""}</td><td>${item.quantity}</td><td>${formatMoney(line)}</td></tr>`;
       })
       .join("");
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Bill #${order.orderNumber}</title><style>${styles}</style></head><body>
@@ -315,6 +318,13 @@ const CustomerBill = () => {
                             <p className="mt-0.5 text-xs font-semibold text-gray-400">
                               {formatMoney(item.price)} each
                             </p>
+                            {(item.selectedVariations || []).length > 0 && (
+                              <p className="mt-1 text-[11px] font-semibold text-gray-500">
+                                {(item.selectedVariations || [])
+                                  .map((v) => `${v.groupName}: ${v.optionName}${Number(v.quantity || 1) > 1 ? ` x${v.quantity}` : ""}`)
+                                  .join(" | ")}
+                              </p>
+                            )}
                           </div>
                           <p className="text-center font-bold text-gray-700">{item.quantity}</p>
                           <p className="text-right font-black text-gray-900">

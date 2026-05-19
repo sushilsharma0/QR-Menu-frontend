@@ -773,6 +773,16 @@ const OrderDetail = () => {
                     <div>
                       <p className="font-bold text-gray-950">{item.name}</p>
                       <p className="text-sm text-gray-500">{formatMoney(item.price)} each</p>
+                      {(item.selectedVariations || []).length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {(item.selectedVariations || []).map((variation, vIdx) => (
+                            <span key={`${variation.optionId || variation.optionName}-${vIdx}`} className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-bold text-primary-700">
+                              {variation.groupName}: {variation.optionName}
+                              {Number(variation.quantity || 1) > 1 ? ` x${variation.quantity}` : ''}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                       {item.specialInstructions && (
                         <p className="mt-2 rounded-lg bg-surface-50 px-3 py-2 text-sm text-gray-600">Note: {item.specialInstructions}</p>
                       )}

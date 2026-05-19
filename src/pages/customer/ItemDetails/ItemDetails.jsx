@@ -28,6 +28,7 @@ const ItemDetails = () => {
 
   const [quantity, setQuantity] = useState(1);
   const [selections, setSelections] = useState({});
+  const [variationSelections, setVariationSelections] = useState({});
   const [cookingInstructions, setCookingInstructions] = useState("");
   const [isFavorite, setIsFavorite] = useState(false);
   const [showMore, setShowMore] = useState(false);
@@ -63,6 +64,21 @@ const ItemDetails = () => {
     });
     setSelections(init);
   }, [item._id]);
+
+  useEffect(() => {
+    const groups = Array.isArray(item?.variationGroups) ? item.variationGroups.filter((g) => g?.isActive !== false) : [];
+    const init = {};
+    groups.forEach((group) => {
+      const defaults = (group.options || []).filter((option) => option.isAvailable !== false && option.isDefault);
+      if (group.selectionType === "multiple" || group.selectionType === "quantity") {
+        init[group._id] = defaults.map((option) => ({ optionId: option._id, quantity: Math.max(1, Number(option.minQuantity || 1)) }));
+      } else {
+        const first = defaults[0] || (group.isRequired ? (group.options || []).find((option) => option.isAvailable !== false) : null);
+        init[group._id] = first ? [{ optionId: first._id, quantity: 1 }] : [];
+      }
+    });
+    setVariationSelections(init);
+  }, [item._id, item?.variationGroups]);
 
   const fetchItemDetails = async () => {
     try {
@@ -118,7 +134,102 @@ const ItemDetails = () => {
     return [{ label: "Non-Veg", border: "border-red-500", fill: "bg-red-500", text: "text-red-600" }];
   }, [item?.dietaryTags, item?.isVegetarian]);
 
-  const lineTotal = () => Number(item.price || 0) * quantity;
+  const activeVariationGroups = useMemo(
+    () => (Array.isArray(item?.variationGroups) ? item.variationGroups.filter((g) => g?.isActive !== false) : []),
+    [item?.variationGroups],
+  );
+
+  const selectedVariationPayload = useMemo(
+    () =>
+      Object.entries(variationSelections).flatMap(([groupId, rows]) =>
+        (Array.isArray(rows) ? rows : []).map((row) => ({
+          groupId,
+          optionId: row.optionId,
+          quantity: Math.max(1, Number(row.quantity || 1)),
+        })),
+      ),
+    [variationSelections],
+  );
+
+  const selectedVariationSnapshots = useMemo(() => {
+    const out = [];
+    activeVariationGroups.forEach((group) => {
+      const rows = variationSelections[group._id] || [];
+      rows.forEach((row) => {
+        const option = (group.options || []).find((opt) => String(opt._id) === String(row.optionId));
+        if (!option) return;
+        const unitPrice = Number(option.discountedPrice ?? option.additionalPrice ?? 0);
+        const qty = Math.max(1, Number(row.quantity || 1));
+        out.push({
+          groupId: group._id,
+          groupName: group.name,
+          groupType: group.type,
+          selectionType: group.selectionType,
+          optionId: option._id,
+          optionName: option.name,
+          sku: option.sku || "",
+          quantity: qty,
+          unitPrice,
+          totalPrice: unitPrice * qty,
+          image: option.image || "",
+          isAddOn: ["addon", "topping"].includes(group.type) || group.selectionType !== "single",
+        });
+      });
+    });
+    return out;
+  }, [activeVariationGroups, variationSelections]);
+
+  const variationValidation = useMemo(() => {
+    const errors = [];
+    activeVariationGroups.forEach((group) => {
+      const rows = variationSelections[group._id] || [];
+      const min = Number(group.minSelection ?? (group.isRequired ? 1 : 0));
+      const max = Number(group.maxSelection || (group.selectionType === "single" ? 1 : 999));
+      if (group.isRequired && rows.length === 0) errors.push(`${group.name} is required`);
+      if (rows.length < min) errors.push(`${group.name} needs at least ${min}`);
+      if (group.selectionType === "single" && rows.length > 1) errors.push(`${group.name} allows one option`);
+      if (max > 0 && rows.length > max) errors.push(`${group.name} allows at most ${max}`);
+      rows.forEach((row) => {
+        const option = (group.options || []).find((opt) => String(opt._id) === String(row.optionId));
+        const qty = Math.max(1, Number(row.quantity || 1));
+        if (!option || option.isAvailable === false) errors.push(`${group.name} has an unavailable option`);
+        if (option?.trackInventory && option.stockQuantity != null && Number(option.stockQuantity) < qty) {
+          errors.push(`${option.name} is out of stock`);
+        }
+      });
+    });
+    return errors;
+  }, [activeVariationGroups, variationSelections]);
+
+  const liveUnitPrice = useMemo(
+    () => Number(item.price || 0) + selectedVariationSnapshots.reduce((sum, row) => sum + Number(row.totalPrice || 0), 0),
+    [item.price, selectedVariationSnapshots],
+  );
+
+  const lineTotal = () => liveUnitPrice * quantity;
+
+  const setSingleVariation = (groupId, optionId) => {
+    setVariationSelections((prev) => ({ ...prev, [groupId]: [{ optionId, quantity: 1 }] }));
+  };
+
+  const toggleMultiVariation = (group, optionId) => {
+    setVariationSelections((prev) => {
+      const rows = prev[group._id] || [];
+      const exists = rows.some((row) => String(row.optionId) === String(optionId));
+      const nextRows = exists
+        ? rows.filter((row) => String(row.optionId) !== String(optionId))
+        : [...rows, { optionId, quantity: 1 }].slice(0, Number(group.maxSelection || 999));
+      return { ...prev, [group._id]: nextRows };
+    });
+  };
+
+  const setVariationQuantity = (group, option, nextQuantity) => {
+    const qty = Math.max(0, Math.min(Number(option.maxQuantity || 99), Number(nextQuantity || 0)));
+    setVariationSelections((prev) => {
+      const rows = (prev[group._id] || []).filter((row) => String(row.optionId) !== String(option._id));
+      return { ...prev, [group._id]: qty > 0 ? [...rows, { optionId: option._id, quantity: qty }] : rows };
+    });
+  };
 
   const handleShare = async () => {
     const url = typeof window !== "undefined" ? window.location.href : "";
@@ -156,11 +267,17 @@ const ItemDetails = () => {
         .filter((c) => /add|extra|topping/i.test(c.name))
         .map((c) => c.value);
 
-      const result = await addItem(item, {
+      if (variationValidation.length > 0) {
+        error(variationValidation[0]);
+        return;
+      }
+
+      const result = await addItem({ ...item, price: liveUnitPrice }, {
         quantity,
         cookingInstructions: cookingInstructions.slice(0, 500),
         customizations,
         addOns: addOnLabels,
+        selectedVariations: selectedVariationPayload,
         // Pop the bottom-sheet cart drawer right after adding so the
         // customer can see what's in their cart and decide whether to
         // continue browsing or check out. The previous flow auto-fired
@@ -293,7 +410,7 @@ const ItemDetails = () => {
 
           <div className="text-right">
             <p className="text-3xl font-bold text-orange-600">
-              Rs. {item.price}
+              Rs. {liveUnitPrice}
             </p>
 
             {item.originalPrice && (
@@ -392,6 +509,96 @@ const ItemDetails = () => {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {activeVariationGroups.length > 0 && (
+          <div className="mt-8 space-y-5">
+            {activeVariationGroups.map((group) => {
+              const selectedRows = variationSelections[group._id] || [];
+              const display = group.displayType || (group.selectionType === "multiple" ? "checkbox" : "chips");
+              return (
+                <div key={group._id} className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-black text-gray-900">{group.name}</p>
+                      <p className="text-[11px] font-bold text-gray-400">
+                        {group.isRequired ? "Required" : "Optional"}
+                        {group.maxSelection > 1 ? ` | choose up to ${group.maxSelection}` : ""}
+                      </p>
+                    </div>
+                  </div>
+
+                  {display === "dropdown" ? (
+                    <select
+                      value={selectedRows[0]?.optionId || ""}
+                      onChange={(e) => setSingleVariation(group._id, e.target.value)}
+                      className="w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-orange-300"
+                    >
+                      {!group.isRequired && <option value="">No selection</option>}
+                      {(group.options || []).map((option) => (
+                        <option key={option._id} value={option._id} disabled={option.isAvailable === false || (option.trackInventory && Number(option.stockQuantity || 0) <= 0)}>
+                          {option.name} {Number(option.additionalPrice || 0) > 0 ? `(+Rs. ${option.additionalPrice})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className={display === "cards" || display === "image" ? "grid grid-cols-2 gap-2" : "flex flex-wrap gap-2"}>
+                      {(group.options || []).map((option) => {
+                        const selected = selectedRows.some((row) => String(row.optionId) === String(option._id));
+                        const row = selectedRows.find((r) => String(r.optionId) === String(option._id));
+                        const outOfStock = option.trackInventory && Number(option.stockQuantity || 0) <= 0;
+                        const unavailable = option.isAvailable === false || outOfStock;
+                        const price = Number(option.discountedPrice ?? option.additionalPrice ?? 0);
+                        if (group.selectionType === "quantity" || display === "stepper") {
+                          const qty = Number(row?.quantity || 0);
+                          return (
+                            <div key={option._id} className={`flex items-center justify-between gap-3 rounded-xl border bg-white p-3 ${qty > 0 ? "border-orange-400" : "border-gray-200"} ${unavailable ? "opacity-50" : ""}`}>
+                              <div className="min-w-0">
+                                <p className="text-xs font-black text-gray-800">{option.name}</p>
+                                <p className="text-[10px] font-bold text-gray-400">
+                                  {price > 0 ? `+Rs. ${price}` : "Included"}{outOfStock ? " | out of stock" : ""}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button type="button" disabled={unavailable || qty <= 0} onClick={() => setVariationQuantity(group, option, qty - 1)} className="h-8 w-8 rounded-lg bg-gray-100 font-black">-</button>
+                                <span className="w-5 text-center text-sm font-black">{qty}</span>
+                                <button type="button" disabled={unavailable} onClick={() => setVariationQuantity(group, option, qty + 1)} className="h-8 w-8 rounded-lg bg-orange-600 font-black text-white">+</button>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return (
+                          <button
+                            type="button"
+                            key={option._id}
+                            disabled={unavailable}
+                            onClick={() =>
+                              group.selectionType === "multiple"
+                                ? toggleMultiVariation(group, option._id)
+                                : setSingleVariation(group._id, option._id)
+                            }
+                            className={`${display === "cards" || display === "image" ? "min-h-[86px] text-left" : ""} rounded-xl border px-3 py-2 text-xs font-bold transition ${
+                              selected
+                                ? "border-orange-500 bg-orange-50 text-orange-700"
+                                : "border-gray-200 bg-white text-gray-700"
+                            } ${unavailable ? "cursor-not-allowed opacity-50" : ""}`}
+                          >
+                            {display === "image" && option.image ? (
+                              <img src={option.image} alt={option.name} className="mb-2 h-16 w-full rounded-lg object-cover" />
+                            ) : null}
+                            <span className="block">{option.name}</span>
+                            <span className="mt-0.5 block text-[10px] text-gray-400">
+                              {price > 0 ? `+Rs. ${price}` : "Included"}{outOfStock ? " | out of stock" : ""}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 

@@ -45,6 +45,7 @@ export function featureKeyForSegment(segment) {
   if (root === 'branches') return 'branches'
   if (root === 'tickets') return 'supportTickets'
   if (root === 'logs') return 'activityLogs'
+  if (root === 'backup-recovery') return 'backup'
   if (root === 'settings' || root === 'public-profile' || root === 'profile') return 'accountSettings'
   if (seg === 'finance/inventory') return 'inventory'
   if (seg === 'finance/invoices') return 'billing'

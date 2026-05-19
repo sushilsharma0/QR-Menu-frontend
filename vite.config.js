@@ -6,6 +6,7 @@ import path from 'path'
 const apiTarget = 'http://127.0.0.1:5000'
 
 export default defineConfig({
+  root: __dirname,
   plugins: [
     react(),
     VitePWA({
@@ -55,6 +56,13 @@ export default defineConfig({
       '@context': path.resolve(__dirname, './src/context'),
       '@utils': path.resolve(__dirname, './src/utils'),
       '@assets': path.resolve(__dirname, './src/assets'),
+    },
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+      },
     },
   },
   server: {

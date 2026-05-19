@@ -274,6 +274,7 @@ export const addItemToGuestCart = async ({
   cookingInstructions = '',
   customizations = [],
   addOns = [],
+  selectedVariations = [],
 }) => {
   const response = await api.post(`/customer/cart/${guestId}/items`, {
     ...withGuestSessionBody(qrToken, {
@@ -284,6 +285,7 @@ export const addItemToGuestCart = async ({
       cookingInstructions,
       customizations,
       addOns,
+      selectedVariations,
     }),
   })
   const cart = response?.data?.data || { items: [] }
