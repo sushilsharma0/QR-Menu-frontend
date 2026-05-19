@@ -95,7 +95,7 @@ const SubscriptionCheckout = () => {
       payments.find(
         (payment) =>
           payment.planId?._id === planId &&
-          ['pending', 'paid', 'pending_verification'].includes(payment.status),
+          ['paid', 'pending_verification'].includes(payment.status),
       ),
     [payments, planId],
   )
@@ -113,7 +113,9 @@ const SubscriptionCheckout = () => {
   )
 
   const handlePaymentStarted = (payment) => {
-    setPayments((prev) => [payment, ...prev])
+    if (payment && ['paid', 'pending_verification'].includes(payment.status)) {
+      setPayments((prev) => [payment, ...prev])
+    }
     toast.success('Payment started. Complete checkout in the gateway page.')
   }
 
