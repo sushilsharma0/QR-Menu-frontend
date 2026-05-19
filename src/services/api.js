@@ -199,6 +199,19 @@ api.interceptors.response.use(
       return Promise.reject(error)
     }
 
+    if (status === 423 && !shouldSkipToast && !isLoginRequest) {
+      const isPlatformRoute = window.location.pathname.startsWith('/platform')
+      if (isPlatformRoute) {
+        toast.error(
+          message ||
+            'A security lock is active on this network. Unlock the restaurant account from Security ops, or wait for the lock to expire.',
+          { duration: 8000 },
+        )
+        error.__toastShown = true
+      }
+      return Promise.reject(error)
+    }
+
     return Promise.reject(error)
   }
 )

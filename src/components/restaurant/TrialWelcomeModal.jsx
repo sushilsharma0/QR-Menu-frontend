@@ -41,7 +41,7 @@ export default function TrialWelcomeModal() {
   const days = user?.trialDaysLeft ?? user?.trialDays ?? 14
 
   return (
-    <motionlessOverlay>
+    <ModalOverlay>
       <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
         <div className="flex items-start justify-between gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-100 text-primary-700 dark:bg-primary-950 dark:text-primary-300">
@@ -85,13 +85,13 @@ export default function TrialWelcomeModal() {
           )}
         </ul>
 
-        <motionlessActions dismiss={dismiss} navigate={navigate} restaurantBase={restaurantBase} />
+        <ModalActions dismiss={dismiss} navigate={navigate} restaurantBase={restaurantBase} />
       </div>
-    </motionlessOverlay>
+    </ModalOverlay>
   )
 }
 
-function motionlessActions({ dismiss, navigate, restaurantBase }) {
+function ModalActions({ dismiss, navigate, restaurantBase }) {
   return (
     <div className="mt-6 flex flex-wrap gap-2">
       <Button type="button" onClick={dismiss}>
@@ -111,7 +111,7 @@ function motionlessActions({ dismiss, navigate, restaurantBase }) {
   )
 }
 
-function motionlessOverlay({ children }) {
+function ModalOverlay({ children }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
       {children}

@@ -141,6 +141,9 @@ const Register = () => {
         otp,
       })
       toast.success('Email verified. Sign in to start your free trial.')
+      toast('After login, complete KYC verification to unlock menu, POS, orders, and all features.', {
+        duration: 7500,
+      })
       navigate('/vendor/login')
     } catch (error) {
       toast.error(error.response?.data?.message || 'Verification failed')

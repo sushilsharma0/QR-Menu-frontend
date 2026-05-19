@@ -190,9 +190,9 @@ export const AuthProvider = ({ children }) => {
       toast.success(response.data?.message || `Welcome ${authUser.name || email}!`)
 
       if (authUser.role === 'restaurant') {
-        if (!authUser.isKYCVerified) {
-          toast('Kindly verify your KYC to unlock menu, tables, staff and order actions.', {
-            duration: 6500,
+        if (authUser.isKYCVerified !== true) {
+          toast('Verify your KYC to unlock menu, POS, orders, and all sidebar features.', {
+            duration: 7500,
           })
         }
         if (authUser.needsPlanUpgrade) {
@@ -222,11 +222,20 @@ export const AuthProvider = ({ children }) => {
       
     } catch (error) {
       console.error('❌ Login error:', error)
+      const status = error.response?.status
+      const payload = error.response?.data?.errors || error.response?.data?.data
       const errorMsg = error.response?.data?.message || error.message || 'Login failed'
       if (!error.__toastShown) {
-        toast.error(errorMsg)
+        if (status === 423) {
+          const until = payload?.lockedUntil
+            ? new Date(payload.lockedUntil).toLocaleString()
+            : null
+          toast.error(until ? `${errorMsg} (until ${until})` : errorMsg, { duration: 9000 })
+        } else {
+          toast.error(errorMsg)
+        }
       }
-      return { success: false, error: errorMsg }
+      return { success: false, error: errorMsg, locked: status === 423 }
     }
   }
 
@@ -315,9 +324,9 @@ export const AuthProvider = ({ children }) => {
       setUser(authUser)
 
       toast.success(response.data?.message || 'Google sign-in successful')
-      if (created) {
-        toast('Complete your vendor profile and KYC after login to unlock all restaurant tools.', {
-          duration: 7000,
+      if (authUser.isKYCVerified !== true) {
+        toast('Verify your KYC to unlock menu, POS, orders, and all sidebar features.', {
+          duration: 7500,
         })
       }
       navigate(defaultPortalPathForUser(authUser))
