@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import toast from '@utils/toast'
 import { FiArchive, FiCheck, FiDatabase, FiDownload, FiEye, FiImage, FiMoon, FiRefreshCw, FiSun, FiTrash2, FiUpload, FiX } from 'react-icons/fi'
@@ -490,8 +491,14 @@ const Settings = () => {
       const form = new FormData()
       form.append('backup', restoreFile)
       form.append('mode', restoreMode)
-      await api.post('/restaurant/backup/restore', form)
-      toast.success('Restore completed')
+      const res = await api.post('/restaurant/backup/restore', form)
+      const restoredCounts = res.data?.data?.restoredCounts || {}
+      const restoredTotal = Object.values(restoredCounts).reduce((sum, value) => sum + Number(value || 0), 0)
+      if (restoredTotal > 0) {
+        toast.success(`Restore completed: ${restoredTotal} records added`)
+      } else {
+        toast('Restore completed, but no records were added from this backup')
+      }
       setRestorePreview(null)
       setRestoreFile(null)
       fetchBackupHistory()
@@ -531,10 +538,17 @@ const Settings = () => {
           title="Backup & Restore"
           icon={FiDatabase}
           actions={
-            <Button type="button" variant="outline" size="sm" onClick={fetchBackupHistory} disabled={backupBusy}>
-              <FiRefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
+            <div className="flex gap-2">
+              <Link to="backup-recovery">
+                <Button type="button" variant="outline" size="sm">
+                  Open Recovery Wizard
+                </Button>
+              </Link>
+              <Button type="button" variant="outline" size="sm" onClick={fetchBackupHistory} disabled={backupBusy}>
+                <FiRefreshCw className="mr-2 h-4 w-4" />
+                Refresh
+              </Button>
+            </div>
           }
         >
           <div className="space-y-6">
