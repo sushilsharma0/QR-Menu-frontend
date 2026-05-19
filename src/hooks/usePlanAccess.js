@@ -23,8 +23,9 @@ export function usePlanAccess() {
       return featureFlags[key] !== false
     }
 
-    /** Hide sidebar items not included in the assigned plan. */
+    /** Hide sidebar items not included in the plan/trial (show locks instead when billing expired). */
     const isFeatureHidden = (segment, explicitKey) => {
+      if (billingLocked) return false
       const key = explicitKey || featureKey(segment)
       if (!key) return false
       return featureFlags[key] === false
@@ -36,22 +37,31 @@ export function usePlanAccess() {
       return !isNavUnlockedWhenBillingLocked(segment)
     }
 
-    const isNavLocked = (segment) => isNavReadOnly(segment)
+    const isNavLocked = (segment) => {
+      if (billingLocked) return !isNavUnlockedWhenBillingLocked(segment)
+      const key = featureKey(segment)
+      return Boolean(key && featureFlags[key] === false)
+    }
 
     const lockMessage = (segment) => {
       const key = featureKey(segment)
+      if (billingLocked && !isNavUnlockedWhenBillingLocked(segment)) {
+        return user?.accessTier === 'expired' && user?.planEndDate
+          ? 'Subscription expired — renew to unlock.'
+          : 'Trial expired — subscribe to unlock.'
+      }
       if (key && featureFlags[key] === false) {
         return `${PLAN_FEATURE_LABELS[key] || 'This feature'} is not included in ${planName}.`
-      }
-      if (isNavReadOnly(segment)) {
-        return 'Plan expired — view only. Renew subscription to make changes.'
       }
       return 'This feature is locked.'
     }
 
     const toastLocked = (segment) => {
-      if (isNavReadOnly(segment)) {
-        return 'Your trial or plan has ended. You can view data in read-only mode. Open Subscription to renew.'
+      if (billingLocked && !isNavUnlockedWhenBillingLocked(segment)) {
+        if (user?.planEndDate && !user?.isTrialActive) {
+          return 'Your subscription has expired. Renew from Subscription to unlock features.'
+        }
+        return 'Your trial has expired. Choose a plan from Subscription to continue.'
       }
       const key = featureKey(segment)
       if (key && featureFlags[key] === false) {

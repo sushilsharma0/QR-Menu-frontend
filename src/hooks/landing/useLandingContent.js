@@ -8,6 +8,7 @@ import {
   fallbackHero,
   featureIcons,
 } from '../../components/landing/landingDefaults'
+import { parseOfferBannerContent } from '../../config/cmsTypeConfig'
 
 const matchesKey = (entry, needle) => String(entry?.key || '').toLowerCase().includes(needle)
 const matchesAnyKey = (entry, needles) => needles.some((needle) => matchesKey(entry, needle))
@@ -161,18 +162,30 @@ export const useLandingContent = () => {
       chat,
       hero,
       offerBanner: offerBanner
-        ? {
-            eyebrow: offerBanner.metaTitle || 'Launch offer',
-            title: offerBanner.title || 'First 10 restaurants get 1 month free.',
-            description:
-              offerBanner.metaDescription ||
-              firstParagraph(offerBanner.content) ||
-              'Register early and start QR Restro Nepal free for the first month.',
-            image:
-              offerBanner.image ||
-              'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200',
-            ctaLabel: offerBanner.content?.includes('|') ? offerBanner.content.split('|')[0].trim() : 'Claim free month',
-          }
+        ? (() => {
+            const parsed = parseOfferBannerContent(offerBanner.content)
+            return {
+              eyebrow: offerBanner.metaTitle || 'Launch offer',
+              title: offerBanner.title || 'First 10 restaurants get 1 month free.',
+              description:
+                offerBanner.metaDescription ||
+                'Register early and start with zero platform cost for the first month.',
+              image:
+                offerBanner.image ||
+                'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200',
+              ctaLabel: parsed.ctaLabel,
+              bullets: parsed.bullets.length
+                ? parsed.bullets
+                : [
+                    'Free restaurant onboarding',
+                    'QR menu setup included',
+                    'Dashboard access included',
+                    'No hidden setup charges',
+                  ],
+              badgeTitle: parsed.badgeTitle,
+              badgeSubtitle: parsed.badgeSubtitle,
+            }
+          })()
         : null,
       features: featureEntries.length ? featureEntries.map(mapFeature) : fallbackFeatures,
       bestThings: bestEntry

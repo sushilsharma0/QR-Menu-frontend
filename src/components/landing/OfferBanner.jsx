@@ -3,10 +3,18 @@ import { Link } from 'react-router-dom'
 import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, BadgePercent, Gift, Sparkles } from 'lucide-react'
 
+const DEFAULT_BULLETS = [
+  'Free restaurant onboarding',
+  'QR menu setup included',
+  'Dashboard access included',
+  'No hidden setup charges',
+]
+
 const OfferBanner = ({ offer }) => {
   const reduceMotion = useReducedMotion()
   const { scrollYProgress } = useScroll()
   const scale = useTransform(scrollYProgress, [0, 0.18, 0.34], [0.96, 1.02, 1])
+  const bullets = offer.bullets?.length ? offer.bullets : DEFAULT_BULLETS
 
   return (
     <section className="relative px-4 pb-12 sm:px-6 sm:pb-16 lg:px-8">
@@ -49,14 +57,9 @@ const OfferBanner = ({ offer }) => {
           </motion.p>
 
           <div className="mt-5 grid gap-2 text-xs font-semibold text-slate-200 sm:text-sm md:grid-cols-2">
-            {[
-              'Free restaurant onboarding',
-              'QR menu setup included',
-              'Dashboard access included',
-              'No hidden setup charges',
-            ].map((item, idx) => (
+            {bullets.map((item, idx) => (
               <motion.p
-                key={item}
+                key={`${item}-${idx}`}
                 initial={{ opacity: 0, x: -10 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
@@ -87,7 +90,7 @@ const OfferBanner = ({ offer }) => {
               to="/vendor/login"
               className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/10 px-5 py-3.5 text-sm font-black text-white backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/20 sm:px-6 sm:py-4"
             >
-              Already Registered? Login
+              Already registered? Login
             </Link>
           </motion.div>
         </div>
@@ -106,7 +109,6 @@ const OfferBanner = ({ offer }) => {
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.4 }}
             animate={reduceMotion ? undefined : { rotate: [0, -3, 3, 0], y: [0, -8, 0] }}
-            style={reduceMotion ? undefined : undefined}
             className="absolute bottom-4 left-4 right-4 rounded-2xl border border-white/20 bg-white/95 p-4 shadow-2xl backdrop-blur sm:bottom-6 sm:left-6 sm:right-6 sm:p-5 lg:left-auto lg:w-72"
           >
             <div className="flex items-center gap-3">
@@ -114,9 +116,9 @@ const OfferBanner = ({ offer }) => {
                 <Gift className="h-5 w-5 sm:h-6 sm:w-6" />
               </span>
               <div>
-                <p className="text-xl font-black text-slate-950 sm:text-2xl">1 Month Free</p>
+                <p className="text-xl font-black text-slate-950 sm:text-2xl">{offer.badgeTitle || '1 Month Free'}</p>
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 sm:text-xs">
-                  First 10 restaurants
+                  {offer.badgeSubtitle || 'Launch offer'}
                 </p>
               </div>
             </div>

@@ -204,18 +204,9 @@ const Inventory = () => {
         deadStock: inv.deadStock || 0,
         expiringSoon: inv.expiringSoon || 0,
       })
-<<<<<<< HEAD
-      const supplierPayload = supplierRes.data?.data
-      setSuppliers(
-        Array.isArray(supplierPayload) ? supplierPayload : supplierPayload?.items || [],
-      )
-      setTransactions(txnRes.data?.data || [])
-      setPurchases(purchaseRes.data?.data || [])
-=======
       setSuppliers(asArray(supplierRes.data?.data))
       setTransactions(asArray(txnRes.data?.data))
       setPurchases(asArray(purchaseRes.data?.data))
->>>>>>> 20120609bbb71b2e1cf0f5ffefa5d521fd754351
       setReport(reportRes.data?.data || null)
       const cb = cbRes.data?.data || {}
       setCashBook({

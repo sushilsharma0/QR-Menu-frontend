@@ -166,10 +166,18 @@ api.interceptors.response.use(
       window.location.href = '/employee/change-password'
       return Promise.reject(error)
     }
-    if (status === 403 && errorCode === 'TRIAL_OR_PLAN_EXPIRED') {
+    if (
+      status === 403 &&
+      (errorCode === 'TRIAL_OR_PLAN_EXPIRED' || errorCode === 'SUBSCRIPTION_EXPIRED')
+    ) {
       const method = String(error.config?.method || 'GET').toUpperCase()
       if (method !== 'GET' && method !== 'HEAD' && !shouldSkipToast) {
-        toast.error(message || 'Your trial or plan has expired. Renew your subscription to make changes.')
+        toast.error(
+          message ||
+            (errorCode === 'SUBSCRIPTION_EXPIRED'
+              ? 'Your subscription has expired. Renew to make changes.'
+              : 'Your trial has expired. Subscribe to make changes.'),
+        )
         error.__toastShown = true
       }
       return Promise.reject(error)

@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import React, { useEffect, useMemo, useState } from 'react'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import toast from '@utils/toast'
 import {
   FiAward,
   FiBarChart2,
   FiBookOpen,
   FiBriefcase,
+  FiChevronDown,
   FiChevronLeft,
   FiChevronRight,
   FiCoffee,
@@ -35,69 +36,37 @@ import { usePlanAccess } from '../../hooks/usePlanAccess'
 import { useSocket } from '../../hooks/useSocket'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { useBranch } from '../../context/BranchContext'
-import { RESTAURANT_NAV_GROUPS } from '../../config/restaurantNavConfig'
+import {
+  RESTAURANT_NAV_SECTIONS,
+  sectionContainsSegment,
+} from '../../config/restaurantNavConfig'
+import { parseRestaurantPortalPath } from '../../utils/tenantPaths'
+
+const NAV_OPEN_STORAGE_KEY = 'restaurant-nav-sections-open'
+
+function readOpenSections() {
+  try {
+    const raw = localStorage.getItem(NAV_OPEN_STORAGE_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch {
+    /* ignore */
+  }
+  return null
+}
+
+function writeOpenSections(state) {
+  try {
+    localStorage.setItem(NAV_OPEN_STORAGE_KEY, JSON.stringify(state))
+  } catch {
+    /* ignore */
+  }
+}
 
 function staffLoginHref(restaurantId, staff) {
   const q = new URLSearchParams({ role: 'employee', staff, restaurantId: String(restaurantId) })
   return `/login?${q.toString()}`
 }
 
-<<<<<<< HEAD
-=======
-const NAV_GROUPS = [
-  {
-    label: 'Overview',
-    items: [
-      { segment: 'dashboard', icon: FiHome, label: 'Dashboard' },
-      { segment: 'orders/activity', icon: FiBarChart2, label: 'Sales activity' },
-    ],
-  },
-  {
-    label: 'Service',
-    items: [
-      { segment: 'pos', icon: FiCoffee, label: 'POS' },
-      { segment: 'orders', icon: FiShoppingBag, label: 'Orders' },
-      { segment: 'menu', icon: FiBookOpen, label: 'Menu' },
-      { segment: 'tables', icon: FiMapPin, label: 'Tables & QR' },
-      { segment: 'promotions', icon: FiPercent, label: 'Promotions' },
-      { segment: 'credit-customers', icon: FiDollarSign, label: 'Credit customers' },
-    ],
-  },
-  {
-    label: 'Business',
-    items: [
-      { segment: 'employees', icon: FiUsers, label: 'Employees' },
-      { segment: 'branches', icon: FiMapPin, label: 'Branches' },
-      { segment: 'kyc', icon: FiShield, label: 'KYC' },
-      { segment: 'subscription', icon: FiCreditCard, label: 'Subscription' },
-    ],
-  },
-  {
-    label: 'Accounting',
-    items: [
-      { segment: 'finance/dashboard', icon: FiBarChart2, label: 'Finance Dashboard' },
-      { segment: 'finance/expenses', icon: FiCreditCard, label: 'Expenses' },
-      { segment: 'finance/budget', icon: FiPieChart, label: 'Budget' },
-      { segment: 'finance/profit-loss', icon: FiPercent, label: 'Profit & Loss' },
-      { segment: 'finance/inventory', icon: FiBookOpen, label: 'Inventory' },
-      { segment: 'finance/payroll', icon: FiUsers, label: 'Payroll' },
-      { segment: 'finance/invoices', icon: FiFileText, label: 'Invoices' },
-    ],
-  },
-  {
-    label: 'Support',
-    items: [
-      { segment: 'tickets', icon: FiHelpCircle, label: 'Support Tickets' },
-      { segment: 'logs', icon: FiTerminal, label: 'Audit Logs' },
-      { segment: 'security', icon: FiShield, label: 'Active Devices' },
-      { segment: 'backup-recovery', icon: FiDatabase, label: 'Backup & Recovery' },
-      { segment: 'public-profile', icon: FiFileText, label: 'About & Privacy' },
-      { segment: 'settings', icon: FiSettings, label: 'Settings' },
-    ],
-  },
-]
-
->>>>>>> 20120609bbb71b2e1cf0f5ffefa5d521fd754351
 const STAFF_LINKS = [
   { staff: 'kitchen', label: 'Kitchen Staff Login', icon: FiCoffee },
   { staff: 'cashier', label: 'Cashier Staff Login', icon: FiBriefcase },
@@ -109,6 +78,7 @@ function NavItem({
   restaurantBase,
   pendingCount,
   collapsed,
+  nested = false,
   onClick,
   onTooltip,
   onTooltipLeave,
@@ -136,7 +106,9 @@ function NavItem({
       end={item.segment === 'orders'}
       onClick={(event) => {
         if (readOnly) {
+          event.preventDefault()
           onReadOnlyClick?.()
+          return
         }
         onClick?.(event)
       }}
@@ -145,7 +117,9 @@ function NavItem({
       onFocus={showTooltip}
       onBlur={onTooltipLeave}
       className={({ isActive }) =>
-        `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 ${
+        `group relative flex items-center gap-3 rounded-xl transition-all duration-200 ${
+          nested && !collapsed ? 'ml-2 py-2 pl-2 pr-3' : 'px-3 py-2.5'
+        } ${
           isActive
             ? readOnly
               ? 'bg-amber-50 font-semibold text-amber-900 ring-1 ring-amber-100 dark:bg-amber-950/30 dark:text-amber-100 dark:ring-amber-900'
@@ -163,7 +137,9 @@ function NavItem({
             <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-amber-500" />
           )}
           <span
-            className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl transition ${
+            className={`flex flex-shrink-0 items-center justify-center rounded-xl transition ${
+              nested && !collapsed ? 'h-7 w-7' : 'h-9 w-9'
+            } ${
               isActive
                 ? readOnly
                   ? 'bg-white text-amber-700 shadow-sm dark:bg-gray-900 dark:text-amber-300'
@@ -171,10 +147,12 @@ function NavItem({
                 : 'text-gray-500 group-hover:bg-white group-hover:text-primary-700 group-hover:shadow-sm dark:text-gray-400 dark:group-hover:bg-gray-900 dark:group-hover:text-gray-100'
             }`}
           >
-            <item.icon className="h-5 w-5" />
+            <item.icon className={nested && !collapsed ? 'h-4 w-4' : 'h-5 w-5'} />
           </span>
 
-          {!collapsed && <span className="truncate text-sm">{item.label}</span>}
+          {!collapsed && (
+            <span className={`truncate ${nested ? 'text-xs' : 'text-sm'}`}>{item.label}</span>
+          )}
 
           {readOnly && !collapsed && (
             <FiLock
@@ -198,6 +176,121 @@ function NavItem({
         </>
       )}
     </NavLink>
+  )
+}
+
+function NavSection({
+  section,
+  visibleItems,
+  restaurantBase,
+  collapsed,
+  hideLabels,
+  isOpen,
+  onToggle,
+  pendingCount,
+  isMobile,
+  onClose,
+  onTooltip,
+  onTooltipLeave,
+  isNavLocked,
+  lockMessage,
+  toastLocked,
+}) {
+  const SectionIcon = section.icon
+  const firstItem = visibleItems[0]
+  const anyLocked = visibleItems.some((item) => isNavLocked(item.segment))
+  const sectionPending =
+    section.id === 'operations' && pendingCount > 0 ? pendingCount : 0
+
+  if (collapsed && hideLabels) {
+    return (
+      <NavLink
+        to={firstItem ? `${restaurantBase}/${firstItem.segment}` : '#'}
+        end={firstItem?.segment === 'orders'}
+        onClick={(e) => {
+          if (firstItem && isNavLocked(firstItem.segment)) {
+            e.preventDefault()
+            toastLocked(firstItem.segment)
+            return
+          }
+          onClose?.()
+        }}
+        onMouseEnter={(event) => {
+          const rect = event.currentTarget.getBoundingClientRect()
+          onTooltip?.({
+            label: section.label,
+            count: sectionPending,
+            top: rect.top + rect.height / 2,
+            left: rect.right + 12,
+          })
+        }}
+        onMouseLeave={onTooltipLeave}
+        className={({ isActive }) =>
+          `group relative flex items-center justify-center rounded-xl px-3 py-2.5 transition ${
+            isActive
+              ? 'bg-primary-50 text-primary-800 ring-1 ring-primary-100 dark:bg-gray-800 dark:text-gray-100'
+              : 'text-gray-600 hover:bg-surface-50 dark:text-gray-300 dark:hover:bg-gray-800'
+          }`
+        }
+      >
+        <SectionIcon className="h-5 w-5" />
+        {sectionPending > 0 && (
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+            {sectionPending > 9 ? '9+' : sectionPending}
+          </span>
+        )}
+      </NavLink>
+    )
+  }
+
+  return (
+    <div className="pb-1">
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`mb-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition hover:bg-surface-50 dark:hover:bg-gray-800 ${
+          isOpen ? 'text-gray-950 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'
+        }`}
+      >
+        <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-surface-50 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+          <SectionIcon className="h-4 w-4" />
+        </span>
+        <span className="flex-1 truncate text-xs font-black uppercase tracking-[0.14em]">
+          {section.label}
+        </span>
+        {sectionPending > 0 && (
+          <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+            {sectionPending > 99 ? '99+' : sectionPending}
+          </span>
+        )}
+        {anyLocked && (
+          <FiLock className="h-3.5 w-3.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+        )}
+        <FiChevronDown
+          className={`h-4 w-4 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+        />
+      </button>
+      {isOpen && (
+        <div className="space-y-0.5 border-l-2 border-gray-100 pl-1 dark:border-gray-800">
+          {visibleItems.map((item) => (
+            <NavItem
+              key={item.segment}
+              item={item}
+              restaurantBase={restaurantBase}
+              pendingCount={pendingCount}
+              collapsed={false}
+              nested
+              onClick={isMobile ? onClose : undefined}
+              onTooltip={onTooltip}
+              onTooltipLeave={onTooltipLeave}
+              readOnly={isNavLocked(item.segment)}
+              lockMessage={lockMessage(item.segment)}
+              onReadOnlyClick={() => toastLocked(item.segment)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -235,12 +328,50 @@ function SidebarContent({
   onTooltip,
   onTooltipLeave,
   isFeatureHidden,
-  isNavReadOnly,
+  isNavLocked,
   lockMessage,
   toastLocked,
   isFeatureEnabled,
 }) {
   const hideLabels = collapsed && !isMobile
+  const location = useLocation()
+  const activeTail = useMemo(() => {
+    const parsed = parseRestaurantPortalPath(location.pathname)
+    return parsed?.tail || ''
+  }, [location.pathname])
+
+  const [openSections, setOpenSections] = useState(() => {
+    const saved = readOpenSections()
+    if (saved && typeof saved === 'object') return saved
+    const initial = {}
+    RESTAURANT_NAV_SECTIONS.forEach((s) => {
+      initial[s.id] = s.defaultOpen !== false
+    })
+    return initial
+  })
+
+  useEffect(() => {
+    setOpenSections((prev) => {
+      let changed = false
+      const next = { ...prev }
+      RESTAURANT_NAV_SECTIONS.forEach((section) => {
+        if (sectionContainsSegment(section, activeTail) && !next[section.id]) {
+          next[section.id] = true
+          changed = true
+        }
+      })
+      if (changed) writeOpenSections(next)
+      return changed ? next : prev
+    })
+  }, [activeTail])
+
+  const toggleSection = (id) => {
+    setOpenSections((prev) => {
+      const next = { ...prev, [id]: !prev[id] }
+      writeOpenSections(next)
+      return next
+    })
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -276,37 +407,31 @@ function SidebarContent({
       </div>
 
       <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4">
-        <div className="space-y-5">
-          {RESTAURANT_NAV_GROUPS.map((group) => {
-            const visibleItems = group.items.filter(
+        <div className="space-y-1">
+          {RESTAURANT_NAV_SECTIONS.map((section) => {
+            const visibleItems = section.items.filter(
               (item) => !isFeatureHidden(item.segment, item.featureKey),
             )
             if (visibleItems.length === 0) return null
             return (
-            <div key={group.label}>
-              {!hideLabels && (
-                <p className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
-                  {group.label}
-                </p>
-              )}
-              <div className="space-y-1">
-                {visibleItems.map((item) => (
-                  <NavItem
-                    key={item.segment}
-                    item={item}
-                    restaurantBase={restaurantBase}
-                    pendingCount={pendingCount}
-                    collapsed={hideLabels}
-                    onClick={isMobile ? onClose : undefined}
-                    onTooltip={onTooltip}
-                    onTooltipLeave={onTooltipLeave}
-                    readOnly={isNavReadOnly(item.segment)}
-                    lockMessage={lockMessage(item.segment)}
-                    onReadOnlyClick={() => toastLocked(item.segment)}
-                  />
-                ))}
-              </div>
-            </div>
+              <NavSection
+                key={section.id}
+                section={section}
+                visibleItems={visibleItems}
+                restaurantBase={restaurantBase}
+                collapsed={collapsed}
+                hideLabels={hideLabels}
+                isOpen={Boolean(openSections[section.id])}
+                onToggle={() => toggleSection(section.id)}
+                pendingCount={pendingCount}
+                isMobile={isMobile}
+                onClose={onClose}
+                onTooltip={onTooltip}
+                onTooltipLeave={onTooltipLeave}
+                isNavLocked={isNavLocked}
+                lockMessage={lockMessage}
+                toastLocked={toastLocked}
+              />
             )
           })}
         </div>
@@ -324,7 +449,7 @@ function SidebarContent({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => {
-                    if (!isFeatureEnabled('employees') || isNavReadOnly('employees')) {
+                    if (!isFeatureEnabled('employees') || isNavLocked('employees')) {
                       e.preventDefault()
                       toastLocked('employees')
                       return
@@ -353,7 +478,7 @@ function SidebarContent({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => {
-                  if (!isFeatureEnabled('employees') || isNavReadOnly('employees')) {
+                  if (!isFeatureEnabled('employees') || isNavLocked('employees')) {
                     e.preventDefault()
                     toastLocked('employees')
                   }
@@ -393,7 +518,7 @@ const RestaurantSidebar = () => {
   const {
     billingLocked,
     isFeatureHidden,
-    isNavReadOnly,
+    isNavLocked,
     lockMessage,
     toastLocked,
     isFeatureEnabled,
@@ -457,7 +582,7 @@ const RestaurantSidebar = () => {
     restaurantId,
     hasTenant,
     isFeatureHidden,
-    isNavReadOnly,
+    isNavLocked,
     lockMessage,
     toastLocked: handleToastLocked,
     isFeatureEnabled,

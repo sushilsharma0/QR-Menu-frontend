@@ -1,69 +1,66 @@
-import React, { useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import React, { useEffect, useState } from 'react'
+import { NavLink, useLocation } from 'react-router-dom'
 import {
   FiAward,
-  FiBarChart2,
+  FiChevronDown,
   FiChevronLeft,
   FiChevronRight,
-  FiClipboard,
-  FiCreditCard,
-  FiFileText,
-  FiHelpCircle,
-  FiHome,
-  FiLayout,
   FiMenu,
-  FiSettings,
-  FiShield,
-  FiStar,
-  FiTerminal,
-  FiUsers,
   FiX,
 } from 'react-icons/fi'
 import { useAuth } from '../../hooks/useAuth'
+import {
+  PLATFORM_NAV_SECTIONS,
+  sectionContainsPath,
+} from '../../config/platformNavConfig'
 
-const NAV_GROUPS = [
-  {
-    label: 'Overview',
-    items: [
-      { path: '/platform/dashboard', icon: FiHome, label: 'Dashboard' },
-    ],
-  },
-  {
-    label: 'Directory',
-    items: [
-      { path: '/platform/restaurants', icon: FiUsers, label: 'Restaurants' },
-      { path: '/platform/kyc', icon: FiFileText, label: 'KYC Verification' },
-    ],
-  },
-  {
-    label: 'Billing',
-    items: [
-      { path: '/platform/subscriptions', icon: FiCreditCard, label: 'Subscriptions' },
-      { path: '/platform/subscription-payments', icon: FiCreditCard, label: 'Payments' },
-      { path: '/platform/invoices', icon: FiClipboard, label: 'Invoices' },
-      { path: '/platform/subscription-activity', icon: FiBarChart2, label: 'Subscription activity' },
-    ],
-  },
-  {
-    label: 'Content & support',
-    items: [
-      { path: '/platform/cms', icon: FiLayout, label: 'CMS' },
-      { path: '/platform/reviews', icon: FiStar, label: 'Reviews' },
-      { path: '/platform/tickets', icon: FiHelpCircle, label: 'Support Tickets' },
-    ],
-  },
-  {
-    label: 'System',
-    items: [
-      { path: '/platform/admins', icon: FiShield, label: 'Admins' },
-      { path: '/platform/security', icon: FiShield, label: 'Security Ops' },
-      { path: '/platform/logs', icon: FiTerminal, label: 'System Logs' },
-      { path: '/platform/settings', icon: FiSettings, label: 'Settings' },
-    ],
-  },
-]
+const NAV_OPEN_STORAGE_KEY = 'platform-nav-sections-open'
 
-function PlatformNavItem({ item, collapsed, onClick, onTooltip, onTooltipLeave }) {
+function readOpenSections() {
+  try {
+    const raw = localStorage.getItem(NAV_OPEN_STORAGE_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch {
+    /* ignore */
+  }
+  return null
+}
+
+function writeOpenSections(state) {
+  try {
+    localStorage.setItem(NAV_OPEN_STORAGE_KEY, JSON.stringify(state))
+  } catch {
+    /* ignore */
+  }
+}
+
+function isPlatformNavItemActive(item, location) {
+  const pathname = location.pathname.replace(/\/+$/, '')
+  const [pathOnly, itemSearch = ''] = String(item.path || '').split('?')
+  const base = pathOnly.replace(/\/+$/, '')
+
+  if (base === '/platform/dashboard') return pathname === base
+
+  if (itemSearch) {
+    const want = new URLSearchParams(itemSearch)
+    const have = new URLSearchParams(location.search || '')
+    for (const [key, value] of want.entries()) {
+      if (have.get(key) !== value) return false
+    }
+    return pathname === base
+  }
+
+  if (base === '/platform/cms') {
+    if (pathname !== base) return false
+    const tab = new URLSearchParams(location.search || '').get('tab')
+    return !tab || tab === 'blocks' || tab === 'guide'
+  }
+
+  return pathname === base || pathname.startsWith(`${base}/`)
+}
+
+function PlatformNavItem({ item, collapsed, nested = false, onClick, onTooltip, onTooltipLeave }) {
+  const location = useLocation()
   const inactiveRow =
     'text-gray-600 hover:bg-surface-50 hover:text-gray-950 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100'
 
@@ -86,32 +83,136 @@ function PlatformNavItem({ item, collapsed, onClick, onTooltip, onTooltipLeave }
       onMouseLeave={onTooltipLeave}
       onFocus={showTooltip}
       onBlur={onTooltipLeave}
-      className={({ isActive }) =>
-        `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 ${
+      className={() => {
+        const isActive = isPlatformNavItemActive(item, location)
+        return `group relative flex items-center gap-3 rounded-xl transition-all duration-200 ${
+          nested ? 'px-3 py-2' : 'px-3 py-2.5'
+        } ${
           isActive
             ? 'bg-primary-50 font-semibold text-primary-800 shadow-sm ring-1 ring-primary-100 dark:bg-gray-800 dark:text-gray-100 dark:ring-gray-700'
             : inactiveRow
         } ${collapsed ? 'justify-center' : ''}`
-      }
+      }}
     >
-      {({ isActive }) => (
+      {() => {
+        const isActive = isPlatformNavItemActive(item, location)
+        return (
         <>
           {isActive && !collapsed && (
-            <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary-600" />
+            <span
+              className={`absolute top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary-600 ${
+                nested ? 'left-0' : 'left-0'
+              }`}
+            />
           )}
           <span
-            className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl transition ${
+            className={`flex flex-shrink-0 items-center justify-center rounded-xl transition ${
+              nested ? 'h-8 w-8' : 'h-9 w-9'
+            } ${
               isActive
                 ? 'bg-white text-primary-700 shadow-sm dark:bg-gray-900 dark:text-gray-100'
                 : 'text-gray-500 group-hover:bg-white group-hover:text-primary-700 group-hover:shadow-sm dark:text-gray-400 dark:group-hover:bg-gray-900 dark:group-hover:text-gray-100'
             }`}
           >
-            <item.icon className="h-5 w-5" />
+            <item.icon className={nested ? 'h-4 w-4' : 'h-5 w-5'} />
           </span>
           {!collapsed && <span className="truncate text-sm">{item.label}</span>}
         </>
-      )}
+        )
+      }}
     </NavLink>
+  )
+}
+
+function NavSection({
+  section,
+  collapsed,
+  hideLabels,
+  isOpen,
+  onToggle,
+  isMobile,
+  onClose,
+  onTooltip,
+  onTooltipLeave,
+}) {
+  const SectionIcon = section.icon
+  const firstItem = section.items[0]
+
+  if (collapsed && hideLabels) {
+    return (
+      <NavLink
+        to={firstItem.path}
+        end={firstItem.path === '/platform/dashboard'}
+        onClick={isMobile ? onClose : undefined}
+        onMouseEnter={(event) => {
+          const rect = event.currentTarget.getBoundingClientRect()
+          onTooltip?.({
+            label: section.label,
+            top: rect.top + rect.height / 2,
+            left: rect.right + 12,
+          })
+        }}
+        onMouseLeave={onTooltipLeave}
+        className={({ isActive }) =>
+          `group relative flex items-center justify-center rounded-xl px-3 py-2.5 transition ${
+            isActive
+              ? 'bg-primary-50 text-primary-800 ring-1 ring-primary-100 dark:bg-gray-800 dark:text-gray-100'
+              : 'text-gray-600 hover:bg-surface-50 dark:text-gray-300 dark:hover:bg-gray-800'
+          }`
+        }
+      >
+        <SectionIcon className="h-5 w-5" />
+      </NavLink>
+    )
+  }
+
+  if (section.items.length === 1) {
+    return (
+      <PlatformNavItem
+        item={firstItem}
+        collapsed={false}
+        onClick={isMobile ? onClose : undefined}
+        onTooltip={onTooltip}
+        onTooltipLeave={onTooltipLeave}
+      />
+    )
+  }
+
+  return (
+    <div className="pb-1">
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`mb-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition hover:bg-surface-50 dark:hover:bg-gray-800 ${
+          isOpen ? 'text-gray-950 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'
+        }`}
+      >
+        <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-surface-50 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+          <SectionIcon className="h-4 w-4" />
+        </span>
+        <span className="flex-1 truncate text-xs font-black uppercase tracking-[0.14em]">
+          {section.label}
+        </span>
+        <FiChevronDown
+          className={`h-4 w-4 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+        />
+      </button>
+      {isOpen && (
+        <div className="space-y-0.5 border-l-2 border-gray-100 pl-1 dark:border-gray-800">
+          {section.items.map((item) => (
+            <PlatformNavItem
+              key={item.path}
+              item={item}
+              collapsed={false}
+              nested
+              onClick={isMobile ? onClose : undefined}
+              onTooltip={onTooltip}
+              onTooltipLeave={onTooltipLeave}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -130,8 +231,12 @@ function Brand({ collapsed, isMobile }) {
         <FiAward className="h-5 w-5" />
       </div>
       <div className="min-w-0">
-        <h1 className="truncate text-base font-black leading-none text-gray-950 dark:text-gray-100">QR Menu SaaS</h1>
-        <p className="mt-1 truncate text-xs font-medium text-gray-500 dark:text-gray-400">Platform Admin</p>
+        <h1 className="truncate text-base font-black leading-none text-gray-950 dark:text-gray-100">
+          QR Menu SaaS
+        </h1>
+        <p className="mt-1 truncate text-xs font-medium text-gray-500 dark:text-gray-400">
+          Platform Admin
+        </p>
       </div>
     </div>
   )
@@ -147,6 +252,41 @@ function SidebarContent({
   onTooltipLeave,
 }) {
   const hideLabels = collapsed && !isMobile
+  const location = useLocation()
+  const pathname = location.pathname
+
+  const [openSections, setOpenSections] = useState(() => {
+    const saved = readOpenSections()
+    if (saved && typeof saved === 'object') return saved
+    const initial = {}
+    PLATFORM_NAV_SECTIONS.forEach((s) => {
+      initial[s.id] = s.defaultOpen !== false
+    })
+    return initial
+  })
+
+  useEffect(() => {
+    setOpenSections((prev) => {
+      let changed = false
+      const next = { ...prev }
+      PLATFORM_NAV_SECTIONS.forEach((section) => {
+        if (sectionContainsPath(section, pathname) && !next[section.id]) {
+          next[section.id] = true
+          changed = true
+        }
+      })
+      if (changed) writeOpenSections(next)
+      return changed ? next : prev
+    })
+  }, [pathname])
+
+  const toggleSection = (id) => {
+    setOpenSections((prev) => {
+      const next = { ...prev, [id]: !prev[id] }
+      writeOpenSections(next)
+      return next
+    })
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -185,27 +325,20 @@ function SidebarContent({
       </div>
 
       <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4">
-        <div className="space-y-5">
-          {NAV_GROUPS.map((group) => (
-            <div key={group.label}>
-              {!hideLabels && (
-                <p className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
-                  {group.label}
-                </p>
-              )}
-              <div className="space-y-1">
-                {group.items.map((item) => (
-                  <PlatformNavItem
-                    key={item.path}
-                    item={item}
-                    collapsed={hideLabels}
-                    onClick={isMobile ? onClose : undefined}
-                    onTooltip={onTooltip}
-                    onTooltipLeave={onTooltipLeave}
-                  />
-                ))}
-              </div>
-            </div>
+        <div className="space-y-1">
+          {PLATFORM_NAV_SECTIONS.map((section) => (
+            <NavSection
+              key={section.id}
+              section={section}
+              collapsed={hideLabels}
+              hideLabels={hideLabels}
+              isOpen={openSections[section.id] !== false}
+              onToggle={() => toggleSection(section.id)}
+              isMobile={isMobile}
+              onClose={onClose}
+              onTooltip={onTooltip}
+              onTooltipLeave={onTooltipLeave}
+            />
           ))}
         </div>
       </nav>
@@ -217,7 +350,9 @@ function SidebarContent({
               {user?.name?.charAt(0) || 'A'}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{user?.name}</p>
+              <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+                {user?.name}
+              </p>
               <p className="truncate text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
             </div>
           </div>
@@ -289,7 +424,9 @@ const PlatformSidebar = () => {
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary-600 to-secondary-500 text-white">
             <FiAward className="h-4 w-4" />
           </div>
-          <h1 className="truncate text-sm font-black text-gray-950 dark:text-gray-100">QR Menu SaaS</h1>
+          <h1 className="truncate text-sm font-black text-gray-950 dark:text-gray-100">
+            QR Menu SaaS
+          </h1>
         </div>
       </div>
 

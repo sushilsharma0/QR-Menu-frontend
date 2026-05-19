@@ -18,6 +18,7 @@ import PlatformKYCPending from "./pages/platform/KYCPending";
 import PlatformKYCDetail from "./pages/platform/KYCDetail";
 import PlatformSubscriptions from "./pages/platform/Subscriptions";
 import PlatformCreatePlan from "./pages/platform/CreatePlan";
+import PlatformPlanAccessSettings from "./pages/platform/PlanAccessSettings";
 import PlatformCMS from "./pages/platform/CMS";
 import PlatformReviews from "./pages/platform/Reviews";
 import PlatformAdmins from "./pages/platform/Admins";
@@ -210,6 +211,10 @@ function App() {
         <Route
           path="/platform/subscriptions/edit/:id"
           element={<PlatformCreatePlan />}
+        />
+        <Route
+          path="/platform/plan-access-settings"
+          element={<PlatformPlanAccessSettings />}
         />
         <Route path="/platform/cms" element={<PlatformCMS />} />
         <Route path="/platform/reviews" element={<PlatformReviews />} />
