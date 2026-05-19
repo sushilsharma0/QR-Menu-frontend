@@ -287,7 +287,10 @@ const Register = () => {
                 label="Phone Number"
                 icon={FiPhone}
                 placeholder="Enter phone number"
-                {...register('phone', { required: 'Phone number is required' })}
+                {...register('phone', {
+                  required: 'Phone number is required',
+                  validate: value => String(value || '').replace(/\D/g, '').length >= 7 || 'Enter a valid mobile number',
+                })}
                 error={errors.phone?.message}
               />
 
