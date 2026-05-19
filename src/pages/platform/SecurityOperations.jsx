@@ -23,6 +23,7 @@ import {
 } from 'recharts'
 import toast from '@utils/toast'
 import api from '../../services/api'
+import { useAuth } from '../../hooks/useAuth'
 import Button from '../../components/common/Button'
 import Card from '../../components/common/Card'
 import { PlatformEmptyState, PlatformMetric, PlatformPageHeader, PlatformPill } from '../../components/platform/PlatformUI'
@@ -76,6 +77,8 @@ const sessionAlertLabels = (alerts = {}) => [
 ].filter(Boolean)
 
 export default function SecurityOperations() {
+  const { user } = useAuth()
+  const isSuperAdmin = user?.role === 'super_admin'
   const [loading, setLoading] = useState(true)
   const [hours, setHours] = useState(24)
   const [data, setData] = useState(null)
@@ -94,14 +97,29 @@ export default function SecurityOperations() {
   const [sessionsLoading, setSessionsLoading] = useState(false)
 
   const loadOverview = useCallback(async () => {
-    const [overviewRes, blocksRes, locksRes] = await Promise.all([
+    const results = await Promise.allSettled([
       api.get('/platform/security/overview', { params: { hours } }),
       api.get('/platform/security/ip-blocks'),
       api.get('/platform/security/locks'),
     ])
-    setData(overviewRes.data?.data || {})
-    setIpBlocks(blocksRes.data?.data || [])
-    setActiveLocks(locksRes.data?.data || [])
+
+    const [overviewRes, blocksRes, locksRes] = results
+    if (overviewRes.status === 'fulfilled') {
+      setData(overviewRes.value.data?.data || {})
+    } else {
+      console.error(overviewRes.reason)
+      toast.error(overviewRes.reason?.response?.data?.message || 'Failed to load security overview')
+    }
+    if (blocksRes.status === 'fulfilled') {
+      setIpBlocks(blocksRes.value.data?.data || [])
+    } else {
+      toast.error(blocksRes.reason?.response?.data?.message || 'Failed to load IP blocks')
+    }
+    if (locksRes.status === 'fulfilled') {
+      setActiveLocks(locksRes.value.data?.data || [])
+    } else {
+      toast.error(locksRes.reason?.response?.data?.message || 'Failed to load account locks')
+    }
   }, [hours])
 
   const loadAlerts = useCallback(async () => {
@@ -212,11 +230,20 @@ export default function SecurityOperations() {
     }
   }
 
-  const releaseLock = async (id) => {
+  const releaseLock = async (lock) => {
+    const id = lock._id
+    const needsSuperAdmin = ['Restaurant', 'Employee'].includes(lock.subjectType)
+    if (needsSuperAdmin && !isSuperAdmin) {
+      toast.error('Only super admin can unlock restaurant or staff accounts')
+      return
+    }
+    if (needsSuperAdmin && !window.confirm(`Unlock ${lock.subjectType} account for ${lock.restaurantDisplay?.name || lock.subjectId}?`)) {
+      return
+    }
     try {
       setActionBusy(true)
       await api.patch(`/platform/security/locks/${id}/release`, {})
-      toast.success('Lock released')
+      toast.success('Account unlocked')
       await loadOverview()
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to release lock')
@@ -910,9 +937,14 @@ export default function SecurityOperations() {
 
       {activeTab === 'locks' && (
         <>
-          <Card title="Active Security Locks" icon={FiLock}>
+          {!isSuperAdmin && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50/90 p-4 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+              Restaurant and staff unlocks require <strong>super admin</strong>. You can still view locks and manage IP blocks.
+            </div>
+          )}
+          <Card title="Locked restaurants & accounts" icon={FiLock}>
             {activeLocks.length === 0 ? (
-              <PlatformEmptyState title="No active locks" description="Temporary locks from fraud detection or manual admin actions appear here." icon={FiLock} />
+              <PlatformEmptyState title="No active locks" description="Accounts locked after repeated failed logins or manual security actions appear here." icon={FiLock} />
             ) : (
               <div className="overflow-x-auto rounded-2xl border border-surface-200 dark:border-gray-800">
                 <table className="min-w-full text-sm">
@@ -932,18 +964,27 @@ export default function SecurityOperations() {
                           <p className="font-bold text-gray-900 dark:text-gray-100">{lock.subjectType}</p>
                           <p className="font-mono text-xs text-gray-500">{lock.subjectId}</p>
                         </td>
-                        <td className="px-4 py-3 text-gray-600">{lock.restaurantId?.name || '-'}</td>
+                        <td className="px-4 py-3 text-gray-600">
+                          {lock.restaurantDisplay?.name || lock.restaurantId?.name || '-'}
+                          {lock.restaurantDisplay?.email && (
+                            <p className="text-xs text-gray-500">{lock.restaurantDisplay.email}</p>
+                          )}
+                        </td>
                         <td className="max-w-xs truncate px-4 py-3 text-gray-500">{lock.reason}</td>
                         <td className="px-4 py-3 text-gray-500">{new Date(lock.lockedUntil).toLocaleString()}</td>
                         <td className="px-4 py-3 text-right">
-                          <button
-                            type="button"
-                            disabled={actionBusy}
-                            onClick={() => releaseLock(lock._id)}
-                            className="text-xs font-bold text-primary-700 dark:text-primary-300"
-                          >
-                            Release
-                          </button>
+                          {['Restaurant', 'Employee'].includes(lock.subjectType) && !isSuperAdmin ? (
+                            <span className="text-xs text-gray-400">Super admin only</span>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={actionBusy}
+                              onClick={() => releaseLock(lock)}
+                              className="text-xs font-bold text-primary-700 dark:text-primary-300"
+                            >
+                              {lock.subjectType === 'Restaurant' ? 'Unlock restaurant' : 'Release'}
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}

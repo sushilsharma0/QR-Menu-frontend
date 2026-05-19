@@ -1,6 +1,11 @@
 import { useMemo } from 'react'
 import { useAuth } from './useAuth'
-import { featureKeyForSegment, isNavUnlockedWhenBillingLocked, PLAN_FEATURE_LABELS } from '../constants/planFeatureMap'
+import {
+  featureKeyForSegment,
+  isNavUnlockedWhenBillingLocked,
+  isNavUnlockedWhenKycPending,
+  PLAN_FEATURE_LABELS,
+} from '../constants/planFeatureMap'
 
 export function usePlanAccess() {
   const { user } = useAuth()
@@ -8,7 +13,8 @@ export function usePlanAccess() {
   return useMemo(() => {
     const isRestaurantOwner = user?.role === 'restaurant' && user?.scope !== 'employee'
     const featureFlags = user?.planFeatureFlags || {}
-    const billingLocked = isRestaurantOwner && user?.needsPlanUpgrade === true
+    const kycLocked = isRestaurantOwner && user?.isKYCVerified !== true
+    const billingLocked = isRestaurantOwner && user?.needsPlanUpgrade === true && !kycLocked
     const isPlanReadOnly = billingLocked
     const planName =
       user?.assignedPlanName ||
@@ -20,43 +26,51 @@ export function usePlanAccess() {
 
     const isFeatureEnabled = (key) => {
       if (!key) return true
+      if (kycLocked) return false
       return featureFlags[key] !== false
     }
 
-    /** Hide sidebar items not included in the plan/trial (show locks instead when billing expired). */
+    /** Hide sidebar items not included in the plan/trial (show locks when billing expired or KYC pending). */
     const isFeatureHidden = (segment, explicitKey) => {
-      if (billingLocked) return false
+      if (kycLocked || billingLocked) return false
       const key = explicitKey || featureKey(segment)
       if (!key) return false
       return featureFlags[key] === false
     }
 
-    /** Expired trial/plan: show item with lock icon, allow read-only navigation. */
     const isNavReadOnly = (segment) => {
-      if (!billingLocked) return false
-      return !isNavUnlockedWhenBillingLocked(segment)
+      if (kycLocked) return !isNavUnlockedWhenKycPending(segment)
+      if (billingLocked) return !isNavUnlockedWhenBillingLocked(segment)
+      return false
     }
 
     const isNavLocked = (segment) => {
+      if (kycLocked) return !isNavUnlockedWhenKycPending(segment)
       if (billingLocked) return !isNavUnlockedWhenBillingLocked(segment)
       const key = featureKey(segment)
       return Boolean(key && featureFlags[key] === false)
     }
 
     const lockMessage = (segment) => {
-      const key = featureKey(segment)
+      if (kycLocked && !isNavUnlockedWhenKycPending(segment)) {
+        return 'Complete KYC verification to unlock this feature.'
+      }
       if (billingLocked && !isNavUnlockedWhenBillingLocked(segment)) {
         return user?.accessTier === 'expired' && user?.planEndDate
           ? 'Subscription expired — renew to unlock.'
           : 'Trial expired — subscribe to unlock.'
       }
-      if (key && featureFlags[key] === false) {
+      if (featureKey(segment) && featureFlags[featureKey(segment)] === false) {
+        const key = featureKey(segment)
         return `${PLAN_FEATURE_LABELS[key] || 'This feature'} is not included in ${planName}.`
       }
       return 'This feature is locked.'
     }
 
     const toastLocked = (segment) => {
+      if (kycLocked && !isNavUnlockedWhenKycPending(segment)) {
+        return 'Verify your KYC to unlock menu, orders, POS, and all restaurant features.'
+      }
       if (billingLocked && !isNavUnlockedWhenBillingLocked(segment)) {
         if (user?.planEndDate && !user?.isTrialActive) {
           return 'Your subscription has expired. Renew from Subscription to unlock features.'
@@ -73,6 +87,7 @@ export function usePlanAccess() {
     return {
       user,
       featureFlags,
+      kycLocked,
       billingLocked,
       isPlanReadOnly,
       planName,

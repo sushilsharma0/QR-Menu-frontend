@@ -21,8 +21,13 @@ export const PLAN_FEATURE_LABELS = {
   backup: 'Backup',
 }
 
-/** Paths always available (not gated by plan features). */
+/** Paths always available (not gated by plan features or pre-KYC lock). */
 export const PLAN_ALWAYS_OPEN_SEGMENTS = new Set(['subscription', 'kyc', 'security'])
+
+export function isPortalSetupSegment(segment) {
+  const root = String(segment || '').replace(/^\/+/, '').split('/')[0]
+  return PLAN_ALWAYS_OPEN_SEGMENTS.has(root)
+}
 
 export function featureKeyForSegment(segment) {
   const seg = String(segment || '').replace(/^\/+/, '')
@@ -58,6 +63,15 @@ export function featureKeyForPath(pathname) {
 }
 
 export function isNavUnlockedWhenBillingLocked(segment) {
-  const root = String(segment || '').split('/')[0]
-  return root === 'subscription' || root === 'kyc' || root === 'security'
+  return isPortalSetupSegment(segment)
+}
+
+export function isNavUnlockedWhenKycPending(segment) {
+  return isPortalSetupSegment(segment)
+}
+
+export function isPathAllowedBeforeKyc(pathname) {
+  const parsed = parseRestaurantPortalPath(pathname)
+  if (!parsed?.tail) return true
+  return isPortalSetupSegment(parsed.tail)
 }

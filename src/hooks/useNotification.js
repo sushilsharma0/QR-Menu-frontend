@@ -44,7 +44,14 @@ const useNotification = () => {
       }
       setNotifications((prev) => [data, ...prev])
       setUnreadCount((prev) => prev + 1)
-      if (data?.type !== 'NEW_ORDER') {
+
+      const isSecurityAlert =
+        data?.category === 'security' ||
+        data?.type === 'fraud_alert' ||
+        data?.silent === true ||
+        data?.metadata?.silent === true
+
+      if (data?.type !== 'NEW_ORDER' && !isSecurityAlert) {
         toast(data?.message || data?.title || 'New notification')
       }
     }

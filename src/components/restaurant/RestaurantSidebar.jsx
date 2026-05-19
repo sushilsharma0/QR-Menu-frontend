@@ -316,6 +316,7 @@ function SidebarContent({
   lockMessage,
   toastLocked,
   isFeatureEnabled,
+  kycLocked,
 }) {
   const hideLabels = collapsed && !isMobile
   const location = useLocation()
@@ -420,7 +421,7 @@ function SidebarContent({
           })}
         </div>
 
-        {hasTenant && restaurantId != null && !hideLabels && isFeatureEnabled('employees') && (
+        {hasTenant && restaurantId != null && !hideLabels && (kycLocked || isFeatureEnabled('employees')) && (
           <div className="mt-5 border-t border-gray-100 pt-4 dark:border-gray-800">
             <p className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
               Staff Logins
@@ -433,7 +434,7 @@ function SidebarContent({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => {
-                    if (!isFeatureEnabled('employees') || isNavLocked('employees')) {
+                    if (isNavLocked('employees')) {
                       e.preventDefault()
                       toastLocked('employees')
                       return
@@ -446,14 +447,18 @@ function SidebarContent({
                     <Icon className="h-3.5 w-3.5" />
                   </span>
                   <span className="truncate">{label}</span>
-                  <FiExternalLink className="ml-auto h-3.5 w-3.5 flex-shrink-0 text-gray-400 group-hover:text-primary-600 dark:text-gray-500 dark:group-hover:text-gray-300" />
+                  {isNavLocked('employees') ? (
+                    <FiLock className="ml-auto h-3.5 w-3.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                  ) : (
+                    <FiExternalLink className="ml-auto h-3.5 w-3.5 flex-shrink-0 text-gray-400 group-hover:text-primary-600 dark:text-gray-500 dark:group-hover:text-gray-300" />
+                  )}
                 </Link>
               ))}
             </div>
           </div>
         )}
 
-        {hasTenant && restaurantId != null && hideLabels && isFeatureEnabled('employees') && (
+        {hasTenant && restaurantId != null && hideLabels && (kycLocked || isFeatureEnabled('employees')) && (
           <div className="mt-4 space-y-1 border-t border-gray-100 pt-4 dark:border-gray-800">
             {STAFF_LINKS.map(({ staff, label, icon: Icon }) => (
               <Link
@@ -462,7 +467,7 @@ function SidebarContent({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => {
-                  if (!isFeatureEnabled('employees') || isNavLocked('employees')) {
+                  if (isNavLocked('employees')) {
                     e.preventDefault()
                     toastLocked('employees')
                   }
@@ -500,6 +505,7 @@ function SidebarContent({
 const RestaurantSidebar = () => {
   const { user } = useAuth()
   const {
+    kycLocked,
     billingLocked,
     isFeatureHidden,
     isNavLocked,
@@ -565,6 +571,7 @@ const RestaurantSidebar = () => {
     restaurantBase,
     restaurantId,
     hasTenant,
+    kycLocked,
     isFeatureHidden,
     isNavLocked,
     lockMessage,
