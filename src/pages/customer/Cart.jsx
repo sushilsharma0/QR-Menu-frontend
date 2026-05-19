@@ -24,6 +24,7 @@ import { getParsedAuthUser } from "../../utils/authStorage";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../../components/common/ToastContainer";
 import {
+  checkoutGuestOrder,
   getCustomerIdentity,
   getStoredCustomerProfile,
   rememberCustomerOrderToken,
@@ -258,8 +259,8 @@ const Cart = () => {
         })),
       };
 
-      const res = await api.post("/customer/checkout", payload);
-      const order = res?.data?.data;
+      const res = await checkoutGuestOrder(payload);
+      const order = res?.data;
       rememberCustomerOrderToken(token, order?.trackToken);
 
       await clear();

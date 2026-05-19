@@ -15,14 +15,6 @@ export const initSocket = () => {
       reconnectionDelay: 1000,
     })
 
-    socket.on('connect', () => {
-      console.log('🟢 Socket connected:', socket.id)
-    })
-
-    socket.on('disconnect', (reason) => {
-      console.log('🔴 Socket disconnected:', reason)
-    })
-
     socket.on('connect_error', (error) => {
       console.error('Socket connection error:', error)
     })
@@ -49,7 +41,6 @@ export const joinRestaurantRoom = (restaurantId) => {
   const socket = getSocket()
   if (socket && restaurantId) {
     socket.emit('join:restaurant', restaurantId)
-    console.log('Joined restaurant room:', restaurantId)
   }
 }
 
@@ -57,7 +48,6 @@ export const joinEmployeeRoom = (employeeId) => {
   const socket = getSocket()
   if (socket && employeeId) {
     socket.emit('join:employee', employeeId)
-    console.log('Joined employee room:', employeeId)
   }
 }
 
@@ -65,7 +55,6 @@ export const joinOrderRoom = (orderId, orderToken = null) => {
   const socket = getSocket()
   if (socket && orderId) {
     socket.emit('join:order', orderToken ? { orderId, orderToken } : orderId)
-    console.log('Joined order room:', orderId)
   }
 }
 
@@ -73,7 +62,6 @@ export const joinTableRoom = (tableId) => {
   const socket = getSocket()
   if (socket && tableId) {
     socket.emit('join:table', tableId)
-    console.log('Joined table room:', tableId)
   }
 }
 
