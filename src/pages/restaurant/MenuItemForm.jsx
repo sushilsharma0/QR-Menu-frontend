@@ -141,8 +141,6 @@ const MenuItemForm = () => {
         formData.append('image', selectedFile)
       }
 
-      console.log('Submitting with file:', selectedFile)
-
       const url = id
         ? `/restaurant/menu/items/${id}`
         : `/restaurant/menu/items`
@@ -170,7 +168,6 @@ const MenuItemForm = () => {
         e.target.value = ''
         return
       }
-      console.log('File selected:', file.name, file.size)
       setSelectedFile(file)
       setImagePreview(URL.createObjectURL(file))
     }

@@ -29,8 +29,7 @@ export async function enqueueOfflinePosAction(record) {
       })
     })
     db.close()
-  } catch (e) {
-    console.warn('POS offline queue unavailable', e)
+  } catch {
   }
 }
 
@@ -57,8 +56,7 @@ export async function drainOfflinePosQueue(handler) {
         tx.onerror = () => reject(tx.error)
         tx.objectStore(STORE).delete(row.id)
       })
-    } catch (err) {
-      console.warn('POS sync item failed', err)
+    } catch {
     }
   }
   db.close()

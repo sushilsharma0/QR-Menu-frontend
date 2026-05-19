@@ -23,10 +23,7 @@ const QRScannerModal = ({ isOpen, onClose, onScanSuccess }) => {
           scanner.clear(); // Stop the camera
           onClose(); // Close modal
         },
-        (error) => {
-          // We can ignore minor scanning errors
-          console.warn(error);
-        },
+        () => {},
       );
 
       // Cleanup: Stop camera when component unmounts or modal closes

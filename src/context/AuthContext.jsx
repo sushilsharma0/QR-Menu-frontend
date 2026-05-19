@@ -154,11 +154,7 @@ export const AuthProvider = ({ children }) => {
         requestData = { username: email, password, restaurantId }
       }
       
-      console.log('📤 Login request:', { endpoint, identifier: String(email || '').slice(0, 5) + '***' })
-      
       const response = await api.post(endpoint, requestData)
-      
-      console.log('📥 Login response:', response.data)
       
       const { token: newToken, user: userData, employee: employeeData } = response.data.data
       const rawUser = userData || employeeData

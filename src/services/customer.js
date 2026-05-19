@@ -34,6 +34,22 @@ export const placeOrder = async (orderData) => {
   return response.data
 }
 
+export const checkoutGuestOrder = async (orderData) => {
+  try {
+    const response = await api.post('/customer/checkout', withGuestSessionBody(orderData?.qrToken, orderData))
+    return response.data
+  } catch (err) {
+    const message = String(err?.response?.data?.message || '')
+    if (err?.response?.status === 403 && /guest session/i.test(message) && orderData?.qrToken) {
+      clearGuestSession(orderData.qrToken)
+      await ensureGuestSession(orderData.qrToken, { force: true })
+      const response = await api.post('/customer/checkout', withGuestSessionBody(orderData.qrToken, orderData))
+      return response.data
+    }
+    throw err
+  }
+}
+
 export const trackOrder = async (qrToken) => {
   const response = await api.get(`/customer/order/${qrToken}`)
   return response.data

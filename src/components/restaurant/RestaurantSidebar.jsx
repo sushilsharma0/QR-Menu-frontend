@@ -12,6 +12,7 @@ import {
   FiCreditCard,
   FiDollarSign,
   FiExternalLink,
+  FiDatabase,
   FiFileText,
   FiHelpCircle,
   FiHome,
@@ -41,6 +42,62 @@ function staffLoginHref(restaurantId, staff) {
   return `/login?${q.toString()}`
 }
 
+<<<<<<< HEAD
+=======
+const NAV_GROUPS = [
+  {
+    label: 'Overview',
+    items: [
+      { segment: 'dashboard', icon: FiHome, label: 'Dashboard' },
+      { segment: 'orders/activity', icon: FiBarChart2, label: 'Sales activity' },
+    ],
+  },
+  {
+    label: 'Service',
+    items: [
+      { segment: 'pos', icon: FiCoffee, label: 'POS' },
+      { segment: 'orders', icon: FiShoppingBag, label: 'Orders' },
+      { segment: 'menu', icon: FiBookOpen, label: 'Menu' },
+      { segment: 'tables', icon: FiMapPin, label: 'Tables & QR' },
+      { segment: 'promotions', icon: FiPercent, label: 'Promotions' },
+      { segment: 'credit-customers', icon: FiDollarSign, label: 'Credit customers' },
+    ],
+  },
+  {
+    label: 'Business',
+    items: [
+      { segment: 'employees', icon: FiUsers, label: 'Employees' },
+      { segment: 'branches', icon: FiMapPin, label: 'Branches' },
+      { segment: 'kyc', icon: FiShield, label: 'KYC' },
+      { segment: 'subscription', icon: FiCreditCard, label: 'Subscription' },
+    ],
+  },
+  {
+    label: 'Accounting',
+    items: [
+      { segment: 'finance/dashboard', icon: FiBarChart2, label: 'Finance Dashboard' },
+      { segment: 'finance/expenses', icon: FiCreditCard, label: 'Expenses' },
+      { segment: 'finance/budget', icon: FiPieChart, label: 'Budget' },
+      { segment: 'finance/profit-loss', icon: FiPercent, label: 'Profit & Loss' },
+      { segment: 'finance/inventory', icon: FiBookOpen, label: 'Inventory' },
+      { segment: 'finance/payroll', icon: FiUsers, label: 'Payroll' },
+      { segment: 'finance/invoices', icon: FiFileText, label: 'Invoices' },
+    ],
+  },
+  {
+    label: 'Support',
+    items: [
+      { segment: 'tickets', icon: FiHelpCircle, label: 'Support Tickets' },
+      { segment: 'logs', icon: FiTerminal, label: 'Audit Logs' },
+      { segment: 'security', icon: FiShield, label: 'Active Devices' },
+      { segment: 'backup-recovery', icon: FiDatabase, label: 'Backup & Recovery' },
+      { segment: 'public-profile', icon: FiFileText, label: 'About & Privacy' },
+      { segment: 'settings', icon: FiSettings, label: 'Settings' },
+    ],
+  },
+]
+
+>>>>>>> 20120609bbb71b2e1cf0f5ffefa5d521fd754351
 const STAFF_LINKS = [
   { staff: 'kitchen', label: 'Kitchen Staff Login', icon: FiCoffee },
   { staff: 'cashier', label: 'Cashier Staff Login', icon: FiBriefcase },

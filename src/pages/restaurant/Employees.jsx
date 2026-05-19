@@ -160,7 +160,7 @@ function EmployeeActions({ employee, onEdit, onDelete, onResetPassword }) {
         <FiEdit2 className="h-4 w-4" />
       </button>
       <button
-        onClick={() => onDelete(employee._id)}
+        onClick={() => onDelete(employee)}
         className="rounded-lg p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
         title="Delete"
       >
@@ -180,6 +180,8 @@ const Employees = () => {
   const [viewMode, setViewMode] = useState('list')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
   const restaurantId = user?.id || user?._id || 'N/A'
 
   useEffect(() => {
@@ -198,13 +200,18 @@ const Employees = () => {
     }
   }
 
-  const handleDelete = async (id) => {
+  const handleDelete = async () => {
+    if (!deleteTarget?._id) return
     try {
-      await api.delete(`/restaurant/employees/${id}`)
+      setDeleteLoading(true)
+      await api.delete(`/restaurant/employees/${deleteTarget._id}`)
       toast.success('Employee deleted')
+      setDeleteTarget(null)
       fetchEmployees()
-    } catch {
-      toast.error('Failed to delete employee')
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete employee')
+    } finally {
+      setDeleteLoading(false)
     }
   }
 
@@ -410,7 +417,7 @@ const Employees = () => {
                       employee={emp}
                       onResetPassword={handleResetPassword}
                       onEdit={(employee) => navigate(`${restaurantBase}/employees/${employee._id}/edit`)}
-                      onDelete={handleDelete}
+                      onDelete={setDeleteTarget}
                     />
                   </div>
                   <div className="mt-4">
@@ -471,7 +478,7 @@ const Employees = () => {
                         employee={emp}
                         onResetPassword={handleResetPassword}
                         onEdit={(employee) => navigate(`${restaurantBase}/employees/${employee._id}/edit`)}
-                        onDelete={handleDelete}
+                        onDelete={setDeleteTarget}
                       />
                     </td>
                   </tr>
@@ -491,6 +498,53 @@ const Employees = () => {
           onPageSizeChange={setPageSize}
         />
       )}
+
+      <AnimatePresence>
+        {deleteTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.96 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="w-full max-w-[430px] rounded-3xl border border-white/80 bg-white p-6 text-center shadow-2xl shadow-slate-950/25"
+            >
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-red-50 text-red-600 ring-8 ring-red-50/70">
+                <FiTrash2 className="h-7 w-7" />
+              </div>
+              <h3 className="mt-6 text-2xl font-black tracking-tight text-gray-950">
+                Delete employee?
+              </h3>
+              <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-gray-500">
+                This will remove <span className="font-bold text-gray-900">{deleteTarget.name || deleteTarget.username}</span> from this branch.
+              </p>
+              <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => setDeleteTarget(null)}
+                  disabled={deleteLoading}
+                  className="rounded-2xl border border-surface-200 bg-white px-5 py-3 text-sm font-black text-gray-700 transition hover:bg-surface-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleteLoading}
+                  className="rounded-2xl bg-red-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-red-900/20 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {deleteLoading ? 'Deleting...' : 'Confirm delete'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

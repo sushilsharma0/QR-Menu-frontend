@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import toast from '@utils/toast'
-import { FiArchive, FiCheck, FiDatabase, FiDownload, FiEye, FiImage, FiMoon, FiRefreshCw, FiSun, FiTrash2, FiUpload, FiX } from 'react-icons/fi'
+import { FiCheck, FiEye, FiImage, FiMoon, FiRefreshCw, FiSun, FiUpload, FiX } from 'react-icons/fi'
 import api from '../../services/api'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
@@ -126,13 +126,6 @@ const Settings = () => {
   const [showBackgroundPreview, setShowBackgroundPreview] = useState(false)
   const [themeDraft, setThemeDraft] = useState(normalizeThemeSettings(DEFAULT_THEME_SETTINGS))
   const [themeSaving, setThemeSaving] = useState(false)
-  const [backupBusy, setBackupBusy] = useState(false)
-  const [backupHistory, setBackupHistory] = useState([])
-  const [backupSchedules, setBackupSchedules] = useState([])
-  const [restorePreview, setRestorePreview] = useState(null)
-  const [restoreFile, setRestoreFile] = useState(null)
-  const [restoreMode, setRestoreMode] = useState('merge')
-  const [backupSections, setBackupSections] = useState(['menu', 'tables', 'inventory', 'employees', 'accounting', 'payroll', 'settings'])
   const { mergeUser } = useAuth()
   const { updateTheme, applyRemoteTheme, resetTheme } = useTheme()
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm()
@@ -141,7 +134,6 @@ const Settings = () => {
 
   useEffect(() => {
     fetchRestaurant()
-    fetchBackupHistory()
   }, [])
 
   const fetchRestaurant = async () => {
@@ -392,133 +384,6 @@ const Settings = () => {
     }
   }
 
-  const fetchBackupHistory = async () => {
-    try {
-      const res = await api.get('/restaurant/backup/history')
-      setBackupHistory(res.data?.data?.backups || [])
-      setBackupSchedules(res.data?.data?.schedules || [])
-    } catch {
-      // Settings page can still load if backup access is disabled for the role.
-    }
-  }
-
-  const createBackup = async (type = 'full') => {
-    try {
-      setBackupBusy(true)
-      const res = await api.post('/restaurant/backup/create', {
-        type,
-        sections: type === 'partial' ? backupSections : [],
-      })
-      toast.success('Backup created')
-      await fetchBackupHistory()
-      const id = res.data?.data?.backup?._id
-      if (id) downloadBackup(id)
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to create backup')
-    } finally {
-      setBackupBusy(false)
-    }
-  }
-
-  const downloadBackup = async (id) => {
-    try {
-      const res = await api.get(`/restaurant/backup/download/${id}`, { responseType: 'blob' })
-      const blobUrl = window.URL.createObjectURL(new Blob([res.data]))
-      const link = document.createElement('a')
-      link.href = blobUrl
-      link.download = `backup-${id}.qrbak`
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      window.URL.revokeObjectURL(blobUrl)
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to download backup')
-    }
-  }
-
-  const deleteBackup = async (id) => {
-    if (!window.confirm('Delete this encrypted backup?')) return
-    try {
-      await api.delete(`/restaurant/backup/${id}`)
-      toast.success('Backup deleted')
-      fetchBackupHistory()
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to delete backup')
-    }
-  }
-
-  const saveBackupSchedule = async (frequency) => {
-    try {
-      setBackupBusy(true)
-      await api.post('/restaurant/backup/schedule', {
-        frequency,
-        backupType: 'snapshot',
-        sections: backupSections,
-        isActive: true,
-      })
-      toast.success('Backup schedule saved')
-      fetchBackupHistory()
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to save schedule')
-    } finally {
-      setBackupBusy(false)
-    }
-  }
-
-  const previewRestore = async () => {
-    if (!restoreFile) return toast.error('Choose a .qrbak file first')
-    try {
-      setBackupBusy(true)
-      const form = new FormData()
-      form.append('backup', restoreFile)
-      form.append('previewOnly', 'true')
-      form.append('mode', restoreMode)
-      const res = await api.post('/restaurant/backup/restore', form)
-      setRestorePreview(res.data?.data)
-      toast.success('Restore preview ready')
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to preview restore')
-    } finally {
-      setBackupBusy(false)
-    }
-  }
-
-  const runRestore = async () => {
-    if (!restoreFile) return toast.error('Choose a .qrbak file first')
-    if (!restorePreview) return toast.error('Preview the backup before restoring')
-    if (!window.confirm(`Restore backup using ${restoreMode} mode?`)) return
-    try {
-      setBackupBusy(true)
-      const form = new FormData()
-      form.append('backup', restoreFile)
-      form.append('mode', restoreMode)
-      await api.post('/restaurant/backup/restore', form)
-      toast.success('Restore completed')
-      setRestorePreview(null)
-      setRestoreFile(null)
-      fetchBackupHistory()
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Restore failed')
-    } finally {
-      setBackupBusy(false)
-    }
-  }
-
-  const toggleBackupSection = (section) => {
-    setBackupSections((prev) =>
-      prev.includes(section) ? prev.filter((item) => item !== section) : [...prev, section],
-    )
-  }
-
-  const formatBackupSize = (bytes = 0) => {
-    const size = Number(bytes || 0)
-    if (size >= 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(1)} MB`
-    return `${Math.max(1, Math.round(size / 1024))} KB`
-  }
-
-  const latestBackup = backupHistory[0]
-  const completedBackups = backupHistory.filter((backup) => backup.status === 'completed').length
-
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div>
@@ -531,6 +396,7 @@ const Settings = () => {
 
         {isFeatureEnabled('backup') && (
         <Card
+<<<<<<< HEAD
           title="Backup & Restore"
           icon={FiDatabase}
           actions={
@@ -746,6 +612,8 @@ const Settings = () => {
         )}
 
         <Card
+=======
+>>>>>>> 20120609bbb71b2e1cf0f5ffefa5d521fd754351
           title="Appearance - Theme Customization"
           icon={FiImage}
           actions={

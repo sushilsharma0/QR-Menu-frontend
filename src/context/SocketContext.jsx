@@ -91,7 +91,6 @@ export const SocketProvider = ({ children }) => {
 
     // Connection event handlers
     newSocket.on('connect', () => {
-      console.log('🔌 Socket connected:', newSocket.id)
       setIsConnected(true)
       setConnectionError(null)
       
@@ -116,25 +115,20 @@ export const SocketProvider = ({ children }) => {
           newSocket.emit('join:branch', { restaurantId: resolvedRestaurantId, branchId })
         } else if (userRole === 'restaurant') {
           newSocket.emit('join:restaurant', userId)
-          console.log('Joined restaurant room:', userId)
         } else if (userScope === 'employee') {
           // Employees should also join restaurant room to receive
           // order/payment broadcasts emitted at restaurant level.
           if (resolvedRestaurantId) {
             newSocket.emit('join:restaurant', resolvedRestaurantId)
-            console.log('Joined restaurant room:', resolvedRestaurantId)
           }
           newSocket.emit('join:employee', userId)
-          console.log('Joined employee room:', userId)
         } else if (userRole === 'super_admin' || userRole === 'admin') {
           newSocket.emit('join:platform', userId)
-          console.log('Joined platform room:', userId)
         }
       }
     })
 
     newSocket.on('disconnect', (reason) => {
-      console.log('🔌 Socket disconnected:', reason)
       setIsConnected(false)
       
       if (reason === 'io server disconnect') {
@@ -159,7 +153,7 @@ export const SocketProvider = ({ children }) => {
       if (import.meta.env.DEV) {
         if (now - lastSocketConnectErrorLogMs > 15000) {
           lastSocketConnectErrorLogMs = now
-          console.warn(
+          console.error(
             '[Socket] Realtime server unreachable (is the API running on port 5000?).',
             error?.message || error,
           )
@@ -169,8 +163,7 @@ export const SocketProvider = ({ children }) => {
       }
     })
 
-    newSocket.on('reconnect', (attemptNumber) => {
-      console.log('Socket reconnected after', attemptNumber, 'attempts')
+    newSocket.on('reconnect', () => {
       setIsConnected(true)
       setConnectionError(null)
       
@@ -204,10 +197,6 @@ export const SocketProvider = ({ children }) => {
           newSocket.emit('join:platform', userId)
         }
       }
-    })
-
-    newSocket.on('reconnect_attempt', (attemptNumber) => {
-      console.log('Reconnection attempt:', attemptNumber)
     })
 
     newSocket.on('reconnect_error', (error) => {
@@ -244,7 +233,6 @@ export const SocketProvider = ({ children }) => {
   const joinRoom = useCallback((roomName, roomId) => {
     if (socket && isConnected) {
       socket.emit(`join:${roomName}`, roomId)
-      console.log(`Joined ${roomName} room:`, roomId)
     }
   }, [socket, isConnected])
 
@@ -252,7 +240,6 @@ export const SocketProvider = ({ children }) => {
   const leaveRoom = useCallback((roomName, roomId) => {
     if (socket && isConnected) {
       socket.emit(`leave:${roomName}`, roomId)
-      console.log(`Left ${roomName} room:`, roomId)
     }
   }, [socket, isConnected])
 
@@ -270,8 +257,6 @@ export const SocketProvider = ({ children }) => {
   const emit = useCallback((event, data) => {
     if (socket && isConnected) {
       socket.emit(event, data)
-    } else {
-      console.warn('Socket not connected, cannot emit:', event)
     }
   }, [socket, isConnected])
 

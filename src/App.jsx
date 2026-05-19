@@ -49,6 +49,7 @@ import RestaurantSubscription from "./pages/restaurant/Subscription";
 import RestaurantSubscriptionCheckout from "./pages/restaurant/SubscriptionCheckout";
 import RestaurantSubscriptionInvoiceDetail from "./pages/restaurant/SubscriptionInvoiceDetail";
 import RestaurantSettings from "./pages/restaurant/Settings";
+import BackupRecovery from "./pages/restaurant/BackupRecovery";
 import RestaurantActiveDevices from "./pages/restaurant/ActiveDevices";
 import RestaurantCreditCustomers from "./pages/restaurant/CreditCustomers";
 import RestaurantProfile from "./pages/restaurant/Profile";
@@ -265,6 +266,7 @@ function App() {
         <Route path="finance/inventory" element={<FinanceInventory />} />
         <Route path="finance/budget" element={<FinanceBudget />} />
         <Route path="settings" element={<RestaurantSettings />} />
+        <Route path="backup-recovery" element={<BackupRecovery />} />
         <Route path="public-profile" element={<RestaurantPublicProfile />} />
         <Route path="profile" element={<RestaurantProfile />} />
         <Route path="settings" element={<RestaurantSettings />} />

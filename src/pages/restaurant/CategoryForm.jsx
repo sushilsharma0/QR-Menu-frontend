@@ -52,8 +52,6 @@ const CategoryForm = () => {
         formData.append('image', selectedFile)
       }
 
-      console.log('Submitting with file:', selectedFile)
-
       if (id) {
         await api.put(`/restaurant/menu/categories/${id}`, formData)
         toast.success('Category updated')
@@ -78,7 +76,6 @@ const CategoryForm = () => {
         e.target.value = ''
         return
       }
-      console.log('File selected:', file.name, file.size)
       setSelectedFile(file)
       setImagePreview(URL.createObjectURL(file))
     }

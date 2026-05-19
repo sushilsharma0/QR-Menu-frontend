@@ -159,7 +159,6 @@ export const CustomerCartProvider = ({ children }) => {
 
       const qrToken = tokenRef.current
       if (!qrToken) {
-        console.warn('Cart: no QR token; cannot add item')
         return null
       }
 
