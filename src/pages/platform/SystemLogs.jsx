@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { FiActivity, FiAlertCircle, FiCheckCircle, FiRefreshCw } from 'react-icons/fi'
+import { FiActivity, FiAlertCircle, FiCheckCircle, FiRefreshCw, FiSlash } from 'react-icons/fi'
 import toast from '@utils/toast'
 import api from '../../services/api'
 import Card from '../../components/common/Card'
@@ -16,6 +16,7 @@ const SystemLogs = () => {
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('')
+  const [blockingIp, setBlockingIp] = useState(null)
 
   const fetchLogs = async () => {
     try {
@@ -43,6 +44,23 @@ const SystemLogs = () => {
     },
     { success: 0, failed: 0 },
   ), [logs])
+
+  const blockIp = async (ipAddress, action) => {
+    if (!ipAddress) return
+    if (!window.confirm(`Block IP ${ipAddress}?`)) return
+    try {
+      setBlockingIp(ipAddress)
+      await api.post('/platform/security/ip-blocks', {
+        ipAddress,
+        reason: `Blocked from system logs (${action || 'suspicious activity'})`,
+      })
+      toast.success('IP blocked')
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to block IP')
+    } finally {
+      setBlockingIp(null)
+    }
+  }
 
   const OutcomePill = ({ log }) => {
     const failed = isFailedLog(log)
@@ -104,8 +122,10 @@ const SystemLogs = () => {
                   <th className="px-4 py-3">Actor</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Action</th>
+                  <th className="px-4 py-3">IP</th>
                   <th className="px-4 py-3">Restaurant</th>
                   <th className="px-4 py-3">Details</th>
+                  <th className="px-4 py-3 text-right">Security</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-900">
@@ -126,11 +146,29 @@ const SystemLogs = () => {
                         {formatAction(log.action)}
                       </span>
                     </td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-600 dark:text-gray-300">
+                      {log.ipAddress || '-'}
+                    </td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
                       {log.details?.restaurantId || '-'}
                     </td>
                     <td className="max-w-md break-words px-4 py-3 text-gray-600 dark:text-gray-300">
                       {getDetails(log)}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {log.ipAddress && isFailedLog(log) ? (
+                        <button
+                          type="button"
+                          disabled={blockingIp === log.ipAddress}
+                          onClick={() => blockIp(log.ipAddress, log.action)}
+                          className="inline-flex items-center gap-1 text-xs font-bold text-red-600 hover:text-red-700 disabled:opacity-50"
+                        >
+                          <FiSlash className="h-3.5 w-3.5" />
+                          Block IP
+                        </button>
+                      ) : (
+                        '-'
+                      )}
                     </td>
                   </tr>
                 ))}

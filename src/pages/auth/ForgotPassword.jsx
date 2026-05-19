@@ -16,7 +16,7 @@ const ForgotPassword = () => {
     try {
       setLoading(true)
       await api.post('/restaurant/auth/forgot-password', data)
-      toast.success('OTP sent to your email')
+      toast.success('Reset code sent to your email')
       navigate(`/reset-password?email=${encodeURIComponent(data.email)}`)
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to send OTP')

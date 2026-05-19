@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import toast from '@utils/toast'
 import { useAuth } from '../../hooks/useAuth'
+import { usePlanAccess } from '../../hooks/usePlanAccess'
 import { FiChevronDown, FiLogOut, FiMail, FiMoon, FiSettings, FiSun, FiUser, FiZap } from 'react-icons/fi'
 import NotificationMenu from './NotificationMenu'
 import { useTheme } from '../../context/ThemeContext'
@@ -12,6 +13,7 @@ import { useBranch } from '../../context/BranchContext'
 
 const Header = () => {
   const { user, logout } = useAuth()
+  const { isPlanReadOnly, isFeatureEnabled, toastLocked } = usePlanAccess()
   const { isDark, toggleTheme } = useTheme()
   const { selectedBranch } = useBranch()
   const [profileOpen, setProfileOpen] = useState(false)
@@ -23,22 +25,7 @@ const Header = () => {
       ? branchPortalBase(user?.restaurantId, user?.branchPortalKey, user?.branchSlug)
       : restaurantPortalBase(slug, restaurantId)
   const profileImage = user?.logo || user?.profilePhoto
-  const restaurantBillingLocked =
-    user?.role === 'restaurant' && user?.scope !== 'employee' && user?.needsPlanUpgrade === true
-  const accountSettingsLocked =
-    user?.role === 'restaurant' &&
-    user?.planAssignmentSource === 'custom' &&
-    user?.planFeatureFlags?.accountSettings === false
-
-  const subscriptionToast = () => {
-    toast.error(
-      'Your trial or plan has ended. Open Subscription to choose a plan and restore access.',
-    )
-  }
-  const accountSettingsToast = () => {
-    const assignedName = user?.assignedPlanName || user?.customPlanLabel || 'Custom plan'
-    toast.error(`Locked by assigned plan: ${assignedName}. Contact super admin to enable this feature.`)
-  }
+  const accountSettingsHidden = user?.role === 'restaurant' && !isFeatureEnabled('accountSettings')
 
   const loginRoleAfterLogout = () => {
     if (user?.role === 'super_admin' || user?.role === 'admin') return 'platform'
@@ -164,21 +151,12 @@ const Header = () => {
                     </div>
                   </div>
                   <div className="grid gap-1 p-2">
-                    {user?.role === 'restaurant' && portalBase && (
+                    {user?.role === 'restaurant' && portalBase && !accountSettingsHidden && (
                       <>
                         <Link
                           to={`${portalBase}/settings`}
-                          onClick={(e) => {
-                            if (restaurantBillingLocked) {
-                              e.preventDefault()
-                              subscriptionToast()
-                              return
-                            }
-                            if (accountSettingsLocked) {
-                              e.preventDefault()
-                              accountSettingsToast()
-                              return
-                            }
+                          onClick={() => {
+                            if (isPlanReadOnly) toast.info(toastLocked('settings'))
                             setProfileOpen(false)
                           }}
                           className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold text-gray-700 transition hover:bg-surface-50 dark:text-gray-200 dark:hover:bg-gray-800"
@@ -188,17 +166,8 @@ const Header = () => {
                         </Link>
                         <Link
                           to={`${portalBase}/profile`}
-                          onClick={(e) => {
-                            if (restaurantBillingLocked) {
-                              e.preventDefault()
-                              subscriptionToast()
-                              return
-                            }
-                            if (accountSettingsLocked) {
-                              e.preventDefault()
-                              accountSettingsToast()
-                              return
-                            }
+                          onClick={() => {
+                            if (isPlanReadOnly) toast.info(toastLocked('settings'))
                             setProfileOpen(false)
                           }}
                           className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold text-gray-700 transition hover:bg-surface-50 dark:text-gray-200 dark:hover:bg-gray-800"

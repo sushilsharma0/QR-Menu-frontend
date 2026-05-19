@@ -106,6 +106,7 @@ import CustomerCreditApply from "./pages/customer/CreditApply";
 // Layouts
 import PlatformLayout from "./components/platform/PlatformLayout";
 import RestaurantLayout from "./components/restaurant/RestaurantLayout";
+import PlanProtectedOutlet from "./components/restaurant/PlanProtectedOutlet";
 import BranchLayout from "./components/branch/BranchLayout";
 import EmployeeLayout from "./components/employee/EmployeeLayout";
 import { defaultPortalPathForUser, getTenantSegments } from "./utils/tenantPaths";
@@ -227,6 +228,7 @@ function App() {
       {/* Restaurant Routes: /restaurant/:slug/:restaurantId/... */}
       <Route path="/restaurant/:slug/:restaurantId" element={<RestaurantLayout />}>
         <Route index element={<Navigate to="dashboard" replace />} />
+        <Route element={<PlanProtectedOutlet />}>
         <Route path="dashboard" element={<RestaurantDashboard />} />
         <Route path="menu" element={<RestaurantMenu />} />
         <Route path="menu/category/new" element={<RestaurantCategoryForm />} />
@@ -276,6 +278,7 @@ function App() {
           <Route path="returns" element={<PosReturns />} />
           <Route path="shift" element={<PosShift />} />
           <Route path="reports" element={<PosReports />} />
+        </Route>
         </Route>
       </Route>
 

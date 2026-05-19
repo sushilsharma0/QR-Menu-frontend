@@ -180,8 +180,8 @@ const Inventory = () => {
       const fromIso = txnDateFrom ? new Date(`${txnDateFrom}T00:00:00`).toISOString() : undefined
       const toIso = txnDateTo ? new Date(`${txnDateTo}T23:59:59`).toISOString() : undefined
       const [invRes, supplierRes, txnRes, purchaseRes, reportRes, cbRes] = await Promise.all([
-        api.get('/restaurant/inventory', { params: { q: search || undefined } }),
-        api.get('/restaurant/inventory/suppliers'),
+        api.get('/restaurant/inventory', { params: { q: search || undefined, limit: 500 } }),
+        api.get('/restaurant/inventory/suppliers', { params: { limit: 500 } }),
         api.get('/restaurant/inventory/transactions', {
           params: { limit: 4000, from: fromIso, to: toIso },
         }),
@@ -197,7 +197,10 @@ const Inventory = () => {
         deadStock: inv.deadStock || 0,
         expiringSoon: inv.expiringSoon || 0,
       })
-      setSuppliers(supplierRes.data?.data || [])
+      const supplierPayload = supplierRes.data?.data
+      setSuppliers(
+        Array.isArray(supplierPayload) ? supplierPayload : supplierPayload?.items || [],
+      )
       setTransactions(txnRes.data?.data || [])
       setPurchases(purchaseRes.data?.data || [])
       setReport(reportRes.data?.data || null)

@@ -486,7 +486,7 @@ const RestaurantDetail = () => {
                   Requested plan: <strong>{restaurant.requestedPlan.name}</strong>
                 </div>
               )}
-              {restaurant?.planAssignmentSource === 'custom' && restaurant?.planFeatureFlags && (
+              {restaurant?.planFeatureFlags && Object.keys(restaurant.planFeatureFlags).length > 0 && (
                 <div className="rounded-2xl border border-surface-200 p-4 text-sm dark:border-gray-700">
                   <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     Feature access

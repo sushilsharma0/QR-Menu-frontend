@@ -26,7 +26,7 @@ const LandingPage = () => {
 
   return (
     <LandingBrandingProvider value={{ ...branding, chat, footer }}>
-      <div className="relative min-h-screen overflow-hidden text-slate-950">
+      <div className="relative min-h-screen  overflow-hidden text-slate-950">
         <LandingBackground />
         <LandingNavbar />
         <main>

@@ -53,9 +53,9 @@ const RestaurantTrialKycBanner = () => {
           <div>
             {trialEnded ? (
               <>
-                <p className="font-medium">Trial ended — upgrade to continue</p>
+                <p className="font-medium">Trial or plan ended — read-only mode</p>
                 <p className="mt-1 opacity-90">
-                  Request a plan, upload your payment proof, and wait for platform approval to restore access.
+                  You can still view your data, but editing is disabled. Renew your subscription to restore full access.
                 </p>
               </>
             ) : (

@@ -7,6 +7,7 @@ import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import { useAuth } from '../../hooks/useAuth'
+import { usePlanAccess } from '../../hooks/usePlanAccess'
 import NotificationSettingsPanel from '../../components/notifications/NotificationSettingsPanel'
 import { useTheme } from '../../context/ThemeContext'
 import {
@@ -110,6 +111,7 @@ function BrandUpload({ id, label, preview, onChange, hint }) {
 }
 
 const Settings = () => {
+  const { isFeatureEnabled } = usePlanAccess()
   const [loading, setLoading] = useState(false)
   const [restaurant, setRestaurant] = useState(null)
   const [logoPreview, setLogoPreview] = useState(null)
@@ -527,6 +529,7 @@ const Settings = () => {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <NotificationSettingsPanel />
 
+        {isFeatureEnabled('backup') && (
         <Card
           title="Backup & Restore"
           icon={FiDatabase}
@@ -740,6 +743,7 @@ const Settings = () => {
             </div>
           </div>
         </Card>
+        )}
 
         <Card
           title="Appearance - Theme Customization"

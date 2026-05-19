@@ -1,28 +1,38 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowRight, Menu, X } from 'lucide-react'
+import { ArrowRight, Menu, Sparkles, X } from 'lucide-react'
 import BrandLogo from './BrandLogo'
 import { navItems } from './landingDefaults'
 
 const NavLink = ({ item, onClick, isActive = false }) => (
-  <a
+  <motion.a
     href={item.href}
     onClick={(event) => onClick(event, item.href)}
+    whileHover={{ scale: 1.05 }}
+    whileTap={{ scale: 0.98 }}
     className={`relative rounded-full px-3 py-2 text-sm font-black transition-all duration-300 xl:px-4 ${
       isActive
-        ? 'bg-white text-primary-700 shadow-sm'
-        : 'text-slate-600 hover:bg-white hover:text-primary-700 hover:shadow-sm'
+        ? 'bg-gradient-to-br from-primary-600 to-primary-700 text-white shadow-lg shadow-primary-600/30'
+        : 'text-slate-600 hover:bg-white hover:text-primary-700 hover:shadow-md'
     }`}
   >
     {item.label}
-  </a>
+    {isActive && (
+      <motion.span
+        layoutId="activeNav"
+        className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-primary-600 to-primary-700"
+        transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+      />
+    )}
+  </motion.a>
 )
 
 const LandingNavbar = () => {
   const [open, setOpen] = useState(false)
   const [activeSection, setActiveSection] = useState('#home')
   const [scrolled, setScrolled] = useState(false)
+  const [isHovering, setIsHovering] = useState(false)
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : ''
@@ -33,7 +43,7 @@ const LandingNavbar = () => {
 
   useEffect(() => {
     const onScroll = () => {
-      setScrolled(window.scrollY > 12)
+      setScrolled(window.scrollY > 20)
     }
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -84,141 +94,310 @@ const LandingNavbar = () => {
   return (
     <>
       <motion.header
-        initial={{ y: -30, opacity: 0 }}
+        initial={{ y: -40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed inset-x-0 top-0 z-50 px-2 py-2 sm:px-5 sm:py-3"
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="fixed inset-x-0 top-0 z-50 px-3 py-3 sm:px-5 sm:py-4"
       >
-        <nav
-          className={`mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center rounded-2xl border px-3 backdrop-blur-xl transition-all duration-300 sm:px-4 lg:px-5 ${
+        <motion.nav
+          animate={{
+            scale: scrolled ? 0.98 : 1,
+          }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
+          className={`mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 rounded-2xl border px-4 backdrop-blur-xl transition-all duration-500 sm:gap-6 sm:px-5 lg:gap-8 lg:px-6 ${
             scrolled
-              ? 'h-13 border-surface-300 bg-white/95 shadow-2xl shadow-slate-900/10 sm:h-14'
-              : 'h-14 border-white/80 bg-white/90 shadow-xl shadow-slate-900/5 sm:h-16'
+              ? 'h-14 border-slate-200/60 bg-white/80 shadow-2xl shadow-slate-900/[0.08] sm:h-16'
+              : 'h-16 border-white/60 bg-white/70 shadow-xl shadow-slate-900/5 sm:h-[4.5rem]'
           }`}
         >
-          <BrandLogo />
+          {/* Gradient overlay on hover */}
+          <motion.div
+            animate={{ opacity: isHovering ? 0.03 : 0 }}
+            transition={{ duration: 0.3 }}
+            className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-500"
+          />
 
+          {/* Logo */}
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+          >
+            <BrandLogo />
+          </motion.div>
+
+          {/* Desktop Navigation */}
           <div className="hidden justify-center lg:flex">
-            <div className="flex items-center gap-1 rounded-full bg-slate-100 p-1">
-              {navItems.map((item) => (
-                <NavLink
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="flex items-center gap-1 rounded-full bg-slate-100/80 p-1.5 backdrop-blur-sm"
+            >
+              {navItems.map((item, index) => (
+                <motion.div
                   key={item.label}
-                  item={item}
-                  onClick={handleSectionNav}
-                  isActive={activeSection === item.href}
-                />
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 + index * 0.05, duration: 0.3 }}
+                >
+                  <NavLink
+                    item={item}
+                    onClick={handleSectionNav}
+                    isActive={activeSection === item.href}
+                  />
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
 
-          <div className="hidden items-center justify-end gap-2 lg:flex xl:gap-3">
-            <Link
-              to="/vendor/login"
-              className="rounded-xl px-3 py-2 text-sm font-black text-slate-700 transition-all duration-300 hover:bg-slate-100 hover:text-primary-700 xl:px-4"
-            >
-              Login
-            </Link>
-            <Link
-              to="/vendor/register"
-              className="group inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-primary-900/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-700 hover:shadow-primary-900/30 xl:px-5"
-            >
-              Start Free
-              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
-            </Link>
-          </div>
+          {/* Desktop CTA Buttons */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+            className="hidden items-center justify-end gap-2 lg:flex xl:gap-3"
+          >
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Link
+                to="/vendor/login"
+                className="group relative overflow-hidden rounded-xl px-4 py-2.5 text-sm font-black text-slate-700 transition-all duration-300 hover:text-primary-700 xl:px-5"
+              >
+                <span className="relative z-10">Login</span>
+                <motion.div
+                  className="absolute inset-0 bg-slate-100"
+                  initial={{ scale: 0, opacity: 0 }}
+                  whileHover={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                />
+              </Link>
+            </motion.div>
 
-          <button
+            <motion.div
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+            >
+              <Link
+                to="/vendor/register"
+                className="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-primary-600/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary-600/40 xl:px-6"
+              >
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-br from-primary-700 to-primary-800"
+                  initial={{ opacity: 0 }}
+                  whileHover={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                />
+                <Sparkles className="relative z-10 h-4 w-4" />
+                <span className="relative z-10">Start Free</span>
+                <ArrowRight className="relative z-10 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+              </Link>
+            </motion.div>
+          </motion.div>
+
+          {/* Mobile Menu Button */}
+          <motion.button
             type="button"
             onClick={() => setOpen(true)}
-            className="ml-auto flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-800 transition-all duration-300 hover:scale-105 hover:border-primary-200 hover:text-primary-700 active:scale-95 sm:h-10 sm:w-10 lg:hidden"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className="relative ml-auto flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/80 bg-white/90 text-slate-800 shadow-md transition-all duration-300 hover:border-primary-300 hover:text-primary-700 hover:shadow-lg active:shadow-sm sm:h-11 sm:w-11 lg:hidden"
             aria-label="Open menu"
           >
-            <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
-          </button>
-        </nav>
+            <motion.div
+              animate={{ rotate: open ? 90 : 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Menu className="h-5 w-5 sm:h-5 sm:w-5" />
+            </motion.div>
+            
+            {/* Pulse effect */}
+            <motion.span
+              className="absolute inset-0 rounded-xl bg-primary-500/20"
+              initial={{ scale: 1, opacity: 0 }}
+              animate={{ scale: [1, 1.4, 1], opacity: [0, 0.3, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            />
+          </motion.button>
+        </motion.nav>
       </motion.header>
 
-      <AnimatePresence>
+      {/* Mobile Menu */}
+      <AnimatePresence mode="wait">
         {open && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-[60] bg-slate-950/55 backdrop-blur-sm lg:hidden"
-            onClick={close}
-          >
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 z-[60] bg-slate-950/60 backdrop-blur-md lg:hidden"
+              onClick={close}
+            />
+
+            {/* Mobile Drawer */}
             <motion.aside
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              className="ml-auto flex h-full w-[min(86vw,360px)] flex-col bg-white shadow-2xl"
+              initial={{ x: '100%', opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: '100%', opacity: 0 }}
+              transition={{ 
+                type: 'spring', 
+                damping: 30, 
+                stiffness: 300,
+                opacity: { duration: 0.2 }
+              }}
+              className="fixed right-0 top-0 z-[61] flex h-full w-[min(88vw,380px)] flex-col overflow-hidden bg-white shadow-2xl lg:hidden"
               onClick={(event) => event.stopPropagation()}
             >
-              <div className="flex h-16 items-center justify-between border-b border-slate-200 px-4 sm:px-5">
-                <BrandLogo onClick={close} />
-                <button
+              {/* Header with gradient */}
+              <div className="relative flex h-16 items-center justify-between border-b border-slate-200 bg-gradient-to-br from-slate-50 to-white px-5 sm:h-[4.5rem] sm:px-6">
+                <motion.div
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <BrandLogo onClick={close} />
+                </motion.div>
+
+                <motion.button
                   type="button"
                   onClick={close}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 hover:rotate-90 hover:bg-slate-100"
+                  whileHover={{ rotate: 90, scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  initial={{ x: 20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-800 transition-all duration-300 hover:bg-slate-200 sm:h-11 sm:w-11"
                   aria-label="Close menu"
                 >
                   <X className="h-5 w-5" />
-                </button>
+                </motion.button>
               </div>
 
+              {/* Navigation Items */}
               <motion.div
                 initial="hidden"
                 animate="show"
                 variants={{
                   hidden: { opacity: 0 },
-                  show: { opacity: 1, transition: { staggerChildren: 0.06, delayChildren: 0.1 } },
+                  show: { 
+                    opacity: 1, 
+                    transition: { 
+                      staggerChildren: 0.08, 
+                      delayChildren: 0.15 
+                    } 
+                  },
                 }}
-                className="grid gap-1.5 overflow-y-auto p-4 sm:p-5"
+                className="flex-1 overflow-y-auto px-4 py-6 sm:px-6"
               >
-                {navItems.map((item) => (
-                  <motion.a
-                    key={item.label}
-                    variants={{
-                      hidden: { opacity: 0, x: 20 },
-                      show: { opacity: 1, x: 0, transition: { duration: 0.35 } },
-                    }}
-                    href={item.href}
-                    onClick={(event) => {
-                      handleSectionNav(event, item.href)
-                      close()
-                    }}
-                    className={`rounded-xl px-4 py-3 text-base font-black transition-all duration-200 ${
-                      activeSection === item.href
-                        ? 'bg-primary-50 text-primary-700'
-                        : 'text-slate-800 hover:bg-slate-100 hover:text-primary-700'
-                    }`}
-                  >
-                    {item.label}
-                  </motion.a>
-                ))}
+                <div className="grid gap-2">
+                  {navItems.map((item) => (
+                    <motion.div
+                      key={item.label}
+                      variants={{
+                        hidden: { opacity: 0, x: 30, y: 10 },
+                        show: { 
+                          opacity: 1, 
+                          x: 0, 
+                          y: 0,
+                          transition: { 
+                            duration: 0.4,
+                            ease: [0.22, 1, 0.36, 1]
+                          } 
+                        },
+                      }}
+                    >
+                      <motion.a
+                        href={item.href}
+                        onClick={(event) => {
+                          handleSectionNav(event, item.href)
+                          close()
+                        }}
+                        whileHover={{ scale: 1.02, x: 5 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`group relative block overflow-hidden rounded-xl px-5 py-4 text-base font-black transition-all duration-300 ${
+                          activeSection === item.href
+                            ? 'bg-gradient-to-br from-primary-600 to-primary-700 text-white shadow-lg shadow-primary-600/30'
+                            : 'bg-slate-50 text-slate-800 hover:bg-slate-100 hover:text-primary-700'
+                        }`}
+                      >
+                        <span className="relative z-10 flex items-center justify-between">
+                          {item.label}
+                          <motion.span
+                            initial={{ x: -10, opacity: 0 }}
+                            animate={{ 
+                              x: activeSection === item.href ? 0 : -10, 
+                              opacity: activeSection === item.href ? 1 : 0 
+                            }}
+                            className="text-white"
+                          >
+                            <ArrowRight className="h-4 w-4" />
+                          </motion.span>
+                        </span>
+
+                        {/* Hover gradient effect */}
+                        {activeSection !== item.href && (
+                          <motion.div
+                            className="absolute inset-0 bg-gradient-to-br from-primary-50 to-secondary-50"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            whileHover={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.2 }}
+                          />
+                        )}
+                      </motion.a>
+                    </motion.div>
+                  ))}
+                </div>
               </motion.div>
 
-              <div className="mt-auto grid gap-3 border-t border-slate-200 p-4 sm:p-5">
-                <Link
-                  to="/vendor/register"
-                  onClick={close}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-center text-sm font-black text-white shadow-lg shadow-primary-900/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-700"
-                >
-                  Register Vendor
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-                <Link
-                  to="/vendor/login"
-                  onClick={close}
-                  className="rounded-xl border border-slate-200 px-5 py-3 text-center text-sm font-black text-slate-700 transition-all duration-300 hover:border-primary-200 hover:bg-slate-50 hover:text-primary-700"
-                >
-                  Vendor Login
-                </Link>
-              </div>
+              {/* CTA Section */}
+              <motion.div
+                initial={{ y: 50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3, duration: 0.4 }}
+                className="border-t border-slate-200 bg-gradient-to-br from-slate-50 to-white p-4 sm:p-6"
+              >
+                <div className="grid gap-3">
+                  <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}>
+                    <Link
+                      to="/vendor/register"
+                      onClick={close}
+                      className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 px-6 py-4 text-center text-base font-black text-white shadow-lg shadow-primary-600/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary-600/40"
+                    >
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-br from-primary-700 to-primary-800"
+                        initial={{ opacity: 0 }}
+                        whileHover={{ opacity: 1 }}
+                        transition={{ duration: 0.2 }}
+                      />
+                      <Sparkles className="relative z-10 h-4 w-4" />
+                      <span className="relative z-10">Register Vendor</span>
+                      <ArrowRight className="relative z-10 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                    </Link>
+                  </motion.div>
+
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Link
+                      to="/vendor/login"
+                      onClick={close}
+                      className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl border-2 border-slate-200 bg-white px-6 py-4 text-center text-base font-black text-slate-700 transition-all duration-300 hover:border-primary-300 hover:bg-slate-50 hover:text-primary-700"
+                    >
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-br from-primary-50 to-secondary-50"
+                        initial={{ opacity: 0 }}
+                        whileHover={{ opacity: 1 }}
+                        transition={{ duration: 0.2 }}
+                      />
+                      <span className="relative z-10">Vendor Login</span>
+                    </Link>
+                  </motion.div>
+                </div>
+              </motion.div>
             </motion.aside>
-          </motion.div>
+          </>
         )}
       </AnimatePresence>
     </>

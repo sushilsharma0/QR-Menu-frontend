@@ -1,11 +1,13 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import api from '../services/api'
 import { useAuth } from '../hooks/useAuth'
+import { usePlanAccess } from '../hooks/usePlanAccess'
 import { getSelectedBranchId, setStoredBranchId, setBranchPortalContext } from '../utils/branchStorage'
 
 const BranchContext = createContext(null)
 export function BranchProvider({ children }) {
   const { user } = useAuth()
+  const { isFeatureEnabled } = usePlanAccess()
   const [branches, setBranches] = useState([])
   const [selectedBranchId, setSelectedBranchIdState] = useState(getSelectedBranchId())
   const [loading, setLoading] = useState(false)
@@ -41,6 +43,10 @@ export function BranchProvider({ children }) {
       return
     }
     if (!user || !['restaurant', 'manager', 'accountant', 'admin'].includes(user.role)) return
+    if (!isFeatureEnabled('branches')) {
+      setBranches([])
+      return
+    }
     try {
       setLoading(true)
       const res = await api.get('/restaurant/branches', { params: { limit: 100 }, skipBranchHeader: true })
@@ -62,7 +68,7 @@ export function BranchProvider({ children }) {
     } finally {
       setLoading(false)
     }
-  }, [persistSelectedBranch, user])
+  }, [isFeatureEnabled, persistSelectedBranch, user])
 
   useEffect(() => {
     loadBranches()

@@ -72,13 +72,12 @@ export function getOrCreateDeviceId() {
   return deviceId
 }
 
+/** Stable across window resize/zoom — screen size is sent separately via X-Device-Screen. */
 export function getDeviceFingerprint() {
   const parts = [
     navigator.userAgent,
     navigator.language,
-    screen.width,
-    screen.height,
-    screen.colorDepth,
+    navigator.platform || '',
     Intl.DateTimeFormat().resolvedOptions().timeZone,
   ]
   return parts.filter(Boolean).join('|')

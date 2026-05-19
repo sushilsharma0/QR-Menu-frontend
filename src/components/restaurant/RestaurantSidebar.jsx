@@ -30,99 +30,22 @@ import {
 } from 'react-icons/fi'
 import api from '../../services/api'
 import { useAuth } from '../../hooks/useAuth'
+import { usePlanAccess } from '../../hooks/usePlanAccess'
 import { useSocket } from '../../hooks/useSocket'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { useBranch } from '../../context/BranchContext'
+import { RESTAURANT_NAV_GROUPS } from '../../config/restaurantNavConfig'
 
 function staffLoginHref(restaurantId, staff) {
   const q = new URLSearchParams({ role: 'employee', staff, restaurantId: String(restaurantId) })
   return `/login?${q.toString()}`
 }
 
-const NAV_GROUPS = [
-  {
-    label: 'Overview',
-    items: [
-      { segment: 'dashboard', icon: FiHome, label: 'Dashboard' },
-      { segment: 'orders/activity', icon: FiBarChart2, label: 'Sales activity' },
-    ],
-  },
-  {
-    label: 'Service',
-    items: [
-      { segment: 'pos', icon: FiCoffee, label: 'POS' },
-      { segment: 'orders', icon: FiShoppingBag, label: 'Orders' },
-      { segment: 'menu', icon: FiBookOpen, label: 'Menu' },
-      { segment: 'tables', icon: FiMapPin, label: 'Tables & QR' },
-      { segment: 'promotions', icon: FiPercent, label: 'Promotions' },
-      { segment: 'credit-customers', icon: FiDollarSign, label: 'Credit customers' },
-    ],
-  },
-  {
-    label: 'Business',
-    items: [
-      { segment: 'employees', icon: FiUsers, label: 'Employees' },
-      { segment: 'branches', icon: FiMapPin, label: 'Branches' },
-      { segment: 'kyc', icon: FiShield, label: 'KYC' },
-      { segment: 'subscription', icon: FiCreditCard, label: 'Subscription' },
-    ],
-  },
-  {
-    label: 'Accounting',
-    items: [
-      { segment: 'finance/dashboard', icon: FiBarChart2, label: 'Finance Dashboard' },
-      { segment: 'finance/expenses', icon: FiCreditCard, label: 'Expenses' },
-      { segment: 'finance/budget', icon: FiPieChart, label: 'Budget' },
-      { segment: 'finance/profit-loss', icon: FiPercent, label: 'Profit & Loss' },
-      { segment: 'finance/inventory', icon: FiBookOpen, label: 'Inventory' },
-      { segment: 'finance/payroll', icon: FiUsers, label: 'Payroll' },
-      { segment: 'finance/invoices', icon: FiFileText, label: 'Invoices' },
-    ],
-  },
-  {
-    label: 'Support',
-    items: [
-      { segment: 'tickets', icon: FiHelpCircle, label: 'Support Tickets' },
-      { segment: 'logs', icon: FiTerminal, label: 'Audit Logs' },
-      { segment: 'security', icon: FiShield, label: 'Active Devices' },
-      { segment: 'public-profile', icon: FiFileText, label: 'About & Privacy' },
-      { segment: 'settings', icon: FiSettings, label: 'Settings' },
-    ],
-  },
-]
-
 const STAFF_LINKS = [
   { staff: 'kitchen', label: 'Kitchen Staff Login', icon: FiCoffee },
   { staff: 'cashier', label: 'Cashier Staff Login', icon: FiBriefcase },
   { staff: 'waiter', label: 'Waiter Staff Login', icon: FiUserCheck },
 ]
-
-const SUBSCRIPTION_REQUIRED_TOAST =
-  'Your trial or plan has ended. Open Subscription to choose a plan and restore access.'
-
-function featureKeyForSegment(segment) {
-  const root = segment.split('/')[0]
-  if (root === 'pos') return 'orders'
-  if (root === 'menu') return 'menu'
-  if (root === 'orders') return segment === 'orders/activity' ? 'analytics' : 'orders'
-  if (root === 'tables') return 'tables'
-  if (root === 'promotions') return 'promotions'
-  // House-account approvals are independent of the QR "customer orders" plan flag.
-  if (root === 'credit-customers') return null
-  if (root === 'employees') return 'employees'
-  if (root === 'branches') return 'accountSettings'
-  if (root === 'tickets') return 'supportTickets'
-  if (root === 'logs') return 'activityLogs'
-  if (root === 'security') return null
-  if (root === 'settings') return 'accountSettings'
-  if (root === 'finance') return 'analytics'
-  return null
-}
-
-function isNavUnlockedWhenBillingLocked(segment) {
-  const root = segment.split('/')[0]
-  return root === 'subscription' || root === 'kyc' || root === 'security'
-}
 
 function NavItem({
   item,
@@ -132,9 +55,9 @@ function NavItem({
   onClick,
   onTooltip,
   onTooltipLeave,
-  locked,
+  readOnly,
   lockMessage,
-  onLockedClick,
+  onReadOnlyClick,
 }) {
   const showTooltip = (event) => {
     if (!collapsed) return
@@ -150,43 +73,16 @@ function NavItem({
   const inactiveRow =
     'text-gray-600 hover:bg-surface-50 hover:text-gray-950 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100'
 
-  if (locked) {
-    return (
-      <button
-        type="button"
-        onClick={() => {
-          onLockedClick?.()
-          onClick?.()
-        }}
-        onMouseEnter={showTooltip}
-        onMouseLeave={onTooltipLeave}
-        onFocus={showTooltip}
-        onBlur={onTooltipLeave}
-        className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-200 ${inactiveRow} cursor-not-allowed opacity-80 ${
-          collapsed ? 'justify-center' : ''
-        }`}
-      >
-        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-gray-400 dark:text-gray-500">
-          <item.icon className="h-5 w-5" />
-        </span>
-        {!collapsed && (
-          <>
-            <span className="truncate text-sm">{item.label}</span>
-            <FiLock className="ml-auto h-4 w-4 flex-shrink-0 text-amber-600 dark:text-amber-400" title={lockMessage || 'Locked'} />
-          </>
-        )}
-        {collapsed && (
-          <FiLock className="pointer-events-none absolute -right-0.5 -top-0.5 h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-        )}
-      </button>
-    )
-  }
-
   return (
     <NavLink
       to={`${restaurantBase}/${item.segment}`}
       end={item.segment === 'orders'}
-      onClick={onClick}
+      onClick={(event) => {
+        if (readOnly) {
+          onReadOnlyClick?.()
+        }
+        onClick?.(event)
+      }}
       onMouseEnter={showTooltip}
       onMouseLeave={onTooltipLeave}
       onFocus={showTooltip}
@@ -194,20 +90,27 @@ function NavItem({
       className={({ isActive }) =>
         `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 ${
           isActive
-            ? 'bg-primary-50 font-semibold text-primary-800 shadow-sm ring-1 ring-primary-100 dark:bg-gray-800 dark:text-gray-100 dark:ring-gray-700'
+            ? readOnly
+              ? 'bg-amber-50 font-semibold text-amber-900 ring-1 ring-amber-100 dark:bg-amber-950/30 dark:text-amber-100 dark:ring-amber-900'
+              : 'bg-primary-50 font-semibold text-primary-800 shadow-sm ring-1 ring-primary-100 dark:bg-gray-800 dark:text-gray-100 dark:ring-gray-700'
             : inactiveRow
-        } ${collapsed ? 'justify-center' : ''}`
+        } ${collapsed ? 'justify-center' : ''} ${readOnly ? 'opacity-90' : ''}`
       }
     >
       {({ isActive }) => (
         <>
-          {isActive && !collapsed && (
+          {isActive && !collapsed && !readOnly && (
             <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary-600" />
+          )}
+          {isActive && !collapsed && readOnly && (
+            <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-amber-500" />
           )}
           <span
             className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl transition ${
               isActive
-                ? 'bg-white text-primary-700 shadow-sm dark:bg-gray-900 dark:text-gray-100'
+                ? readOnly
+                  ? 'bg-white text-amber-700 shadow-sm dark:bg-gray-900 dark:text-amber-300'
+                  : 'bg-white text-primary-700 shadow-sm dark:bg-gray-900 dark:text-gray-100'
                 : 'text-gray-500 group-hover:bg-white group-hover:text-primary-700 group-hover:shadow-sm dark:text-gray-400 dark:group-hover:bg-gray-900 dark:group-hover:text-gray-100'
             }`}
           >
@@ -216,7 +119,17 @@ function NavItem({
 
           {!collapsed && <span className="truncate text-sm">{item.label}</span>}
 
-          {item.segment === 'orders' && pendingCount > 0 && (
+          {readOnly && !collapsed && (
+            <FiLock
+              className="ml-auto h-4 w-4 flex-shrink-0 text-amber-600 dark:text-amber-400"
+              title={lockMessage || 'Read-only'}
+            />
+          )}
+          {readOnly && collapsed && (
+            <FiLock className="pointer-events-none absolute -right-0.5 -top-0.5 h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+          )}
+
+          {item.segment === 'orders' && pendingCount > 0 && !readOnly && (
             <span
               className={`flex h-5 min-w-[20px] flex-shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white ${
                 collapsed ? 'absolute -right-1 -top-1' : 'ml-auto'
@@ -225,7 +138,6 @@ function NavItem({
               {pendingCount > 99 ? '99+' : pendingCount}
             </span>
           )}
-
         </>
       )}
     </NavLink>
@@ -265,11 +177,11 @@ function SidebarContent({
   isMobile,
   onTooltip,
   onTooltipLeave,
-  billingLocked,
-  isFeatureLocked,
-  featureLockedToast,
-  user,
-  featureFlags,
+  isFeatureHidden,
+  isNavReadOnly,
+  lockMessage,
+  toastLocked,
+  isFeatureEnabled,
 }) {
   const hideLabels = collapsed && !isMobile
 
@@ -308,7 +220,12 @@ function SidebarContent({
 
       <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4">
         <div className="space-y-5">
-          {NAV_GROUPS.map((group) => (
+          {RESTAURANT_NAV_GROUPS.map((group) => {
+            const visibleItems = group.items.filter(
+              (item) => !isFeatureHidden(item.segment, item.featureKey),
+            )
+            if (visibleItems.length === 0) return null
+            return (
             <div key={group.label}>
               {!hideLabels && (
                 <p className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
@@ -316,7 +233,7 @@ function SidebarContent({
                 </p>
               )}
               <div className="space-y-1">
-                {group.items.map((item) => (
+                {visibleItems.map((item) => (
                   <NavItem
                     key={item.segment}
                     item={item}
@@ -326,23 +243,18 @@ function SidebarContent({
                     onClick={isMobile ? onClose : undefined}
                     onTooltip={onTooltip}
                     onTooltipLeave={onTooltipLeave}
-                    locked={isFeatureLocked(item.segment)}
-                    lockMessage={
-                      user?.planAssignmentSource === 'custom' &&
-                      featureKeyForSegment(item.segment) &&
-                      featureFlags[featureKeyForSegment(item.segment)] === false
-                        ? `Locked by assigned plan: ${user?.assignedPlanName || user?.customPlanLabel || 'Custom plan'}`
-                        : undefined
-                    }
-                    onLockedClick={() => featureLockedToast(item.segment)}
+                    readOnly={isNavReadOnly(item.segment)}
+                    lockMessage={lockMessage(item.segment)}
+                    onReadOnlyClick={() => toastLocked(item.segment)}
                   />
                 ))}
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
 
-        {hasTenant && restaurantId != null && !hideLabels && (
+        {hasTenant && restaurantId != null && !hideLabels && isFeatureEnabled('employees') && (
           <div className="mt-5 border-t border-gray-100 pt-4 dark:border-gray-800">
             <p className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
               Staff Logins
@@ -355,9 +267,9 @@ function SidebarContent({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => {
-                    if (isFeatureLocked('employees')) {
+                    if (!isFeatureEnabled('employees') || isNavReadOnly('employees')) {
                       e.preventDefault()
-                      featureLockedToast('employees')
+                      toastLocked('employees')
                       return
                     }
                     if (isMobile) onClose?.()
@@ -375,7 +287,7 @@ function SidebarContent({
           </div>
         )}
 
-        {hasTenant && restaurantId != null && hideLabels && (
+        {hasTenant && restaurantId != null && hideLabels && isFeatureEnabled('employees') && (
           <div className="mt-4 space-y-1 border-t border-gray-100 pt-4 dark:border-gray-800">
             {STAFF_LINKS.map(({ staff, label, icon: Icon }) => (
               <Link
@@ -384,9 +296,9 @@ function SidebarContent({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => {
-                  if (isFeatureLocked('employees')) {
+                  if (!isFeatureEnabled('employees') || isNavReadOnly('employees')) {
                     e.preventDefault()
-                    featureLockedToast('employees')
+                    toastLocked('employees')
                   }
                 }}
                 onMouseEnter={(event) => {
@@ -421,6 +333,14 @@ function SidebarContent({
 
 const RestaurantSidebar = () => {
   const { user } = useAuth()
+  const {
+    billingLocked,
+    isFeatureHidden,
+    isNavReadOnly,
+    lockMessage,
+    toastLocked,
+    isFeatureEnabled,
+  } = usePlanAccess()
   const { socket } = useSocket()
   const { restaurantBase, restaurantId, hasTenant } = useTenantRoutes()
   const { selectedBranchId, loading: branchesLoading } = useBranch()
@@ -429,25 +349,8 @@ const RestaurantSidebar = () => {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [tooltip, setTooltip] = useState(null)
 
-  const billingLocked =
-    user?.role === 'restaurant' && user?.scope !== 'employee' && user?.needsPlanUpgrade === true
-  const featureFlags = user?.planFeatureFlags || {}
-
-  const isFeatureLocked = (segment) => {
-    if (billingLocked && !isNavUnlockedWhenBillingLocked(segment)) return true
-    const key = featureKeyForSegment(segment)
-    if (!key) return false
-    return user?.planAssignmentSource === 'custom' && featureFlags[key] === false
-  }
-
-  const featureLockedToast = (segment) => {
-    const assignedName = user?.assignedPlanName || user?.customPlanLabel || 'Custom plan'
-    const key = featureKeyForSegment(segment)
-    if (key && user?.planAssignmentSource === 'custom' && featureFlags[key] === false) {
-      toast.error(`Locked by assigned plan: ${assignedName}. Contact super admin to enable this feature.`)
-      return
-    }
-    toast.error(SUBSCRIPTION_REQUIRED_TOAST)
+  const handleToastLocked = (segment) => {
+    toast.error(toastLocked(segment))
   }
 
   const fetchPendingCount = async () => {
@@ -496,11 +399,11 @@ const RestaurantSidebar = () => {
     restaurantBase,
     restaurantId,
     hasTenant,
-    billingLocked,
-    isFeatureLocked,
-    featureLockedToast,
-    user,
-    featureFlags,
+    isFeatureHidden,
+    isNavReadOnly,
+    lockMessage,
+    toastLocked: handleToastLocked,
+    isFeatureEnabled,
   }
 
   return (
