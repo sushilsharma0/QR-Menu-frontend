@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-import { FiGlobe, FiLock, FiSettings } from 'react-icons/fi'
+import { FiLock, FiSettings } from 'react-icons/fi'
 import toast from '@utils/toast'
 import api from '../../services/api'
 import { DEFAULT_CURRENCY_CODE, DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
-import Textarea from '../../components/common/Textarea'
 import Tabs from '../../components/common/Tabs'
 import { PlatformPageHeader } from '../../components/platform/PlatformUI'
 import { useAuth } from '../../hooks/useAuth'
-import { LANDING_THEMES } from '../../components/landing/landingThemePresets'
 
 const IMAGE_MAX_BYTES = 1 * 1024 * 1024
 
@@ -25,10 +24,6 @@ const Settings = () => {
   const [manualPaymentSaving, setManualPaymentSaving] = useState(false)
   const [manualQrFile, setManualQrFile] = useState(null)
   const [manualQrPreview, setManualQrPreview] = useState('')
-  const [publicTabSaving, setPublicTabSaving] = useState(false)
-  const [feedbackEnabled, setFeedbackEnabled] = useState(true)
-  const [showFeedbackOnLanding, setShowFeedbackOnLanding] = useState(true)
-  const [feedbackSummary, setFeedbackSummary] = useState(null)
   const { register, handleSubmit, formState: { errors } } = useForm()
   const {
     register: registerBilling,
@@ -41,11 +36,6 @@ const Settings = () => {
     handleSubmit: handleManualSubmit,
     reset: resetManual,
     formState: { errors: manualErrors },
-  } = useForm()
-  const {
-    register: registerLanding,
-    handleSubmit: handleLandingSubmit,
-    reset: resetLanding,
   } = useForm()
 
   useEffect(() => {
@@ -74,53 +64,10 @@ const Settings = () => {
         if (!cancelled) setBillingLoading(false)
       }
     })()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [resetBilling])
-
-  useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      try {
-        const res = await api.get('/platform/settings/site')
-        const data = res.data?.data
-        if (!cancelled && data) {
-          setFeedbackEnabled(data.feedbackEnabled !== false)
-          setShowFeedbackOnLanding(data.showFeedbackOnLanding !== false)
-          setFeedbackSummary(data.feedbackSummary || null)
-          resetLanding({
-            softwareName: data.softwareName || '',
-            brandSubtitle: data.brandSubtitle || '',
-            publicSiteUrl: data.publicSiteUrl || '',
-            supportEmail: data.supportEmail || '',
-            contactPhone: data.contactPhone || '',
-            landingTheme: data.landingTheme || 'default',
-            heroEyebrow: data.heroEyebrow || '',
-            heroTitle: data.heroTitle || '',
-            heroDescription: data.heroDescription || '',
-            heroSubDescription: data.heroSubDescription || '',
-            heroImage: data.heroImage || '',
-            heroTypewriterPhrases: data.heroTypewriterPhrases || '',
-            heroPrimaryCtaText: data.heroPrimaryCtaText || '',
-            heroPrimaryCtaHref: data.heroPrimaryCtaHref || '',
-            heroSecondaryCtaText: data.heroSecondaryCtaText || '',
-            heroSecondaryCtaHref: data.heroSecondaryCtaHref || '',
-            heroBulletPoints: data.heroBulletPoints || '',
-            footerTagline: data.footerTagline || '',
-            footerCtaTitle: data.footerCtaTitle || '',
-            footerCtaSubtitle: data.footerCtaSubtitle || '',
-            chatWidgetEnabled: data.chatWidgetEnabled !== false,
-            chatWidgetMode: data.chatWidgetMode || 'whatsapp',
-            chatWhatsappNumber: data.chatWhatsappNumber || '',
-            chatWhatsappMessage: data.chatWhatsappMessage || '',
-            chatDisplayPhone: data.chatDisplayPhone || '',
-          })
-        }
-      } catch (error) {
-        toast.error(error.response?.data?.message || 'Failed to load site settings')
-      }
-    })()
-    return () => { cancelled = true }
-  }, [resetLanding])
 
   useEffect(() => {
     let cancelled = false
@@ -144,7 +91,9 @@ const Settings = () => {
         if (!cancelled) setManualPaymentLoading(false)
       }
     })()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [resetManual])
 
   const onSubmit = async (data) => {
@@ -152,7 +101,7 @@ const Settings = () => {
       setLoading(true)
       await api.post('/platform/auth/change-password', {
         currentPassword: data.currentPassword,
-        newPassword: data.newPassword
+        newPassword: data.newPassword,
       })
       toast.success('Password changed successfully')
     } catch (error) {
@@ -181,51 +130,6 @@ const Settings = () => {
       toast.error(e.response?.data?.message || 'Failed to save billing settings')
     } finally {
       setBillingSaving(false)
-    }
-  }
-
-  const syncFeedbackFromResponse = (data) => {
-    if (!data) return
-    setFeedbackEnabled(data.feedbackEnabled !== false)
-    setShowFeedbackOnLanding(data.showFeedbackOnLanding !== false)
-    if (data.feedbackSummary != null) setFeedbackSummary(data.feedbackSummary)
-  }
-
-  const savePublicFeedbackOnly = async () => {
-    try {
-      setPublicTabSaving(true)
-      const res = await api.patch('/platform/settings/site', {
-        feedbackEnabled,
-        showFeedbackOnLanding,
-      })
-      syncFeedbackFromResponse(res.data?.data)
-      toast.success('Feedback settings saved')
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to save')
-    } finally {
-      setPublicTabSaving(false)
-    }
-  }
-
-  const savePublicSiteSuper = async (form) => {
-    if (!isSuperAdmin) {
-      toast.error('Only super admin can update landing branding')
-      return
-    }
-    try {
-      setPublicTabSaving(true)
-      const res = await api.patch('/platform/settings/site', {
-        ...form,
-        chatWidgetEnabled: form.chatWidgetEnabled === true || form.chatWidgetEnabled === 'true',
-        feedbackEnabled,
-        showFeedbackOnLanding,
-      })
-      syncFeedbackFromResponse(res.data?.data)
-      toast.success('Public site settings saved')
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to save')
-    } finally {
-      setPublicTabSaving(false)
     }
   }
 
@@ -262,131 +166,6 @@ const Settings = () => {
     setManualQrFile(file)
   }
 
-  const feedbackPanel = (
-    <>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-          <p className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Feedback</p>
-          <p className="mt-2 text-2xl font-black text-gray-950 dark:text-gray-100">{feedbackSummary?.total ?? 0}</p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-          <p className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Public</p>
-          <p className="mt-2 text-2xl font-black text-gray-950 dark:text-gray-100">{feedbackSummary?.publicCount ?? 0}</p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-          <p className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">System rating</p>
-          <p className="mt-2 text-2xl font-black text-gray-950 dark:text-gray-100">{feedbackSummary?.averageSystemRating || 0}/5</p>
-        </div>
-      </div>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Control whether customers can submit feedback after orders and whether approved public feedback appears on the marketing landing page.
-      </p>
-      <label className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-        <div>
-          <p className="text-sm font-bold text-gray-900 dark:text-gray-100">Enable customer feedback</p>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">After paid orders, customers can answer feedback prompts.</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setFeedbackEnabled((c) => !c)}
-          className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${feedbackEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-700'}`}
-        >
-          <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${feedbackEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-        </button>
-      </label>
-      <label className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-        <div>
-          <p className="text-sm font-bold text-gray-900 dark:text-gray-100">Show feedback on landing page</p>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">High-rated public feedback can appear with restaurant logos.</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setShowFeedbackOnLanding((c) => !c)}
-          disabled={!feedbackEnabled}
-          className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${showFeedbackOnLanding && feedbackEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-700'}`}
-        >
-          <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${showFeedbackOnLanding && feedbackEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-        </button>
-      </label>
-    </>
-  )
-
-  const landingFieldsSuper = (
-    <>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Branding, hero, footer, chat, and theme for the public landing page. Filled hero fields override CMS banner text for those slots; leave blank to keep CMS content.
-      </p>
-      <div className="grid gap-4 md:grid-cols-2">
-        <Input label="Software / brand name" {...registerLanding('softwareName')} placeholder="QR Restro Nepal" />
-        <Input label="Brand subtitle (under name)" {...registerLanding('brandSubtitle')} placeholder="Nepal" />
-        <Input label="Public site URL (display only)" {...registerLanding('publicSiteUrl')} placeholder="www.yourdomain.com" icon={FiGlobe} />
-        <Input label="Support email" type="email" {...registerLanding('supportEmail')} />
-        <Input label="Contact phone (landing)" {...registerLanding('contactPhone')} placeholder="+977 …" />
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Landing theme</label>
-          <select
-            {...registerLanding('landingTheme')}
-            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-          >
-            {Object.values(LANDING_THEMES).map((t) => (
-              <option key={t.id} value={t.id}>{t.label}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div>
-        <h3 className="mb-3 text-xs font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">Hero</h3>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Input label="Eyebrow" {...registerLanding('heroEyebrow')} />
-          <Input label="Title" {...registerLanding('heroTitle')} />
-          <Textarea label="Description" rows={3} className="md:col-span-2" {...registerLanding('heroDescription')} />
-          <Textarea label="Secondary paragraph" rows={2} className="md:col-span-2" {...registerLanding('heroSubDescription')} />
-          <Input label="Hero image URL" {...registerLanding('heroImage')} />
-          <Input label="Typewriter phrases (comma or newline)" {...registerLanding('heroTypewriterPhrases')} />
-          <Input label="Primary CTA label" {...registerLanding('heroPrimaryCtaText')} />
-          <Input label="Primary CTA link" {...registerLanding('heroPrimaryCtaHref')} placeholder="/vendor/register" />
-          <Input label="Secondary CTA label" {...registerLanding('heroSecondaryCtaText')} />
-          <Input label="Secondary CTA link" {...registerLanding('heroSecondaryCtaHref')} placeholder="#features" />
-          <Textarea label="Bullets (one per line, max 4)" rows={4} className="md:col-span-2" {...registerLanding('heroBulletPoints')} />
-        </div>
-      </div>
-
-      <div>
-        <h3 className="mb-3 text-xs font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">Footer</h3>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Textarea label="Tagline (under logo)" rows={2} className="md:col-span-2" {...registerLanding('footerTagline')} />
-          <Input label="CTA title" {...registerLanding('footerCtaTitle')} />
-          <Input label="CTA subtitle" {...registerLanding('footerCtaSubtitle')} />
-        </div>
-      </div>
-
-      <div>
-        <h3 className="mb-3 text-xs font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">Landing chat widget</h3>
-        <label className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-800 dark:text-gray-200">
-          <input type="checkbox" {...registerLanding('chatWidgetEnabled')} className="h-4 w-4 rounded border-gray-400" />
-          Show floating chat button on landing page
-        </label>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Channels</label>
-            <select
-              {...registerLanding('chatWidgetMode')}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-            >
-              <option value="whatsapp">WhatsApp only</option>
-              <option value="phone">Phone only</option>
-              <option value="both">WhatsApp + phone</option>
-            </select>
-          </div>
-          <Input label="WhatsApp number (digits, country code, no +)" {...registerLanding('chatWhatsappNumber')} />
-          <Input label="Phone shown in popup (optional)" {...registerLanding('chatDisplayPhone')} />
-          <Input label="WhatsApp pre-filled message" {...registerLanding('chatWhatsappMessage')} />
-        </div>
-      </div>
-    </>
-  )
-
   const financeTabContent = (
     <div className="space-y-10">
       {isSuperAdmin && (
@@ -415,14 +194,18 @@ const Settings = () => {
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">QR code image</label>
                 <input type="file" accept="image/*" className="text-sm" onChange={handleManualQrFileChange} />
-                <p className="mt-1 text-xs text-gray-500">Square QR image, recommended 800x800 px. Max 1 MB.</p>
+                <p className="mt-1 text-xs text-gray-500">Square QR image, recommended 800×800 px. Max 1 MB.</p>
                 {manualQrPreview ? (
-                  <a href={manualQrPreview} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm text-primary-600 underline dark:text-primary-400">View current QR</a>
+                  <a href={manualQrPreview} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm text-primary-600 underline dark:text-primary-400">
+                    View current QR
+                  </a>
                 ) : (
                   <p className="mt-2 text-xs text-gray-500">No QR uploaded yet.</p>
                 )}
               </div>
-              <Button type="submit" loading={manualPaymentSaving}>Save manual payment details</Button>
+              <Button type="submit" loading={manualPaymentSaving}>
+                Save manual payment details
+              </Button>
             </form>
           )}
         </div>
@@ -462,7 +245,9 @@ const Settings = () => {
               <input type="checkbox" {...registerBilling('pricesAreVatInclusive')} className="rounded border-gray-300 dark:border-gray-700" />
               Plan prices include VAT (inclusive pricing)
             </label>
-            <Button type="submit" loading={billingSaving}>Save billing settings</Button>
+            <Button type="submit" loading={billingSaving}>
+              Save billing settings
+            </Button>
           </form>
         )}
       </div>
@@ -482,28 +267,13 @@ const Settings = () => {
         })}
         error={errors.confirmPassword?.message}
       />
-      <Button type="submit" loading={loading}>Update password</Button>
+      <Button type="submit" loading={loading}>
+        Update password
+      </Button>
     </form>
-  )
-
-  const publicTabContent = isSuperAdmin ? (
-    <form onSubmit={handleLandingSubmit(savePublicSiteSuper)} className="space-y-8">
-      {landingFieldsSuper}
-      <div className="border-t border-gray-200 pt-8 dark:border-gray-800">
-        <h3 className="mb-4 text-xs font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">Customer feedback</h3>
-        <div className="space-y-4">{feedbackPanel}</div>
-      </div>
-      <Button type="submit" loading={publicTabSaving}>Save public site &amp; feedback</Button>
-    </form>
-  ) : (
-    <div className="space-y-6">
-      {feedbackPanel}
-      <Button type="button" loading={publicTabSaving} onClick={savePublicFeedbackOnly}>Save feedback settings</Button>
-    </div>
   )
 
   const settingsTabs = [
-    { key: 'public', label: 'Public site', content: publicTabContent },
     { key: 'finance', label: 'Finance & billing', content: financeTabContent },
     { key: 'account', label: 'Your account', content: accountTabContent },
   ]
@@ -513,12 +283,23 @@ const Settings = () => {
       <PlatformPageHeader
         badge="Platform"
         title="Settings"
-        description="All platform controls in one place: public marketing site, feedback, finance, billing, and your password."
+        description="Billing, manual payments, and your admin password. Landing page and CMS live under Content → Website content."
         icon={FiSettings}
       />
 
-      <Card title="Platform configuration" icon={FiSettings}>
-        <Tabs tabs={settingsTabs} defaultTab="public" />
+      <div className="rounded-xl border border-primary-200 bg-primary-50/80 p-4 text-sm text-primary-950 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-100">
+        <p className="font-bold">Public site &amp; landing content</p>
+        <p className="mt-1">
+          Branding, hero overrides, offer banners, blog posts, and feature cards are managed in{' '}
+          <Link to="/platform/cms?tab=public" className="font-semibold underline">
+            Content → Website content
+          </Link>
+          .
+        </p>
+      </div>
+
+      <Card title="Platform configuration" icon={FiLock}>
+        <Tabs tabs={settingsTabs} defaultTab="finance" />
       </Card>
     </div>
   )

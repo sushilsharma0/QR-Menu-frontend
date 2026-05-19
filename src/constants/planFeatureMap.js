@@ -3,22 +3,22 @@
 import { parseRestaurantPortalPath } from '../utils/tenantPaths'
 
 export const PLAN_FEATURE_LABELS = {
-  analytics: 'Dashboard & sales reports',
-  menu: 'Menu & categories',
-  orders: 'Order management',
-  customerOrders: 'POS & QR customer orders',
-  tables: 'Tables & QR codes',
+  analytics: 'Overview',
+  menu: 'Menu',
+  orders: 'Orders',
+  customerOrders: 'POS',
+  tables: 'Tables & QR',
   promotions: 'Promotions',
-  cashier: 'Cashier payments',
-  employees: 'Employees & payroll',
-  branches: 'Branch management',
-  creditCustomers: 'Credit customers',
+  cashier: 'Cashier (staff portal)',
+  employees: 'Staff & payroll',
+  branches: 'Branches',
+  creditCustomers: 'Credit accounts',
   inventory: 'Inventory',
-  billing: 'Invoices & billing',
+  billing: 'Invoices',
   activityLogs: 'Audit logs',
-  supportTickets: 'Support tickets',
-  accountSettings: 'Settings & public profile',
-  backup: 'Backup & restore',
+  supportTickets: 'Support',
+  accountSettings: 'Settings & profile',
+  backup: 'Backup',
 }
 
 /** Paths always available (not gated by plan features). */
@@ -47,6 +47,7 @@ export function featureKeyForSegment(segment) {
   if (seg === 'finance/payroll') return 'employees'
   if (root === 'finance') return 'analytics'
   if (root === 'notifications') return null
+  if (root === 'backup-recovery') return 'backup'
   return null
 }
 

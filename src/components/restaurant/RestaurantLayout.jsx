@@ -4,9 +4,12 @@ import RestaurantSidebar from './RestaurantSidebar'
 import Header from '../common/Header'
 import RestaurantTrialKycBanner from './RestaurantTrialKycBanner'
 import PlanReadOnlyBanner from './PlanReadOnlyBanner'
+import TrialWelcomeModal from './TrialWelcomeModal'
 import { BranchProvider } from '../../context/BranchContext'
+import { useSubscriptionSync } from '../../hooks/useSubscriptionSync'
 
 const RestaurantLayout = () => {
+  useSubscriptionSync()
   const location = useLocation()
   const path = location.pathname || ''
   const isPosRoute = /\/restaurant\/[^/]+\/[^/]+\/pos(\/|$)/.test(path)
@@ -30,6 +33,7 @@ const RestaurantLayout = () => {
           <main className="portal-main flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950">
             <RestaurantTrialKycBanner />
             <PlanReadOnlyBanner />
+            <TrialWelcomeModal />
             <Outlet />
           </main>
         </div>

@@ -140,10 +140,7 @@ const Register = () => {
         email: pendingEmail,
         otp,
       })
-      toast.success('Email verified. Please sign in.')
-      toast('Your 14-day free trial starts now. Complete KYC after login to unlock all restaurant tools.', {
-        duration: 7500,
-      })
+      toast.success('Email verified. Sign in to start your free trial.')
       navigate('/vendor/login')
     } catch (error) {
       toast.error(error.response?.data?.message || 'Verification failed')

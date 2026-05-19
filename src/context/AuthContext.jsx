@@ -195,17 +195,13 @@ export const AuthProvider = ({ children }) => {
             duration: 6500,
           })
         }
-        if (authUser.trialEndsAt && !authUser.hasPaidPlanActive) {
-          const days = Math.ceil(
-            (new Date(authUser.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+        if (authUser.needsPlanUpgrade) {
+          toast.error(
+            authUser.planEndDate && !authUser.isTrialActive
+              ? 'Your subscription has expired. Renew from Subscription to unlock features.'
+              : 'Your trial has ended. Choose a plan from Subscription to continue.',
+            { duration: 6000 },
           )
-          if (days > 0) {
-            toast(`Your ${days}-day${days === 1 ? '' : 's'} free trial is active. Subscribe before it ends to keep access.`, {
-              duration: 5500,
-            })
-          } else if (authUser.needsPlanUpgrade) {
-            toast.error('Your trial has ended. Upgrade your plan from Subscription to continue.')
-          }
         }
       }
       
