@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
   FiArrowRight,
   FiBriefcase,
@@ -275,7 +276,7 @@ const Login = () => {
   const left = leftHeading[role]
 
   return (
-    <div className="flex min-h-screen overflow-hidden bg-white font-sans">
+    <div className="flex h-screen overflow-hidden bg-white font-sans">
       {/* ── LEFT: dark restaurant image panel ── */}
       <div
         className="relative hidden w-[47%] shrink-0 overflow-hidden lg:block"
@@ -395,8 +396,12 @@ const Login = () => {
       </div>
 
       {/* ── RIGHT: white login panel ── */}
-      <div className="flex flex-1 items-start justify-center px-6 py-12 lg:pl-20 lg:pr-24 lg:pt-20">
-        <div className="w-full max-w-[440px] space-y-7">
+      <div
+        className={`flex min-h-0 flex-1 flex-col justify-center overflow-hidden px-6 lg:pl-20 lg:pr-24 ${
+          isBranchLogin ? 'py-6 lg:py-8' : 'py-12 lg:pt-20'
+        }`}
+      >
+        <div className={`mx-auto w-full max-w-[440px] ${isBranchLogin ? 'space-y-5' : 'space-y-7'}`}>
           {/* Mobile logo */}
           <Link to="/" className="flex items-center gap-2 lg:hidden">
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#9a3412] text-white">
@@ -418,40 +423,78 @@ const Login = () => {
             </div>
           </div>
 
-          {/* Google sign-in (vendor only, non-branch) */}
-          {role === 'restaurant' && !isBranchLogin && (
-            <>
-              <GoogleSignIn onSuccess={handleGoogleSuccess} disabled={googleLoading} />
-              <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-widest text-gray-400">
-                <span className="h-px flex-1 bg-gray-200" />
-                OR USE EMAIL
-                <span className="h-px flex-1 bg-gray-200" />
-              </div>
-            </>
-          )}
+          {/* Login mode panel — vendor keeps Google block height; branch uses shorter hint */}
+          <div
+            className={
+              role === 'restaurant' ? (isBranchLogin ? 'h-[72px] shrink-0' : 'min-h-[118px]') : ''
+            }
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              {role === 'restaurant' && !isBranchLogin && (
+                <motion.div
+                  key="vendor-email-mode"
+                  initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
+                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }}
+                  transition={{ duration: 0.22, ease: 'easeOut' }}
+                  className="space-y-7"
+                >
+                  <GoogleSignIn onSuccess={handleGoogleSuccess} disabled={googleLoading} />
+                  <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-widest text-gray-400">
+                    <span className="h-px flex-1 bg-gray-200" />
+                    OR USE EMAIL
+                    <span className="h-px flex-1 bg-gray-200" />
+                  </div>
+                </motion.div>
+              )}
 
-          {/* Info banners */}
-          {role === 'employee' && (
-            <div className="rounded-xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-800">
-              {staffCopy}
-            </div>
-          )}
+              {role === 'restaurant' && isBranchLogin && (
+                <motion.div
+                  key="branch-mode"
+                  initial={{ opacity: 0, y: 12, scale: 0.98, filter: 'blur(4px)' }}
+                  animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, y: -12, scale: 0.98, filter: 'blur(4px)' }}
+                  transition={{ type: 'spring', stiffness: 190, damping: 20 }}
+                  className="rounded-xl border border-[#f1b089]/60 bg-[#fff7ed] px-4 py-3 text-sm text-[#7c260b] shadow-sm shadow-[#8f2a05]/5"
+                >
+                  Branch outlet login: enter your <strong>@branch.com</strong> username,{' '}
+                  <strong>Restaurant ID</strong>, and password.
+                </motion.div>
+              )}
 
-          {role === 'restaurant' && isBranchLogin && (
-            <div className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              Branch outlet login: enter your <strong>@branch.com</strong> username,{' '}
-              <strong>Restaurant ID</strong>, and password.
-            </div>
-          )}
+              {role === 'employee' && (
+                <motion.div
+                  key="employee-mode"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="rounded-xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-800"
+                >
+                  {staffCopy}
+                </motion.div>
+              )}
 
-          {role === 'platform' && (
-            <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-              Platform access is intentionally separate from vendor and staff login.
-            </div>
-          )}
+              {role === 'platform' && (
+                <motion.div
+                  key="platform-mode"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600"
+                >
+                  Platform access is intentionally separate from vendor and staff login.
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <motion.form
+            layout
+            transition={{ layout: { duration: 0.24, ease: 'easeOut' } }}
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-5"
+          >
             {/* Email field */}
             {(role === 'platform' || role === 'restaurant') && (
               <TextInput
@@ -473,15 +516,30 @@ const Login = () => {
               />
             )}
 
-            {/* Branch restaurant ID */}
-            {role === 'restaurant' && isBranchLogin && (
-              <TextInput
-                label="Restaurant ID"
-                icon={FiBriefcase}
-                placeholder="REST-2041 or Mongo id"
-                error={errors.restaurantIdBranch?.message}
-                {...register('restaurantIdBranch', { required: 'Restaurant ID is required' })}
-              />
+            {/* Branch restaurant ID — fixed slot height keeps panel from growing / scrolling */}
+            {role === 'restaurant' && (
+              <div className={`shrink-0 overflow-hidden ${isBranchLogin ? 'h-[76px]' : 'h-0'}`}>
+                <AnimatePresence initial={false}>
+                  {isBranchLogin && (
+                    <motion.div
+                      key="branch-restaurant-id"
+                      initial={{ opacity: 0, height: 0, y: -10, scale: 0.98 }}
+                      animate={{ opacity: 1, height: 'auto', y: 0, scale: 1 }}
+                      exit={{ opacity: 0, height: 0, y: -10, scale: 0.98 }}
+                      transition={{ type: 'spring', stiffness: 210, damping: 24 }}
+                      className="overflow-hidden"
+                    >
+                      <TextInput
+                        label="Restaurant ID"
+                        icon={FiBriefcase}
+                        placeholder="REST-2041 or Mongo id"
+                        error={errors.restaurantIdBranch?.message}
+                        {...register('restaurantIdBranch', { required: 'Restaurant ID is required' })}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             )}
 
             {/* Employee fields */}
@@ -547,7 +605,7 @@ const Login = () => {
               {panel.buttonLabel}
               {!loading && !googleLoading && <FiArrowRight className="h-4 w-4" />}
             </button>
-          </form>
+          </motion.form>
 
           {/* Secure access footer card */}
           <div className="flex items-start gap-4 rounded-xl border border-gray-100 bg-gray-50 p-4">
@@ -562,19 +620,21 @@ const Login = () => {
             </div>
           </div>
 
-          {/* Demo credentials */}
-          <div className="rounded-lg bg-gray-50 px-4 py-3 text-xs text-gray-500">
-            {role === 'platform' ? (
-              <p><span className="font-semibold text-gray-700">Demo:</span> superadmin@qrmenu.com / Admin@123</p>
-            ) : role === 'restaurant' ? (
-              <p>
-                <span className="font-semibold text-gray-700">Vendor demo:</span> test@restaurant.com / Test@123456.
-                <span className="mt-1 block">Branch demo: use credentials from Branch Management after creating an outlet (…@branch.com + Restaurant ID).</span>
-              </p>
-            ) : (
-              <p>Ask your restaurant vendor for your staff username, password, and restaurant ID.</p>
-            )}
-          </div>
+          {/* Demo credentials — hidden in branch mode to keep login panel within viewport */}
+          {!(role === 'restaurant' && isBranchLogin) && (
+            <div className="rounded-lg bg-gray-50 px-4 py-3 text-xs text-gray-500">
+              {role === 'platform' ? (
+                <p><span className="font-semibold text-gray-700">Demo:</span> superadmin@qrmenu.com / Admin@123</p>
+              ) : role === 'restaurant' ? (
+                <p>
+                  <span className="font-semibold text-gray-700">Vendor demo:</span> test@restaurant.com / Test@123456.
+                  <span className="mt-1 block">Branch demo: use credentials from Branch Management after creating an outlet (…@branch.com + Restaurant ID).</span>
+                </p>
+              ) : (
+                <p>Ask your restaurant vendor for your staff username, password, and restaurant ID.</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
