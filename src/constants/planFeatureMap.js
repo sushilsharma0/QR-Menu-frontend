@@ -3,16 +3,23 @@
 import { parseRestaurantPortalPath } from '../utils/tenantPaths'
 
 export const PLAN_FEATURE_LABELS = {
-  analytics: 'Overview',
+  dashboard: 'Dashboard',
+  salesReports: 'Sales reports',
   menu: 'Menu',
-  orders: 'Orders',
-  customerOrders: 'POS',
+  orders: 'Order management',
+  customerOrders: 'POS & new orders',
   tables: 'Tables & QR',
   promotions: 'Promotions',
   cashier: 'Cashier (staff portal)',
-  employees: 'Staff & payroll',
+  employees: 'Staff management',
   branches: 'Branches',
   creditCustomers: 'Credit accounts',
+  financeOverview: 'Finance overview',
+  expenses: 'Expenses',
+  budget: 'Budget',
+  profitLoss: 'Profit & loss',
+  accounting: 'Accounting',
+  payroll: 'Payroll',
   inventory: 'Inventory',
   billing: 'Invoices',
   activityLogs: 'Audit logs',
@@ -34,7 +41,8 @@ export function featureKeyForSegment(segment) {
   const root = seg.split('/')[0]
 
   if (PLAN_ALWAYS_OPEN_SEGMENTS.has(root)) return null
-  if (seg === 'dashboard' || seg === 'orders/activity') return 'analytics'
+  if (seg === 'dashboard') return 'dashboard'
+  if (seg === 'orders/activity') return 'salesReports'
   if (root === 'pos') return 'customerOrders'
   if (root === 'menu') return 'menu'
   if (root === 'orders') return 'orders'
@@ -47,12 +55,15 @@ export function featureKeyForSegment(segment) {
   if (root === 'logs') return 'activityLogs'
   if (root === 'backup-recovery') return 'backup'
   if (root === 'settings' || root === 'public-profile' || root === 'profile') return 'accountSettings'
+  if (seg === 'finance/dashboard') return 'financeOverview'
+  if (seg === 'finance/expenses') return 'expenses'
+  if (seg === 'finance/budget') return 'budget'
+  if (seg === 'finance/profit-loss') return 'profitLoss'
   if (seg === 'finance/inventory') return 'inventory'
+  if (seg === 'finance/payroll') return 'payroll'
   if (seg === 'finance/invoices') return 'billing'
-  if (seg === 'finance/payroll') return 'employees'
-  if (root === 'finance') return 'analytics'
+  if (root === 'finance') return 'financeOverview'
   if (root === 'notifications') return null
-  if (root === 'backup-recovery') return 'backup'
   return null
 }
 

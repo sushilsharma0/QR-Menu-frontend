@@ -23,6 +23,7 @@ export default function PayrollControlsPanel({
   overtimePreview,
   generating,
   onGenerate,
+  showStatutorySettings = false,
 }) {
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const [statutoryOpen, setStatutoryOpen] = useState(false)
@@ -32,7 +33,7 @@ export default function PayrollControlsPanel({
 
   return (
     <FinancePanel title="Create bulk salary payroll">
-      {user?.role === 'restaurant' && statutory && (
+      {(showStatutorySettings || user?.role === 'restaurant') && statutory && (
         <div className="mb-4">
           <button
             type="button"

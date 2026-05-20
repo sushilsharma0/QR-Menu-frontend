@@ -24,7 +24,8 @@ const Header = () => {
     user?.scope === 'branch_user'
       ? branchPortalBase(user?.restaurantId, user?.branchPortalKey, user?.branchSlug)
       : restaurantPortalBase(slug, restaurantId)
-  const profileImage = user?.logo || user?.profilePhoto
+  const isPlatformUser = user?.role === 'super_admin' || user?.role === 'admin' || user?.role === 'support'
+  const profileImage = user?.logo || user?.profilePhoto || user?.profileImage
   const accountSettingsHidden = user?.role === 'restaurant' && !isFeatureEnabled('accountSettings')
 
   const loginRoleAfterLogout = () => {
@@ -44,7 +45,9 @@ const Header = () => {
           ? 'Super Admin'
           : user?.role === 'admin'
             ? 'Platform Admin'
-            : user?.role || 'User'
+            : user?.role === 'support'
+              ? 'Support'
+              : user?.role || 'User'
 
   useEffect(() => {
     const handleClick = (event) => {
@@ -185,6 +188,16 @@ const Header = () => {
                       >
                         <FiUser className="h-4 w-4 text-primary-600 dark:text-primary-300" />
                         Branch profile
+                      </Link>
+                    )}
+                    {isPlatformUser && (
+                      <Link
+                        to="/platform/settings"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold text-gray-700 transition hover:bg-surface-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                      >
+                        <FiSettings className="h-4 w-4 text-primary-600 dark:text-primary-300" />
+                        Account settings
                       </Link>
                     )}
                     <button

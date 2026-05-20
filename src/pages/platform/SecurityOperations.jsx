@@ -95,15 +95,27 @@ export default function SecurityOperations() {
   const [activeSessions, setActiveSessions] = useState([])
   const [sessionsFilter, setSessionsFilter] = useState({ suspiciousOnly: false })
   const [sessionsLoading, setSessionsLoading] = useState(false)
+  const [loginPolicy, setLoginPolicy] = useState(null)
+  const [policyForm, setPolicyForm] = useState({
+    restaurantLoginMaxFailures: 5,
+    restaurantLoginFailureWindowMinutes: 15,
+    restaurantLoginLockMinutes: 30,
+    employeeLoginMaxFailures: 5,
+    employeeLoginFailureWindowMinutes: 15,
+    employeeLoginLockMinutes: 30,
+  })
+  const [unlockRestaurantId, setUnlockRestaurantId] = useState('')
+  const [unlockIp, setUnlockIp] = useState('')
 
   const loadOverview = useCallback(async () => {
     const results = await Promise.allSettled([
       api.get('/platform/security/overview', { params: { hours } }),
       api.get('/platform/security/ip-blocks'),
       api.get('/platform/security/locks'),
+      api.get('/platform/security/login-policy'),
     ])
 
-    const [overviewRes, blocksRes, locksRes] = results
+    const [overviewRes, blocksRes, locksRes, policyRes] = results
     if (overviewRes.status === 'fulfilled') {
       setData(overviewRes.value.data?.data || {})
     } else {
@@ -119,6 +131,21 @@ export default function SecurityOperations() {
       setActiveLocks(locksRes.value.data?.data || [])
     } else {
       toast.error(locksRes.reason?.response?.data?.message || 'Failed to load account locks')
+    }
+    if (policyRes.status === 'fulfilled') {
+      const policy = policyRes.value.data?.data
+      setLoginPolicy(policy)
+      if (policy?.restaurant) {
+        setPolicyForm((prev) => ({
+          ...prev,
+          restaurantLoginMaxFailures: policy.restaurant.maxFailures,
+          restaurantLoginFailureWindowMinutes: policy.restaurant.windowMinutes,
+          restaurantLoginLockMinutes: policy.restaurant.lockMinutes,
+          employeeLoginMaxFailures: policy.employee?.maxFailures ?? prev.employeeLoginMaxFailures,
+          employeeLoginFailureWindowMinutes: policy.employee?.windowMinutes ?? prev.employeeLoginFailureWindowMinutes,
+          employeeLoginLockMinutes: policy.employee?.lockMinutes ?? prev.employeeLoginLockMinutes,
+        }))
+      }
     }
   }, [hours])
 
@@ -225,6 +252,51 @@ export default function SecurityOperations() {
       await loadOverview()
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to apply security lock')
+    } finally {
+      setActionBusy(false)
+    }
+  }
+
+  const saveLoginPolicy = async () => {
+    if (!isSuperAdmin) {
+      toast.error('Only super admin can update vendor login policy')
+      return
+    }
+    try {
+      setActionBusy(true)
+      const res = await api.patch('/platform/security/login-policy', policyForm)
+      setLoginPolicy(res.data?.data)
+      toast.success('Vendor login policy saved')
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to save login policy')
+    } finally {
+      setActionBusy(false)
+    }
+  }
+
+  const releaseBySubject = async (subjectType, subjectId) => {
+    if (!subjectId?.trim()) {
+      toast.error(subjectType === 'Restaurant' ? 'Enter a restaurant ID' : 'Enter an IP address')
+      return
+    }
+    if (subjectType === 'Restaurant' && !isSuperAdmin) {
+      toast.error('Only super admin can unlock restaurant accounts')
+      return
+    }
+    const label = subjectType === 'Restaurant' ? 'restaurant account' : 'IP lock'
+    if (!window.confirm(`Unlock ${label} for ${subjectId.trim()}?`)) return
+    try {
+      setActionBusy(true)
+      await api.post('/platform/security/locks/release-by-subject', {
+        subjectType,
+        subjectId: subjectId.trim(),
+      })
+      toast.success(subjectType === 'Restaurant' ? 'Restaurant unlocked — they can sign in again' : 'IP lock released')
+      if (subjectType === 'Restaurant') setUnlockRestaurantId('')
+      if (subjectType === 'ip') setUnlockIp('')
+      await loadOverview()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to release lock')
     } finally {
       setActionBusy(false)
     }
@@ -942,6 +1014,123 @@ export default function SecurityOperations() {
               Restaurant and staff unlocks require <strong>super admin</strong>. You can still view locks and manage IP blocks.
             </div>
           )}
+
+          <Card title="Vendor login policy" icon={FiShield}>
+            <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+              Wrong-password limit for vendor sign-in. After the limit, the account is locked until a super admin unlocks it.
+              {loginPolicy?.restaurant && (
+                <span className="mt-1 block font-semibold text-gray-700 dark:text-gray-300">
+                  Active: {loginPolicy.restaurant.maxFailures} failures in {loginPolicy.restaurant.windowMinutes} min →
+                  lock {loginPolicy.restaurant.lockMinutes} min
+                </span>
+              )}
+            </p>
+            <div className="grid gap-4 md:grid-cols-3">
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Max failed attempts
+                <input
+                  type="number"
+                  min={3}
+                  max={20}
+                  disabled={!isSuperAdmin || actionBusy}
+                  value={policyForm.restaurantLoginMaxFailures}
+                  onChange={(e) =>
+                    setPolicyForm((prev) => ({
+                      ...prev,
+                      restaurantLoginMaxFailures: Number(e.target.value),
+                    }))
+                  }
+                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                />
+              </label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Window (minutes)
+                <input
+                  type="number"
+                  min={5}
+                  max={120}
+                  disabled={!isSuperAdmin || actionBusy}
+                  value={policyForm.restaurantLoginFailureWindowMinutes}
+                  onChange={(e) =>
+                    setPolicyForm((prev) => ({
+                      ...prev,
+                      restaurantLoginFailureWindowMinutes: Number(e.target.value),
+                    }))
+                  }
+                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                />
+              </label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Lock duration (minutes)
+                <input
+                  type="number"
+                  min={5}
+                  max={1440}
+                  disabled={!isSuperAdmin || actionBusy}
+                  value={policyForm.restaurantLoginLockMinutes}
+                  onChange={(e) =>
+                    setPolicyForm((prev) => ({
+                      ...prev,
+                      restaurantLoginLockMinutes: Number(e.target.value),
+                    }))
+                  }
+                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                />
+              </label>
+            </div>
+            {isSuperAdmin ? (
+              <Button type="button" className="mt-4" onClick={saveLoginPolicy} disabled={actionBusy}>
+                Save vendor login policy
+              </Button>
+            ) : (
+              <p className="mt-3 text-xs text-amber-700 dark:text-amber-300">Super admin required to change policy.</p>
+            )}
+          </Card>
+
+          <div className="grid gap-6 xl:grid-cols-2">
+            <Card title="Unlock restaurant account" icon={FiLock}>
+              <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
+                Enter restaurant ID to allow vendor login again.
+              </p>
+              <input
+                value={unlockRestaurantId}
+                onChange={(e) => setUnlockRestaurantId(e.target.value)}
+                placeholder="Restaurant ID"
+                disabled={!isSuperAdmin || actionBusy}
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-sm dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+              />
+              <Button
+                type="button"
+                className="mt-3"
+                disabled={!isSuperAdmin || actionBusy}
+                onClick={() => releaseBySubject('Restaurant', unlockRestaurantId)}
+              >
+                Unlock restaurant
+              </Button>
+            </Card>
+            <Card title="Unlock IP address" icon={FiSlash}>
+              <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
+                Release IP lock and unblock the address.
+              </p>
+              <input
+                value={unlockIp}
+                onChange={(e) => setUnlockIp(e.target.value)}
+                placeholder="IP address"
+                disabled={actionBusy}
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+              />
+              <Button
+                type="button"
+                className="mt-3"
+                variant="secondary"
+                disabled={actionBusy}
+                onClick={() => releaseBySubject('ip', unlockIp)}
+              >
+                Unlock IP
+              </Button>
+            </Card>
+          </div>
+
           <Card title="Locked restaurants & accounts" icon={FiLock}>
             {activeLocks.length === 0 ? (
               <PlatformEmptyState title="No active locks" description="Accounts locked after repeated failed logins or manual security actions appear here." icon={FiLock} />

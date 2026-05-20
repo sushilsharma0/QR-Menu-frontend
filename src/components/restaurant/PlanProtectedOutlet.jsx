@@ -6,21 +6,21 @@ import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import {
   featureKeyForPath,
   isPathAllowedBeforeKyc,
-  PLAN_FEATURE_LABELS,
 } from '../../constants/planFeatureMap'
 
 /**
  * Blocks restaurant routes until KYC is approved and plan features allow access.
- * KYC, subscription, and security paths stay open.
+ * Disabled plan modules: hidden in sidebar + silent redirect (no error toast).
  */
 export default function PlanProtectedOutlet() {
   const location = useLocation()
-  const { isFeatureEnabled, toastLocked, kycLocked } = usePlanAccess()
+  const { isFeatureEnabled, kycLocked } = usePlanAccess()
   const { restaurantBase } = useTenantRoutes()
   const featureKey = featureKeyForPath(location.pathname)
   const kycToastShown = useRef(false)
 
   const kycBlocked = kycLocked && !isPathAllowedBeforeKyc(location.pathname)
+  const planBlocked = Boolean(featureKey && !isFeatureEnabled(featureKey))
 
   useEffect(() => {
     if (kycBlocked && !kycToastShown.current) {
@@ -34,18 +34,12 @@ export default function PlanProtectedOutlet() {
     }
   }, [kycBlocked, location.pathname])
 
-  useEffect(() => {
-    if (!kycBlocked && featureKey && !isFeatureEnabled(featureKey)) {
-      toast.error(`${PLAN_FEATURE_LABELS[featureKey] || 'This feature'} is not included in your subscription plan.`)
-    }
-  }, [featureKey, isFeatureEnabled, kycBlocked, location.pathname])
-
   if (kycBlocked) {
     return <Navigate to={`${restaurantBase}/kyc`} replace />
   }
 
-  if (featureKey && !isFeatureEnabled(featureKey)) {
-    return <Navigate to={`${restaurantBase}/subscription`} replace />
+  if (planBlocked) {
+    return <Navigate to={`${restaurantBase}/dashboard`} replace />
   }
 
   return <Outlet />

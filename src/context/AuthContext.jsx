@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from '@utils/toast'
+import { formatAuthLoginToast } from '../utils/authLoginErrors'
 import api from '../services/api'
 import { defaultPortalPathForUser, branchPortalBase } from '../utils/tenantPaths'
 import {
@@ -53,7 +54,7 @@ export const AuthProvider = ({ children }) => {
   const logout = useCallback(async (options = {}) => {
     let loginRole = options.loginRole
     if (loginRole === undefined && options.idleTimeout && user) {
-      if (user.role === 'super_admin' || user.role === 'admin') loginRole = 'platform'
+      if (user.role === 'super_admin' || user.role === 'admin' || user.role === 'support') loginRole = 'platform'
       else if (user.scope === 'employee') loginRole = 'employee'
       else if (user.scope === 'branch_user') loginRole = 'branch'
       else if (user.role === 'restaurant') loginRole = 'restaurant'
@@ -66,7 +67,7 @@ export const AuthProvider = ({ children }) => {
         await api.post('/restaurant/branch-auth/logout', {}, { skipErrorToast: true })
       } else if (user?.role === 'restaurant') {
         await api.post('/restaurant/auth/logout', {}, { skipErrorToast: true })
-      } else if (user?.role === 'super_admin' || user?.role === 'admin') {
+      } else if (user?.role === 'super_admin' || user?.role === 'admin' || user?.role === 'support') {
         await api.post('/platform/auth/logout', {}, { skipErrorToast: true })
       }
     } catch (e) {
@@ -210,7 +211,7 @@ export const AuthProvider = ({ children }) => {
         navigate('/employee/change-password')
       } else if (authUser.scope === 'employee') {
         navigate(defaultPortalPathForUser(authUser))
-      } else if (authUser.role === 'super_admin' || authUser.role === 'admin') {
+      } else if (authUser.role === 'super_admin' || authUser.role === 'admin' || authUser.role === 'support') {
         navigate('/platform/dashboard')
       } else if (authUser.role === 'restaurant') {
         navigate(defaultPortalPathForUser(authUser))
@@ -264,11 +265,12 @@ export const AuthProvider = ({ children }) => {
       )
       return { success: true }
     } catch (error) {
-      const errorMsg = error.response?.data?.message || error.message || 'Login failed'
+      const { text: errorMsg, duration } = formatAuthLoginToast(error)
       if (!error.__toastShown) {
-        toast.error(errorMsg)
+        toast.error(errorMsg, { duration })
+        error.__toastShown = true
       }
-      return { success: false, error: errorMsg }
+      return { success: false, error: errorMsg, locked: error.response?.status === 423 }
     }
   }
 

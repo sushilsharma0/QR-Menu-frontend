@@ -23,6 +23,7 @@ import PlatformCMS from "./pages/platform/CMS";
 import PlatformReviews from "./pages/platform/Reviews";
 import PlatformAdmins from "./pages/platform/Admins";
 import PlatformSettings from "./pages/platform/Settings";
+import PlatformFinanceSettings from "./pages/platform/PlatformFinanceSettings";
 import PlatformInvoices from "./pages/platform/Invoices";
 import PlatformInvoiceDetail from "./pages/platform/InvoiceDetail";
 import PlatformSubscriptionActivity from "./pages/platform/SubscriptionActivity";
@@ -31,6 +32,10 @@ import PlatformSecurityOperations from "./pages/platform/SecurityOperations";
 import PlatformTickets from "./pages/platform/Tickets";
 import PlatformTicketDetail from "./pages/platform/TicketDetail";
 import PlatformSubscriptionPayments from "./pages/platform/SubscriptionPayments";
+import PlatformPayroll from "./pages/platform/PlatformPayroll";
+import PlatformExpenses from "./pages/platform/finance/PlatformExpenses";
+import PlatformProfitLoss from "./pages/platform/finance/PlatformProfitLoss";
+import PlatformPermissionGate from "./components/platform/PlatformPermissionGate";
 
 // Restaurant Pages
 import RestaurantDashboard from "./pages/restaurant/Dashboard";
@@ -40,7 +45,6 @@ import RestaurantCategoryForm from "./pages/restaurant/CategoryForm";
 import RestaurantOrders from "./pages/restaurant/Orders";
 import RestaurantOrderDetail from "./pages/restaurant/OrderDetail";
 import RestaurantOrderActivityReport from "./pages/restaurant/OrderActivityReport";
-import RestaurantCreateOrder from "./pages/restaurant/CreateOrder";
 import RestaurantTables from "./pages/restaurant/Tables";
 import RestaurantTableForm from "./pages/restaurant/TableForm";
 import RestaurantEmployees from "./pages/restaurant/Employees";
@@ -193,42 +197,31 @@ function App() {
 
       {/* Platform Routes */}
       <Route element={<PlatformLayout />}>
-        <Route path="/platform/dashboard" element={<PlatformDashboard />} />
-        <Route path="/platform/restaurants" element={<PlatformRestaurants />} />
-        <Route
-          path="/platform/restaurants/:id"
-          element={<PlatformRestaurantDetail />}
-        />
-        <Route path="/platform/kyc" element={<PlatformKYCPending />} />
-        <Route path="/platform/kyc/:id" element={<PlatformKYCDetail />} />
-        <Route
-          path="/platform/subscriptions"
-          element={<PlatformSubscriptions />}
-        />
-        <Route
-          path="/platform/subscriptions/create"
-          element={<PlatformCreatePlan />}
-        />
-        <Route
-          path="/platform/subscriptions/edit/:id"
-          element={<PlatformCreatePlan />}
-        />
-        <Route
-          path="/platform/plan-access-settings"
-          element={<PlatformPlanAccessSettings />}
-        />
-        <Route path="/platform/cms" element={<PlatformCMS />} />
-        <Route path="/platform/reviews" element={<PlatformReviews />} />
+        <Route path="/platform/dashboard" element={<PlatformPermissionGate permission="viewAnalytics"><PlatformDashboard /></PlatformPermissionGate>} />
+        <Route path="/platform/restaurants" element={<PlatformPermissionGate permission="manageRestaurants"><PlatformRestaurants /></PlatformPermissionGate>} />
+        <Route path="/platform/restaurants/:id" element={<PlatformPermissionGate permission="manageRestaurants"><PlatformRestaurantDetail /></PlatformPermissionGate>} />
+        <Route path="/platform/kyc" element={<PlatformPermissionGate permission="verifyKYC"><PlatformKYCPending /></PlatformPermissionGate>} />
+        <Route path="/platform/kyc/:id" element={<PlatformPermissionGate permission="verifyKYC"><PlatformKYCDetail /></PlatformPermissionGate>} />
+        <Route path="/platform/subscriptions" element={<PlatformPermissionGate permission="manageSubscriptions"><PlatformSubscriptions /></PlatformPermissionGate>} />
+        <Route path="/platform/subscriptions/create" element={<PlatformPermissionGate permission="manageSubscriptions"><PlatformCreatePlan /></PlatformPermissionGate>} />
+        <Route path="/platform/subscriptions/edit/:id" element={<PlatformPermissionGate permission="manageSubscriptions"><PlatformCreatePlan /></PlatformPermissionGate>} />
+        <Route path="/platform/plan-access-settings" element={<PlatformPermissionGate permission="manageSubscriptions"><PlatformPlanAccessSettings /></PlatformPermissionGate>} />
+        <Route path="/platform/cms" element={<PlatformPermissionGate permission="manageCMS"><PlatformCMS /></PlatformPermissionGate>} />
+        <Route path="/platform/reviews" element={<PlatformPermissionGate permission="manageReviews"><PlatformReviews /></PlatformPermissionGate>} />
         <Route path="/platform/admins" element={<PlatformAdmins />} />
-        <Route path="/platform/tickets" element={<PlatformTickets />} />
-        <Route path="/platform/tickets/:id" element={<PlatformTicketDetail />} />
-        <Route path="/platform/logs" element={<PlatformSystemLogs />} />
-        <Route path="/platform/security" element={<PlatformSecurityOperations />} />
-        <Route path="/platform/settings" element={<PlatformSettings />} />
-        <Route path="/platform/invoices" element={<PlatformInvoices />} />
-        <Route path="/platform/invoices/:id" element={<PlatformInvoiceDetail />} />
-        <Route path="/platform/subscription-activity" element={<PlatformSubscriptionActivity />} />
-        <Route path="/platform/subscription-payments" element={<PlatformSubscriptionPayments />} />
+        <Route path="/platform/payroll" element={<PlatformPermissionGate permission="managePayroll"><PlatformPayroll /></PlatformPermissionGate>} />
+        <Route path="/platform/expenses" element={<PlatformExpenses />} />
+        <Route path="/platform/profit-loss" element={<PlatformProfitLoss />} />
+        <Route path="/platform/tickets" element={<PlatformPermissionGate permission="manageTickets"><PlatformTickets /></PlatformPermissionGate>} />
+        <Route path="/platform/tickets/:id" element={<PlatformPermissionGate permission="manageTickets"><PlatformTicketDetail /></PlatformPermissionGate>} />
+        <Route path="/platform/logs" element={<PlatformPermissionGate permission="manageLogs"><PlatformSystemLogs /></PlatformPermissionGate>} />
+        <Route path="/platform/security" element={<PlatformPermissionGate permission="manageSecurity"><PlatformSecurityOperations /></PlatformPermissionGate>} />
+        <Route path="/platform/settings" element={<PlatformPermissionGate staffOnly><PlatformSettings /></PlatformPermissionGate>} />
+        <Route path="/platform/finance/settings" element={<PlatformFinanceSettings />} />
+        <Route path="/platform/invoices" element={<PlatformPermissionGate permission="manageSubscriptions"><PlatformInvoices /></PlatformPermissionGate>} />
+        <Route path="/platform/invoices/:id" element={<PlatformPermissionGate permission="manageSubscriptions"><PlatformInvoiceDetail /></PlatformPermissionGate>} />
+        <Route path="/platform/subscription-activity" element={<PlatformPermissionGate permission="manageSubscriptions"><PlatformSubscriptionActivity /></PlatformPermissionGate>} />
+        <Route path="/platform/subscription-payments" element={<PlatformPermissionGate permission="manageSubscriptions"><PlatformSubscriptionPayments /></PlatformPermissionGate>} />
         <Route path="/platform/notifications" element={<NotificationsPage />} />
       </Route>
 
@@ -243,7 +236,6 @@ function App() {
         <Route path="menu/item/new" element={<RestaurantMenuItemForm />} />
         <Route path="menu/item/:id/edit" element={<RestaurantMenuItemForm />} />
         <Route path="orders" element={<RestaurantOrders />} />
-        <Route path="orders/new" element={<RestaurantCreateOrder />} />
         <Route path="orders/activity" element={<RestaurantOrderActivityReport />} />
         <Route path="orders/:id" element={<RestaurantOrderDetail />} />
         <Route path="tables" element={<RestaurantTables />} />
@@ -300,7 +292,6 @@ function App() {
         <Route path="menu/item/new" element={<RestaurantMenuItemForm />} />
         <Route path="menu/item/:id/edit" element={<RestaurantMenuItemForm />} />
         <Route path="orders" element={<RestaurantOrders />} />
-        <Route path="orders/new" element={<RestaurantCreateOrder />} />
         <Route path="orders/activity" element={<RestaurantOrderActivityReport />} />
         <Route path="orders/:id" element={<RestaurantOrderDetail />} />
         <Route path="tables" element={<RestaurantTables />} />

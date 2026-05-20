@@ -9,7 +9,6 @@ import {
   FiFilter,
   FiGrid,
   FiList,
-  FiPlus,
   FiRefreshCw,
   FiSearch,
   FiShoppingBag,
@@ -32,6 +31,7 @@ import {
 import { useAuth } from '../../hooks/useAuth'
 import { useSocket } from '../../hooks/useSocket'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
+import { usePlanAccess } from '../../hooks/usePlanAccess'
 
 const STATUS_FILTERS = [
   { value: 'all', label: 'All', icon: FiShoppingBag },
@@ -387,10 +387,6 @@ const Orders = () => {
               <Button type="button" variant="secondary" onClick={() => fetchOrders(true)} disabled={refreshing}>
                 <FiRefreshCw className={`mr-2 ${refreshing ? 'animate-spin' : ''}`} />
                 Refresh
-              </Button>
-              <Button type="button" onClick={() => navigate(`${restaurantBase}/orders/new`)}>
-                <FiPlus className="mr-2" />
-                Create Order
               </Button>
             </div>
           </div>

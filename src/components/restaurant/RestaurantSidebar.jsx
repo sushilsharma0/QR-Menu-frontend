@@ -526,14 +526,21 @@ const RestaurantSidebar = () => {
   }
 
   const fetchPendingCount = async () => {
+    if (!isFeatureEnabled('orders') && !isFeatureEnabled('customerOrders')) {
+      setPendingCount(0)
+      return
+    }
     try {
-      const res = await api.get('/restaurant/customer-orders/stats')
+      const res = await api.get('/restaurant/customer-orders/stats', { skipErrorToast: true })
       const active = res?.data?.data?.active || {}
       const count = Number(active.pending || 0)
       setPendingCount(Number.isFinite(count) ? count : 0)
     } catch {
       try {
-        const res = await api.get('/restaurant/customer-orders', { params: { status: 'pending', page: 1, limit: 1 } })
+        const res = await api.get('/restaurant/customer-orders', {
+          params: { status: 'pending', page: 1, limit: 1 },
+          skipErrorToast: true,
+        })
         setPendingCount(res?.data?.data?.pagination?.total || 0)
       } catch {
         setPendingCount(0)
@@ -548,7 +555,7 @@ const RestaurantSidebar = () => {
     }
     if (branchesLoading) return
     fetchPendingCount()
-  }, [billingLocked, branchesLoading, selectedBranchId])
+  }, [billingLocked, branchesLoading, selectedBranchId, isFeatureEnabled])
 
   useEffect(() => {
     if (billingLocked || !socket) return undefined

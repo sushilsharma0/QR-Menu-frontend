@@ -1,16 +1,11 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import {
-  FiAward,
-  FiChevronDown,
-  FiChevronLeft,
-  FiChevronRight,
-  FiMenu,
-  FiX,
-} from 'react-icons/fi'
+import { FiAward, FiChevronDown, FiChevronLeft, FiChevronRight, FiMenu, FiX } from 'react-icons/fi'
 import { useAuth } from '../../hooks/useAuth'
+import { usePlatformAccess } from '../../hooks/usePlatformAccess'
 import {
   PLATFORM_NAV_SECTIONS,
+  filterPlatformNavSections,
   sectionContainsPath,
 } from '../../config/platformNavConfig'
 
@@ -34,7 +29,7 @@ function writeOpenSections(state) {
   }
 }
 
-function isPlatformNavItemActive(item, location) {
+function isNavItemActive(item, location) {
   const pathname = location.pathname.replace(/\/+$/, '')
   const [pathOnly, itemSearch = ''] = String(item.path || '').split('?')
   const base = pathOnly.replace(/\/+$/, '')
@@ -59,10 +54,14 @@ function isPlatformNavItemActive(item, location) {
   return pathname === base || pathname.startsWith(`${base}/`)
 }
 
-function PlatformNavItem({ item, collapsed, nested = false, onClick, onTooltip, onTooltipLeave }) {
-  const location = useLocation()
-  const inactiveRow =
-    'text-gray-600 hover:bg-surface-50 hover:text-gray-950 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100'
+function roleLabel(role) {
+  if (role === 'super_admin') return 'Super admin'
+  if (role === 'admin') return 'Admin'
+  return role || 'User'
+}
+
+function NavItem({ item, collapsed, nested = false, onNavigate, onTooltip, onTooltipLeave }) {
+  const Icon = item.icon
 
   const showTooltip = (event) => {
     if (!collapsed) return
@@ -78,71 +77,60 @@ function PlatformNavItem({ item, collapsed, nested = false, onClick, onTooltip, 
     <NavLink
       to={item.path}
       end={item.path === '/platform/dashboard'}
-      onClick={onClick}
+      onClick={onNavigate}
       onMouseEnter={showTooltip}
       onMouseLeave={onTooltipLeave}
       onFocus={showTooltip}
       onBlur={onTooltipLeave}
-      className={() => {
-        const isActive = isPlatformNavItemActive(item, location)
-        return `group relative flex items-center gap-3 rounded-xl transition-all duration-200 ${
-          nested ? 'px-3 py-2' : 'px-3 py-2.5'
+      className={({ isActive }) =>
+        `group relative flex items-center gap-3 rounded-xl transition-all duration-200 ${
+          nested && !collapsed ? 'ml-2 py-2 pl-2 pr-3' : 'px-3 py-2.5'
         } ${
           isActive
             ? 'bg-primary-50 font-semibold text-primary-800 shadow-sm ring-1 ring-primary-100 dark:bg-gray-800 dark:text-gray-100 dark:ring-gray-700'
-            : inactiveRow
+            : 'text-gray-600 hover:bg-surface-50 hover:text-gray-950 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100'
         } ${collapsed ? 'justify-center' : ''}`
-      }}
+      }
     >
-      {() => {
-        const isActive = isPlatformNavItemActive(item, location)
-        return (
+      {({ isActive }) => (
         <>
           {isActive && !collapsed && (
-            <span
-              className={`absolute top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary-600 ${
-                nested ? 'left-0' : 'left-0'
-              }`}
-            />
+            <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary-600" />
           )}
           <span
             className={`flex flex-shrink-0 items-center justify-center rounded-xl transition ${
-              nested ? 'h-8 w-8' : 'h-9 w-9'
+              nested && !collapsed ? 'h-7 w-7' : 'h-9 w-9'
             } ${
               isActive
                 ? 'bg-white text-primary-700 shadow-sm dark:bg-gray-900 dark:text-gray-100'
                 : 'text-gray-500 group-hover:bg-white group-hover:text-primary-700 group-hover:shadow-sm dark:text-gray-400 dark:group-hover:bg-gray-900 dark:group-hover:text-gray-100'
             }`}
           >
-            <item.icon className={nested ? 'h-4 w-4' : 'h-5 w-5'} />
+            <Icon className={nested && !collapsed ? 'h-4 w-4' : 'h-5 w-5'} />
           </span>
-          {!collapsed && <span className="truncate text-sm">{item.label}</span>}
+          {!collapsed && (
+            <span className={`truncate ${nested ? 'text-xs' : 'text-sm'}`}>{item.label}</span>
+          )}
         </>
-        )
-      }}
+      )}
     </NavLink>
   )
 }
 
-function NavSection({
-  section,
-  collapsed,
-  hideLabels,
-  isOpen,
-  onToggle,
-  isMobile,
-  onClose,
-  onTooltip,
-  onTooltipLeave,
-}) {
+function NavSection({ section, items, collapsed, hideLabels, isOpen, onToggle, isMobile, onClose, onTooltip, onTooltipLeave }) {
+  const location = useLocation()
   const SectionIcon = section.icon
-  const firstItem = section.items[0]
+  const firstItem = items[0]
+  const hasActiveChild = items.some((item) => isNavItemActive(item, location))
 
   if (collapsed && hideLabels) {
+    const target = firstItem?.path || '#'
+    const active = firstItem && isNavItemActive(firstItem, location)
+
     return (
       <NavLink
-        to={firstItem.path}
-        end={firstItem.path === '/platform/dashboard'}
+        to={target}
+        end={firstItem?.path === '/platform/dashboard'}
         onClick={isMobile ? onClose : undefined}
         onMouseEnter={(event) => {
           const rect = event.currentTarget.getBoundingClientRect()
@@ -153,28 +141,17 @@ function NavSection({
           })
         }}
         onMouseLeave={onTooltipLeave}
-        className={({ isActive }) =>
-          `group relative flex items-center justify-center rounded-xl px-3 py-2.5 transition ${
-            isActive
-              ? 'bg-primary-50 text-primary-800 ring-1 ring-primary-100 dark:bg-gray-800 dark:text-gray-100'
-              : 'text-gray-600 hover:bg-surface-50 dark:text-gray-300 dark:hover:bg-gray-800'
-          }`
-        }
+        className={`group relative flex items-center justify-center rounded-xl px-3 py-2.5 transition ${
+          active || hasActiveChild
+            ? 'bg-primary-50 text-primary-800 ring-1 ring-primary-100 dark:bg-gray-800 dark:text-gray-100'
+            : 'text-gray-600 hover:bg-surface-50 dark:text-gray-300 dark:hover:bg-gray-800'
+        }`}
       >
         <SectionIcon className="h-5 w-5" />
+        {hasActiveChild && !active && (
+          <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-primary-600 ring-2 ring-white dark:ring-gray-900" />
+        )}
       </NavLink>
-    )
-  }
-
-  if (section.items.length === 1) {
-    return (
-      <PlatformNavItem
-        item={firstItem}
-        collapsed={false}
-        onClick={isMobile ? onClose : undefined}
-        onTooltip={onTooltip}
-        onTooltipLeave={onTooltipLeave}
-      />
     )
   }
 
@@ -184,28 +161,32 @@ function NavSection({
         type="button"
         onClick={onToggle}
         className={`mb-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition hover:bg-surface-50 dark:hover:bg-gray-800 ${
-          isOpen ? 'text-gray-950 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'
+          isOpen || hasActiveChild ? 'text-gray-950 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'
         }`}
       >
-        <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-surface-50 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+        <span
+          className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg ${
+            hasActiveChild
+              ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+              : 'bg-surface-50 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
+          }`}
+        >
           <SectionIcon className="h-4 w-4" />
         </span>
-        <span className="flex-1 truncate text-xs font-black uppercase tracking-[0.14em]">
-          {section.label}
-        </span>
+        <span className="flex-1 truncate text-xs font-black uppercase tracking-[0.14em]">{section.label}</span>
         <FiChevronDown
           className={`h-4 w-4 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
       {isOpen && (
         <div className="space-y-0.5 border-l-2 border-gray-100 pl-1 dark:border-gray-800">
-          {section.items.map((item) => (
-            <PlatformNavItem
+          {items.map((item) => (
+            <NavItem
               key={item.path}
               item={item}
               collapsed={false}
               nested
-              onClick={isMobile ? onClose : undefined}
+              onNavigate={isMobile ? onClose : undefined}
               onTooltip={onTooltip}
               onTooltipLeave={onTooltipLeave}
             />
@@ -231,12 +212,8 @@ function Brand({ collapsed, isMobile }) {
         <FiAward className="h-5 w-5" />
       </div>
       <div className="min-w-0">
-        <h1 className="truncate text-base font-black leading-none text-gray-950 dark:text-gray-100">
-          QR Menu SaaS
-        </h1>
-        <p className="mt-1 truncate text-xs font-medium text-gray-500 dark:text-gray-400">
-          Platform Admin
-        </p>
+        <h1 className="truncate text-base font-black leading-none text-gray-950 dark:text-gray-100">QR Menu SaaS</h1>
+        <p className="mt-1 truncate text-xs font-medium text-gray-500 dark:text-gray-400">Platform Console</p>
       </div>
     </div>
   )
@@ -246,6 +223,7 @@ function SidebarContent({
   collapsed,
   setCollapsed,
   user,
+  sections,
   onClose,
   isMobile,
   onTooltip,
@@ -269,7 +247,7 @@ function SidebarContent({
     setOpenSections((prev) => {
       let changed = false
       const next = { ...prev }
-      PLATFORM_NAV_SECTIONS.forEach((section) => {
+      sections.forEach((section) => {
         if (sectionContainsPath(section, pathname) && !next[section.id]) {
           next[section.id] = true
           changed = true
@@ -278,7 +256,7 @@ function SidebarContent({
       if (changed) writeOpenSections(next)
       return changed ? next : prev
     })
-  }, [pathname])
+  }, [pathname, sections])
 
   const toggleSection = (id) => {
     setOpenSections((prev) => {
@@ -300,7 +278,7 @@ function SidebarContent({
         {!isMobile && (
           <button
             type="button"
-            onClick={() => setCollapsed((current) => !current)}
+            onClick={() => setCollapsed((c) => !c)}
             className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-surface-50 transition-colors hover:bg-surface-100 dark:bg-gray-800 dark:hover:bg-gray-700"
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
@@ -317,7 +295,7 @@ function SidebarContent({
             type="button"
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-xl bg-surface-50 dark:bg-gray-800"
-            aria-label="Close sidebar"
+            aria-label="Close menu"
           >
             <FiX className="h-4 w-4 text-gray-600 dark:text-gray-300" />
           </button>
@@ -326,64 +304,57 @@ function SidebarContent({
 
       <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4">
         <div className="space-y-1">
-          {PLATFORM_NAV_SECTIONS.map((section) => (
-            <NavSection
-              key={section.id}
-              section={section}
-              collapsed={hideLabels}
-              hideLabels={hideLabels}
-              isOpen={openSections[section.id] !== false}
-              onToggle={() => toggleSection(section.id)}
-              isMobile={isMobile}
-              onClose={onClose}
-              onTooltip={onTooltip}
-              onTooltipLeave={onTooltipLeave}
-            />
-          ))}
+          {sections.map((section) => {
+            if (!section.items.length) return null
+            return (
+              <NavSection
+                key={section.id}
+                section={section}
+                items={section.items}
+                collapsed={collapsed}
+                hideLabels={hideLabels}
+                isOpen={Boolean(openSections[section.id])}
+                onToggle={() => toggleSection(section.id)}
+                isMobile={isMobile}
+                onClose={onClose}
+                onTooltip={onTooltip}
+                onTooltipLeave={onTooltipLeave}
+              />
+            )
+          })}
         </div>
       </nav>
 
-      {!hideLabels && user && (
-        <div className="flex-shrink-0 border-t border-gray-100 px-5 py-4 dark:border-gray-800">
-          <div className="flex items-center gap-3 rounded-xl bg-surface-50/80 px-3 py-2.5 dark:bg-gray-800/60">
-            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-white text-sm font-semibold text-primary-700 shadow-sm dark:bg-gray-900 dark:text-primary-300">
-              {user?.name?.charAt(0) || 'A'}
+      {user && !hideLabels && (
+        <div className="flex-shrink-0 border-t border-gray-100 px-4 py-4 dark:border-gray-800">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary-600 to-secondary-500 text-sm font-bold text-white">
+              {user.name?.charAt(0) || 'A'}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
-                {user?.name}
-              </p>
-              <p className="truncate text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
+              <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{user.name}</p>
+              <p className="truncate text-xs text-gray-500 dark:text-gray-400">{roleLabel(user.role)}</p>
             </div>
           </div>
         </div>
       )}
 
-      {hideLabels && user && (
-        <div className="flex flex-shrink-0 justify-center border-t border-gray-100 py-4 dark:border-gray-800">
+      {user && hideLabels && (
+        <div className="flex flex-shrink-0 justify-center border-t border-gray-100 p-4 dark:border-gray-800">
           <div
             tabIndex={0}
-            className="flex h-9 w-9 cursor-default items-center justify-center rounded-xl bg-white text-sm font-semibold text-primary-700 shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:bg-gray-900 dark:text-primary-300 dark:focus-visible:ring-offset-gray-900"
-            onMouseEnter={(event) => {
-              const rect = event.currentTarget.getBoundingClientRect()
+            className="flex h-10 w-10 cursor-default items-center justify-center rounded-full bg-gradient-to-br from-primary-600 to-secondary-500 text-sm font-bold text-white"
+            onMouseEnter={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect()
               onTooltip?.({
-                label: `${user?.name || 'Admin'} — ${user?.email || ''}`,
+                label: `${user.name} · ${roleLabel(user.role)}`,
                 top: rect.top + rect.height / 2,
                 left: rect.right + 12,
               })
             }}
             onMouseLeave={onTooltipLeave}
-            onFocus={(event) => {
-              const rect = event.currentTarget.getBoundingClientRect()
-              onTooltip?.({
-                label: `${user?.name || 'Admin'} — ${user?.email || ''}`,
-                top: rect.top + rect.height / 2,
-                left: rect.right + 12,
-              })
-            }}
-            onBlur={onTooltipLeave}
           >
-            {user?.name?.charAt(0) || 'A'}
+            {user.name?.charAt(0) || 'A'}
           </div>
         </div>
       )}
@@ -393,9 +364,15 @@ function SidebarContent({
 
 const PlatformSidebar = () => {
   const { user } = useAuth()
+  const { hasPermission, isSuperAdmin } = usePlatformAccess()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [tooltip, setTooltip] = useState(null)
+
+  const sections = useMemo(
+    () => filterPlatformNavSections(hasPermission, isSuperAdmin),
+    [hasPermission, isSuperAdmin],
+  )
 
   if (user?.role !== 'super_admin' && user?.role !== 'admin') {
     return null
@@ -403,6 +380,7 @@ const PlatformSidebar = () => {
 
   const sharedProps = {
     user,
+    sections,
     collapsed,
     setCollapsed,
     onTooltip: setTooltip,
@@ -416,7 +394,7 @@ const PlatformSidebar = () => {
           type="button"
           onClick={() => setMobileOpen(true)}
           className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-surface-50 dark:bg-gray-800"
-          aria-label="Open sidebar"
+          aria-label="Open menu"
         >
           <FiMenu className="h-5 w-5 text-gray-700 dark:text-gray-200" />
         </button>
@@ -424,17 +402,16 @@ const PlatformSidebar = () => {
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary-600 to-secondary-500 text-white">
             <FiAward className="h-4 w-4" />
           </div>
-          <h1 className="truncate text-sm font-black text-gray-950 dark:text-gray-100">
-            QR Menu SaaS
-          </h1>
+          <h1 className="truncate text-sm font-black text-gray-950 dark:text-gray-100">Platform Console</h1>
         </div>
       </div>
 
       {mobileOpen && (
-        <div
+        <button
+          type="button"
           className="fixed inset-0 z-[65] bg-black/50 backdrop-blur-sm lg:hidden"
           onClick={() => setMobileOpen(false)}
-          aria-hidden
+          aria-label="Close overlay"
         />
       )}
 
@@ -443,12 +420,7 @@ const PlatformSidebar = () => {
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <SidebarContent
-          {...sharedProps}
-          collapsed={false}
-          onClose={() => setMobileOpen(false)}
-          isMobile
-        />
+        <SidebarContent {...sharedProps} collapsed={false} onClose={() => setMobileOpen(false)} isMobile />
       </div>
 
       <aside
@@ -461,7 +433,8 @@ const PlatformSidebar = () => {
 
       {tooltip && (
         <div
-          className="pointer-events-none fixed z-[80] max-w-[240px] -translate-y-1/2 whitespace-normal break-words rounded-xl bg-gray-950 px-3 py-2 text-xs font-semibold text-white shadow-2xl ring-1 ring-white/10"
+          role="tooltip"
+          className="pointer-events-none fixed z-[80] -translate-y-1/2 whitespace-nowrap rounded-xl bg-gray-950 px-3 py-2 text-xs font-semibold text-white shadow-2xl ring-1 ring-white/10"
           style={{ top: tooltip.top, left: tooltip.left }}
         >
           {tooltip.label}

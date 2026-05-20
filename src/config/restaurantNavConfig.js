@@ -29,8 +29,8 @@ export const RESTAURANT_NAV_SECTIONS = [
     icon: FiHome,
     defaultOpen: true,
     items: [
-      { segment: 'dashboard', icon: FiHome, label: 'Dashboard', featureKey: 'analytics' },
-      { segment: 'orders/activity', icon: FiBarChart2, label: 'Sales reports', featureKey: 'analytics' },
+      { segment: 'dashboard', icon: FiHome, label: 'Dashboard', featureKey: 'dashboard' },
+      { segment: 'orders/activity', icon: FiBarChart2, label: 'Sales reports', featureKey: 'salesReports' },
     ],
   },
   {
@@ -52,12 +52,12 @@ export const RESTAURANT_NAV_SECTIONS = [
     icon: FiPieChart,
     defaultOpen: false,
     items: [
-      { segment: 'finance/dashboard', icon: FiBarChart2, label: 'Overview', featureKey: 'analytics' },
-      { segment: 'finance/expenses', icon: FiCreditCard, label: 'Expenses', featureKey: 'analytics' },
-      { segment: 'finance/budget', icon: FiPieChart, label: 'Budget', featureKey: 'analytics' },
-      { segment: 'finance/profit-loss', icon: FiPercent, label: 'Profit & loss', featureKey: 'analytics' },
+      { segment: 'finance/dashboard', icon: FiBarChart2, label: 'Overview', featureKey: 'financeOverview' },
+      { segment: 'finance/expenses', icon: FiCreditCard, label: 'Expenses', featureKey: 'expenses' },
+      { segment: 'finance/budget', icon: FiPieChart, label: 'Budget', featureKey: 'budget' },
+      { segment: 'finance/profit-loss', icon: FiPercent, label: 'Profit & loss', featureKey: 'profitLoss' },
       { segment: 'finance/inventory', icon: FiBookOpen, label: 'Inventory', featureKey: 'inventory' },
-      { segment: 'finance/payroll', icon: FiUsers, label: 'Payroll', featureKey: 'employees' },
+      { segment: 'finance/payroll', icon: FiUsers, label: 'Payroll', featureKey: 'payroll' },
       { segment: 'finance/invoices', icon: FiFileText, label: 'Invoices', featureKey: 'billing' },
     ],
   },

@@ -190,10 +190,14 @@ api.interceptors.response.use(
       return Promise.reject(error)
     }
     if (status === 403 && errorCode === 'PLAN_FEATURE_DISABLED') {
-      if (!shouldSkipToast) {
+      const method = String(error.config?.method || 'GET').toUpperCase()
+      const isReadOnly = method === 'GET' || method === 'HEAD'
+      if (!shouldSkipToast && !isReadOnly) {
         const featureKey = error.response?.data?.errors?.feature
         const featureLabel = FEATURE_LABELS[featureKey] || 'This feature'
         toast.error(`${featureLabel} is not included in your subscription plan.`)
+        error.__toastShown = true
+      } else {
         error.__toastShown = true
       }
       return Promise.reject(error)
@@ -370,6 +374,19 @@ export const deleteAdmin = (id) =>
 
 export const toggleAdminStatus = (id) => 
   api.patch(`/platform/admins/${id}/toggle-status`)
+
+export const getAdminPermissionCatalog = () =>
+  api.get('/platform/admins/permission-catalog')
+
+export const updateAdminPermissions = (id, permissions) =>
+  api.patch(`/platform/admins/${id}/permissions`, { permissions })
+
+// Platform internal payroll (admins as employees)
+export const getPlatformPayrollEmployees = () => api.get('/platform/payroll/employees')
+export const getPlatformPayroll = (params) => api.get('/platform/payroll', { params })
+export const generatePlatformPayroll = (data) => api.post('/platform/payroll/generate', data)
+export const markPlatformPayrollPaid = (id) => api.patch(`/platform/payroll/pay/${id}`)
+export const getNextPlatformEmployeeCode = () => api.get('/platform/admins/next-employee-code')
 
 // Dashboard APIs
 export const getPlatformDashboardStats = () => 

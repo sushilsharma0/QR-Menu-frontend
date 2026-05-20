@@ -15,8 +15,26 @@ import {
 } from 'react-icons/fi'
 import { FcGoogle } from 'react-icons/fc'
 import { useAuth } from '../../hooks/useAuth'
+import api from '../../services/api'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
+
+function VendorLoginPolicyHint() {
+  const [policy, setPolicy] = useState(null)
+  useEffect(() => {
+    api
+      .get('/restaurant/auth/login-policy', { skipErrorToast: true })
+      .then((res) => setPolicy(res.data?.data))
+      .catch(() => {})
+  }, [])
+  if (!policy?.maxAttempts) return null
+  return (
+    <div className="mb-5 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-300">
+      After <strong>{policy.maxAttempts}</strong> wrong passwords within {policy.windowMinutes} minutes, your
+      vendor account is locked for {policy.lockMinutes} minutes. Contact platform administration to unlock early.
+    </div>
+  )
+}
 
 const VALID_ROLES = ['restaurant', 'employee', 'platform']
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
@@ -303,6 +321,8 @@ const Login = () => {
               Platform access is intentionally separate from vendor registration and staff login.
             </div>
           )}
+
+          {role === 'restaurant' && !isBranchLogin && <VendorLoginPolicyHint />}
 
           {role === 'restaurant' && !isBranchLogin && (
             <div className="mb-6">

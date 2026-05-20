@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { useSearchParams } from 'react-router-dom'
 import toast from '@utils/toast'
@@ -10,11 +10,12 @@ import { usePlanAccess } from '../../hooks/usePlanAccess'
 import { useTheme } from '../../context/ThemeContext'
 import { DEFAULT_THEME_SETTINGS, normalizeThemeSettings } from '../../theme/themePresets'
 import {
-  COUNTRY_OPTIONS,
   currencyForCountry,
   DEFAULT_BACKUP_SECTIONS,
   IMAGE_MAX_BYTES,
 } from '../../components/restaurant/settings/settingsConstants'
+import { useCountriesCatalog } from '../../hooks/useCountriesCatalog'
+import { useLocationCascade } from '../../hooks/useLocationCascade'
 import { getSectionById } from '../../components/restaurant/settings/settingsConfig'
 import SettingsHub from '../../components/restaurant/settings/SettingsHub'
 import SettingsSectionShell from '../../components/restaurant/settings/SettingsSectionShell'
@@ -54,9 +55,84 @@ const Settings = () => {
   const activeSection = searchParams.get('section')
   const { mergeUser } = useAuth()
   const { updateTheme, applyRemoteTheme, resetTheme } = useTheme()
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm()
+  const { register, handleSubmit, setValue, watch, control, formState: { errors } } = useForm({
+    defaultValues: {
+      country: 'Nepal',
+      currency: 'Rs.',
+      timezone: 'Asia/Kathmandu',
+    },
+  })
+  const {
+    rows: countryRows,
+    loading: countriesLoading,
+    currencyOptions: catalogCurrencyOptions,
+    resolveRow,
+    timezoneOptionsFor,
+    ensureSavedLocale,
+  } = useCountriesCatalog()
+
   const selectedCountry = watch('country') || restaurant?.country || 'Nepal'
-  const selectedCurrency = watch('currency') || restaurant?.settings?.currency || currencyForCountry(selectedCountry).currency
+  const selectedState = watch('state') || restaurant?.state || ''
+  const selectedDistrict = watch('district') || restaurant?.district || ''
+  const selectedLocalLevel = watch('localLevel') || restaurant?.localLevel || ''
+  const selectedCurrency = watch('currency') || restaurant?.settings?.currency || resolveRow(selectedCountry)?.currency || 'Rs.'
+  const selectedTimezone = watch('timezone') || restaurant?.settings?.timezone || resolveRow(selectedCountry)?.timezone || 'Asia/Kathmandu'
+
+  const {
+    statesLoading,
+    districtsLoading,
+    stateOptions: cascadeStateOptions,
+    districtOptions: cascadeDistrictOptions,
+    localLevelOptions: cascadeLocalLevelOptions,
+    hasStates,
+    hasDistricts,
+    districtsError,
+  } = useLocationCascade({
+    countryName: selectedCountry,
+    selectedState,
+    selectedDistrict,
+    selectedLocalLevel,
+  })
+
+  const stateOptions = useMemo(
+    () => cascadeStateOptions,
+    [cascadeStateOptions],
+  )
+
+  const districtOptions = useMemo(
+    () => cascadeDistrictOptions,
+    [cascadeDistrictOptions],
+  )
+
+  const localLevelOptions = useMemo(() => {
+    const base = [...cascadeLocalLevelOptions]
+    if (selectedLocalLevel && !base.some((o) => o.value === selectedLocalLevel)) {
+      base.unshift({ value: selectedLocalLevel, label: `${selectedLocalLevel} (current)` })
+    }
+    return base
+  }, [cascadeLocalLevelOptions, selectedLocalLevel])
+
+  const countryOptions = useMemo(
+    () => ensureSavedLocale(restaurant).map((r) => ({ value: r.country, label: r.label || r.country })),
+    [countryRows, restaurant?.country, restaurant?.settings?.currency, restaurant?.settings?.timezone],
+  )
+
+  const currencyOptions = useMemo(() => {
+    const base = [...catalogCurrencyOptions]
+    const current = selectedCurrency || restaurant?.settings?.currency
+    if (current && !base.some((o) => o.value === current)) {
+      base.unshift({ value: current, label: `${current} (current)` })
+    }
+    return base
+  }, [catalogCurrencyOptions, selectedCurrency, restaurant?.settings?.currency])
+
+  const timezoneOptions = useMemo(() => {
+    const base = timezoneOptionsFor(selectedCountry)
+    if (selectedTimezone && !base.some((o) => o.value === selectedTimezone)) {
+      return [{ value: selectedTimezone, label: selectedTimezone.replace(/_/g, ' ') }, ...base]
+    }
+    return base
+  }, [timezoneOptionsFor, selectedCountry, selectedTimezone])
 
   useEffect(() => {
     fetchRestaurant()
@@ -72,9 +148,11 @@ const Settings = () => {
       setValue('name', res.data.data.name)
       setValue('phone', res.data.data.phone)
       setValue('address', res.data.data.address)
-      setValue('city', res.data.data.city)
-      setValue('state', res.data.data.state)
-      setValue('pincode', res.data.data.pincode)
+      setValue('city', res.data.data.city || '')
+      setValue('state', res.data.data.state || '')
+      setValue('district', res.data.data.district || '')
+      setValue('localLevel', res.data.data.localLevel || '')
+      setValue('pincode', res.data.data.pincode || '')
       setValue('country', res.data.data.country || 'Nepal')
       setValue('currency', res.data.data.settings?.currency || currencyForCountry(res.data.data.country || 'Nepal').currency)
       setValue('timezone', res.data.data.settings?.timezone || currencyForCountry(res.data.data.country || 'Nepal').timezone)
@@ -178,6 +256,7 @@ const Settings = () => {
           slug: updatedRestaurant.slug,
           country: updatedRestaurant.country,
           currency: updatedRestaurant?.settings?.currency,
+          timezone: updatedRestaurant?.settings?.timezone,
           themeSettings: updatedRestaurant?.settings?.themeSettings,
         })
         applyRemoteTheme(updatedRestaurant?.settings?.themeSettings)
@@ -220,12 +299,14 @@ const Settings = () => {
     if (restaurant?.backgroundPhoto) setBackgroundPreview(restaurant.backgroundPhoto)
   }
 
-  const handleCountryChange = (event) => {
-    const country = event.target.value
-    const option = currencyForCountry(country)
-    setValue('country', option.country, { shouldDirty: true })
-    setValue('currency', option.currency, { shouldDirty: true })
-    setValue('timezone', option.timezone, { shouldDirty: true })
+  const handleCountrySelect = (countryName) => {
+    const option = resolveRow(countryName) || currencyForCountry(countryName)
+    setValue('country', option.country, { shouldDirty: true, shouldValidate: true })
+    setValue('currency', option.currency, { shouldDirty: true, shouldValidate: true })
+    setValue('timezone', option.timezone, { shouldDirty: true, shouldValidate: true })
+    setValue('state', '', { shouldDirty: true })
+    setValue('district', '', { shouldDirty: true })
+    setValue('localLevel', '', { shouldDirty: true })
   }
 
   const onSubmit = async (data) => {
@@ -243,14 +324,18 @@ const Settings = () => {
         formData.append(key, str)
       }
 
-      appendIfPresent('phone', data.phone)
-      appendIfPresent('address', data.address)
-      appendIfPresent('city', data.city)
-      appendIfPresent('state', data.state)
-      appendIfPresent('pincode', data.pincode)
-      appendIfPresent('country', data.country)
-      appendIfPresent('currency', data.currency)
-      appendIfPresent('timezone', data.timezone)
+      if (String(data.phone || '').trim()) {
+        formData.append('phone', String(data.phone).trim())
+      }
+      formData.append('state', String(data.state || restaurant?.state || '').trim())
+      formData.append('district', String(data.district || restaurant?.district || '').trim())
+      formData.append('localLevel', String(data.localLevel || restaurant?.localLevel || '').trim())
+      formData.append('city', String(data.city || restaurant?.city || '').trim())
+      formData.append('address', String(data.address || restaurant?.address || '').trim())
+      formData.append('pincode', String(data.pincode || '').trim())
+      formData.append('country', String(data.country || restaurant?.country || 'Nepal').trim())
+      formData.append('currency', String(data.currency || restaurant?.settings?.currency || 'Rs.').trim())
+      formData.append('timezone', String(data.timezone || restaurant?.settings?.timezone || 'Asia/Kathmandu').trim())
       appendIfPresent('description', data.description)
       appendIfPresent('openingTime', data.openingTime)
       appendIfPresent('closingTime', data.closingTime)
@@ -283,6 +368,7 @@ const Settings = () => {
           slug: updatedRestaurant.slug,
           country: updatedRestaurant.country,
           currency: updatedRestaurant?.settings?.currency,
+          timezone: updatedRestaurant?.settings?.timezone,
           themeSettings: updatedRestaurant?.settings?.themeSettings,
         })
         applyRemoteTheme(updatedRestaurant?.settings?.themeSettings)
@@ -516,9 +602,26 @@ const Settings = () => {
           <ProfileSettingsSection
             restaurant={restaurant}
             register={register}
+            control={control}
+            setValue={setValue}
             errors={errors}
+            selectedCountry={selectedCountry}
+            selectedState={selectedState}
             selectedCurrency={selectedCurrency}
-            onCountryChange={handleCountryChange}
+            selectedTimezone={selectedTimezone}
+            countryOptions={countryOptions}
+            currencyOptions={currencyOptions}
+            timezoneOptions={timezoneOptions}
+            countriesLoading={countriesLoading}
+            onCountrySelect={handleCountrySelect}
+            stateOptions={stateOptions}
+            districtOptions={districtOptions}
+            localLevelOptions={localLevelOptions}
+            statesLoading={statesLoading}
+            districtsLoading={districtsLoading}
+            hasDistricts={hasDistricts}
+            districtsError={districtsError}
+            hasStates={hasStates}
           />
         )
       case 'branding':

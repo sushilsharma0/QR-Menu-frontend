@@ -31,6 +31,7 @@ export default function PayrollEditModal({
         <div className="mb-4 flex items-start justify-between gap-2">
           <div>
             <h2 id="payroll-modal-title" className="text-lg font-bold text-gray-900 dark:text-gray-100">
+              {modalProfile?.employeeCode ? `${modalProfile.employeeCode} — ` : ''}
               {modalProfile?.name || 'Employee'} — {monthName(month)} {year}
               {payrollPeriodBs ? (
                 <span className="mt-1 block text-sm font-normal text-emerald-800 dark:text-emerald-200">
@@ -42,6 +43,7 @@ export default function PayrollEditModal({
             {!modalLoading && modalProfile && (
               <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                 Basic {money(modalProfile.salary)} · Allowance {money(modalProfile.allowance)}
+                {modalProfile.designation ? ` · ${modalProfile.designation}` : ''}
                 {modalProfile.department ? ` · ${modalProfile.department}` : ''}
               </p>
             )}

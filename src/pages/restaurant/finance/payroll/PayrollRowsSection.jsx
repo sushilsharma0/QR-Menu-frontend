@@ -18,6 +18,7 @@ export default function PayrollRowsSection({
   onPrint,
   onPay,
   onDelete,
+  enableStaffPicker = false,
 }) {
   const list = Array.isArray(items) ? items : []
   const pendingRows = useMemo(
@@ -33,7 +34,10 @@ export default function PayrollRowsSection({
     () =>
       staffDirectory
         .filter((e) => e.isActive !== false)
-        .map((e) => ({ value: String(e._id), label: e.name })),
+        .map((e) => ({
+          value: String(e._id),
+          label: e.employeeCode ? `${e.employeeCode} — ${e.name}` : e.name,
+        })),
     [staffDirectory],
   )
 
@@ -55,7 +59,7 @@ export default function PayrollRowsSection({
       <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
         Only <strong>unpaid</strong> payroll appears here. After <strong>Pay salary</strong>, it moves to <strong>Payroll history</strong>. Slip and PDF still work on pending rows below.
       </p>
-      {user?.role === 'restaurant' && staffDirectory.length > 0 && (
+      {(enableStaffPicker || user?.role === 'restaurant') && staffDirectory.length > 0 && (
         <div className="relative mb-5 overflow-hidden rounded-2xl border border-amber-200/50 bg-gradient-to-br from-amber-50/90 via-white to-emerald-50/50 p-[1px] shadow-md shadow-amber-900/5 dark:border-amber-900/30 dark:from-gray-900 dark:via-gray-900 dark:to-emerald-950/20 dark:shadow-none">
           <div className="rounded-[0.9rem] bg-white/95 px-4 py-4 backdrop-blur-sm dark:bg-gray-900/95 sm:px-5 sm:py-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
@@ -94,8 +98,12 @@ export default function PayrollRowsSection({
             return (
               <FinanceRow
                 key={p._id}
-                title={p.employeeId?.name || 'Employee'}
-                meta={`${rowBs ? `${rowBs} BS · ` : ''}Present ${p.presentDays || 0}/${p.workingDays || 0} | Leave/absent ${p.absentDays || 0} | Basic ${money(p.basicSalary)} + allowance ${money(p.allowance)} | Net ${money(p.finalSalary)}`}
+                title={
+                  p.employeeId?.employeeCode
+                    ? `${p.employeeId.employeeCode} — ${p.employeeId?.name || 'Employee'}`
+                    : p.employeeId?.name || 'Employee'
+                }
+                meta={`${rowBs ? `${rowBs} BS · ` : ''}${p.employeeId?.designation ? `${p.employeeId.designation} · ` : ''}Present ${p.presentDays || 0}/${p.workingDays || 0} | Leave/absent ${p.absentDays || 0} | Basic ${money(p.basicSalary)} + allowance ${money(p.allowance)} | Net ${money(p.finalSalary)}`}
                 amount={money(p.finalSalary)}
                 status={p.paymentStatus}
                 action={(

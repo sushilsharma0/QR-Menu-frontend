@@ -9,6 +9,7 @@ import {
   FiClock,
   FiCreditCard,
   FiGrid,
+  FiLock,
   FiRefreshCw,
   FiShoppingBag,
   FiUsers,
@@ -28,6 +29,7 @@ import { useAuth } from '../../hooks/useAuth'
 import Button from '../../components/common/Button'
 import Card from '../../components/common/Card'
 import Tabs from '../../components/common/Tabs'
+import PlanFeatureSelector from '../../components/platform/PlanFeatureSelector'
 import {
   RestaurantPageLoader,
   RestaurantStatusPill,
@@ -114,6 +116,7 @@ const RestaurantDetail = () => {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [planFeatureDefs, setPlanFeatureDefs] = useState([])
+  const [planFeatureGroups, setPlanFeatureGroups] = useState([])
   const [customSubmitting, setCustomSubmitting] = useState(false)
   const [customForm, setCustomForm] = useState({
     planLabel: '',
@@ -158,7 +161,9 @@ const RestaurantDetail = () => {
       try {
         const res = await api.get('/platform/subscriptions/plan-feature-options')
         const features = res.data?.data?.features || []
+        const groups = res.data?.data?.groups || []
         setPlanFeatureDefs(features)
+        setPlanFeatureGroups(groups)
         const initialFlags = {}
         features.forEach((f) => {
           initialFlags[f.key] = true
@@ -174,9 +179,16 @@ const RestaurantDetail = () => {
     loadFeatureOptions()
   }, [user?.role])
 
+  const canAssignCustomPlan = restaurant?.canAssignCustomPlan !== false
+  const customPlanBlockedReason = restaurant?.customPlanBlockedReason || null
+
   const submitCustomPlan = async (e) => {
     e.preventDefault()
     if (!id) return
+    if (!canAssignCustomPlan) {
+      toast.error(customPlanBlockedReason || 'Cannot assign a custom plan while a catalog subscription is active.')
+      return
+    }
     setCustomSubmitting(true)
     try {
       await api.post('/platform/subscriptions/assign-custom', {
@@ -514,10 +526,36 @@ const RestaurantDetail = () => {
 
           {user?.role === 'super_admin' && (
             <Card title="Assign custom plan" icon={FiCreditCard} className="xl:col-span-2">
+              {!canAssignCustomPlan ? (
+                <motion.div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-900/50 dark:bg-amber-950/30">
+                  <div className="flex gap-3">
+                    <FiLock className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-700 dark:text-amber-400" />
+                    <div>
+                      <p className="font-semibold text-amber-950 dark:text-amber-100">Custom plan unavailable</p>
+                      <p className="mt-1 text-sm text-amber-900/90 dark:text-amber-200/90">
+                        {customPlanBlockedReason ||
+                          'This restaurant has an active catalog subscription. Custom plans are only for trial, expired, or partner accounts without a paid plan.'}
+                      </p>
+                      <p className="mt-2 text-xs text-amber-800/80 dark:text-amber-300/80">
+                        To change access, approve or assign a different catalog plan under{' '}
+                        <button
+                          type="button"
+                          onClick={() => navigate('/platform/subscription-payments')}
+                          className="font-semibold underline hover:no-underline"
+                        >
+                          Subscription payments
+                        </button>
+                        , or wait until the current plan expires.
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              ) : (
+                <>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Set how many days the access lasts, numeric caps (tables, employees, categories, menu items), and
-                which product areas this restaurant may use. This replaces catalog plans for the restaurant until you
-                assign a standard plan again.
+                {restaurant?.planAssignmentSource === 'custom'
+                  ? 'Update this restaurant’s custom access (duration, limits, and modules).'
+                  : 'Set duration, resource limits, and modules. Use this for trial extensions or partner pilots—not when they already pay for a catalog plan.'}
               </p>
               <form onSubmit={submitCustomPlan} className="mt-4 space-y-5">
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -576,38 +614,24 @@ const RestaurantDetail = () => {
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    Features
-                  </p>
-                  <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {planFeatureDefs.map((def) => (
-                      <label
-                        key={def.key}
-                        className="flex cursor-pointer items-start gap-3 rounded-2xl border border-surface-200 p-3 dark:border-gray-700"
-                      >
-                        <input
-                          type="checkbox"
-                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-600"
-                          checked={customForm.features[def.key] !== false}
-                          onChange={(ev) =>
-                            setCustomForm((p) => ({
-                              ...p,
-                              features: { ...p.features, [def.key]: ev.target.checked },
-                            }))
-                          }
-                        />
-                        <span>
-                          <span className="font-medium text-gray-950 dark:text-gray-100">{def.label}</span>
-                          <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">{def.description}</span>
-                        </span>
-                      </label>
-                    ))}
-                  </div>
+                  <PlanFeatureSelector
+                    options={planFeatureDefs}
+                    groups={planFeatureGroups}
+                    flags={customForm.features}
+                    onChange={(features) => setCustomForm((p) => ({ ...p, features }))}
+                    disabled={customSubmitting}
+                  />
                 </div>
                 <Button type="submit" disabled={customSubmitting || planFeatureDefs.length === 0}>
-                  {customSubmitting ? 'Assigning…' : 'Assign custom plan to this restaurant'}
+                  {customSubmitting
+                    ? 'Saving…'
+                    : restaurant?.planAssignmentSource === 'custom'
+                      ? 'Update custom plan'
+                      : 'Assign custom plan'}
                 </Button>
               </form>
+                </>
+              )}
             </Card>
           )}
         </div>
