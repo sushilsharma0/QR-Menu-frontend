@@ -12,15 +12,15 @@ import AdminPrivilegeEditor from '../../components/platform/AdminPrivilegeEditor
 import AdminHrProfileForm, { emptyHrProfile, hrProfileFromAdmin } from '../../components/platform/AdminHrProfileForm'
 import PlatformPermissionGate from '../../components/platform/PlatformPermissionGate'
 import { usePlatformAccess } from '../../hooks/usePlatformAccess'
-import { emptyPermissions, PERMISSION_KEYS } from '../../constants/platformPermissions'
+import { countGrantedPrivileges, emptyPermissions, hydratePrivilegesForEditor, PERMISSION_KEYS } from '../../constants/platformPermissions'
 import { PlatformMetric, PlatformPageHeader, PlatformPill, platformStatusStyles } from '../../components/platform/PlatformUI'
 
 function mergePermissions(source = {}) {
-  return { ...emptyPermissions(), ...source }
+  return hydratePrivilegesForEditor(source)
 }
 
 function countEnabled(perms) {
-  return PERMISSION_KEYS.filter((k) => perms?.[k]).length
+  return countGrantedPrivileges(perms || {})
 }
 
 function buildHrPayload(hr, employeeCode) {

@@ -15,7 +15,7 @@ const IMAGE_MAX_BYTES = 1 * 1024 * 1024
 
 const PlatformFinanceSettings = () => {
   const { isSuperAdmin, hasPermission } = usePlatformAccess()
-  const canBilling = hasPermission('manageSubscriptions')
+  const canBilling = hasPermission('managePlatformBillingSettings')
   const canManual = isSuperAdmin
 
   const [billingLoading, setBillingLoading] = useState(true)
@@ -170,7 +170,7 @@ const PlatformFinanceSettings = () => {
         />
         <PlatformAccessDenied
           title="Finance settings restricted"
-          message="Only super admins or admins with Subscriptions & billing permission can manage platform billing. Contact a super admin to request access."
+          message="Only super admins or admins with “Platform billing setup” can change VAT, branding, and payout details. Contact a super admin to request access."
         />
       </div>
     )

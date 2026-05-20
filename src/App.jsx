@@ -202,10 +202,10 @@ function App() {
         <Route path="/platform/restaurants/:id" element={<PlatformPermissionGate permission="manageRestaurants"><PlatformRestaurantDetail /></PlatformPermissionGate>} />
         <Route path="/platform/kyc" element={<PlatformPermissionGate permission="verifyKYC"><PlatformKYCPending /></PlatformPermissionGate>} />
         <Route path="/platform/kyc/:id" element={<PlatformPermissionGate permission="verifyKYC"><PlatformKYCDetail /></PlatformPermissionGate>} />
-        <Route path="/platform/subscriptions" element={<PlatformPermissionGate permission="manageSubscriptions"><PlatformSubscriptions /></PlatformPermissionGate>} />
-        <Route path="/platform/subscriptions/create" element={<PlatformPermissionGate permission="manageSubscriptions"><PlatformCreatePlan /></PlatformPermissionGate>} />
-        <Route path="/platform/subscriptions/edit/:id" element={<PlatformPermissionGate permission="manageSubscriptions"><PlatformCreatePlan /></PlatformPermissionGate>} />
-        <Route path="/platform/plan-access-settings" element={<PlatformPermissionGate permission="manageSubscriptions"><PlatformPlanAccessSettings /></PlatformPermissionGate>} />
+        <Route path="/platform/subscriptions" element={<PlatformPermissionGate permission="manageSubscriptionPlans"><PlatformSubscriptions /></PlatformPermissionGate>} />
+        <Route path="/platform/subscriptions/create" element={<PlatformPermissionGate permission="manageSubscriptionPlans"><PlatformCreatePlan /></PlatformPermissionGate>} />
+        <Route path="/platform/subscriptions/edit/:id" element={<PlatformPermissionGate permission="manageSubscriptionPlans"><PlatformCreatePlan /></PlatformPermissionGate>} />
+        <Route path="/platform/plan-access-settings" element={<PlatformPermissionGate permission="manageTrialAccess"><PlatformPlanAccessSettings /></PlatformPermissionGate>} />
         <Route path="/platform/cms" element={<PlatformPermissionGate permission="manageCMS"><PlatformCMS /></PlatformPermissionGate>} />
         <Route path="/platform/reviews" element={<PlatformPermissionGate permission="manageReviews"><PlatformReviews /></PlatformPermissionGate>} />
         <Route path="/platform/admins" element={<PlatformAdmins />} />
@@ -218,10 +218,10 @@ function App() {
         <Route path="/platform/security" element={<PlatformPermissionGate permission="manageSecurity"><PlatformSecurityOperations /></PlatformPermissionGate>} />
         <Route path="/platform/settings" element={<PlatformPermissionGate staffOnly><PlatformSettings /></PlatformPermissionGate>} />
         <Route path="/platform/finance/settings" element={<PlatformFinanceSettings />} />
-        <Route path="/platform/invoices" element={<PlatformPermissionGate permission="manageSubscriptions"><PlatformInvoices /></PlatformPermissionGate>} />
-        <Route path="/platform/invoices/:id" element={<PlatformPermissionGate permission="manageSubscriptions"><PlatformInvoiceDetail /></PlatformPermissionGate>} />
-        <Route path="/platform/subscription-activity" element={<PlatformPermissionGate permission="manageSubscriptions"><PlatformSubscriptionActivity /></PlatformPermissionGate>} />
-        <Route path="/platform/subscription-payments" element={<PlatformPermissionGate permission="manageSubscriptions"><PlatformSubscriptionPayments /></PlatformPermissionGate>} />
+        <Route path="/platform/invoices" element={<PlatformPermissionGate permission="manageSubscriptionInvoices"><PlatformInvoices /></PlatformPermissionGate>} />
+        <Route path="/platform/invoices/:id" element={<PlatformPermissionGate permission="manageSubscriptionInvoices"><PlatformInvoiceDetail /></PlatformPermissionGate>} />
+        <Route path="/platform/subscription-activity" element={<PlatformPermissionGate permission="manageSubscriptionActivity"><PlatformSubscriptionActivity /></PlatformPermissionGate>} />
+        <Route path="/platform/subscription-payments" element={<PlatformPermissionGate permission="manageSubscriptionPayments"><PlatformSubscriptionPayments /></PlatformPermissionGate>} />
         <Route path="/platform/notifications" element={<NotificationsPage />} />
       </Route>
 

@@ -48,11 +48,11 @@ export const PLATFORM_NAV_SECTIONS = [
     icon: FiLayers,
     defaultOpen: false,
     items: [
-      { path: '/platform/subscriptions', icon: FiLayers, label: 'Plans', permission: 'manageSubscriptions', badgeKey: 'subscriptionRequests' },
-      { path: '/platform/plan-access-settings', icon: FiSliders, label: 'Trial access', permission: 'manageSubscriptions' },
-      { path: '/platform/subscription-payments', icon: FiDollarSign, label: 'Payments', permission: 'manageSubscriptions', badgeKey: 'paymentReviews' },
-      { path: '/platform/invoices', icon: FiClipboard, label: 'Invoices', permission: 'manageSubscriptions' },
-      { path: '/platform/subscription-activity', icon: FiActivity, label: 'Activity log', permission: 'manageSubscriptions' },
+      { path: '/platform/subscriptions', icon: FiLayers, label: 'Plans', permission: 'manageSubscriptionPlans', badgeKey: 'subscriptionRequests' },
+      { path: '/platform/plan-access-settings', icon: FiSliders, label: 'Trial access', permission: 'manageTrialAccess' },
+      { path: '/platform/subscription-payments', icon: FiDollarSign, label: 'Payments', permission: 'manageSubscriptionPayments', badgeKey: 'paymentReviews' },
+      { path: '/platform/invoices', icon: FiClipboard, label: 'Invoices', permission: 'manageSubscriptionInvoices' },
+      { path: '/platform/subscription-activity', icon: FiActivity, label: 'Activity log', permission: 'manageSubscriptionActivity' },
     ],
   },
   {
@@ -72,7 +72,7 @@ export const PLATFORM_NAV_SECTIONS = [
     icon: FiTrendingUp,
     defaultOpen: false,
     items: [
-      { path: '/platform/finance/settings', icon: FiDollarSign, label: 'Billing & payments', permission: 'manageSubscriptions', superAdminOnly: false, financeSettings: true },
+      { path: '/platform/finance/settings', icon: FiDollarSign, label: 'Billing & payments', permission: 'managePlatformBillingSettings', superAdminOnly: false, financeSettings: true },
       { path: '/platform/payroll', icon: FiUserCheck, label: 'Payroll', permission: 'managePayroll' },
       { path: '/platform/expenses', icon: FiCreditCard, label: 'Expenses', permission: 'manageFinance' },
       { path: '/platform/profit-loss', icon: FiPieChart, label: 'Profit & loss', permission: 'manageFinance' },
@@ -106,7 +106,7 @@ export const PLATFORM_NAV_GROUPS = PLATFORM_NAV_SECTIONS.map((section) => ({
 
 export function canSeeNavItem(item, hasPermission, isSuperAdmin) {
   if (item.financeSettings) {
-    return isSuperAdmin || hasPermission('manageSubscriptions')
+    return isSuperAdmin || hasPermission('managePlatformBillingSettings')
   }
   if (item.superAdminOnly) return isSuperAdmin
   if (!item.permission) return true
