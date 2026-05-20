@@ -3,7 +3,6 @@ import { Outlet, Link, NavLink, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { FiClock, FiGrid, FiHome, FiList, FiLogOut, FiPlusCircle, FiUser } from 'react-icons/fi'
 import { FiMoon, FiSun } from 'react-icons/fi'
-import { TbCurrencyRupee } from 'react-icons/tb'
 import NotificationMenu from '../common/NotificationMenu'
 import api from '../../services/api'
 import { useSocket } from '../../hooks/useSocket'
@@ -37,6 +36,7 @@ const EmployeeLayout = () => {
     if (user?.role === 'kitchen') return 'Kitchen Dashboard'
     if (user?.role === 'cashier') return 'Cashier Dashboard'
     if (user?.role === 'waiter') return 'Waiter POS'
+    if (user?.role === 'manager' || user?.role === 'admin') return 'Manager Portal'
     return 'Employee Dashboard'
   }
 
@@ -60,7 +60,6 @@ const EmployeeLayout = () => {
     { path: cashierDashboardPath, label: 'Payments', icon: FiHome, role: 'cashier' },
     { path: cashierTransactionsPath, label: 'Transactions', icon: FiList, role: 'cashier' },
     { path: cashierHouseCreditPath, label: 'House credit', icon: FiUser, role: 'cashier' },
-    { path: cashierDashboardPath, label: 'Payments', icon: TbCurrencyRupee, role: 'manager' },
     { path: waiterDashboardPath, label: 'Dashboard', icon: FiGrid, role: 'waiter' },
     { path: waiterPosPath, label: 'POS', icon: FiGrid, role: 'waiter' },
     { path: waiterOrderPath, label: 'Take Order', icon: FiPlusCircle, role: 'waiter' },

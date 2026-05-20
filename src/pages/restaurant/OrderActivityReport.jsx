@@ -165,7 +165,7 @@ function SummaryTile({ label, value, sub, icon: Icon, accent }) {
 }
 
 export default function OrderActivityReport() {
-  const { restaurantBase } = useTenantRoutes()
+  const { portalBase } = useTenantRoutes()
   const [from, setFrom] = useState(defaultFromDate)
   const [to, setTo] = useState(defaultToDate)
   const [orderNumberQ, setOrderNumberQ] = useState('')
@@ -348,7 +348,7 @@ export default function OrderActivityReport() {
       header: 'Order #',
       render: (row) => (
         <Link
-          to={`${restaurantBase}/orders/${row._id}`}
+          to={`${portalBase}/orders/${row._id}`}
           className="font-semibold text-primary-600 hover:underline"
         >
           {row.orderNumber}
@@ -620,7 +620,7 @@ export default function OrderActivityReport() {
             {rows.slice(0, 6).map((row) => (
               <Link
                 key={row._id}
-                to={`${restaurantBase}/orders/${row._id}`}
+                to={`${portalBase}/orders/${row._id}`}
                 className="block rounded-2xl border border-surface-200 bg-white p-4 transition hover:border-primary-100 hover:bg-surface-50 hover:shadow-sm"
               >
                 <div className="flex items-start justify-between gap-3">

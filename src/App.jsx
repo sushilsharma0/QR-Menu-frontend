@@ -116,6 +116,10 @@ import RestaurantPortalIndex from "./components/restaurant/RestaurantPortalIndex
 import PlanProtectedOutlet from "./components/restaurant/PlanProtectedOutlet";
 import BranchLayout from "./components/branch/BranchLayout";
 import EmployeeLayout from "./components/employee/EmployeeLayout";
+import ManagerLayout from "./components/manager/ManagerLayout";
+import ManagerDashboard from "./pages/manager/Dashboard";
+import ManagerSalesActivity from "./pages/manager/SalesActivity";
+import ManagerTeam from "./pages/manager/Team";
 import { defaultPortalPathForUser, getTenantSegments } from "./utils/tenantPaths";
 import LandingPage from "./pages/LandingPage";
 import Blog from "./pages/Blog";
@@ -129,7 +133,7 @@ function App() {
   const themeProfileLoadedFor = useRef("");
   const isEmployeeUser =
     user?.scope === "employee" ||
-    ["kitchen", "cashier", "manager", "waiter"].includes(user?.role);
+    ["kitchen", "cashier", "manager", "waiter", "admin", "accountant"].includes(user?.role);
   const { slug: userSlug, restaurantId: userRestaurantId } = getTenantSegments(user);
 
   useEffect(() => {
@@ -330,6 +334,31 @@ function App() {
       {/* Employee: forced password change (no sidebar) */}
       <Route path="/employee/change-password" element={<EmployeeChangePassword />} />
 
+      {/* Manager portal: operations, analytics, team */}
+      <Route path="/manager/:slug/:restaurantId" element={<ManagerLayout />}>
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<ManagerDashboard />} />
+        <Route path="orders" element={<RestaurantOrders />} />
+        <Route path="orders/:id" element={<RestaurantOrderDetail />} />
+        <Route path="tables" element={<RestaurantTables />} />
+        <Route path="tables/new" element={<RestaurantTableForm />} />
+        <Route path="tables/:id/edit" element={<RestaurantTableForm />} />
+        <Route path="payments" element={<CashierDashboard />} />
+        <Route path="sales-activity" element={<ManagerSalesActivity />} />
+        <Route path="reports" element={<RestaurantOrderActivityReport />} />
+        <Route path="team" element={<ManagerTeam />} />
+        <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="pos" element={<PosLayout />}>
+          <Route index element={<PosMain />} />
+          <Route path="orders" element={<PosOrdersList />} />
+          <Route path="billing" element={<PosBilling />} />
+          <Route path="history" element={<PosHistory />} />
+          <Route path="returns" element={<PosReturns />} />
+          <Route path="shift" element={<PosShift />} />
+          <Route path="reports" element={<PosReports />} />
+        </Route>
+      </Route>
+
       {/* Employee Routes: kitchen / cashier / generic employee — all include :slug :restaurantId */}
       <Route element={<EmployeeLayout />}>
         <Route path="/kitchen/:slug/:restaurantId/dashboard" element={<KitchenDashboard />} />
@@ -393,7 +422,7 @@ function App() {
             <Navigate to={defaultPortalPathForUser(user)} replace />
           ) : isEmployeeUser && userSlug != null && userRestaurantId != null ? (
             <Navigate to={defaultPortalPathForUser(user)} replace />
-          ) : user.role === "super_admin" || user.role === "admin" ? (
+          ) : (user.role === "super_admin" || user.role === "admin") && user.scope !== "employee" ? (
             <Navigate to="/platform/dashboard" />
           ) : user.role === "restaurant" && userSlug != null && userRestaurantId != null ? (
             <Navigate to={defaultPortalPathForUser(user)} replace />

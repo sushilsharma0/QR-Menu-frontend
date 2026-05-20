@@ -198,7 +198,7 @@ function PaginationBar({ pagination, onPageChange }) {
 
 const Orders = () => {
   const navigate = useNavigate()
-  const { restaurantBase } = useTenantRoutes()
+  const { portalBase } = useTenantRoutes()
   const { socket } = useSocket()
   const { user } = useAuth()
   const currency = user?.currency || 'Rs.'
@@ -325,7 +325,7 @@ const Orders = () => {
         toast.error('Order not found')
         return
       }
-      navigate(`${restaurantBase}/orders/${found._id}`)
+      navigate(`${portalBase}/orders/${found._id}`)
     } catch {
       toast.error('Failed to track order')
     }
@@ -649,7 +649,7 @@ const Orders = () => {
                   <OrderActionButtons
                     order={order}
                     onUpdate={updateOrderStatus}
-                    onView={() => navigate(`${restaurantBase}/orders/${order._id}`)}
+                    onView={() => navigate(`${portalBase}/orders/${order._id}`)}
                   />
                 </div>
               </motion.article>
@@ -689,7 +689,7 @@ const Orders = () => {
                       <OrderActionButtons
                         order={order}
                         onUpdate={updateOrderStatus}
-                        onView={() => navigate(`${restaurantBase}/orders/${order._id}`)}
+                        onView={() => navigate(`${portalBase}/orders/${order._id}`)}
                       />
                     </td>
                   </tr>

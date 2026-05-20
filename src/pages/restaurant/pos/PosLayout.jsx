@@ -14,12 +14,14 @@ import { fetchPosMeta } from '../../../services/posApi'
 export default function PosLayout() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { restaurantBase, cashierBase, waiterBase } = useTenantRoutes()
+  const { restaurantBase, cashierBase, waiterBase, managerBase, portalBase } = useTenantRoutes()
   const posBase = pathname.includes('/cashier/')
     ? `${cashierBase}/pos`
     : pathname.includes('/waiter/')
       ? `${waiterBase}/pos`
-      : `${restaurantBase}/pos`
+      : pathname.includes('/manager/')
+        ? `${managerBase}/pos`
+        : `${restaurantBase}/pos`
 
   const { user, logout } = useAuth()
   const { isDark, toggleTheme } = useTheme()
@@ -95,26 +97,25 @@ export default function PosLayout() {
   const hasOpenShift = Boolean(meta?.shift)
   const posLocked = metaLoaded && !hasOpenShift && !isShiftRoute
 
+  const managerDashboardTo = managerBase ? `${managerBase}/dashboard` : '/login'
+
+  const employeeDashboardTo =
+    user?.role === 'cashier'
+      ? `${cashierBase}/dashboard`
+      : user?.role === 'waiter'
+        ? `${waiterBase}/dashboard`
+        : user?.role === 'manager' || user?.role === 'admin'
+          ? managerDashboardTo
+          : `${portalBase}/dashboard`
+
   const userButtonTo =
-    user?.scope === 'employee'
-      ? user?.role === 'cashier'
-        ? `${cashierBase}/dashboard`
-        : user?.role === 'waiter'
-          ? `${waiterBase}/dashboard`
-          : restaurantBase || '/'
-      : `${restaurantBase}/profile`
+    user?.scope === 'employee' ? employeeDashboardTo : `${restaurantBase}/profile`
 
   const dashboardTo =
-    user?.scope === 'employee'
-      ? user?.role === 'cashier'
-        ? `${cashierBase}/dashboard`
-        : user?.role === 'waiter'
-          ? `${waiterBase}/dashboard`
-          : restaurantBase || '/'
-      : `${restaurantBase}/dashboard`
+    user?.scope === 'employee' ? employeeDashboardTo : `${restaurantBase}/dashboard`
 
   const loginRoleAfterLogout = () => {
-    if (user?.role === 'super_admin' || user?.role === 'admin') return 'platform'
+    if (user?.role === 'super_admin' || (user?.role === 'admin' && user?.scope !== 'employee')) return 'platform'
     if (user?.scope === 'employee') return 'employee'
     if (user?.role === 'restaurant') return 'restaurant'
     return undefined

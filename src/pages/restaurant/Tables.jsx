@@ -197,7 +197,7 @@ function TableActions({ table, onQr, onRegenerate, onEdit, onDelete }) {
 
 const Tables = () => {
   const navigate = useNavigate();
-  const { restaurantBase } = useTenantRoutes();
+  const { portalBase } = useTenantRoutes();
   const [tables, setTables] = useState([]);
   const [restaurant, setRestaurant] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -341,7 +341,7 @@ const Tables = () => {
                 <FiRefreshCw className={`mr-2 ${refreshing ? "animate-spin" : ""}`} />
                 Refresh
               </Button>
-              <Button type="button" onClick={() => navigate(`${restaurantBase}/tables/new`)}>
+              <Button type="button" onClick={() => navigate(`${portalBase}/tables/new`)}>
                 <FiPlus className="mr-2" />
                 Add Table
               </Button>
@@ -437,7 +437,7 @@ const Tables = () => {
               <p className="mt-1 max-w-md text-sm text-gray-500">
                 Try clearing filters or create your first table to start accepting QR orders.
               </p>
-              <Button className="mt-4" onClick={() => navigate(`${restaurantBase}/tables/new`)}>
+              <Button className="mt-4" onClick={() => navigate(`${portalBase}/tables/new`)}>
                 <FiPlus className="mr-2" /> Add Table
               </Button>
             </motion.div>
@@ -484,7 +484,7 @@ const Tables = () => {
                       table={table}
                       onQr={(selected) => setQrModal({ open: true, table: selected })}
                       onRegenerate={handleRegenerateQR}
-                      onEdit={(selected) => navigate(`${restaurantBase}/tables/${selected._id}/edit`)}
+                      onEdit={(selected) => navigate(`${portalBase}/tables/${selected._id}/edit`)}
                       onDelete={handleDelete}
                     />
                   </div>
@@ -527,7 +527,7 @@ const Tables = () => {
                           table={table}
                           onQr={(selected) => setQrModal({ open: true, table: selected })}
                           onRegenerate={handleRegenerateQR}
-                          onEdit={(selected) => navigate(`${restaurantBase}/tables/${selected._id}/edit`)}
+                          onEdit={(selected) => navigate(`${portalBase}/tables/${selected._id}/edit`)}
                           onDelete={handleDelete}
                         />
                       </td>
