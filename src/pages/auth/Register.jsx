@@ -1,7 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-import { FiArrowLeft, FiBriefcase, FiCheckCircle, FiCoffee, FiKey, FiLock, FiMail, FiMapPin, FiPhone, FiZap } from 'react-icons/fi'
+import {
+  FiArrowLeft,
+  FiArrowRight,
+  FiBriefcase,
+  FiCheckCircle,
+  FiCoffee,
+  FiKey,
+  FiLock,
+  FiMail,
+  FiMapPin,
+  FiPhone,
+  FiShield,
+  FiShoppingBag,
+  FiUsers,
+  FiZap,
+} from 'react-icons/fi'
 import { FcGoogle } from 'react-icons/fc'
 import toast from '@utils/toast'
 import api from '../../services/api'
@@ -58,7 +73,7 @@ const VendorGoogleButton = ({ onSuccess, disabled }) => {
   if (!GOOGLE_CLIENT_ID) return null
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-gradient-to-br from-white to-emerald-50/50 p-4 shadow-sm dark:border-gray-800 dark:from-gray-950 dark:to-emerald-950/20">
+    <div className="rounded-xl border border-[#f1b089]/40 bg-gradient-to-br from-white to-[#fff7ed] p-4 shadow-sm">
       <div className="mb-4 flex items-center gap-3">
         <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
           <FcGoogle className="h-5 w-5" />
@@ -79,8 +94,8 @@ const VendorGoogleButton = ({ onSuccess, disabled }) => {
           Loading Google sign-up
         </button>
       )}
-      <div className="mt-4 flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-xs text-gray-500 dark:bg-gray-900/70 dark:text-gray-400">
-        <FiZap className="h-4 w-4 text-emerald-600" />
+      <div className="mt-4 flex items-center gap-2 rounded-lg bg-white/80 px-3 py-2 text-xs text-gray-500">
+        <FiZap className="h-4 w-4 text-[#a43a12]" />
         <span>Google signup skips the email code because Google already verifies your email.</span>
       </div>
     </div>
@@ -213,42 +228,150 @@ const Register = () => {
     }
   }
 
+  const leftFeatures = [
+    { icon: FiCoffee, title: 'Menu Setup', desc: 'Create digital menus and ordering flows' },
+    { icon: FiUsers, title: 'Team Ready', desc: 'Invite kitchen, cashier, and waiter staff' },
+    { icon: FiShield, title: 'Secure Onboarding', desc: 'Verify email before opening your dashboard' },
+  ]
+
+  const benefitCards = ['14-day trial', 'KYC ready', 'Staff tools']
+
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,#dcfce7,transparent_30%),linear-gradient(135deg,#f8fafc,#ffffff_48%,#eff6ff)] px-4 py-6 text-gray-950 dark:bg-gray-950 dark:bg-none dark:text-gray-100 sm:px-6 lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100vh-3rem)] w-full max-w-6xl items-center gap-8 lg:grid-cols-[0.95fr_1.05fr]">
-        <section className="space-y-7">
-          <Link to="/vendor/login" className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-950 dark:text-gray-300 dark:hover:text-white">
+    <div className="flex min-h-screen overflow-hidden bg-white font-sans">
+      <div
+        className="relative hidden w-[47%] shrink-0 overflow-hidden lg:block"
+        style={{
+          background: 'linear-gradient(160deg, #4a1b10 0%, #7d3218 48%, #2f150d 100%)',
+        }}
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=900&q=80')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            opacity: 0.78,
+            filter: 'blur(1.1px) saturate(0.9) contrast(0.96)',
+            transform: 'scale(1.018)',
+          }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(90deg, rgba(55,21,12,0.96) 0%, rgba(80,31,17,0.82) 30%, rgba(111,52,29,0.48) 58%, rgba(159,92,55,0.2) 82%, rgba(190,126,88,0.08) 100%), linear-gradient(180deg, rgba(48,18,10,0.08) 0%, rgba(58,22,12,0.5) 100%)',
+          }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(ellipse 70% 50% at 78% 34%, rgba(255,213,184,0.08), transparent 62%), radial-gradient(ellipse 65% 42% at 74% 92%, rgba(148,74,42,0.14), transparent 64%)',
+            backdropFilter: 'blur(0.2px)',
+          }}
+        />
+        <div
+          className="absolute -right-32 bottom-0 top-0 w-80"
+          style={{
+            background: 'radial-gradient(ellipse 70% 60% at 0% 50%, rgba(218,155,116,0.16), transparent 72%)',
+          }}
+        />
+        <svg
+          className="absolute -right-32 bottom-0 top-0 h-full w-80 text-white"
+          viewBox="0 0 320 900"
+          preserveAspectRatio="none"
+          fill="currentColor"
+        >
+          <path d="M320,0 L118,0 C170,150 174,265 132,392 C88,528 82,690 154,900 L320,900 Z" />
+        </svg>
+        <svg
+          className="absolute -right-32 bottom-0 top-0 h-full w-80 text-[#c85b22]"
+          viewBox="0 0 320 900"
+          preserveAspectRatio="none"
+          fill="none"
+        >
+          <path d="M118,0 C170,150 174,265 132,392 C88,528 82,690 154,900" stroke="currentColor" strokeWidth="4" />
+        </svg>
+
+        <div className="relative z-10 h-full px-12 py-14 xl:px-14">
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#c65a22] to-[#8d310f] text-white shadow-lg shadow-[#4a1608]/25">
+              <FiCoffee className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="text-sm font-bold leading-tight text-white">QR Menu SaaS</p>
+              <p className="text-xs tracking-[0.28em] text-[#ffc49b]">NEPAL</p>
+            </div>
+          </div>
+
+          <div className="mt-20 space-y-5 xl:mt-20">
+            <div>
+              <h1 className="text-5xl font-bold leading-tight text-white">Start your</h1>
+              <h1 className="text-5xl font-bold leading-tight text-[#ff7a24]">
+                Vendor account <span aria-hidden="true">{'\u{1F44B}'}</span>
+              </h1>
+            </div>
+            <p className="max-w-sm text-base leading-8 text-gray-100">
+              Register your restaurant, verify your email, and begin setting up menus, staff, billing, and QR ordering.
+            </p>
+
+            <div className="space-y-7 pt-10">
+              {leftFeatures.map(({ icon: Icon, title, desc }) => (
+                <div key={title} className="flex items-center gap-4">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#ffc49b]/45 bg-[#9a3412]/20 text-[#ffd0ad] backdrop-blur-sm">
+                    <Icon className="h-6 w-6" />
+                  </span>
+                  <div>
+                    <p className="text-base font-semibold text-white">{title}</p>
+                    <p className="text-sm text-gray-200">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="absolute bottom-20 right-3 hidden xl:block">
+            <div className="h-64 w-64 overflow-hidden rounded-full border-4 border-[#ffd0ad]/80 bg-white shadow-2xl">
+              <img
+                src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80"
+                alt="food"
+                className="h-full w-full object-cover"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="absolute right-20 top-[44%] z-20 -translate-y-1/2 translate-x-1/2">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-white text-[#b74717] shadow-2xl">
+            <FiShoppingBag className="h-9 w-9" />
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-1 items-start justify-center overflow-y-auto px-6 py-12 lg:pl-20 lg:pr-24 lg:pt-16">
+        <section className="w-full max-w-[520px] space-y-6">
+          <Link to="/vendor/login" className="inline-flex items-center gap-2 text-sm font-semibold text-[#8f2a05] hover:text-[#5f1d08]">
             <FiArrowLeft className="h-4 w-4" />
             Back to vendor login
           </Link>
 
-          <div>
-            <span className="inline-flex items-center gap-2 rounded-lg bg-emerald-100 px-3 py-2 text-sm font-semibold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
-              <FiCoffee className="h-4 w-4" />
-              Restaurant is vendor
+          <div className="flex items-center gap-4">
+            <span className="flex h-16 w-16 items-center justify-center rounded-xl border border-[#f1b089]/40 bg-[#fff7ed] text-[#a43a12] shadow-sm">
+              <FiShoppingBag className="h-9 w-9" />
             </span>
-            <h1 className="mt-5 max-w-xl text-4xl font-bold leading-tight text-gray-950 dark:text-white sm:text-5xl">
-              Register your restaurant vendor account.
-            </h1>
-            <p className="mt-5 max-w-lg text-base leading-7 text-gray-600 dark:text-gray-300">
-              Create the owner account first. After login, complete KYC, set up the profile, invite staff, and start building the digital menu.
-            </p>
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#8f2a05]">Vendor onboarding</p>
+              <h2 className="mt-1 text-2xl font-bold text-gray-950">Create account</h2>
+            </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
-            {['14-day trial', 'KYC ready', 'Staff tools'].map((item) => (
-              <div key={item} className="rounded-lg border border-gray-200 bg-white/80 p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900/80">
-                <FiCheckCircle className="h-5 w-5 text-emerald-600" />
-                <p className="mt-3 text-sm font-semibold text-gray-900 dark:text-white">{item}</p>
+            {benefitCards.map((item) => (
+              <div key={item} className="rounded-xl border border-gray-100 bg-gray-50 p-4 shadow-sm">
+                <FiCheckCircle className="h-5 w-5 text-[#a43a12]" />
+                <p className="mt-3 text-sm font-semibold text-gray-900">{item}</p>
               </div>
             ))}
-          </div>
-        </section>
-
-        <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-2xl shadow-gray-200/70 dark:border-gray-800 dark:bg-gray-900 dark:shadow-black/30 sm:p-8">
-          <div className="mb-7">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-300">Vendor onboarding</p>
-            <h2 className="mt-2 text-2xl font-bold text-gray-950 dark:text-white">Create account</h2>
           </div>
 
           {step === 'details' && (
@@ -328,20 +451,25 @@ const Register = () => {
                 error={errors.address?.message}
               />
 
-              <Button type="submit" loading={loading || googleLoading} className="w-full py-3">
+              <button
+                type="submit"
+                disabled={loading || googleLoading}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#8f2a05] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#8f2a05]/20 transition hover:bg-[#6f2106] disabled:opacity-60"
+              >
                 Send Verification Code
-              </Button>
+                {!loading && !googleLoading && <FiArrowRight className="h-4 w-4" />}
+              </button>
             </form>
           ) : (
             <form onSubmit={onVerify} className="space-y-5">
-              <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
+              <div className="rounded-lg border border-[#f1b089]/50 bg-[#fff7ed] px-4 py-3 text-sm text-[#7c260b]">
                 We sent a 6-digit verification code to <span className="font-semibold">{pendingEmail}</span>.
                 Wrong email? Use <span className="font-semibold">Edit details</span> to update your information and resend the code.
               </div>
 
               <div>
-                <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                  <FiKey className="h-4 w-4 text-emerald-600" />
+                <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <FiKey className="h-4 w-4 text-[#a43a12]" />
                   Verification Code
                 </label>
                 <div className="grid grid-cols-6 gap-2 sm:gap-3" onPaste={handleOtpPaste}>
@@ -359,18 +487,23 @@ const Register = () => {
                       onChange={(event) => updateOtpDigit(index, event.target.value)}
                       onKeyDown={(event) => handleOtpKeyDown(index, event)}
                       aria-label={`Verification code digit ${index + 1}`}
-                      className="aspect-square w-full rounded-lg border border-gray-300 bg-white text-center text-2xl font-bold text-gray-950 shadow-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                      className="aspect-square w-full rounded-lg border border-gray-300 bg-white text-center text-2xl font-bold text-gray-950 shadow-sm outline-none transition focus:border-[#9a3412] focus:ring-2 focus:ring-[#9a3412]/25"
                     />
                   ))}
                 </div>
-                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                <p className="mt-2 text-xs text-gray-500">
                   Paste the full code or type each digit.
                 </p>
               </div>
 
-              <Button type="submit" loading={loading} className="w-full py-3">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#8f2a05] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#8f2a05]/20 transition hover:bg-[#6f2106] disabled:opacity-60"
+              >
                 Verify and Activate Vendor
-              </Button>
+                {!loading && <FiArrowRight className="h-4 w-4" />}
+              </button>
 
               <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
                 <button
@@ -379,7 +512,7 @@ const Register = () => {
                     setOtpDigits(Array(6).fill(''))
                     setStep('details')
                   }}
-                  className="font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                  className="font-medium text-gray-500 hover:text-gray-900"
                 >
                   Edit details
                 </button>
@@ -387,7 +520,7 @@ const Register = () => {
                   type="button"
                   onClick={resendCode}
                   disabled={resending}
-                  className="font-semibold text-emerald-700 hover:text-emerald-800 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-300"
+                  className="font-semibold text-[#8f2a05] hover:text-[#5f1d08] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {resending ? 'Sending...' : 'Resend code'}
                 </button>
@@ -395,9 +528,9 @@ const Register = () => {
             </form>
           )}
 
-          <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-300">
+          <p className="text-center text-sm text-gray-600">
             Already have a vendor account?{' '}
-            <Link to="/vendor/login" className="font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-300">
+            <Link to="/vendor/login" className="font-semibold text-[#8f2a05] hover:text-[#5f1d08]">
               Sign in
             </Link>
           </p>
