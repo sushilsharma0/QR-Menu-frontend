@@ -39,8 +39,13 @@ export const PLATFORM_NAV_SECTIONS = [
     icon: FiUsers,
     defaultOpen: false,
     items: [
+<<<<<<< HEAD
       { path: '/platform/restaurants', icon: FiUsers, label: 'Restaurants', permission: 'manageRestaurants' },
       { path: '/platform/kyc', icon: FiFileText, label: 'KYC verification', permission: 'verifyKYC' },
+=======
+      { path: '/platform/restaurants', icon: FiUsers, label: 'Restaurants' },
+      { path: '/platform/kyc', icon: FiFileText, label: 'KYC verification', badgeKey: 'kycPending' },
+>>>>>>> 7b607cb6b43ad3bc5c94ad4ec80d0751a9126c01
     ],
   },
   {
@@ -49,11 +54,19 @@ export const PLATFORM_NAV_SECTIONS = [
     icon: FiLayers,
     defaultOpen: false,
     items: [
+<<<<<<< HEAD
       { path: '/platform/subscriptions', icon: FiLayers, label: 'Plans', permission: 'manageSubscriptions' },
       { path: '/platform/plan-access-settings', icon: FiSliders, label: 'Trial access', permission: 'manageSubscriptions' },
       { path: '/platform/subscription-payments', icon: FiDollarSign, label: 'Payments', permission: 'manageSubscriptions' },
       { path: '/platform/invoices', icon: FiClipboard, label: 'Invoices', permission: 'manageSubscriptions' },
       { path: '/platform/subscription-activity', icon: FiActivity, label: 'Activity log', permission: 'manageSubscriptions' },
+=======
+      { path: '/platform/subscriptions', icon: FiCreditCard, label: 'Subscriptions', badgeKey: 'subscriptionRequests' },
+      { path: '/platform/plan-access-settings', icon: FiSliders, label: 'Trial settings' },
+      { path: '/platform/subscription-payments', icon: FiCreditCard, label: 'Payments', badgeKey: 'paymentReviews' },
+      { path: '/platform/invoices', icon: FiClipboard, label: 'Invoices' },
+      { path: '/platform/subscription-activity', icon: FiBarChart2, label: 'Activity' },
+>>>>>>> 7b607cb6b43ad3bc5c94ad4ec80d0751a9126c01
     ],
   },
   {

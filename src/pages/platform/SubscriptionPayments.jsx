@@ -51,7 +51,7 @@ const SubscriptionPayments = () => {
   }, [status, method])
 
   const metrics = useMemo(() => ({
-    pending: payments.filter((payment) => ['pending', 'paid', 'pending_verification'].includes(payment.status)).length,
+    pending: payments.filter((payment) => ['paid', 'pending_verification'].includes(payment.status)).length,
     approved: payments.filter((payment) => payment.status === 'approved').length,
     total: payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
   }), [payments])
@@ -90,7 +90,7 @@ const SubscriptionPayments = () => {
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <PlatformMetric label="In this view" value={payments.length} sub="Filtered payment records" icon={FiCreditCard} accent="from-primary-600 to-secondary-500" />
-        <PlatformMetric label="Needs review" value={metrics.pending} sub="Pending, paid, or verified" icon={FiCheckCircle} accent="from-amber-500 to-orange-500" />
+        <PlatformMetric label="Needs review" value={metrics.pending} sub="Paid or gateway verified" icon={FiCheckCircle} accent="from-amber-500 to-orange-500" />
         <PlatformMetric label="Visible amount" value={formatMoney(metrics.total)} sub="Across current filters" icon={FiCreditCard} accent="from-emerald-500 to-teal-500" />
       </div>
 

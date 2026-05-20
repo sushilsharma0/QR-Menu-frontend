@@ -7,6 +7,20 @@ import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import { PlatformPageHeader } from '../../components/platform/PlatformUI'
 
+const LIMIT_FIELDS = [
+  { key: 'maxTables', label: 'Max tables', hint: 'How many tables/QR codes a trial restaurant can create.' },
+  { key: 'maxEmployees', label: 'Max employees', hint: 'How many staff accounts can be added during trial.' },
+  { key: 'maxCategories', label: 'Max categories', hint: 'How many menu categories can be created during trial.' },
+  { key: 'maxMenuItems', label: 'Max menu items', hint: 'How many menu items can be created during trial.' },
+]
+
+const defaultLimits = {
+  maxTables: 0,
+  maxEmployees: 0,
+  maxCategories: 0,
+  maxMenuItems: 0,
+}
+
 function FeatureGrid({ group, flags, onToggle }) {
   return (
     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -49,6 +63,7 @@ export default function PlanAccessSettings() {
   const [saving, setSaving] = useState(false)
   const [trialDays, setTrialDays] = useState(14)
   const [trialFlags, setTrialFlags] = useState({})
+  const [trialLimits, setTrialLimits] = useState(defaultLimits)
   const [options, setOptions] = useState([])
   const [groups, setGroups] = useState([])
 
@@ -75,6 +90,7 @@ export default function PlanAccessSettings() {
       const data = res.data?.data || {}
       setTrialDays(data.trialDays ?? 14)
       setTrialFlags(data.trialFeatureFlags || {})
+      setTrialLimits({ ...defaultLimits, ...(data.trialLimits || {}) })
       setOptions(data.featureOptions || [])
       setGroups(data.groups || [])
     } catch (e) {
@@ -94,6 +110,7 @@ export default function PlanAccessSettings() {
       await api.put('/platform/plan-access-settings', {
         trialDays: Number(trialDays),
         trialFeatureFlags: trialFlags,
+        trialLimits,
       })
       toast.success('Trial settings saved')
       load()
@@ -114,6 +131,13 @@ export default function PlanAccessSettings() {
       next[o.key] = enabled
     })
     setTrialFlags(next)
+  }
+
+  const updateLimit = (key, value) => {
+    setTrialLimits((prev) => ({
+      ...prev,
+      [key]: value,
+    }))
   }
 
   if (loading) {
@@ -148,6 +172,28 @@ export default function PlanAccessSettings() {
           <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
             Applied when a restaurant completes email verification. After this period, features lock until a paid plan is assigned.
           </p>
+        </div>
+      </Card>
+
+      <Card title="Trial limits" icon={FiSliders}>
+        <div className="mb-4 max-w-3xl text-sm text-gray-600 dark:text-gray-400">
+          Set quantity limits for restaurants while they are on trial. Use <strong>0</strong> for unlimited.
+          These limits update active trial restaurants in realtime.
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {LIMIT_FIELDS.map((field) => (
+            <div key={field.key} className="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-950">
+              <Input
+                label={field.label}
+                type="number"
+                min={0}
+                max={999999}
+                value={trialLimits[field.key] ?? 0}
+                onChange={(e) => updateLimit(field.key, e.target.value)}
+              />
+              <p className="mt-2 text-xs leading-5 text-gray-500 dark:text-gray-400">{field.hint}</p>
+            </div>
+          ))}
         </div>
       </Card>
 
