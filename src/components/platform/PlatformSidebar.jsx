@@ -2,11 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { FiAward, FiChevronDown, FiChevronLeft, FiChevronRight, FiMenu, FiX } from 'react-icons/fi'
 import { useAuth } from '../../hooks/useAuth'
-<<<<<<< HEAD
 import { usePlatformAccess } from '../../hooks/usePlatformAccess'
-=======
 import api from '../../services/api'
->>>>>>> 7b607cb6b43ad3bc5c94ad4ec80d0751a9126c01
 import {
   PLATFORM_NAV_SECTIONS,
   filterPlatformNavSections,
@@ -59,16 +56,12 @@ function isNavItemActive(item, location) {
   return pathname === base || pathname.startsWith(`${base}/`)
 }
 
-<<<<<<< HEAD
 function roleLabel(role) {
   if (role === 'super_admin') return 'Super admin'
   if (role === 'admin') return 'Admin'
   return role || 'User'
 }
 
-function NavItem({ item, collapsed, nested = false, onNavigate, onTooltip, onTooltipLeave }) {
-  const Icon = item.icon
-=======
 function formatBadge(value) {
   const count = Number(value || 0)
   if (count <= 0) return null
@@ -89,12 +82,9 @@ function Badge({ value, collapsed }) {
   )
 }
 
-function PlatformNavItem({ item, collapsed, nested = false, badgeCounts = {}, onClick, onTooltip, onTooltipLeave }) {
-  const location = useLocation()
+function NavItem({ item, collapsed, nested = false, badgeCounts = {}, onNavigate, onTooltip, onTooltipLeave }) {
+  const Icon = item.icon
   const badgeValue = item.badgeKey ? badgeCounts[item.badgeKey] : 0
-  const inactiveRow =
-    'text-gray-600 hover:bg-surface-50 hover:text-gray-950 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100'
->>>>>>> 7b607cb6b43ad3bc5c94ad4ec80d0751a9126c01
 
   const showTooltip = (event) => {
     if (!collapsed) return
@@ -141,47 +131,40 @@ function PlatformNavItem({ item, collapsed, nested = false, badgeCounts = {}, on
           >
             <Icon className={nested && !collapsed ? 'h-4 w-4' : 'h-5 w-5'} />
           </span>
-<<<<<<< HEAD
-          {!collapsed && (
-            <span className={`truncate ${nested ? 'text-xs' : 'text-sm'}`}>{item.label}</span>
-          )}
-=======
           {collapsed && <Badge value={badgeValue} collapsed />}
-          {!collapsed && <span className="min-w-0 flex-1 truncate text-sm">{item.label}</span>}
-          {!collapsed && <Badge value={badgeValue} />}
->>>>>>> 7b607cb6b43ad3bc5c94ad4ec80d0751a9126c01
+          {!collapsed && (
+            <>
+              <span className={`min-w-0 flex-1 truncate ${nested ? 'text-xs' : 'text-sm'}`}>{item.label}</span>
+              <Badge value={badgeValue} />
+            </>
+          )}
         </>
       )}
     </NavLink>
   )
 }
 
-<<<<<<< HEAD
-function NavSection({ section, items, collapsed, hideLabels, isOpen, onToggle, isMobile, onClose, onTooltip, onTooltipLeave }) {
-  const location = useLocation()
-  const SectionIcon = section.icon
-  const firstItem = items[0]
-  const hasActiveChild = items.some((item) => isNavItemActive(item, location))
-=======
 function NavSection({
   section,
+  items,
   collapsed,
   hideLabels,
   isOpen,
   onToggle,
   isMobile,
-  badgeCounts,
+  badgeCounts = {},
   onClose,
   onTooltip,
   onTooltipLeave,
 }) {
+  const location = useLocation()
   const SectionIcon = section.icon
-  const firstItem = section.items[0]
-  const sectionBadge = section.items.reduce(
+  const firstItem = items[0]
+  const hasActiveChild = items.some((item) => isNavItemActive(item, location))
+  const sectionBadge = items.reduce(
     (sum, item) => sum + Number(item.badgeKey ? badgeCounts[item.badgeKey] || 0 : 0),
     0,
   )
->>>>>>> 7b607cb6b43ad3bc5c94ad4ec80d0751a9126c01
 
   if (collapsed && hideLabels) {
     const target = firstItem?.path || '#'
@@ -208,33 +191,28 @@ function NavSection({
         }`}
       >
         <SectionIcon className="h-5 w-5" />
-<<<<<<< HEAD
         {hasActiveChild && !active && (
           <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-primary-600 ring-2 ring-white dark:ring-gray-900" />
         )}
-=======
         <Badge value={sectionBadge} collapsed />
->>>>>>> 7b607cb6b43ad3bc5c94ad4ec80d0751a9126c01
       </NavLink>
     )
   }
 
-<<<<<<< HEAD
-=======
-  if (section.items.length === 1) {
+  if (items.length === 1) {
     return (
-      <PlatformNavItem
+      <NavItem
         item={firstItem}
         collapsed={false}
+        nested={false}
         badgeCounts={badgeCounts}
-        onClick={isMobile ? onClose : undefined}
+        onNavigate={isMobile ? onClose : undefined}
         onTooltip={onTooltip}
         onTooltipLeave={onTooltipLeave}
       />
     )
   }
 
->>>>>>> 7b607cb6b43ad3bc5c94ad4ec80d0751a9126c01
   return (
     <div className="pb-1">
       <button
@@ -253,14 +231,8 @@ function NavSection({
         >
           <SectionIcon className="h-4 w-4" />
         </span>
-<<<<<<< HEAD
         <span className="flex-1 truncate text-xs font-black uppercase tracking-[0.14em]">{section.label}</span>
-=======
-        <span className="flex-1 truncate text-xs font-black uppercase tracking-[0.14em]">
-          {section.label}
-        </span>
         <Badge value={sectionBadge} />
->>>>>>> 7b607cb6b43ad3bc5c94ad4ec80d0751a9126c01
         <FiChevronDown
           className={`h-4 w-4 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />
@@ -273,12 +245,8 @@ function NavSection({
               item={item}
               collapsed={false}
               nested
-<<<<<<< HEAD
-              onNavigate={isMobile ? onClose : undefined}
-=======
               badgeCounts={badgeCounts}
-              onClick={isMobile ? onClose : undefined}
->>>>>>> 7b607cb6b43ad3bc5c94ad4ec80d0751a9126c01
+              onNavigate={isMobile ? onClose : undefined}
               onTooltip={onTooltip}
               onTooltipLeave={onTooltipLeave}
             />
@@ -397,7 +365,6 @@ function SidebarContent({
 
       <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4">
         <div className="space-y-1">
-<<<<<<< HEAD
           {sections.map((section) => {
             if (!section.items.length) return null
             return (
@@ -410,29 +377,13 @@ function SidebarContent({
                 isOpen={Boolean(openSections[section.id])}
                 onToggle={() => toggleSection(section.id)}
                 isMobile={isMobile}
+                badgeCounts={badgeCounts}
                 onClose={onClose}
                 onTooltip={onTooltip}
                 onTooltipLeave={onTooltipLeave}
               />
             )
           })}
-=======
-          {PLATFORM_NAV_SECTIONS.map((section) => (
-            <NavSection
-              key={section.id}
-              section={section}
-              collapsed={hideLabels}
-              hideLabels={hideLabels}
-              isOpen={openSections[section.id] !== false}
-              onToggle={() => toggleSection(section.id)}
-              isMobile={isMobile}
-              badgeCounts={badgeCounts}
-              onClose={onClose}
-              onTooltip={onTooltip}
-              onTooltipLeave={onTooltipLeave}
-            />
-          ))}
->>>>>>> 7b607cb6b43ad3bc5c94ad4ec80d0751a9126c01
         </div>
       </nav>
 

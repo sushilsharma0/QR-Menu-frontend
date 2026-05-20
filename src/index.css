@@ -582,6 +582,23 @@ a {
   .restaurant-portal .finance-chart-area--sm {
     @apply h-56 sm:h-60 laptop:h-64 2xl:h-72;
   }
+
+  /* Platform console uses the same finance helpers but is not wrapped in .restaurant-portal */
+  .platform-console .finance-metrics-grid {
+    @apply grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 3xl:grid-cols-6;
+  }
+
+  .platform-console .finance-chart-area {
+    @apply h-60 sm:h-64 laptop:h-72 2xl:h-80;
+  }
+
+  .platform-console .finance-chart-area--sm {
+    @apply h-56 sm:h-60 laptop:h-64 2xl:h-72;
+  }
+
+  .platform-console .finance-chart-area--hero {
+    @apply h-72 sm:h-80 laptop:h-96 2xl:h-[28rem];
+  }
 }
 
 @media (min-width: 1024px) and (max-width: 1535px) {

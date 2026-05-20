@@ -1,17 +1,17 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import toast from '@utils/toast'
 import { usePlanAccess } from '../../hooks/usePlanAccess'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import {
   featureKeyForPath,
-<<<<<<< HEAD
   isPathAllowedBeforeKyc,
+  PLAN_FEATURE_LABELS,
 } from '../../constants/planFeatureMap'
 
 /**
- * Blocks restaurant routes until KYC is approved and plan features allow access.
- * Disabled plan modules: hidden in sidebar + silent redirect (no error toast).
+ * Blocks restaurant routes when KYC is pending (except setup paths) or when
+ * plan/trial feature flags disallow access.
  */
 export default function PlanProtectedOutlet() {
   const location = useLocation()
@@ -19,6 +19,7 @@ export default function PlanProtectedOutlet() {
   const { restaurantBase } = useTenantRoutes()
   const featureKey = featureKeyForPath(location.pathname)
   const kycToastShown = useRef(false)
+  const planToastShown = useRef(false)
 
   const kycBlocked = kycLocked && !isPathAllowedBeforeKyc(location.pathname)
   const planBlocked = Boolean(featureKey && !isFeatureEnabled(featureKey))
@@ -35,29 +36,21 @@ export default function PlanProtectedOutlet() {
     }
   }, [kycBlocked, location.pathname])
 
+  useEffect(() => {
+    if (planBlocked && featureKey && !planToastShown.current) {
+      planToastShown.current = true
+      toast.error(
+        `${PLAN_FEATURE_LABELS[featureKey] || 'This feature'} is not included in your subscription plan.`,
+      )
+    }
+    if (!planBlocked) {
+      planToastShown.current = false
+    }
+  }, [planBlocked, featureKey, location.pathname])
+
   if (kycBlocked) {
     return <Navigate to={`${restaurantBase}/kyc`} replace />
   }
-=======
-  PLAN_FEATURE_LABELS,
-} from '../../constants/planFeatureMap'
-
-/**
- * Blocks restaurant routes only when the effective plan/trial feature flags disallow access.
- * KYC is a reminder/compliance workflow and does not lock routes by itself.
- */
-export default function PlanProtectedOutlet() {
-  const location = useLocation()
-  const { isFeatureEnabled } = usePlanAccess()
-  const { restaurantBase } = useTenantRoutes()
-  const featureKey = featureKeyForPath(location.pathname)
-
-  useEffect(() => {
-    if (featureKey && !isFeatureEnabled(featureKey)) {
-      toast.error(`${PLAN_FEATURE_LABELS[featureKey] || 'This feature'} is not included in your subscription plan.`)
-    }
-  }, [featureKey, isFeatureEnabled, location.pathname])
->>>>>>> 7b607cb6b43ad3bc5c94ad4ec80d0751a9126c01
 
   if (planBlocked) {
     return <Navigate to={`${restaurantBase}/dashboard`} replace />
