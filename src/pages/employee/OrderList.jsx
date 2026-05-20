@@ -13,10 +13,14 @@ import { useAuth } from '../../hooks/useAuth'
 const OrderList = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { kitchenBase, employeeBase } = useTenantRoutes()
+  const { kitchenBase, employeeBase, managerBase } = useTenantRoutes()
   const { user } = useAuth()
   const currency = user?.currency || 'Rs.'
-  const ordersBase = location.pathname.startsWith('/kitchen/') ? kitchenBase : employeeBase
+  const ordersBase = location.pathname.startsWith('/kitchen/')
+    ? kitchenBase
+    : location.pathname.startsWith('/manager/')
+      ? managerBase
+      : employeeBase
   const { socket } = useSocket()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)

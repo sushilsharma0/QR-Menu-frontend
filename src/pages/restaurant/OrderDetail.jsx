@@ -106,7 +106,7 @@ const OrderDetail = () => {
   const navigate = useNavigate()
   const { socket } = useSocket()
   const { user } = useAuth()
-  const { restaurantBase, kitchenBase, cashierBase, employeeBase } = useTenantRoutes()
+  const { portalBase, restaurantBase, kitchenBase, cashierBase, employeeBase, managerBase } = useTenantRoutes()
   const [order, setOrder] = useState(null)
   const [restaurant, setRestaurant] = useState(null)
   const [creditCustomers, setCreditCustomers] = useState([])
@@ -119,6 +119,7 @@ const OrderDetail = () => {
   const [updating, setUpdating] = useState(false)
   const suppressNextSocketToastRef = useRef(false)
   const isCashierView = user?.scope === 'employee' && user?.role === 'cashier'
+  const isManagerView = user?.scope === 'employee' && (user?.role === 'manager' || user?.role === 'admin')
   const currency = user?.currency || restaurant?.settings?.currency || 'Rs.'
   const formatMoney = (value) => formatRestaurantCurrency(value, currency)
   const subtotal = Number(order?.totalAmount || 0)
@@ -128,11 +129,13 @@ const OrderDetail = () => {
   const customerName = getOrderCustomerLabel(order)
   const backPath = isCashierView
     ? `${cashierBase}/dashboard`
-    : user?.role === 'kitchen'
-      ? `${kitchenBase}/orders`
-      : user?.scope === 'employee' || ['kitchen', 'cashier', 'manager', 'waiter'].includes(user?.role)
-        ? `${employeeBase}/orders`
-        : `${restaurantBase}/orders`
+    : isManagerView
+      ? `${managerBase}/orders`
+      : user?.role === 'kitchen'
+        ? `${kitchenBase}/orders`
+        : user?.scope === 'employee' || ['kitchen', 'cashier', 'waiter'].includes(user?.role)
+          ? `${employeeBase}/orders`
+          : `${portalBase}/orders`
 
   useEffect(() => {
     fetchOrder()

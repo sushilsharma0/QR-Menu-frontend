@@ -74,6 +74,15 @@ export function waiterPortalBase(slug, restaurantId) {
   return `/waiter/${encodePathSegment(slug)}/${encodePathSegment(restaurantId)}`
 }
 
+export function managerPortalBase(slug, restaurantId) {
+  if (slug == null || restaurantId == null) return ''
+  return `/manager/${encodePathSegment(slug)}/${encodePathSegment(restaurantId)}`
+}
+
+export function isManagerEmployeeUser(user) {
+  return user?.scope === 'employee' && (user?.role === 'manager' || user?.role === 'admin')
+}
+
 /**
  * Branch portal: restaurant Mongo id + unguessable portal key + branch slug.
  * Same pattern as /restaurant/:slug/:id so outlets are not enumerable by slug alone.
@@ -113,6 +122,9 @@ export function defaultPortalPathForUser(user) {
   }
   if (user?.scope === 'employee' && user?.role === 'waiter') {
     return `${waiterPortalBase(slug, restaurantId)}/dashboard`
+  }
+  if (user?.scope === 'employee' && (user?.role === 'manager' || user?.role === 'admin')) {
+    return `${managerPortalBase(slug, restaurantId)}/dashboard`
   }
   if (user?.scope === 'employee') {
     return `${employeePortalBase(slug, restaurantId)}/orders`

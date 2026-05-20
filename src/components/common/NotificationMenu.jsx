@@ -17,6 +17,7 @@ import {
   kitchenPortalBase,
   restaurantPortalBase,
   waiterPortalBase,
+  managerPortalBase,
 } from '../../utils/tenantPaths'
 import useNotification from '../../hooks/useNotification'
 
@@ -32,7 +33,7 @@ const NotificationMenu = () => {
   const { slug, restaurantId } = getTenantSegments(user)
 
   let notificationsPath = '/notifications'
-  if (user?.role === 'super_admin' || user?.role === 'admin') {
+  if (user?.role === 'super_admin' || (user?.role === 'admin' && user?.scope !== 'employee')) {
     notificationsPath = '/platform/notifications'
   } else if (user?.scope === 'branch_user') {
     notificationsPath = `${branchPortalBase(user?.restaurantId, user?.branchPortalKey, user?.branchSlug)}/notifications`
@@ -44,6 +45,8 @@ const NotificationMenu = () => {
     notificationsPath = `${cashierPortalBase(slug, restaurantId)}/notifications`
   } else if (user?.scope === 'employee' && user?.role === 'waiter') {
     notificationsPath = `${waiterPortalBase(slug, restaurantId)}/notifications`
+  } else if (user?.scope === 'employee' && (user?.role === 'manager' || user?.role === 'admin')) {
+    notificationsPath = `${managerPortalBase(slug, restaurantId)}/notifications`
   } else if (user?.scope === 'employee') {
     notificationsPath = `${employeePortalBase(slug, restaurantId)}/notifications`
   }

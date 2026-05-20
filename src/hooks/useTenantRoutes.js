@@ -9,6 +9,8 @@ import {
   cashierPortalBase,
   employeePortalBase,
   waiterPortalBase,
+  managerPortalBase,
+  isManagerEmployeeUser,
 } from '../utils/tenantPaths'
 
 /**
@@ -44,14 +46,31 @@ export function useTenantRoutes() {
         : restaurantPortalBase(slug, restaurantId)
       : ''
 
+    const managerBase =
+      hasTenant && !isBranchPortal ? managerPortalBase(slug, restaurantId) : ''
+
+    const isManagerPortal =
+      isManagerEmployeeUser(user) ||
+      (typeof window !== 'undefined' &&
+        String(window.location?.pathname || '').startsWith('/manager/'))
+
+    const portalBase = isBranchPortal
+      ? restaurantBase
+      : isManagerPortal && managerBase
+        ? managerBase
+        : restaurantBase
+
     return {
       slug,
       restaurantId,
       branchSlug,
       portalKey,
       isBranchPortal,
+      isManagerPortal,
       hasTenant,
       restaurantBase,
+      managerBase,
+      portalBase,
       kitchenBase: hasTenant && !isBranchPortal ? kitchenPortalBase(slug, restaurantId) : '',
       cashierBase: hasTenant && !isBranchPortal ? cashierPortalBase(slug, restaurantId) : '',
       employeeBase: hasTenant && !isBranchPortal ? employeePortalBase(slug, restaurantId) : '',
