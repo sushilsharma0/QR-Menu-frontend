@@ -234,7 +234,7 @@ const Register = () => {
     { icon: FiShield, title: 'Secure Onboarding', desc: 'Verify email before opening your dashboard' },
   ]
 
-  const benefitCards = ['14-day trial', 'KYC ready', 'Staff tools']
+  const benefitCards = ['7-day trial', 'KYC ready', 'Staff tools']
 
   return (
     <div className="flex min-h-screen overflow-hidden bg-white font-sans">
@@ -293,7 +293,7 @@ const Register = () => {
           <path d="M118,0 C170,150 174,265 132,392 C88,528 82,690 154,900" stroke="currentColor" strokeWidth="4" />
         </svg>
 
-        <div className="relative z-10 h-full px-12 py-14 xl:px-14">
+        <div className="relative z-10 h-full px-12 py-14 xl:px-36">
           <div className="flex items-center gap-3">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#c65a22] to-[#8d310f] text-white shadow-lg shadow-[#4a1608]/25">
               <FiCoffee className="h-5 w-5" />
@@ -341,7 +341,7 @@ const Register = () => {
           </div>
         </div>
 
-        <div className="absolute right-20 top-[44%] z-20 -translate-y-1/2 translate-x-1/2">
+        <div className="absolute right-16 top-[44%] z-20 -translate-y-1/2 translate-x-1/2">
           <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-white text-[#b74717] shadow-2xl">
             <FiShoppingBag className="h-9 w-9" />
           </div>

@@ -337,7 +337,7 @@ const Login = () => {
         </svg>
 
         {/* Content */}
-        <div className="relative z-10 h-full px-12 py-14 xl:px-14">
+        <div className="relative z-10 h-full px-12 py-14 xl:px-36">
           {/* Logo */}
           <div className="flex items-center gap-3">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#c65a22] to-[#8d310f] text-white shadow-lg shadow-[#4a1608]/25">
@@ -422,6 +422,29 @@ const Login = () => {
               <p className="text-sm text-gray-500">{panel.subtitle}</p>
             </div>
           </div>
+
+          {role !== 'platform' && (
+            <div className="grid grid-cols-2 gap-2 rounded-xl border border-gray-200 bg-gray-50 p-1">
+              {[
+                { key: 'restaurant', label: 'Vendor', icon: FiShoppingBag },
+                { key: 'employee', label: 'Staff', icon: FiUsers },
+              ].map(({ key, label, icon: Icon }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setRole(key)}
+                  className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                    role === key
+                      ? 'bg-white text-[#8f2a05] shadow-sm'
+                      : 'text-gray-500 hover:text-gray-900'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Login mode panel — vendor keeps Google block height; branch uses shorter hint */}
           <div
