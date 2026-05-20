@@ -124,7 +124,7 @@ const EmployeeLayout = () => {
                 className="flex items-center gap-2"
               >
                 <span className="text-2xl">{getRoleIcon()}</span>
-                <span className="text-xl font-bold text-primary-600">QR Menu SaaS</span>
+                <span className="text-xl font-bold text-primary-600">QR Restro Nepal</span>
               </Link>
               <span className="text-sm text-gray-500 dark:text-gray-400 hidden md:inline">|</span>
               <span className="text-sm text-gray-600 dark:text-gray-300 hidden md:inline">{getRoleTitle()}</span>
@@ -224,7 +224,7 @@ const EmployeeLayout = () => {
         <footer className="mt-8 w-full border-t border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-900">
           <div className="mx-auto max-w-[1920px] px-3 py-4 sm:px-5 lg:px-8">
             <p className="text-center text-xs text-gray-500 dark:text-gray-400 sm:text-sm">
-              &copy; {new Date().getFullYear()} QR Menu SaaS. All rights reserved.
+              &copy; {new Date().getFullYear()} QR Restro Nepal. All rights reserved.
             </p>
           </div>
         </footer>

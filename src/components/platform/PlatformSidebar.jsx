@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { FiAward, FiChevronDown, FiChevronLeft, FiChevronRight, FiMenu, FiX } from 'react-icons/fi'
+import { FiAward, FiChevronDown, FiChevronLeft, FiChevronRight, FiCoffee, FiMenu, FiX } from 'react-icons/fi'
 import { useAuth } from '../../hooks/useAuth'
 import { usePlatformAccess } from '../../hooks/usePlatformAccess'
 import api from '../../services/api'
@@ -269,11 +269,11 @@ function Brand({ collapsed, isMobile }) {
   return (
     <div className="flex min-w-0 items-center gap-3">
       <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-600 to-secondary-500 text-white shadow-md">
-        <FiAward className="h-5 w-5" />
+      <FiCoffee className="h-5 w-5" />
       </div>
       <div className="min-w-0">
-        <h1 className="truncate text-base font-black leading-none text-gray-950 dark:text-gray-100">QR Menu SaaS</h1>
-        <p className="mt-1 truncate text-xs font-medium text-gray-500 dark:text-gray-400">Platform Console</p>
+        <h1 className="truncate text-base font-black leading-none text-gray-950 dark:text-gray-100">QR Restro Nepal</h1>
+        <p className="mt-1 truncate text-xs font-medium text-gray-500 dark:text-gray-400">Platform Portal</p>
       </div>
     </div>
   )

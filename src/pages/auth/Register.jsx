@@ -299,8 +299,8 @@ const Register = () => {
               <FiCoffee className="h-5 w-5" />
             </span>
             <div>
-              <p className="text-sm font-bold leading-tight text-white">QR Menu SaaS</p>
-              <p className="text-xs tracking-[0.28em] text-[#ffc49b]">NEPAL</p>
+              <p className="text-sm font-bold leading-tight text-white">QR Restro</p>
+              <p className="text-xs tracking-[0.28em] text-[#ffc49b] ">NEPAL</p>
             </div>
           </div>
 

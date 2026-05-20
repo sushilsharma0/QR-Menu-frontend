@@ -290,10 +290,10 @@ function Brand({ collapsed, isMobile }) {
   return (
     <div className="flex min-w-0 items-center gap-3">
       <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-600 to-secondary-500 text-white shadow-md">
-        <FiAward className="h-5 w-5" />
+      <FiCoffee className="h-5 w-5" />
       </div>
       <div className="min-w-0">
-        <h1 className="truncate text-base font-black leading-none text-gray-950 dark:text-gray-100">QR Menu SaaS</h1>
+        <h1 className="truncate text-base font-black leading-none text-gray-950 dark:text-gray-100">QR Restro Nepal</h1>
         <p className="mt-1 truncate text-xs font-medium text-gray-500 dark:text-gray-400">Restaurant Portal</p>
       </div>
     </div>
@@ -597,9 +597,9 @@ const RestaurantSidebar = () => {
         </button>
         <div className="flex min-w-0 items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary-600 to-secondary-500 text-white">
-            <FiAward className="h-4 w-4" />
+          <FiCoffee className="h-5 w-5" />
           </div>
-          <h1 className="truncate text-sm font-black text-gray-950 dark:text-gray-100">QR Menu SaaS</h1>
+          <h1 className="truncate text-sm font-black text-gray-950 dark:text-gray-100">QR Restro Nepal</h1>
         </div>
         {pendingCount > 0 && (
           <span className="ml-auto flex h-5 min-w-[22px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">

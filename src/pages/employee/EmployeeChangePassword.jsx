@@ -49,7 +49,7 @@ const EmployeeChangePassword = () => {
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
         <div className="flex items-center gap-2 mb-2 text-primary-600">
           <FiHome className="h-6 w-6" />
-          <span className="font-semibold">QR Menu SaaS</span>
+          <span className="font-semibold">QR Restro Nepal</span>
         </div>
         <h1 className="text-xl font-bold text-gray-900 mb-1">Set a new password</h1>
         <p className="text-sm text-gray-600 mb-6">

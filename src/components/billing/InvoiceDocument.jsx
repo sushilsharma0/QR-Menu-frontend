@@ -72,7 +72,7 @@ export default function InvoiceDocument({ invoice, onBack }) {
         {/* Header band */}
         <header className="invoice-header">
           <div className="invoice-header-left">
-            <p className="invoice-brand">{issuer.companyLegalName || 'QR Menu SaaS'}</p>
+            <p className="invoice-brand">{issuer.companyLegalName || 'QR Restro Nepal'}</p>
             {issuer.companyAddress ? (
               <p className="invoice-brand-sub whitespace-pre-line">{issuer.companyAddress}</p>
             ) : null}

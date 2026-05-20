@@ -64,7 +64,7 @@ const Sidebar = () => {
   return (
     <aside className="w-64 bg-white border-r border-surface-200 flex flex-col">
       <div className="p-6 border-b border-surface-200">
-        <h1 className="text-xl font-bold text-primary-600">QR Menu SaaS</h1>
+        <h1 className="text-xl font-bold text-primary-600">QR Restro Nepal</h1>
         <p className="text-sm text-accent-700 mt-1 capitalize">{user?.role} Portal</p>
       </div>
       <nav className="flex-1 px-4 py-6 space-y-1">
