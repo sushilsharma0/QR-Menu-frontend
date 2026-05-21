@@ -484,7 +484,7 @@ const OTP_SLOT_KEYS = ['otp-1', 'otp-2', 'otp-3', 'otp-4', 'otp-5', 'otp-6']
                 error={errors.address?.message}
               />
 
-              <div className="max-w-md">
+              <div className="w-full">
                 <label htmlFor="referral-code" className="mb-1 block text-sm font-medium text-gray-700">
                   Referral Code
                 </label>
@@ -496,7 +496,7 @@ const OTP_SLOT_KEYS = ['otp-1', 'otp-2', 'otp-3', 'otp-4', 'otp-5', 'otp-6']
                     id="referral-code"
                     type="text"
                     placeholder="Optional code"
-                    className="min-w-0 flex-1 border-0 px-3 py-2 text-sm font-semibold uppercase tracking-wide text-gray-900 outline-none placeholder:font-normal placeholder:normal-case placeholder:tracking-normal"
+                    className="min-w-0 flex-1 border-0 px-4 py-3 text-sm font-semibold uppercase tracking-wide text-gray-900 outline-none placeholder:font-normal placeholder:normal-case placeholder:tracking-normal"
                     {...register('referralCode', {
                       onChange: () => setReferralStatus(null),
                     })}
@@ -505,7 +505,7 @@ const OTP_SLOT_KEYS = ['otp-1', 'otp-2', 'otp-3', 'otp-4', 'otp-5', 'otp-6']
                     type="button"
                     onClick={checkReferralCode}
                     disabled={checkingReferral || !String(referralCodeValue || '').trim()}
-                    className="shrink-0 border-l border-gray-200 bg-[#fff7ed] px-3 text-xs font-bold text-[#8f2a05] transition hover:bg-[#fde6d3] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="shrink-0 border-l border-gray-200 bg-[#fff7ed] px-5 text-sm font-bold text-[#8f2a05] transition hover:bg-[#fde6d3] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {checkingReferral ? 'Checking' : 'Check'}
                   </button>
