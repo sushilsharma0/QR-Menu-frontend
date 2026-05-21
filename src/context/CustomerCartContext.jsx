@@ -71,6 +71,7 @@ export const CustomerCartProvider = ({ children }) => {
   const tokenRef = useRef('')
   const hydrateRequestRef = useRef(0)
   const pendingAddKeysRef = useRef(new Set())
+  const lineMutationVersionRef = useRef(new Map())
 
   useEffect(() => {
     guestRef.current = guestId
@@ -258,6 +259,9 @@ export const CustomerCartProvider = ({ children }) => {
       if (!qrToken || !gid) return null
 
       let current = null
+      const mutationKey = String(lineId || menuItemId)
+      const mutationVersion = Number(lineMutationVersionRef.current.get(mutationKey) || 0) + 1
+      lineMutationVersionRef.current.set(mutationKey, mutationVersion)
       setItems((prev) => {
         const idx = prev.findIndex((i) =>
           i && i.menuItemId === menuItemId && (lineId ? i.lineId === lineId : true),
@@ -279,12 +283,15 @@ export const CustomerCartProvider = ({ children }) => {
           lineId: current.lineId && !String(current.lineId).startsWith('tmp-') ? current.lineId : undefined,
           quantity: current.quantity + 1,
         })
+        if (lineMutationVersionRef.current.get(mutationKey) !== mutationVersion) return null
         const next = mapServerCart(cart)
         setItems(next)
         return next
       } catch (err) {
         console.error('Increment failed', err)
-        await refresh()
+        if (lineMutationVersionRef.current.get(mutationKey) === mutationVersion) {
+          await refresh()
+        }
         return null
       } finally {
         setPendingCount((c) => Math.max(0, c - 1))
@@ -300,6 +307,9 @@ export const CustomerCartProvider = ({ children }) => {
       if (!qrToken || !gid) return null
 
       let current = null
+      const mutationKey = String(lineId || menuItemId)
+      const mutationVersion = Number(lineMutationVersionRef.current.get(mutationKey) || 0) + 1
+      lineMutationVersionRef.current.set(mutationKey, mutationVersion)
       setItems((prev) => {
         const idx = prev.findIndex((i) =>
           i && i.menuItemId === menuItemId && (lineId ? i.lineId === lineId : true),
@@ -326,7 +336,9 @@ export const CustomerCartProvider = ({ children }) => {
                 ? current.lineId
                 : undefined,
           })
-          setItems(mapServerCart(cart))
+          if (lineMutationVersionRef.current.get(mutationKey) === mutationVersion) {
+            setItems(mapServerCart(cart))
+          }
         } else {
           const cart = await updateGuestCartItem({
             guestId: gid,
@@ -338,11 +350,15 @@ export const CustomerCartProvider = ({ children }) => {
                 : undefined,
             quantity: current.quantity - 1,
           })
-          setItems(mapServerCart(cart))
+          if (lineMutationVersionRef.current.get(mutationKey) === mutationVersion) {
+            setItems(mapServerCart(cart))
+          }
         }
       } catch (err) {
         console.error('Decrement failed', err)
-        await refresh()
+        if (lineMutationVersionRef.current.get(mutationKey) === mutationVersion) {
+          await refresh()
+        }
       } finally {
         setPendingCount((c) => Math.max(0, c - 1))
       }
@@ -416,7 +432,15 @@ export const CustomerCartProvider = ({ children }) => {
   const quantityFor = useCallback(
     (menuItemId) =>
       items
-        .filter((i) => i && i.menuItemId === menuItemId && !i.customizations?.length && !i.cookingInstructions)
+        .filter(
+          (i) =>
+            i &&
+            i.menuItemId === menuItemId &&
+            !i.customizations?.length &&
+            !i.selectedVariations?.length &&
+            !i.addOns?.length &&
+            !i.cookingInstructions,
+        )
         .reduce((acc, i) => acc + (i.quantity || 0), 0),
     [items],
   )

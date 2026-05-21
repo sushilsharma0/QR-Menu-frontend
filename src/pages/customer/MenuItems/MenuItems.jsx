@@ -48,6 +48,54 @@ const isVegItem = (item) => {
   return tags.includes("veg") || item?.isVegetarian === true;
 };
 
+const hasRequiredVariationGroup = (item) =>
+  (Array.isArray(item?.variationGroups) ? item.variationGroups : []).some((group) => {
+    if (!group || group.isActive === false) return false;
+    const minSelection = Number(group.minSelection ?? (group.isRequired ? 1 : 0));
+    return group.isRequired || minSelection > 0;
+  });
+
+const needsOptionSelection = (item) =>
+  hasRequiredVariationGroup(item) || (Array.isArray(item?.customizations) && item.customizations.length > 0);
+
+const buildDefaultCustomizations = (item) =>
+  (Array.isArray(item?.customizations) ? item.customizations : []).reduce((rows, group) => {
+    if (group?.name && Array.isArray(group.options) && group.options.length > 0) {
+      rows.push({ name: group.name, value: group.options[0] });
+    }
+    return rows;
+  }, []);
+
+const buildDefaultVariationPayload = (item) =>
+  (Array.isArray(item?.variationGroups) ? item.variationGroups : []).flatMap((group) => {
+    if (!group || group.isActive === false) return [];
+
+    const availableOptions = (Array.isArray(group.options) ? group.options : []).filter(
+      (option) => option && option.isAvailable !== false,
+    );
+    if (availableOptions.length === 0) return [];
+
+    const minSelection = Math.max(0, Number(group.minSelection ?? (group.isRequired ? 1 : 0)));
+    const defaultOptions = availableOptions.filter((option) => option.isDefault);
+
+    if (group.selectionType === "multiple" || group.selectionType === "quantity") {
+      const selected = [...defaultOptions];
+      availableOptions.forEach((option) => {
+        if (selected.length >= minSelection) return;
+        if (!selected.some((row) => String(row._id) === String(option._id))) selected.push(option);
+      });
+
+      return selected.map((option) => ({
+        groupId: group._id,
+        optionId: option._id,
+        quantity: Math.max(1, Number(option.minQuantity || 1)),
+      }));
+    }
+
+    const option = defaultOptions[0] || (minSelection > 0 || group.isRequired ? availableOptions[0] : null);
+    return option ? [{ groupId: group._id, optionId: option._id, quantity: 1 }] : [];
+  });
+
 const MenuItems = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
@@ -170,7 +218,11 @@ const MenuItems = () => {
 
   const handleQuickAdd = async (item) => {
     try {
-      const result = await addItem(item, { quantity: 1 });
+      const result = await addItem(item, {
+        quantity: 1,
+        customizations: buildDefaultCustomizations(item),
+        selectedVariations: buildDefaultVariationPayload(item),
+      });
       if (result) success(`${item.name} added to cart`);
     } catch (err) {
       error("Could not add item. Try again.");
@@ -396,10 +448,7 @@ const MenuItems = () => {
                         onAdd={() => handleQuickAdd(item)}
                         onPlus={() => increment(item._id)}
                         onMinus={() => decrement(item._id)}
-                        hasCustomizations={(item.customizations || []).length > 0}
-                        onCustomize={() =>
-                          navigate(`/item-detail/${slug}/${token}/${item._id}`)
-                        }
+                        hasCustomizations={needsOptionSelection(item)}
                       />
                     </div>
                   </div>
@@ -444,17 +493,18 @@ function CardQuantityControl({
   onPlus,
   onMinus,
   hasCustomizations,
-  onCustomize,
 }) {
   if (hasCustomizations && quantity === 0) {
     return (
       <FramerMotion.motion.button
         type="button"
         whileTap={{ scale: 0.9 }}
-        onClick={onCustomize}
-        className="rounded-xl border border-primary-200 bg-primary-50 px-3 py-1.5 text-[11px] font-semibold text-primary-700 transition active:bg-primary-100"
+        onClick={onAdd}
+        className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md shadow-emerald-600/25 transition active:from-emerald-600"
+        aria-label="Add to cart"
       >
-        Customize
+        <Plus size={14} strokeWidth={3} />
+        Add
       </FramerMotion.motion.button>
     );
   }

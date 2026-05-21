@@ -303,6 +303,7 @@ const Cart = () => {
       {/* Header */}
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-gray-100 bg-white px-5 pb-4 pt-12 shadow-[0_8px_24px_-22px_rgba(15,23,42,0.45)]">
         <button
+          type="button"
           className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-700 transition active:bg-gray-200"
           onClick={goBack}
           aria-label="Back"
@@ -317,6 +318,7 @@ const Cart = () => {
         </div>
         {step === "review" ? (
           <button
+            type="button"
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-500 transition active:bg-red-100"
             onClick={() => items.length > 0 && clear()}
             aria-label="Clear cart"
@@ -458,6 +460,7 @@ const Cart = () => {
 
               {step === "confirm" ? (
                 <motion.button
+                  type="button"
                   whileTap={{ scale: 0.97 }}
                   onClick={handlePlaceOrder}
                   disabled={isPlacingOrder}
@@ -468,6 +471,7 @@ const Cart = () => {
                 </motion.button>
               ) : (
                 <motion.button
+                  type="button"
                   whileTap={{ scale: 0.97 }}
                   onClick={goNext}
                   className="inline-flex items-center gap-1.5 rounded-2xl bg-primary-700 px-5 py-2.5 text-sm font-black text-white shadow-md shadow-primary-900/25 transition active:bg-primary-800"
@@ -578,6 +582,7 @@ function ReviewStep({
             Browse the menu and add a few favourites.
           </p>
           <button
+            type="button"
             onClick={onBrowse}
             className="mt-5 rounded-2xl bg-primary-600 px-5 py-2.5 text-xs font-black text-white shadow-md shadow-primary-900/20 transition active:scale-95"
           >
@@ -641,6 +646,7 @@ function ReviewStep({
                 <div className="flex flex-col items-end gap-2">
                   <div className="flex items-center gap-1.5 rounded-xl border border-primary-100 bg-primary-50/70 px-1.5 py-1">
                     <button
+                      type="button"
                       onClick={() => onDecrement(item.menuItemId, item.lineId)}
                       className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-primary-700 shadow-sm transition active:scale-90"
                       aria-label="Decrease"
@@ -657,6 +663,7 @@ function ReviewStep({
                       {item.quantity}
                     </motion.span>
                     <button
+                      type="button"
                       onClick={() => onIncrement(item.menuItemId, item.lineId)}
                       className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary-600 text-white shadow-sm transition active:scale-90"
                       aria-label="Increase"
@@ -665,6 +672,7 @@ function ReviewStep({
                     </button>
                   </div>
                   <button
+                    type="button"
                     onClick={() => onRemove(item.menuItemId, item.lineId)}
                     className="text-[10px] font-bold text-gray-400 transition hover:text-red-500"
                   >
@@ -689,6 +697,7 @@ function ReviewStep({
               className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold outline-none transition focus:border-primary-400 focus:bg-white focus:ring-2 focus:ring-primary-100"
             />
             <button
+              type="button"
               onClick={onApplyPromo}
               disabled={applyingPromo}
               className="rounded-xl bg-gray-950 px-4 py-2 text-sm font-black text-white transition active:scale-95 disabled:opacity-60"
