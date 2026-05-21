@@ -479,7 +479,7 @@ const Subscription = () => {
               </Notice>
             )}
 
-            {currentPlan?.referralBenefit?.status === 'pending' && (
+            {['pending', 'qualified'].includes(currentPlan?.referralBenefit?.status) && (
               <Notice tone="green" icon={FiGift} title="Referral benefit pending">
                 {currentPlan.referralBenefit.message}
                 {currentPlan.referralBenefit.role === 'referrer' && currentPlan.referralBenefit.referredRestaurantName ? (
