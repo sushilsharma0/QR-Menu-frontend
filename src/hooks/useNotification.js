@@ -8,6 +8,20 @@ import {
 } from '../services/api'
 import { useAuth } from './useAuth'
 
+const NOTIFICATION_TITLE_PREFIX = /^\(\d+\)\s+/
+const DEFAULT_FAVICON = '/favicon.svg'
+
+function setBrowserFavicon(href) {
+  const nextHref = href || DEFAULT_FAVICON
+  let link = document.querySelector("link[rel='icon']")
+  if (!link) {
+    link = document.createElement('link')
+    link.rel = 'icon'
+    document.head.appendChild(link)
+  }
+  link.href = nextHref
+}
+
 const useNotification = () => {
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -29,6 +43,21 @@ const useNotification = () => {
   useEffect(() => {
     fetchNotifications().catch(() => undefined)
   }, [fetchNotifications])
+
+  useEffect(() => {
+    const cleanTitle = (document.title || 'QR Menu SaaS').replace(NOTIFICATION_TITLE_PREFIX, '')
+    document.title = unreadCount > 0 ? `(${unreadCount}) ${cleanTitle}` : cleanTitle
+  }, [unreadCount])
+
+  useEffect(() => {
+    const isRestaurantSide =
+      user?.role === 'restaurant' ||
+      user?.scope === 'branch_user' ||
+      user?.scope === 'employee' ||
+      ['kitchen', 'cashier', 'manager', 'waiter', 'accountant'].includes(user?.role)
+
+    setBrowserFavicon(isRestaurantSide ? user?.favicon || user?.logo : null)
+  }, [user?.favicon, user?.logo, user?.role, user?.scope])
 
   useEffect(() => {
     if (!socket) return

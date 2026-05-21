@@ -128,7 +128,7 @@ import NotificationsPage from "./pages/Notifications";
 import SubscriptionPaymentCallback from "./pages/restaurant/SubscriptionPaymentCallback";
 
 function App() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, mergeUser } = useAuth();
   const { applyRemoteTheme } = useTheme();
   const themeProfileLoadedFor = useRef("");
   const isEmployeeUser =
@@ -156,11 +156,17 @@ function App() {
         if (restaurant?.settings?.themeSettings) {
           applyRemoteTheme(restaurant.settings.themeSettings);
         }
+        if (restaurant?.logo || restaurant?.favicon) {
+          mergeUser({
+            logo: restaurant.logo || user?.logo || '',
+            favicon: restaurant.favicon || user?.favicon || '',
+          });
+        }
       })
       .catch(() => {
         themeProfileLoadedFor.current = "";
       });
-  }, [applyRemoteTheme, user]);
+  }, [applyRemoteTheme, mergeUser, user]);
 
   if (isLoading) {
     return (
