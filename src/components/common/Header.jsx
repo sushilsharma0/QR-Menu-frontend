@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, LazyMotion, domAnimation, m } from 'framer-motion'
 import toast from '@utils/toast'
 import { useAuth } from '../../hooks/useAuth'
 import { usePlanAccess } from '../../hooks/usePlanAccess'
@@ -85,7 +85,7 @@ const Header = () => {
           </div>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="truncate text-lg font-black tracking-tight text-gray-950 dark:text-gray-100 xl:text-xl">
+              <h2 className="truncate text-lg font-semibold tracking-tight text-gray-950 dark:text-gray-100 xl:text-xl">
                 Welcome back, {user?.name?.split(' ')[0] || 'User'}!
               </h2>
               <span className="rounded-full bg-primary-100 px-2.5 py-1 text-xs font-bold capitalize text-primary-700 dark:bg-gray-800 dark:text-primary-300">
@@ -129,15 +129,16 @@ const Header = () => {
               <FiChevronDown className={`h-4 w-4 text-gray-400 transition ${profileOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            <AnimatePresence>
-              {profileOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                  transition={{ duration: 0.18 }}
-                  className="absolute right-0 z-30 mt-3 w-[310px] overflow-hidden rounded-3xl border border-surface-200 bg-white shadow-2xl shadow-slate-900/15 dark:border-gray-800 dark:bg-gray-900"
-                >
+            <LazyMotion features={domAnimation}>
+              <AnimatePresence>
+                {profileOpen && (
+                  <m.div
+                    initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                    transition={{ duration: 0.18 }}
+                    className="absolute right-0 z-30 mt-3 w-[310px] overflow-hidden rounded-3xl border border-surface-200 bg-white shadow-2xl shadow-slate-900/15 dark:border-gray-800 dark:bg-gray-900"
+                  >
                   <div className="bg-gradient-to-br from-primary-50 via-white to-surface-50 p-4 dark:from-gray-800 dark:via-gray-900 dark:to-gray-900">
                     <div className="flex items-center gap-3">
                       {avatar}
@@ -162,7 +163,7 @@ const Header = () => {
                             if (isPlanReadOnly) toast.info(toastLocked('settings'))
                             setProfileOpen(false)
                           }}
-                          className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold text-gray-700 transition hover:bg-surface-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                          className="flex items-center gap-3 rounded-2xl p-3 text-sm font-bold text-gray-700 transition hover:bg-surface-50 dark:text-gray-200 dark:hover:bg-gray-800"
                         >
                           <FiSettings className="h-4 w-4 text-primary-600 dark:text-primary-300" />
                           Restaurant settings
@@ -173,7 +174,7 @@ const Header = () => {
                             if (isPlanReadOnly) toast.info(toastLocked('settings'))
                             setProfileOpen(false)
                           }}
-                          className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold text-gray-700 transition hover:bg-surface-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                          className="flex items-center gap-3 rounded-2xl p-3 text-sm font-bold text-gray-700 transition hover:bg-surface-50 dark:text-gray-200 dark:hover:bg-gray-800"
                         >
                           <FiUser className="h-4 w-4 text-primary-600 dark:text-primary-300" />
                           Account security
@@ -184,7 +185,7 @@ const Header = () => {
                       <Link
                         to={`${portalBase}/profile`}
                         onClick={() => setProfileOpen(false)}
-                        className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold text-gray-700 transition hover:bg-surface-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                        className="flex items-center gap-3 rounded-2xl p-3 text-sm font-bold text-gray-700 transition hover:bg-surface-50 dark:text-gray-200 dark:hover:bg-gray-800"
                       >
                         <FiUser className="h-4 w-4 text-primary-600 dark:text-primary-300" />
                         Branch profile
@@ -194,7 +195,7 @@ const Header = () => {
                       <Link
                         to="/platform/settings"
                         onClick={() => setProfileOpen(false)}
-                        className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold text-gray-700 transition hover:bg-surface-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                        className="flex items-center gap-3 rounded-2xl p-3 text-sm font-bold text-gray-700 transition hover:bg-surface-50 dark:text-gray-200 dark:hover:bg-gray-800"
                       >
                         <FiSettings className="h-4 w-4 text-primary-600 dark:text-primary-300" />
                         Account settings
@@ -206,30 +207,32 @@ const Header = () => {
                         setProfileOpen(false)
                         setConfirmLogout(true)
                       }}
-                      className="flex items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-bold text-red-600 transition hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950/30"
+                      className="flex items-center gap-3 rounded-2xl p-3 text-left text-sm font-bold text-red-600 transition hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950/30"
                     >
                       <FiLogOut className="h-4 w-4" />
                       Logout
                     </button>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  </m.div>
+                )}
+              </AnimatePresence>
+            </LazyMotion>
           </div>
         </div>
       </div>
 
       {typeof document !== 'undefined' &&
         createPortal(
-          <AnimatePresence>
-            {confirmLogout && (
-              <motion.div
+          <LazyMotion features={domAnimation}>
+            <AnimatePresence>
+              {confirmLogout && (
+                <m.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="fixed inset-0 z-[9999] grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm"
               >
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, y: 20, scale: 0.96 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 20, scale: 0.96 }}
@@ -239,7 +242,7 @@ const Header = () => {
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-red-50 text-red-600 ring-8 ring-red-50/70 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-950/20">
                     <FiLogOut className="h-7 w-7" />
                   </div>
-                  <h3 className="mt-6 text-2xl font-black tracking-tight text-gray-950 dark:text-gray-100">
+                  <h3 className="mt-6 text-2xl font-semibold tracking-tight text-gray-950 dark:text-gray-100">
                     Logout?
                   </h3>
                   <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-gray-500 dark:text-gray-400">
@@ -261,10 +264,11 @@ const Header = () => {
                       Logout
                     </button>
                   </div>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>,
+                </m.div>
+              </m.div>
+              )}
+            </AnimatePresence>
+          </LazyMotion>,
           document.body,
         )}
     </header>

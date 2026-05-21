@@ -168,7 +168,7 @@ const KitchenDashboard = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Kitchen Control Center</p>
-            <h1 className="text-3xl font-bold mt-2">Kitchen Dashboard</h1>
+            <h1 className="text-3xl font-semibold mt-2">Kitchen Dashboard</h1>
             <p className="text-slate-300 mt-1">Manage incoming orders and cooking flow in real time.</p>
           </div>
           <Button variant="secondary" onClick={fetchOrders} title="Reload all kitchen orders">
@@ -196,28 +196,28 @@ const KitchenDashboard = () => {
         <div className="rounded-2xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm" title="Total orders currently active in kitchen workflow">
           <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Total Active</p>
           <div className="mt-2 flex items-center justify-between">
-            <p className="text-2xl font-bold text-slate-900 dark:text-gray-100">{totalOrders}</p>
+            <p className="text-2xl font-semibold text-slate-900 dark:text-gray-100">{totalOrders}</p>
             <FiUsers className="text-slate-500" />
           </div>
         </div>
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm" title="Orders waiting for acceptance or cooking start">
           <p className="text-xs uppercase tracking-wide text-amber-700">Incoming</p>
           <div className="mt-2 flex items-center justify-between">
-            <p className="text-2xl font-bold text-amber-900">{pendingCount}</p>
+            <p className="text-2xl font-semibold text-amber-900">{pendingCount}</p>
             <FiClock className="text-amber-600" />
           </div>
         </div>
         <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4 shadow-sm" title="Orders in prep or on the line">
           <p className="text-xs uppercase tracking-wide text-violet-700">Prep / cooking</p>
           <div className="mt-2 flex items-center justify-between">
-            <p className="text-2xl font-bold text-violet-900">{preparingCount}</p>
+            <p className="text-2xl font-semibold text-violet-900">{preparingCount}</p>
             <FiZap className="text-violet-600" />
           </div>
         </div>
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm" title="Orders ready for serving handoff">
           <p className="text-xs uppercase tracking-wide text-emerald-700">Ready</p>
           <div className="mt-2 flex items-center justify-between">
-            <p className="text-2xl font-bold text-emerald-900">{readyCount}</p>
+            <p className="text-2xl font-semibold text-emerald-900">{readyCount}</p>
             <FiCheck className="text-emerald-600" />
           </div>
         </div>
@@ -229,7 +229,7 @@ const KitchenDashboard = () => {
             <div id={section.id} />
             <div className={`mb-4 rounded-xl bg-gradient-to-r ${section.accent} p-[1px]`}>
               <div className="rounded-[11px] bg-white dark:bg-gray-900 px-4 py-3">
-                <h2 className="font-bold text-gray-900 dark:text-gray-100">{section.title}</h2>
+                <h2 className="font-semibold text-gray-900 dark:text-gray-100">{section.title}</h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{section.subtitle}</p>
               </div>
             </div>
@@ -243,7 +243,7 @@ const KitchenDashboard = () => {
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h3 className="font-bold text-gray-900 dark:text-gray-100">#{order.orderNumber}</h3>
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100">#{order.orderNumber}</h3>
                       <p className="text-sm text-gray-600 dark:text-gray-300">Table: {order.table?.tableNumber || 'N/A'}</p>
                     </div>
                     <div className="text-right">

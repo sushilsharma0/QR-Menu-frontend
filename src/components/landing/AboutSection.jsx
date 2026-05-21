@@ -1,5 +1,5 @@
 import React from 'react'
-import { motion } from 'framer-motion'
+import { LazyMotion, domAnimation, m } from 'framer-motion'
 import { BadgeCheck, ChefHat, LayoutDashboard, ShieldCheck, Sparkles, Users } from 'lucide-react'
 import SectionHeader from './SectionHeader'
 
@@ -13,8 +13,9 @@ const points = [
 
 const AboutSection = ({ about }) => (
   <section id="about" className="py-14 sm:py-20 lg:py-24">
-    <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:gap-10 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
-      <motion.div
+    <LazyMotion features={domAnimation}>
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:gap-10 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
+      <m.div
         initial={{ opacity: 0, x: -24 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true, margin: '-80px' }}
@@ -28,7 +29,7 @@ const AboutSection = ({ about }) => (
           className="h-full min-h-[280px] w-full object-cover transition-transform duration-700 hover:scale-105 sm:min-h-[360px] lg:min-h-[420px]"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-primary-900/65 via-transparent to-transparent" />
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -41,8 +42,8 @@ const AboutSection = ({ about }) => (
               Trusted by restaurants for practical daily operations.
             </p>
           </div>
-        </motion.div>
-      </motion.div>
+        </m.div>
+      </m.div>
 
       <div className="flex flex-col justify-center">
         <SectionHeader
@@ -51,10 +52,10 @@ const AboutSection = ({ about }) => (
           title={about.title}
           description={`${about.description} From digital menus to kitchen coordination and cashier billing, the platform connects your entire restaurant workflow in one place.`}
         />
-        <h3 className="mt-6 text-xs font-black uppercase tracking-[0.2em] text-primary-700 sm:mt-8 sm:text-sm">
+        <h3 className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-primary-700 sm:mt-8 sm:text-sm">
           What Restaurants Can Do
         </h3>
-        <motion.div
+        <m.div
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, margin: '-60px' }}
@@ -67,7 +68,7 @@ const AboutSection = ({ about }) => (
           {points.map((point) => {
             const Icon = point.icon
             return (
-              <motion.div
+              <m.div
                 key={point.text}
                 variants={{
                   hidden: { opacity: 0, y: 20 },
@@ -80,12 +81,13 @@ const AboutSection = ({ about }) => (
                   <Icon className="h-5 w-5" />
                 </span>
                 <p className="text-sm font-semibold leading-7 text-slate-600">{point.text}</p>
-              </motion.div>
+              </m.div>
             )
           })}
-        </motion.div>
+        </m.div>
       </div>
-    </div>
+      </div>
+    </LazyMotion>
   </section>
 )
 

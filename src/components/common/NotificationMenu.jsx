@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, LazyMotion, domAnimation, m } from 'framer-motion'
 import {
   FiBell,
   FiCheckCircle,
@@ -23,7 +23,7 @@ import useNotification from '../../hooks/useNotification'
 
 const NotificationMenu = () => {
   const [isOpen, setIsOpen] = useState(false)
-  const location = useLocation()
+  const routerLocation = useLocation()
   const { user } = useAuth()
   const {
     notifications,
@@ -53,7 +53,7 @@ const NotificationMenu = () => {
 
   useEffect(() => {
     setIsOpen(false)
-  }, [location.pathname])
+  }, [routerLocation.pathname])
 
   const handleToggle = () => {
     setIsOpen((prev) => {
@@ -121,21 +121,21 @@ const NotificationMenu = () => {
 
       <AnimatePresence>
         {isOpen && (
-          <>
+    <LazyMotion features={domAnimation}>
           <button
             type="button"
             className="fixed inset-0 z-[100] cursor-default bg-transparent"
             onClick={() => setIsOpen(false)}
             aria-label="Close notifications"
           />
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: -18, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -18, scale: 0.98 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
             className="absolute right-[-280%] md:right-0 mt-2 w-[430px] max-w-[95vw] bg-white dark:bg-gray-900 border border-surface-200 dark:border-gray-800 rounded-2xl shadow-[0_20px_50px_-12px_rgba(143,40,0,0.25)] z-[110] overflow-hidden"
           >
-            <div className="px-4 py-4 border-b dark:border-gray-800 bg-gradient-to-br from-surface-50 via-secondary-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+            <div className="p-4 border-b dark:border-gray-800 bg-gradient-to-br from-surface-50 via-secondary-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-primary-900 dark:text-gray-100 tracking-tight">Notifications</p>
@@ -153,7 +153,7 @@ const NotificationMenu = () => {
               </div>
             </div>
 
-            <motion.div
+            <m.div
               initial="hidden"
               animate="show"
               className="max-h-[450px] overflow-y-auto bg-gradient-to-b from-surface-50/50 to-white dark:from-gray-900 dark:to-gray-900 p-2.5"
@@ -169,7 +169,7 @@ const NotificationMenu = () => {
                   const TypeIcon = typeMeta.icon
 
                   return (
-                    <motion.div
+                    <m.div
                       key={notification._id}
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -228,11 +228,11 @@ const NotificationMenu = () => {
                           </a>
                         ) : null}
                       </div> */}
-                    </motion.div>
+                    </m.div>
                   )
                 })
               )}
-            </motion.div>
+            </m.div>
             <div className="border-t dark:border-gray-800 px-3 py-2 flex items-center justify-between bg-white dark:bg-gray-900">
               <button
                 type="button"
@@ -249,8 +249,8 @@ const NotificationMenu = () => {
                 View all
               </Link>
             </div>
-          </motion.div>
-          </>
+          </m.div>
+    </LazyMotion>
         )}
       </AnimatePresence>
     </div>

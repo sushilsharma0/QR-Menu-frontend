@@ -7,7 +7,7 @@ const TableCard = ({ table, onViewQR, onEdit, onDelete, onRegenerateQR }) => {
     <Card className="hover:shadow-lg transition-shadow">
       <div className="flex justify-between items-start mb-3">
         <div>
-          <h3 className="text-xl font-bold text-gray-900">Table {table.tableNumber}</h3>
+          <h3 className="text-xl font-semibold text-gray-900">Table {table.tableNumber}</h3>
           <p className="text-sm text-gray-500">Capacity: {table.capacity} persons</p>
         </div>
         <span className={`px-2 py-1 text-xs rounded-full ${table.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>

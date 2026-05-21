@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useReducer } from 'react'
 import { Link } from 'react-router-dom'
-import { motion, useScroll, useTransform, useReducedMotion } from 'framer-motion'
+import { LazyMotion, domAnimation, m, useScroll, useTransform, useReducedMotion } from 'framer-motion'
 import { ArrowRight, BellRing, BookOpenText, CheckCircle2, Clock3, QrCode, Sparkles, UtensilsCrossed } from 'lucide-react'
 import { useLandingBranding } from '../../context/LandingBrandingContext'
 
@@ -41,23 +41,36 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
 }
 
+const initialTypewriterState = { typeText: '', phraseIndex: 0, deleting: false }
+
+function typewriterReducer(state, action) {
+  switch (action.type) {
+    case 'reset':
+      return initialTypewriterState
+    case 'setText':
+      return { ...state, typeText: action.value }
+    case 'setDeleting':
+      return { ...state, deleting: action.value }
+    case 'nextPhrase':
+      return { typeText: '', deleting: false, phraseIndex: (state.phraseIndex + 1) % action.count }
+    default:
+      return state
+  }
+}
+
 const HeroSection = ({ hero }) => {
   const { themeTokens } = useLandingBranding()
   const reduceMotion = useReducedMotion()
   const { scrollYProgress } = useScroll()
   const phoneScale = useTransform(scrollYProgress, [0, 0.18, 0.36], [1, 1.05, 0.97])
   const cardScale = useTransform(scrollYProgress, [0, 0.22, 0.42], [0.96, 1.03, 0.98])
-  const [typeText, setTypeText] = useState('')
-  const [phraseIndex, setPhraseIndex] = useState(0)
-  const [deleting, setDeleting] = useState(false)
+  const [{ typeText, phraseIndex, deleting }, dispatchTypewriter] = useReducer(typewriterReducer, initialTypewriterState)
   const typewriterPhrases = hero?.typewriterPhrases?.length
     ? hero.typewriterPhrases
     : ['QR scanning live', 'Kitchen synced', 'Cashier ready']
 
   useEffect(() => {
-    setTypeText('')
-    setPhraseIndex(0)
-    setDeleting(false)
+    dispatchTypewriter({ type: 'reset' })
   }, [typewriterPhrases.join('|')])
 
   useEffect(() => {
@@ -65,64 +78,64 @@ const HeroSection = ({ hero }) => {
     let timeout
 
     if (!deleting && typeText.length < current.length) {
-      timeout = setTimeout(() => setTypeText(current.slice(0, typeText.length + 1)), 85)
+      timeout = setTimeout(() => dispatchTypewriter({ type: 'setText', value: current.slice(0, typeText.length + 1) }), 85)
     } else if (!deleting && typeText.length === current.length) {
-      timeout = setTimeout(() => setDeleting(true), 1100)
+      timeout = setTimeout(() => dispatchTypewriter({ type: 'setDeleting', value: true }), 1100)
     } else if (deleting && typeText.length > 0) {
-      timeout = setTimeout(() => setTypeText((prev) => prev.slice(0, -1)), 40)
+      timeout = setTimeout(() => dispatchTypewriter({ type: 'setText', value: typeText.slice(0, -1) }), 40)
     } else if (deleting && typeText.length === 0) {
-      setDeleting(false)
-      setPhraseIndex((prev) => (prev + 1) % typewriterPhrases.length)
+      dispatchTypewriter({ type: 'nextPhrase', count: typewriterPhrases.length })
     }
 
     return () => clearTimeout(timeout)
   }, [typeText, deleting, phraseIndex])
 
   return (
+    <LazyMotion features={domAnimation}>
     <section id="home" className="relative overflow-hidden px-4 pb-12 pt-16 sm:px-6 sm:pb-16 sm:pt-24 lg:px-8 lg:pt-28">
       <div className="mx-auto grid max-w-7xl items-center gap-8 py-6 sm:gap-10 sm:py-8 lg:min-h-[calc(100vh-7rem)] lg:grid-cols-[1.1fr_0.9fr] lg:gap-12 lg:py-12">
         {/* Left Column - Content */}
-        <motion.div
+        <m.div
           variants={containerVariants}
           initial="hidden"
           animate="show"
           className="relative z-10 text-center lg:text-left"
         >
           {/* Eyebrow Badge */}
-          <motion.div
+          <m.div
             variants={itemVariants}
             className={`inline-flex items-center gap-2 rounded-full border border-primary-200 bg-white/90 px-3 py-1.5 text-xs font-black shadow-sm backdrop-blur sm:px-4 sm:py-2 sm:text-sm ${themeTokens.accentText}`}
           >
             <Sparkles className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
             <span className="truncate">{hero.eyebrow}</span>
-          </motion.div>
+          </m.div>
 
           {/* Main Title - Fixed responsive sizing */}
-          <motion.h1
+          <m.h1
             variants={itemVariants}
-            className="mt-4 text-3xl font-black leading-[1.1] tracking-tight text-slate-950 sm:mt-6 sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl"
+            className="mt-4 text-3xl font-semibold leading-[1.1] tracking-tight text-slate-950 sm:mt-6 sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl"
           >
             {hero.title}
-          </motion.h1>
+          </m.h1>
 
           {/* Main Description - Fixed responsive sizing */}
-          <motion.p
+          <m.p
             variants={itemVariants}
             className="mx-auto mt-3 max-w-2xl text-base leading-relaxed text-slate-600 sm:mt-4 sm:text-lg sm:leading-relaxed lg:mx-0 lg:text-xl"
           >
             {hero.description}
-          </motion.p>
+          </m.p>
 
           {/* Sub Description - Consistent sizing */}
-          <motion.p
+          <m.p
             variants={itemVariants}
             className="mx-auto mt-2 max-w-2xl text-sm leading-relaxed text-slate-500 sm:text-base lg:mx-0"
           >
             {hero.subDescription}
-          </motion.p>
+          </m.p>
 
           {/* CTA Buttons */}
-          <motion.div
+          <m.div
             variants={itemVariants}
             className="mt-6 flex flex-col justify-center gap-3 sm:mt-8 sm:flex-row lg:justify-start"
           >
@@ -140,15 +153,15 @@ const HeroSection = ({ hero }) => {
               {hero.secondaryCta?.text}
               <BookOpenText className="h-4 w-4 transition-transform duration-300 group-hover:rotate-6 sm:h-5 sm:w-5" />
             </HeroCta>
-          </motion.div>
+          </m.div>
 
           {/* Feature Bullets - Better responsive grid */}
-          <motion.div
+          <m.div
             variants={itemVariants}
             className="mt-6 grid grid-cols-1 gap-2 text-left sm:mt-8 sm:grid-cols-2 sm:gap-3 lg:gap-3 xl:grid-cols-4"
           >
             {(hero.bullets || []).map((item, idx) => (
-              <motion.div
+              <m.div
                 key={item}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -157,15 +170,15 @@ const HeroSection = ({ hero }) => {
               >
                 <CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 sm:h-5 sm:w-5 ${themeTokens.ringAccent}`} />
                 <span className="line-clamp-2 leading-snug">{item}</span>
-              </motion.div>
+              </m.div>
             ))}
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
 
         {/* Right Column - Phone Mockup */}
         <div className="relative mx-auto mt-8 h-[480px] w-full max-w-[380px] sm:h-[560px] sm:max-w-[460px] lg:mt-0 lg:h-[640px] lg:max-w-[540px]">
           {/* Main Phone */}
-          <motion.div
+          <m.div
             style={reduceMotion ? undefined : { scale: phoneScale, x: '-50%' }}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -198,7 +211,7 @@ const HeroSection = ({ hero }) => {
                     <p className={`mt-1.5 text-[9px] font-black uppercase tracking-[0.15em] sm:mt-2 sm:text-[10px] lg:text-xs ${themeTokens.accentText}`}>
                       Table 07
                     </p>
-                    <h2 className="mt-0.5 text-sm font-black text-slate-950 sm:text-base lg:text-lg">
+                    <h2 className="mt-0.5 text-sm font-semibold text-slate-950 sm:text-base lg:text-lg">
                       Today's Popular Items
                     </h2>
                   </div>
@@ -206,7 +219,7 @@ const HeroSection = ({ hero }) => {
                   {/* Menu Items */}
                   <div className="mt-2 grid gap-1.5 sm:mt-2.5 sm:gap-2 lg:gap-2.5">
                     {['Chicken momo', 'Newari khaja set', 'Masala tea'].map((item, index) => (
-                      <motion.div
+                      <m.div
                         key={item}
                         initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -222,7 +235,7 @@ const HeroSection = ({ hero }) => {
                         <span className="ml-2 shrink-0 rounded-md bg-secondary-100 px-1.5 py-0.5 text-[9px] font-black text-secondary-700 sm:rounded-lg sm:px-2 sm:py-1 sm:text-[10px] lg:text-xs">
                           Add
                         </span>
-                      </motion.div>
+                      </m.div>
                     ))}
                   </div>
                   
@@ -242,17 +255,17 @@ const HeroSection = ({ hero }) => {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </m.div>
 
           {/* QR Code Card */}
-          <motion.div
+          <m.div
             style={reduceMotion ? undefined : { scale: cardScale, x: '-50%' }}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.5 }}
             className="absolute bottom-0 left-1/2 z-20 w-[160px] rounded-2xl border border-slate-200 bg-white p-2.5 shadow-2xl sm:bottom-auto sm:left-[70%] sm:top-[380px] sm:w-[180px] sm:p-3 lg:top-[440px] lg:w-[200px] lg:p-4"
           >
-            <motion.div
+            <m.div
               animate={reduceMotion ? undefined : { y: [0, -8, 0] }}
               transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
               className="relative mx-auto grid h-16 w-16 grid-cols-7 gap-0.5 overflow-hidden rounded-lg bg-white p-1 sm:h-20 sm:w-20 sm:gap-0.5 sm:p-1.5 lg:h-24 lg:w-24"
@@ -267,12 +280,12 @@ const HeroSection = ({ hero }) => {
                   }
                 />
               ))}
-              <motion.span
+              <m.span
                 animate={reduceMotion ? undefined : { y: [0, 48, 0] }}
                 transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
                 className={`absolute left-1 right-1 top-1 h-0.5 rounded-full opacity-90 shadow-md sm:left-1.5 sm:right-1.5 sm:top-1.5 sm:h-0.5 ${themeTokens.ringAccent.replace('text-', 'bg-')}`}
               />
-            </motion.div>
+            </m.div>
             <div className="mt-1.5 flex items-center justify-center gap-1.5 text-[9px] font-black text-slate-700 sm:mt-2 sm:gap-2 sm:text-[10px] lg:text-xs">
               <Clock3 className="h-3 w-3 shrink-0 text-primary-600 sm:h-3.5 sm:w-3.5" />
               <span className="min-w-[72px] text-left sm:min-w-[88px]">
@@ -280,7 +293,7 @@ const HeroSection = ({ hero }) => {
                 <span className="ml-0.5 inline-block h-2.5 w-[1.5px] animate-pulse bg-primary-600 align-middle sm:h-3" />
               </span>
             </div>
-          </motion.div>
+          </m.div>
 
           {/* Floating Feature Cards - Hidden on mobile/tablet */}
           {floatingFeatures.map((feature, index) => {
@@ -291,7 +304,7 @@ const HeroSection = ({ hero }) => {
               'left-2 bottom-20',
             ]
             return (
-              <motion.div
+              <m.div
                 key={feature.title}
                 initial={{ opacity: 0, scale: 0.86, y: 24 }}
                 whileInView={{ opacity: 1, scale: 1, y: 0 }}
@@ -305,12 +318,13 @@ const HeroSection = ({ hero }) => {
                 </span>
                 <p className="mt-2.5 text-xs font-black text-slate-950">{feature.title}</p>
                 <p className="text-[10px] font-bold text-slate-500">{feature.text}</p>
-              </motion.div>
+              </m.div>
             )
           })}
         </div>
       </div>
     </section>
+    </LazyMotion>
   )
 }
 

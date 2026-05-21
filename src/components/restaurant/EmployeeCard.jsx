@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { FiEdit2, FiTrash2, FiKey } from 'react-icons/fi'
 import Card from '../common/Card'
 import Badge from '../common/Badge'
 
 const EmployeeCard = ({ employee, onEdit, onDelete, onResetPassword }) => {
+  const [lastLoginLabel, setLastLoginLabel] = useState('Never')
   const roleColors = {
     admin: 'purple',
     manager: 'blue',
@@ -11,6 +12,10 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onResetPassword }) => {
     cashier: 'green',
     waiter: 'indigo',
   }
+
+  useEffect(() => {
+    setLastLoginLabel(employee.lastLogin ? new Date(employee.lastLogin).toLocaleDateString() : 'Never')
+  }, [employee.lastLogin])
 
   return (
     <Card className="hover:shadow-lg transition-shadow">
@@ -36,7 +41,7 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onResetPassword }) => {
         </div>
       </div>
       <div className="mt-3 pt-3 border-t">
-        <p className="text-xs text-gray-400">Last Login: {employee.lastLogin ? new Date(employee.lastLogin).toLocaleDateString() : 'Never'}</p>
+        <p className="text-xs text-gray-400">Last Login: {lastLoginLabel}</p>
       </div>
     </Card>
   )

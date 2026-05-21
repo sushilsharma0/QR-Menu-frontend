@@ -14,14 +14,14 @@ import {
  * plan/trial feature flags disallow access.
  */
 export default function PlanProtectedOutlet() {
-  const location = useLocation()
+  const routerLocation = useLocation()
   const { isFeatureEnabled, kycLocked } = usePlanAccess()
   const { restaurantBase } = useTenantRoutes()
-  const featureKey = featureKeyForPath(location.pathname)
+  const featureKey = featureKeyForPath(routerLocation.pathname)
   const kycToastShown = useRef(false)
   const planToastShown = useRef(false)
 
-  const kycBlocked = kycLocked && !isPathAllowedBeforeKyc(location.pathname)
+  const kycBlocked = kycLocked && !isPathAllowedBeforeKyc(routerLocation.pathname)
   const planBlocked = Boolean(featureKey && !isFeatureEnabled(featureKey))
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export default function PlanProtectedOutlet() {
     if (!kycBlocked) {
       kycToastShown.current = false
     }
-  }, [kycBlocked, location.pathname])
+  }, [kycBlocked, routerLocation.pathname])
 
   useEffect(() => {
     if (planBlocked && featureKey && !planToastShown.current) {
@@ -46,7 +46,7 @@ export default function PlanProtectedOutlet() {
     if (!planBlocked) {
       planToastShown.current = false
     }
-  }, [planBlocked, featureKey, location.pathname])
+  }, [planBlocked, featureKey, routerLocation.pathname])
 
   if (kycBlocked) {
     return <Navigate to={`${restaurantBase}/kyc`} replace />

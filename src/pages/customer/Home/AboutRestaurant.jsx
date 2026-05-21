@@ -142,11 +142,11 @@ export default function AboutRestaurant() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#fafaf7] p-6 text-center">
         <Utensils className="h-12 w-12 text-gray-400" />
-        <h1 className="text-xl font-black text-gray-900">Restaurant not found</h1>
+        <h1 className="text-xl font-semibold text-gray-900">Restaurant not found</h1>
         <p className="max-w-xs text-sm text-gray-500">
           We couldn&apos;t load this restaurant&apos;s details. Please scan the table QR again.
         </p>
-        <Link to={homePath} className="rounded-2xl bg-primary-600 px-4 py-2 text-sm font-bold text-white">
+        <Link to={homePath} className="rounded-2xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white">
           Back home
         </Link>
         <Navigation />
@@ -181,7 +181,7 @@ export default function AboutRestaurant() {
                 <Utensils size={28} />
               )}
             </div>
-            <h1 className="text-3xl font-black">{restaurantName}</h1>
+            <h1 className="text-3xl font-semibold">{restaurantName}</h1>
             <p className="mt-1 text-sm opacity-90">{tagline}</p>
           </div>
         </div>
@@ -195,7 +195,7 @@ export default function AboutRestaurant() {
                 {about.rating != null && (
                   <div className="flex items-center gap-1 rounded-full bg-yellow-50 px-3 py-1">
                     <Star size={16} className="fill-yellow-500 text-yellow-500" />
-                    <span className="font-bold text-gray-800">
+                    <span className="font-semibold text-gray-800">
                       {Number(about.rating).toFixed(1)}
                     </span>
                   </div>
@@ -216,7 +216,7 @@ export default function AboutRestaurant() {
         )}
 
         <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-          <h2 className="mb-2 font-bold text-gray-800">About Us</h2>
+          <h2 className="mb-2 font-semibold text-gray-800">About Us</h2>
           <p className="whitespace-pre-line text-sm leading-relaxed text-gray-600">
             {aboutText}
           </p>
@@ -224,13 +224,13 @@ export default function AboutRestaurant() {
             <div className="mt-4 flex gap-4">
               {about.cuisine && (
                 <div className="text-center">
-                  <p className="text-lg font-bold text-orange-500">{about.cuisine}</p>
+                  <p className="text-lg font-semibold text-orange-500">{about.cuisine}</p>
                   <p className="text-xs text-gray-500">Cuisine</p>
                 </div>
               )}
               {about.priceRange && (
                 <div className="text-center">
-                  <p className="text-lg font-bold text-orange-500">{about.priceRange}</p>
+                  <p className="text-lg font-semibold text-orange-500">{about.priceRange}</p>
                   <p className="text-xs text-gray-500">Price</p>
                 </div>
               )}
@@ -248,7 +248,7 @@ export default function AboutRestaurant() {
                     <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-orange-50">
                       <Icon size={20} className="text-orange-500" />
                     </div>
-                    <p className="text-xs font-bold text-gray-700">{feature.label}</p>
+                    <p className="text-xs font-semibold text-gray-700">{feature.label}</p>
                   </div>
                 );
               })}
@@ -257,7 +257,7 @@ export default function AboutRestaurant() {
         )}
 
         <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-          <h2 className="mb-4 font-bold text-gray-800">Contact Us</h2>
+          <h2 className="mb-4 font-semibold text-gray-800">Contact Us</h2>
           <div className="space-y-3">
             {profile.address && (
               <div className="flex items-center gap-3">
@@ -266,7 +266,7 @@ export default function AboutRestaurant() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Address</p>
-                  <p className="text-sm font-bold text-gray-800">{profile.address}</p>
+                  <p className="text-sm font-semibold text-gray-800">{profile.address}</p>
                 </div>
               </div>
             )}
@@ -277,7 +277,7 @@ export default function AboutRestaurant() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Phone</p>
-                  <p className="text-sm font-bold text-gray-800">{profile.phone}</p>
+                  <p className="text-sm font-semibold text-gray-800">{profile.phone}</p>
                 </div>
               </div>
             )}
@@ -288,7 +288,7 @@ export default function AboutRestaurant() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Email</p>
-                  <p className="text-sm font-bold text-gray-800">{profile.email}</p>
+                  <p className="text-sm font-semibold text-gray-800">{profile.email}</p>
                 </div>
               </div>
             )}
@@ -298,13 +298,13 @@ export default function AboutRestaurant() {
         <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
             <Clock size={18} className="text-orange-500" />
-            <h2 className="font-bold text-gray-800">Opening Hours</h2>
+            <h2 className="font-semibold text-gray-800">Opening Hours</h2>
           </div>
           <div className="space-y-2">
             {hoursList.map((row) => (
               <div key={row.key} className="flex justify-between text-sm">
                 <span className="capitalize text-gray-600">{row.label}</span>
-                <span className="font-bold text-gray-800">
+                <span className="font-semibold text-gray-800">
                   {row.hours || "Closed"}
                 </span>
               </div>
@@ -314,7 +314,7 @@ export default function AboutRestaurant() {
 
         {socialLinks.length > 0 && (
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-            <h2 className="mb-3 font-bold text-gray-800">Follow Us</h2>
+            <h2 className="mb-3 font-semibold text-gray-800">Follow Us</h2>
             <div className="flex flex-wrap gap-3">
               {socialLinks.map((s) => {
                 const Icon = s.icon;
@@ -325,7 +325,7 @@ export default function AboutRestaurant() {
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-700 transition hover:bg-orange-50 hover:text-orange-600"
+                    className="flex items-center gap-2 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-orange-50 hover:text-orange-600"
                   >
                     <Icon size={14} />
                     {s.label}
@@ -337,7 +337,7 @@ export default function AboutRestaurant() {
         )}
 
         <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-          <h2 className="mb-4 font-bold text-gray-800">Gallery</h2>
+          <h2 className="mb-4 font-semibold text-gray-800">Gallery</h2>
           <div className="grid grid-cols-2 gap-2">
             {gallery.map((image, index) => (
               <div

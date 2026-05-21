@@ -9,7 +9,7 @@ export function BranchProvider({ children }) {
   const { user } = useAuth()
   const { isFeatureEnabled } = usePlanAccess()
   const [branches, setBranches] = useState([])
-  const [selectedBranchId, setSelectedBranchIdState] = useState(getSelectedBranchId())
+  const [selectedBranchId, setSelectedBranchIdState] = useState(() => getSelectedBranchId())
   const [loading, setLoading] = useState(false)
 
   const canSwitchBranches =

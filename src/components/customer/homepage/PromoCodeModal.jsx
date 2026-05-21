@@ -72,7 +72,7 @@ function PromoCardModal({ promo }) {
         {discountText} OFF
       </div>
       <div className="flex-1">
-        <h3 className="text-sm font-bold text-gray-800">
+        <h3 className="text-sm font-semibold text-gray-800">
           {promo.name || promo.bannerText}
         </h3>
         <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -99,7 +99,9 @@ function PromoCardModal({ promo }) {
 
 /* ── Main Modal ── */
 
-export default function PromoCodeModal({ isOpen, onClose, promos = [], onViewAllOffers }) {
+const EMPTY_PROMOS = []
+
+export default function PromoCodeModal({ isOpen, onClose, promos = EMPTY_PROMOS, onViewAllOffers }) {
   const [showOffers, setShowOffers] = useState(false);
   const { slug } = useParams();
 
@@ -159,7 +161,7 @@ export default function PromoCodeModal({ isOpen, onClose, promos = [], onViewAll
                       <Tag size={22} />
                     </div>
                     <div>
-                      <h2 className="text-lg font-bold">Special Offers</h2>
+                      <h2 className="text-lg font-semibold">Special Offers</h2>
                       <p className="text-xs opacity-90">{validPromos.length} available</p>
                     </div>
                   </div>
@@ -170,10 +172,10 @@ export default function PromoCodeModal({ isOpen, onClose, promos = [], onViewAll
               </div>
 
               {/* Promo list */}
-              <div className="p-4 max-h-[60vh] overflow-y-auto space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
+              <div className="p-4 max-h-[60vh] overflow-y-auto flex flex-col gap-y-3 lg:grid lg:grid-cols-2 lg:gap-4">
                 {validPromos.length > 0 ? (
-                  validPromos.map((promo, i) => (
-                    <PromoCardModal key={i} promo={promo} />
+                  validPromos.map((promo) => (
+                    <PromoCardModal key={promo.id || promo._id || promo.code || promo.name} promo={promo} />
                   ))
                 ) : (
                   <div className="col-span-2 text-center py-10 text-gray-400">

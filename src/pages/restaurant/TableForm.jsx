@@ -76,7 +76,7 @@ const TableForm = () => {
   return (
     <div className="max-w-md mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">{id ? 'Edit' : 'Add'} Table</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">{id ? 'Edit' : 'Add'} Table</h1>
         <p className="text-gray-500 mt-1">Create or update table details</p>
       </div>
 
@@ -98,8 +98,9 @@ const TableForm = () => {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Table Type</label>
+            <label htmlFor="table-type" className="block text-sm font-medium text-gray-700 mb-1">Table Type</label>
             <select
+              id="table-type"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
               {...register('tableType')}
               defaultValue="regular"
@@ -113,8 +114,9 @@ const TableForm = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Floor</label>
+            <label htmlFor="table-floor" className="block text-sm font-medium text-gray-700 mb-1">Floor</label>
             <select
+              id="table-floor"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
               {...register('floor')}
               defaultValue="ground"

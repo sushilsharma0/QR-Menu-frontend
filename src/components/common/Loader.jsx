@@ -18,7 +18,7 @@ const Loader = ({ size = 'md', fullScreen = false }) => {
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm dark:bg-gray-950/80">
         <div className="rounded-3xl border border-surface-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
           {spinner}
-          <p className="mt-4 text-sm font-semibold text-gray-600 dark:text-gray-300">Loading...</p>
+          <p className="mt-4 text-sm font-semibold text-gray-600 dark:text-gray-300">Loading&hellip;</p>
         </div>
       </div>
     )

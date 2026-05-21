@@ -1,5 +1,5 @@
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { LazyMotion, domAnimation, m, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Minus,
@@ -39,9 +39,10 @@ export default function CartDrawer() {
   };
 
   return (
-    <AnimatePresence>
+    <LazyMotion features={domAnimation}>
+      <AnimatePresence>
       {isDrawerOpen && (
-        <motion.div
+        <m.div
           key="cart-drawer-root"
           className="fixed inset-0 z-[120] flex items-end justify-center"
           initial="hidden"
@@ -49,7 +50,7 @@ export default function CartDrawer() {
           exit="hidden"
         >
           {/* Backdrop */}
-          <motion.button
+          <m.button
             type="button"
             onClick={closeDrawer}
             aria-label="Close cart"
@@ -62,7 +63,7 @@ export default function CartDrawer() {
           />
 
           {/* Sheet */}
-          <motion.div
+          <m.div
             variants={{
               hidden: { y: "100%", opacity: 0.4 },
               visible: { y: 0, opacity: 1 },
@@ -108,7 +109,7 @@ export default function CartDrawer() {
                 <ul className="space-y-3">
                   <AnimatePresence initial={false} mode="popLayout">
                     {items.map((item) => (
-                      <motion.li
+                      <m.li
                         layout
                         key={item.lineId || item.menuItemId}
                         initial={{ opacity: 0, y: 16, scale: 0.96 }}
@@ -174,7 +175,7 @@ export default function CartDrawer() {
                             Remove
                           </button>
                         </div>
-                      </motion.li>
+                      </m.li>
                     ))}
                   </AnimatePresence>
                 </ul>
@@ -191,7 +192,7 @@ export default function CartDrawer() {
                   </span>
                 </div>
                 <p className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700">
-                  <ChefHat size={12} /> Sent to the kitchen — pay after you&apos;re served.
+                  <ChefHat size={12} /> Sent to the kitchen, pay after you&apos;re served.
                 </p>
 
                 <div className="mt-4 grid grid-cols-5 gap-2">
@@ -221,10 +222,11 @@ export default function CartDrawer() {
                 </button>
               </div>
             )}
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       )}
-    </AnimatePresence>
+      </AnimatePresence>
+    </LazyMotion>
   );
 }
 
@@ -239,7 +241,7 @@ function QuantityStepper({ quantity, onMinus, onPlus }) {
       >
         <Minus size={14} strokeWidth={3} />
       </button>
-      <motion.span
+      <m.span
         key={quantity}
         initial={{ scale: 0.85, opacity: 0.6 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -247,7 +249,7 @@ function QuantityStepper({ quantity, onMinus, onPlus }) {
         className="w-5 text-center text-sm font-black tabular-nums text-primary-800"
       >
         {quantity}
-      </motion.span>
+      </m.span>
       <button
         type="button"
         onClick={onPlus}

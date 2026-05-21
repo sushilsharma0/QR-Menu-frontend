@@ -212,7 +212,7 @@ export default function PosMain() {
     <div className="flex min-h-full flex-col gap-3 p-3 md:p-4 xl:h-full xl:min-h-0 xl:flex-row">
       {/* Categories / filters */}
       <aside className="flex shrink-0 flex-col gap-3 rounded-3xl border border-surface-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-900 xl:w-60 xl:overflow-y-auto">
-        <div className="flex items-center gap-2 rounded-2xl bg-primary-50 px-3 py-2 text-xs font-black uppercase tracking-wide text-primary-700">
+        <div className="flex items-center gap-2 rounded-2xl bg-primary-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-primary-700">
           <FiShoppingBag className="h-4 w-4" />
           Mode
         </div>
@@ -232,7 +232,7 @@ export default function PosMain() {
             </button>
           ))}
         </div>
-        <div className="mt-1 flex items-center gap-2 rounded-2xl bg-surface-50 px-3 py-2 text-xs font-black uppercase tracking-wide text-gray-500">
+        <div className="mt-1 flex items-center gap-2 rounded-2xl bg-surface-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
           <FiCoffee className="h-4 w-4" />
           Categories
         </div>
@@ -259,7 +259,7 @@ export default function PosMain() {
             ))
           )}
         </div>
-        <div className="text-xs font-black uppercase tracking-wide text-gray-500">
+        <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
           Search
         </div>
         <div className="relative">
@@ -274,7 +274,7 @@ export default function PosMain() {
         </div>
         {mode === 'dine_in' && (
           <>
-            <div className="flex items-center gap-2 text-xs font-black uppercase text-gray-500">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase text-gray-500">
               <FiUsers className="h-4 w-4" />
               Tables
             </div>
@@ -296,7 +296,7 @@ export default function PosMain() {
                       : 'bg-surface-50 hover:bg-primary-50 hover:text-primary-700 dark:bg-gray-800'
                   }`}
                 >
-                  <span className="font-bold">T-{t.tableNumber}</span>
+                  <span className="font-semibold">T-{t.tableNumber}</span>
                   <span className="text-[9px] opacity-80">{t.posStatus}</span>
                 </button>
               ))}
@@ -309,8 +309,8 @@ export default function PosMain() {
       <section className="min-w-0 flex-1 rounded-3xl border border-surface-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-900 md:p-4 xl:overflow-y-auto">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs font-black uppercase tracking-wide text-primary-700">Menu register</p>
-            <h2 className="mt-1 text-xl font-black text-gray-950 dark:text-gray-100 sm:text-2xl">Add items to order</h2>
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary-700">Menu register</p>
+            <h2 className="mt-1 text-xl font-semibold text-gray-950 dark:text-gray-100 sm:text-2xl">Add items to order</h2>
           </div>
           <div className="rounded-2xl bg-surface-50 px-3 py-2 text-xs font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-300 sm:px-4 sm:text-sm">
             {items.length} available items
@@ -340,10 +340,10 @@ export default function PosMain() {
                 )}
               </div>
               <div className="p-2">
-                <div className="line-clamp-2 text-xs font-bold leading-tight text-gray-950 dark:text-gray-100 md:text-sm">
+                <div className="line-clamp-2 text-xs font-semibold leading-tight text-gray-950 dark:text-gray-100 md:text-sm">
                   {item.name}
                 </div>
-                <div className="mt-1 text-xs font-black text-primary-700 dark:text-primary-300">
+                <div className="mt-1 text-xs font-semibold text-primary-700 dark:text-primary-300">
                   Rs. {item.price}
                 </div>
               </div>
@@ -360,8 +360,8 @@ export default function PosMain() {
       {/* Cart */}
       <aside className="flex w-full shrink-0 flex-col overflow-hidden rounded-3xl border border-surface-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900 lg:max-h-[45rem] xl:h-full xl:w-80">
         <div className="border-b border-surface-200 px-4 py-3 dark:border-gray-800">
-          <p className="text-xs font-black uppercase tracking-wide text-primary-700">Cart</p>
-          <h2 className="mt-1 text-lg font-black text-gray-950 dark:text-gray-100">Current order</h2>
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary-700">Cart</p>
+          <h2 className="mt-1 text-lg font-semibold text-gray-950 dark:text-gray-100">Current order</h2>
         </div>
         <div className="max-h-72 flex-1 space-y-2 overflow-y-auto p-3 xl:max-h-none">
           <AnimatePresence initial={false}>
@@ -396,7 +396,7 @@ export default function PosMain() {
                   >
                     <FiMinus className="h-4 w-4" />
                   </button>
-                  <span className="w-6 text-center text-sm font-bold">{l.quantity}</span>
+                  <span className="w-6 text-center text-sm font-semibold">{l.quantity}</span>
                   <button
                     type="button"
                     className="rounded-lg bg-white p-1 shadow-sm dark:bg-gray-700"
@@ -406,7 +406,7 @@ export default function PosMain() {
                   >
                     <FiPlus className="h-4 w-4" />
                   </button>
-                  <span className="ml-auto text-xs font-bold">
+                  <span className="ml-auto text-xs font-semibold">
                     Rs. {l.price * l.quantity}
                   </span>
                 </div>
@@ -517,7 +517,7 @@ export default function PosMain() {
               <span>Service</span>
               <span>Rs. {totals.serviceCharge.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-base font-black text-primary-700 dark:text-primary-300">
+            <div className="flex justify-between text-base font-semibold text-primary-700 dark:text-primary-300">
               <span>Total</span>
               <span>Rs. {totals.grandTotal.toFixed(2)}</span>
             </div>
@@ -527,7 +527,7 @@ export default function PosMain() {
             type="button"
             disabled={submitting || !canTakeOrder}
             onClick={submitOrder}
-            className="w-full rounded-xl bg-primary-600 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-primary-700 disabled:opacity-50"
+            className="w-full rounded-xl bg-primary-600 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-primary-700 disabled:opacity-50"
           >
             {submitting ? 'Sending...' : 'Send to kitchen'}
           </button>

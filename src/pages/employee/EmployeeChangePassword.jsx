@@ -51,7 +51,7 @@ const EmployeeChangePassword = () => {
           <FiHome className="h-6 w-6" />
           <span className="font-semibold">QR Restro Nepal</span>
         </div>
-        <h1 className="text-xl font-bold text-gray-900 mb-1">Set a new password</h1>
+        <h1 className="text-xl font-semibold text-gray-900 mb-1">Set a new password</h1>
         <p className="text-sm text-gray-600 mb-6">
           {user?.mustChangePassword
             ? 'For security, replace your temporary password before using the app.'

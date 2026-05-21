@@ -183,9 +183,10 @@ export const normalizeThemeSettings = (settings = {}) => {
   const customPalette =
     raw.customPalette && typeof raw.customPalette === 'object'
       ? Object.fromEntries(
-          Object.entries(raw.customPalette)
-            .filter(([, value]) => isValidHex(value))
-            .map(([key, value]) => [key, value]),
+          Object.entries(raw.customPalette).reduce((entries, [key, value]) => {
+            if (isValidHex(value)) entries.push([key, value])
+            return entries
+          }, []),
         )
       : null
 

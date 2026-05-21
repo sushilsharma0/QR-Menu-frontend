@@ -133,14 +133,14 @@ const TakeOrder = () => {
   return (
     <div className="space-y-4">
       <div className="rounded-3xl border border-secondary-200 bg-gradient-to-r from-surface-50 to-white p-4 md:p-5">
-        <h1 className="text-2xl font-bold text-primary-900">Take Order</h1>
+        <h1 className="text-2xl font-semibold text-primary-900">Take Order</h1>
         <p className="text-sm text-accent-700">POS mode: choose table, add items quickly, and send directly to kitchen.</p>
       </div>
 
       <div className="grid lg:grid-cols-[1fr_380px] gap-4">
       <div className="space-y-4">
         <div className="card p-4">
-          <h2 className="text-lg font-bold text-primary-900 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-primary-900 flex items-center gap-2">
             <FiGrid /> Order Details
           </h2>
           <p className="text-sm text-accent-700">Select table and optional customer name.</p>

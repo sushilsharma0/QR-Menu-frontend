@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import toast from '@utils/toast'
@@ -19,7 +19,7 @@ export default function PlatformProfileSection() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [photoPreview, setPhotoPreview] = useState('')
-  const [photoFile, setPhotoFile] = useState(null)
+  const photoFileRef = useRef(null)
   const [employee, setEmployee] = useState(null)
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm()
@@ -61,7 +61,7 @@ export default function PlatformProfileSection() {
       event.target.value = ''
       return
     }
-    setPhotoFile(file)
+    photoFileRef.current = file
     if (file) setPhotoPreview(URL.createObjectURL(file))
   }
 
@@ -71,13 +71,13 @@ export default function PlatformProfileSection() {
       const fd = new FormData()
       fd.append('name', data.name || '')
       fd.append('bio', data.bio || '')
-      if (photoFile) fd.append('profileImage', photoFile)
+      if (photoFileRef.current) fd.append('profileImage', photoFileRef.current)
 
       const res = await api.patch('/platform/auth/profile', fd)
       const saved = res.data?.data
       const profileImage = saved?.profileImage || photoPreview
       setPhotoPreview(profileImage)
-      setPhotoFile(null)
+      photoFileRef.current = null
       setEmployee((prev) => ({
         ...prev,
         name: saved?.name || data.name,
@@ -150,7 +150,7 @@ export default function PlatformProfileSection() {
       <Card title="Your profile" icon={FiUser}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <section className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-gray-900/60">
-            <h3 className="text-sm font-black uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
               Profile photo
             </h3>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -178,8 +178,9 @@ export default function PlatformProfileSection() {
           />
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Bio</label>
+            <label htmlFor="platform-profile-bio" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Bio</label>
             <textarea
+              id="platform-profile-bio"
               rows={4}
               maxLength={500}
               placeholder="Short note about your role or how to reach you"

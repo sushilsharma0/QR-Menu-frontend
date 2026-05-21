@@ -14,11 +14,10 @@ import { currentMonthDays } from './payrollUtils'
 
 export function usePayrollPage() {
   const { user } = useContext(AuthContext)
-  const now = new Date()
   const slipRef = useRef(null)
 
-  const [month, setMonth] = useState(now.getMonth() + 1)
-  const [year, setYear] = useState(now.getFullYear())
+  const [month, setMonth] = useState(() => new Date().getMonth() + 1)
+  const [year, setYear] = useState(() => new Date().getFullYear())
   const [monthCount, setMonthCount] = useState(1)
   const [data, setData] = useState({ items: [], summary: null })
   const [history, setHistory] = useState([])
@@ -31,16 +30,21 @@ export function usePayrollPage() {
   const [modalLoading, setModalLoading] = useState(false)
   const [staffDirectory, setStaffDirectory] = useState([])
   const [staffPickId, setStaffPickId] = useState('')
-  const [defaults, setDefaults] = useState({
-    workingDays: currentMonthDays(now.getFullYear(), now.getMonth() + 1),
-    presentDays: currentMonthDays(now.getFullYear(), now.getMonth() + 1),
-    absentDays: 0,
-    lateDays: 0,
-    latePenalty: 0,
-    overtimeHours: 0,
-    overtimeRate: 0,
-    festivalBonus: 0,
-    performanceBonus: 0,
+  const [defaults, setDefaults] = useState(() => {
+    const now = new Date()
+    const currentMonthWorkingDays = currentMonthDays(now.getFullYear(), now.getMonth() + 1)
+
+    return {
+      workingDays: currentMonthWorkingDays,
+      presentDays: currentMonthWorkingDays,
+      absentDays: 0,
+      lateDays: 0,
+      latePenalty: 0,
+      overtimeHours: 0,
+      overtimeRate: 0,
+      festivalBonus: 0,
+      performanceBonus: 0,
+    }
   })
   const [statutory, setStatutory] = useState(null)
   const [statutorySaving, setStatutorySaving] = useState(false)
@@ -139,8 +143,10 @@ export function usePayrollPage() {
 
   useEffect(() => {
     if (selectedPayroll) {
-      setTimeout(() => slipRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+      const timer = setTimeout(() => slipRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+      return () => clearTimeout(timer)
     }
+    return undefined
   }, [selectedPayroll])
 
   const load = async () => {

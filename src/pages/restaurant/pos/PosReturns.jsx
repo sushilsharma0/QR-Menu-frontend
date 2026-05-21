@@ -38,11 +38,11 @@ export default function PosReturns() {
   return (
     <div className="h-full overflow-y-auto p-4">
       <div className="mx-auto max-w-xl rounded-3xl border border-surface-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-        <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1 text-xs font-black uppercase tracking-wide text-red-700">
+        <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-red-700">
           <FiRotateCcw className="h-4 w-4" />
           Manager control
         </span>
-        <h1 className="mt-3 text-3xl font-black text-gray-950 dark:text-gray-100">Returns and voids</h1>
+        <h1 className="mt-3 text-3xl font-semibold text-gray-950 dark:text-gray-100">Returns and voids</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Creates an audit record and marks payment failed on the order.
         </p>
@@ -55,7 +55,7 @@ export default function PosReturns() {
             <option value="void">Void</option>
           </select>
           <textarea placeholder="Reason" value={reason} onChange={(e) => setReason(e.target.value)} className="w-full rounded-xl border border-surface-200 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800" rows={3} />
-          <button type="submit" disabled={busy} className="w-full rounded-xl bg-primary-600 py-3 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50">
+          <button type="submit" disabled={busy} className="w-full rounded-xl bg-primary-600 py-3 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50">
             Submit refund
           </button>
         </form>

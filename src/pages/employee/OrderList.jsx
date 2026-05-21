@@ -154,7 +154,7 @@ const OrderList = () => {
       {/* Header */}
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Order Management</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Order Management</h1>
           <p className="text-gray-500 mt-1">View and manage all customer orders</p>
         </div>
         <Button variant="secondary" onClick={fetchOrders}>
@@ -203,7 +203,7 @@ const OrderList = () => {
             {/* Order Header */}
             <div className="bg-gray-50 px-4 py-3 border-b border-gray-100 flex justify-between items-center">
               <div>
-                <h3 className="font-bold text-gray-900">#{order.orderNumber}</h3>
+                <h3 className="font-semibold text-gray-900">#{order.orderNumber}</h3>
                 <p className="text-xs text-gray-500">{new Date(order.createdAt).toLocaleString()}</p>
               </div>
               {getStatusBadge(order.status)}
@@ -245,7 +245,7 @@ const OrderList = () => {
               {/* Total Amount */}
               <div className="border-t pt-3 flex justify-between items-center">
                 <span className="text-gray-600">Total Amount</span>
-                <span className="text-xl font-bold text-primary-600">{currency}{order.grandTotal ?? order.totalAmount}</span>
+                <span className="text-xl font-semibold text-primary-600">{currency}{order.grandTotal ?? order.totalAmount}</span>
               </div>
 
               {/* Actions */}
@@ -302,27 +302,27 @@ const OrderList = () => {
           <h3 className="font-semibold text-gray-900 mb-3">Order Statistics</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">{orders.length}</p>
+              <p className="text-2xl font-semibold text-gray-900">{orders.length}</p>
               <p className="text-xs text-gray-500">Total</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-yellow-600">{orders.filter(o => o.status === 'pending').length}</p>
+              <p className="text-2xl font-semibold text-yellow-600">{orders.filter(o => o.status === 'pending').length}</p>
               <p className="text-xs text-gray-500">Pending</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">{orders.filter(o => o.status === 'confirmed').length}</p>
+              <p className="text-2xl font-semibold text-blue-600">{orders.filter(o => o.status === 'confirmed').length}</p>
               <p className="text-xs text-gray-500">Confirmed</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-purple-600">{orders.filter(o => o.status === 'preparing').length}</p>
+              <p className="text-2xl font-semibold text-purple-600">{orders.filter(o => o.status === 'preparing').length}</p>
               <p className="text-xs text-gray-500">Preparing</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">{orders.filter(o => o.status === 'ready').length}</p>
+              <p className="text-2xl font-semibold text-green-600">{orders.filter(o => o.status === 'ready').length}</p>
               <p className="text-xs text-gray-500">Ready</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-600">{orders.filter(o => o.status === 'served').length}</p>
+              <p className="text-2xl font-semibold text-gray-600">{orders.filter(o => o.status === 'served').length}</p>
               <p className="text-xs text-gray-500">Served</p>
             </div>
           </div>

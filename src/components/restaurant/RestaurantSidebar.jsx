@@ -293,7 +293,7 @@ function Brand({ collapsed, isMobile }) {
       <FiCoffee className="h-5 w-5" />
       </div>
       <div className="min-w-0">
-        <h1 className="truncate text-base font-black leading-none text-gray-950 dark:text-gray-100">QR Restro Nepal</h1>
+        <h1 className="truncate text-base font-semibold leading-none text-gray-950 dark:text-gray-100">QR Restro Nepal</h1>
         <p className="mt-1 truncate text-xs font-medium text-gray-500 dark:text-gray-400">Restaurant Portal</p>
       </div>
     </div>
@@ -319,11 +319,11 @@ function SidebarContent({
   kycLocked,
 }) {
   const hideLabels = collapsed && !isMobile
-  const location = useLocation()
+  const routerLocation = useLocation()
   const activeTail = useMemo(() => {
-    const parsed = parseRestaurantPortalPath(location.pathname)
+    const parsed = parseRestaurantPortalPath(routerLocation.pathname)
     return parsed?.tail || ''
-  }, [location.pathname])
+  }, [routerLocation.pathname])
 
   const [openSections, setOpenSections] = useState(() => {
     const saved = readOpenSections()
@@ -599,7 +599,7 @@ const RestaurantSidebar = () => {
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary-600 to-secondary-500 text-white">
           <FiCoffee className="h-5 w-5" />
           </div>
-          <h1 className="truncate text-sm font-black text-gray-950 dark:text-gray-100">QR Restro Nepal</h1>
+          <h1 className="truncate text-sm font-semibold text-gray-950 dark:text-gray-100">QR Restro Nepal</h1>
         </div>
         {pendingCount > 0 && (
           <span className="ml-auto flex h-5 min-w-[22px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
@@ -609,7 +609,12 @@ const RestaurantSidebar = () => {
       </div>
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-[65] bg-black/50 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)} />
+        <button
+          type="button"
+          aria-label="Close restaurant navigation"
+          className="fixed inset-0 z-[65] bg-black/50 backdrop-blur-sm lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
       )}
 
       <div

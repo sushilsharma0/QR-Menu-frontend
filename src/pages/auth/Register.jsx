@@ -110,7 +110,7 @@ const Register = () => {
   const [resending, setResending] = useState(false)
   const [step, setStep] = useState('details')
   const [pendingEmail, setPendingEmail] = useState('')
-  const [otpDigits, setOtpDigits] = useState(Array(6).fill(''))
+  const [otpDigits, setOtpDigits] = useState(() => Array(6).fill(''))
   const otpRefs = useRef([])
   const { register, handleSubmit, watch, formState: { errors } } = useForm()
   const password = watch('password')
@@ -228,11 +228,13 @@ const Register = () => {
     }
   }
 
-  const leftFeatures = [
+const leftFeatures = [
     { icon: FiCoffee, title: 'Menu Setup', desc: 'Create digital menus and ordering flows' },
     { icon: FiUsers, title: 'Team Ready', desc: 'Invite kitchen, cashier, and waiter staff' },
     { icon: FiShield, title: 'Secure Onboarding', desc: 'Verify email before opening your dashboard' },
-  ]
+]
+
+const OTP_SLOT_KEYS = ['otp-1', 'otp-2', 'otp-3', 'otp-4', 'otp-5', 'otp-6']
 
   const benefitCards = ['7-day trial', 'KYC ready', 'Staff tools']
 
@@ -306,8 +308,8 @@ const Register = () => {
 
           <div className="mt-20 space-y-5 xl:mt-20">
             <div>
-              <h1 className="text-5xl font-bold leading-tight text-white">Start your</h1>
-              <h1 className="text-5xl font-bold leading-tight text-[#ff7a24]">
+              <h1 className="text-5xl font-semibold leading-tight text-white">Start your</h1>
+              <h1 className="text-5xl font-semibold leading-tight text-[#ff7a24]">
                 Vendor account <span aria-hidden="true">{'\u{1F44B}'}</span>
               </h1>
             </div>
@@ -361,7 +363,7 @@ const Register = () => {
             </span>
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#8f2a05]">Vendor onboarding</p>
-              <h2 className="mt-1 text-2xl font-bold text-gray-950">Create account</h2>
+              <h2 className="mt-1 text-2xl font-semibold text-gray-950">Create account</h2>
             </div>
           </div>
 
@@ -468,14 +470,15 @@ const Register = () => {
               </div>
 
               <div>
-                <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
+                <label id="register-verification-code-label" className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
                   <FiKey className="h-4 w-4 text-[#a43a12]" />
                   Verification Code
                 </label>
                 <div className="grid grid-cols-6 gap-2 sm:gap-3" onPaste={handleOtpPaste}>
                   {otpDigits.map((digit, index) => (
                     <input
-                      key={index}
+                      key={OTP_SLOT_KEYS[index]}
+                      aria-labelledby="register-verification-code-label"
                       ref={(node) => {
                         otpRefs.current[index] = node
                       }}

@@ -12,6 +12,31 @@ const getActorName = (log) => log.user?.name || log.details?.actorName || log.us
 const getActorMeta = (log) => [log.user?.email || log.user?.username || log.details?.username, log.details?.actorRole || log.user?.role || log.userModel].filter(Boolean).join(' - ') || 'System activity'
 const getDetails = (log) => log.details?.message || log.details?.reason || log.details?.error || log.details?.path || log.resource || '-'
 
+function ClientDateTime({ value }) {
+  const [label, setLabel] = useState('')
+
+  useEffect(() => {
+    if (!value) return
+    setLabel(new Date(value).toLocaleString())
+  }, [value])
+
+  return <span suppressHydrationWarning>{label}</span>
+}
+
+function OutcomePill({ log }) {
+  const failed = isFailedLog(log)
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
+      failed
+        ? 'bg-red-50 text-red-700 ring-1 ring-red-100 dark:bg-red-950/30 dark:text-red-300 dark:ring-red-900'
+        : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-900'
+    }`}>
+      {failed ? <FiAlertCircle className="h-3.5 w-3.5" /> : <FiCheckCircle className="h-3.5 w-3.5" />}
+      {failed ? 'Failed' : 'Success'}
+    </span>
+  )
+}
+
 const SystemLogs = () => {
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
@@ -62,20 +87,6 @@ const SystemLogs = () => {
     }
   }
 
-  const OutcomePill = ({ log }) => {
-    const failed = isFailedLog(log)
-    return (
-      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
-        failed
-          ? 'bg-red-50 text-red-700 ring-1 ring-red-100 dark:bg-red-950/30 dark:text-red-300 dark:ring-red-900'
-          : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-900'
-      }`}>
-        {failed ? <FiAlertCircle className="h-3.5 w-3.5" /> : <FiCheckCircle className="h-3.5 w-3.5" />}
-        {failed ? 'Failed' : 'Success'}
-      </span>
-    )
-  }
-
   return (
     <div className="space-y-6">
       <PlatformPageHeader
@@ -110,7 +121,7 @@ const SystemLogs = () => {
 
       <Card title="Activity Timeline">
         {loading ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">Loading logs...</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Loading logs…</p>
         ) : logs.length === 0 ? (
           <PlatformEmptyState title="No logs found" description="Try changing the event filter or refreshing later." icon={FiActivity} />
         ) : (
@@ -132,7 +143,7 @@ const SystemLogs = () => {
                 {logs.map((log) => (
                   <tr key={log._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/70">
                     <td className="whitespace-nowrap px-4 py-3 text-gray-600 dark:text-gray-300">
-                      {new Date(log.timestamp || log.createdAt).toLocaleString()}
+                      <ClientDateTime value={log.timestamp || log.createdAt} />
                     </td>
                     <td className="px-4 py-3">
                       <div className="font-medium text-gray-900 dark:text-gray-100">

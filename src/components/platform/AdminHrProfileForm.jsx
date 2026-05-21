@@ -57,9 +57,10 @@ export default function AdminHrProfileForm({
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Employee ID</label>
+        <label htmlFor="admin-hr-employee-code" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Employee ID</label>
         <div className="flex gap-2">
           <input
+            id="admin-hr-employee-code"
             type="text"
             value={employeeCode}
             onChange={(e) => onEmployeeCodeChange?.(e.target.value.toUpperCase())}

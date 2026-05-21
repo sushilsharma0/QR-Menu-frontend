@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { LazyMotion, domAnimation, m, AnimatePresence } from "framer-motion";
 import { ShoppingBag, ChevronUp } from "lucide-react";
 import { useCustomerCart } from "../../context/CustomerCartContext";
 
@@ -24,9 +24,10 @@ export default function ViewCartBtn({ offset = "5.25rem", hidden = false }) {
   }, [lastAddedAt]);
 
   return (
-    <AnimatePresence>
-      {totals.count > 0 && !hidden && (
-        <motion.div
+    <LazyMotion features={domAnimation}>
+      <AnimatePresence>
+        {totals.count > 0 && !hidden && (
+        <m.div
           key="floating-cart-bar"
           initial={{ y: 80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -40,7 +41,7 @@ export default function ViewCartBtn({ offset = "5.25rem", hidden = false }) {
           // / overlapping cart UI.
           style={{ bottom: `calc(${offset} + env(safe-area-inset-bottom, 0px))` }}
         >
-          <motion.button
+          <m.button
             type="button"
             onClick={openDrawer}
             animate={pulse ? { scale: [1, 1.04, 1] } : { scale: 1 }}
@@ -49,7 +50,7 @@ export default function ViewCartBtn({ offset = "5.25rem", hidden = false }) {
             className="pointer-events-auto relative flex w-full max-w-md items-center justify-between gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 px-5 py-3.5 text-left shadow-[0_18px_40px_-12px_rgba(122,34,0,0.55)] ring-1 ring-primary-900/10 transition-all"
             aria-label="View cart"
           >
-            <motion.span
+            <m.span
               aria-hidden
               animate={pulse ? { opacity: [0, 0.35, 0] } : { opacity: 0 }}
               transition={{ duration: 0.7 }}
@@ -59,7 +60,7 @@ export default function ViewCartBtn({ offset = "5.25rem", hidden = false }) {
             <div className="relative flex items-center gap-3">
               <span className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 backdrop-blur">
                 <ShoppingBag size={18} className="text-white" />
-                <motion.span
+                <m.span
                   key={totals.count}
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
@@ -67,7 +68,7 @@ export default function ViewCartBtn({ offset = "5.25rem", hidden = false }) {
                   className="absolute -right-1.5 -top-1.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-attention-300 px-1 text-[10px] font-black text-primary-900 ring-2 ring-primary-700"
                 >
                   {totals.count}
-                </motion.span>
+                </m.span>
               </span>
 
               <div className="flex flex-col leading-tight">
@@ -84,9 +85,10 @@ export default function ViewCartBtn({ offset = "5.25rem", hidden = false }) {
               View cart
               <ChevronUp size={14} strokeWidth={3} />
             </div>
-          </motion.button>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          </m.button>
+        </m.div>
+        )}
+      </AnimatePresence>
+    </LazyMotion>
   );
 }

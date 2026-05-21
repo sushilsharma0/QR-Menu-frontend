@@ -51,9 +51,10 @@ const LandingNavbar = () => {
   }, [])
 
   useEffect(() => {
-    const sections = navItems
-      .map((item) => document.querySelector(item.href))
-      .filter(Boolean)
+    const sections = navItems.flatMap((item) => {
+      const section = document.querySelector(item.href)
+      return section ? [section] : []
+    })
 
     if (!sections.length) return undefined
 
@@ -168,7 +169,7 @@ const LandingNavbar = () => {
                 <span className="relative z-10">Login</span>
                 <motion.div
                   className="absolute inset-0 bg-slate-100"
-                  initial={{ scale: 0, opacity: 0 }}
+                  initial={{ scale: 0.95, opacity: 0 }}
                   whileHover={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.2 }}
                 />

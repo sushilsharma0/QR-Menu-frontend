@@ -18,7 +18,7 @@ const BrandLogo = ({ compact = false, onClick }) => {
       </span>
       {!compact && (
         <span className="leading-none">
-          <span className="block bg-gradient-to-r from-primary-700 via-secondary-700 to-primary-900 bg-clip-text text-[1.22rem] font-black tracking-tight text-transparent">
+          <span className="block text-[1.22rem] font-semibold tracking-tight text-primary-800">
             {title}
           </span>
           {sub ? (

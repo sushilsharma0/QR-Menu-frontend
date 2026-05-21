@@ -9,7 +9,7 @@ function Tile({ label, value, hint }) {
   return (
     <div className="rounded-xl border border-surface-200 bg-surface-50/90 p-3 dark:border-gray-800 dark:bg-gray-950/60">
       <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
-      <p className="mt-1 text-base font-bold tabular-nums text-gray-950 dark:text-gray-100">{value}</p>
+      <p className="mt-1 text-base font-semibold tabular-nums text-gray-950 dark:text-gray-100">{value}</p>
       {hint ? <p className="mt-0.5 text-[10px] text-gray-500 dark:text-gray-400">{hint}</p> : null}
     </div>
   )
@@ -55,7 +55,7 @@ export default function PayrollEmployeeInsightDetailModal({
         <p className="mb-5 text-xs text-gray-500 dark:text-gray-400">Range: {periodLabel}</p>
 
         <section className="mb-6">
-          <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
             Summary (this range)
           </h4>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -71,7 +71,7 @@ export default function PayrollEmployeeInsightDetailModal({
         </section>
 
         <section>
-          <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
             By month
           </h4>
           {rowsForEmployee.length === 0 ? (
@@ -79,7 +79,7 @@ export default function PayrollEmployeeInsightDetailModal({
           ) : (
             <div className="overflow-x-auto rounded-xl border border-surface-200 dark:border-gray-800">
               <table className="min-w-[720px] w-full text-left text-sm">
-                <thead className="bg-surface-50 text-xs font-bold uppercase text-gray-600 dark:bg-gray-950 dark:text-gray-400">
+                <thead className="bg-surface-50 text-xs font-semibold uppercase text-gray-600 dark:bg-gray-950 dark:text-gray-400">
                   <tr>
                     <th className="px-3 py-2">Period (AD)</th>
                     <th className="px-3 py-2">BS</th>

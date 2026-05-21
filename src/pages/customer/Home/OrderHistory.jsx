@@ -42,7 +42,7 @@ const OrderHistory = () => {
         <button className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors" onClick={() => window.history.back()}>
           <ArrowLeft size={20} className="text-gray-700" />
         </button>
-        <h1 className="ml-4 text-xl font-black text-gray-800">Order History</h1>
+        <h1 className="ml-4 text-xl font-semibold text-gray-800">Order History</h1>
       </header>
 
       <div className="p-6 space-y-6">
@@ -91,7 +91,7 @@ const OrderHistory = () => {
               {/* Items Summary */}
               <div className="space-y-2 mb-5">
                 {order.items.map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center">
+                  <div key={`${item.name || item.itemName || 'item'}-${item.quantity || 0}-${item.price || item.total || 0}`} className="flex justify-between items-center">
                     <p className="text-sm font-bold text-gray-700">{item}</p>
                   </div>
                 ))}

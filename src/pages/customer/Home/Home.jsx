@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   BadgePlus,
   BellRing,
@@ -13,7 +13,7 @@ import {
   UtensilsCrossed,
   X,
 } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import { Link, useParams } from "react-router-dom";
 import SideBar from "../../../components/customer/homepage/SideBar";
 import UserProfile from "../../../components/customer/homepage/UserProfile";
@@ -50,7 +50,7 @@ export default function Home() {
   const [showOffers, setShowOffers] = useState(false);
   const [promoBanners, setPromoBanners] = useState([]);
   const [showPromoModal, setShowPromoModal] = useState(false);
-  const [promoModalShown, setPromoModalShown] = useState(false);
+  const promoModalShownRef = useRef(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [tableNumber, setTableNumber] = useState("");
@@ -64,7 +64,7 @@ export default function Home() {
   const [loyaltyPoints, setLoyaltyPoints] = useState(null);
   const [showGuestAssist, setShowGuestAssist] = useState(false);
   const [assistSending, setAssistSending] = useState(false);
-  // Inline menu state — keeps the customer on the home page while letting
+  // Inline menu state â€” keeps the customer on the home page while letting
   // them peek at and then expand the full menu without a navigation.
   const [menuCategories, setMenuCategories] = useState([]);
   const [menuLoading, setMenuLoading] = useState(true);
@@ -177,7 +177,7 @@ export default function Home() {
   const toggleMenuExpanded = () => {
     setMenuExpanded((v) => {
       const next = !v;
-      // When expanding, scroll the page so the menu starts near the top —
+      // When expanding, scroll the page so the menu starts near the top â€”
       // matches the "top section goes up and hides" intent of the UX.
       if (next) {
         requestAnimationFrame(() =>
@@ -194,9 +194,9 @@ export default function Home() {
       const res = await api.get(`/customer/offers/${slug}`);
       const promos = res?.data?.data || [];
       setPromoBanners(promos);
-      if (!promoModalShown && promos.length > 0) {
+      if (!promoModalShownRef.current && promos.length > 0) {
         setShowPromoModal(true);
-        setPromoModalShown(true);
+        promoModalShownRef.current = true;
       }
     } catch (err) {
       console.error("Failed to fetch promotions:", err);
@@ -210,7 +210,7 @@ export default function Home() {
 
   const sendGuestRequest = async (requestType) => {
     if (!guestIdLocal) {
-      toast.error("Session not ready — try again.");
+      toast.error("Session not ready â€” try again.");
       return;
     }
     try {
@@ -370,13 +370,14 @@ export default function Home() {
 
   return (
     <PageTransition>
+      <LazyMotion features={domAnimation}>
       <div className="min-h-screen bg-[#fafaf7] flex flex-col items-center pb-28 font-sans text-gray-950">
         {/* Top hero + table card. We collapse this whole block when the
-            customer expands the inline menu — that's the "top section goes
+            customer expands the inline menu â€” that's the "top section goes
             up and hides" animation the new design calls for. */}
         <AnimatePresence initial={false}>
           {!menuExpanded && (
-            <motion.div
+            <m.div
               key="home-hero-block"
               initial={false}
               animate={{ opacity: 1, y: 0 }}
@@ -384,7 +385,7 @@ export default function Home() {
               transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
               className="flex w-full flex-col items-center"
             >
-              {/* Compact hero — smaller min-h, tighter content, fade into bg. */}
+              {/* Compact hero â€” smaller min-h, tighter content, fade into bg. */}
               <div
                 className="relative flex min-h-[32vh] w-full flex-col items-center justify-center overflow-hidden bg-cover bg-center px-6 pb-10 pt-14 text-white"
                 style={{
@@ -422,7 +423,7 @@ export default function Home() {
                     <QrCode size={10} />
                     QR table ordering
                   </p>
-                  <h1 className="text-2xl font-black tracking-tight">{restaurantInfo?.name || restaurantDisplayName}</h1>
+                  <h1 className="text-2xl font-semibold tracking-tight">{restaurantInfo?.name || restaurantDisplayName}</h1>
                   <p className="mx-auto mt-1.5 max-w-[20rem] text-[11px] leading-5 text-white/80">
                     {(() => {
                       const clean = (s) => {
@@ -439,7 +440,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Slim glass info chip — replaces the heavy white card. Three
+              {/* Slim glass info chip â€” replaces the heavy white card. Three
                   segments: Table | Reward pts | Scan another. */}
               <div className="relative -mt-6 z-10 flex w-[92%] max-w-md items-center gap-2 rounded-2xl border border-white/60 bg-white/95 p-2 shadow-[0_10px_30px_-12px_rgba(15,23,42,0.18)] backdrop-blur-xl">
                 <div className="flex flex-1 items-center gap-2 rounded-xl bg-gray-50/80 px-3 py-2">
@@ -471,7 +472,7 @@ export default function Home() {
                       <div className="flex items-center justify-between gap-4">
                         <div>
                           <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-500">Today&apos;s offer</p>
-                          <h3 className="mt-1 text-base font-black text-gray-950">{promo.bannerText || promo.name}</h3>
+                          <h3 className="mt-1 text-base font-semibold text-gray-950">{promo.bannerText || promo.name}</h3>
                           <p className="mt-1 text-xs font-semibold text-gray-500">Use code {promo.code} on checkout</p>
                         </div>
                         <div className="rounded-2xl px-3 py-2 text-sm font-black text-white" style={{ backgroundColor: promo.bannerColor || "#f97316" }}>
@@ -482,11 +483,11 @@ export default function Home() {
                   ))}
                 </div>
               )}
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
 
-        {/* Inline menu list — always visible. Shows the first 3 categories
+        {/* Inline menu list â€” always visible. Shows the first 3 categories
             as a preview; tapping "View full menu" expands to the full list
             and (via AnimatePresence above) the hero block slides up out. */}
         <MenuPreview
@@ -536,7 +537,7 @@ export default function Home() {
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-50 text-primary-700">
                 <User size={26} />
               </div>
-              <h2 className="text-center text-xl font-black text-gray-950">How would you like to continue?</h2>
+              <h2 className="text-center text-xl font-semibold text-gray-950">How would you like to continue?</h2>
               <p className="mx-auto mt-2 max-w-xs text-center text-sm font-semibold leading-6 text-gray-500">
                 Order as a guest now, or login/signup to keep all orders and reward points under one ID.
               </p>
@@ -572,14 +573,14 @@ export default function Home() {
         <Waiters isOpen={showWaiters} onClose={() => setShowWaiters(false)} />
         {showGuestAssist && (
           <>
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowGuestAssist(false)}
               className="fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px]"
             />
-            <motion.div
+            <m.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
@@ -595,7 +596,7 @@ export default function Home() {
                     <BellRing size={18} className="text-orange-500" />
                   </div>
                   <div>
-                    <h2 className="text-base font-bold leading-none text-gray-800">Need something?</h2>
+                    <h2 className="text-base font-semibold leading-none text-gray-800">Need something?</h2>
                     <p className="mt-0.5 text-[11px] text-gray-400">We alert the restaurant in real time</p>
                   </div>
                 </div>
@@ -627,7 +628,7 @@ export default function Home() {
                   </button>
                 ))}
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
         <Offers isOpen={showOffers} onClose={() => setShowOffers(false)} slug={slug} />
@@ -641,12 +642,13 @@ export default function Home() {
         />
         <Navigation hidden={hideBottomNav} />
       </div>
+      </LazyMotion>
     </PageTransition>
   );
 }
 
 /**
- * Maps the current local hour to a "daypart" — the slot of day used to bias
+ * Maps the current local hour to a "daypart" â€” the slot of day used to bias
  * the featured-item picker (breakfast at 7am, lunch at noon, etc). Patterns
  * are tested against both category names and item names so a restaurant that
  * uses "Chiya & coffee" or "Lunch thali" surfaces at the right hour.
@@ -698,7 +700,7 @@ function getDaypart(date = new Date()) {
 
 /**
  * Picks `count` items from the menu, ranked by:
- *   1. category/name matching the current daypart (Breakfast → /breakfast|coffee/...)
+ *   1. category/name matching the current daypart (Breakfast â†’ /breakfast|coffee/...)
  *   2. flagged popular/featured items
  *   3. category sort order as a stable tiebreaker
  * Returns an empty array when the menu hasn't loaded yet.
@@ -736,7 +738,7 @@ function pickFeaturedItems(categories, count = 4) {
 /**
  * Inline menu shown on the customer Home page. Two visual modes:
  *
- *   - collapsed: 4 featured items in a 2×2 card grid, chosen dynamically by
+ *   - collapsed: 4 featured items in a 2Ã—2 card grid, chosen dynamically by
  *     time of day (breakfast/lunch/snacks/dinner/late). Tapping a card opens
  *     the item details page.
  *   - expanded: the full categories list slides in (with the hero block
@@ -744,7 +746,7 @@ function pickFeaturedItems(categories, count = 4) {
  */
 function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
   const FEATURED_COUNT = 4;
-  // Recompute featured items on every render — cheap enough and keeps the
+  // Recompute featured items on every render â€” cheap enough and keeps the
   // selection in sync if the daypart crosses an hour while the page is open.
   const { items: featuredItems, daypart } = pickFeaturedItems(
     categories,
@@ -760,7 +762,7 @@ function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
           <p className="text-[10px] font-black uppercase tracking-[0.22em] text-primary-700">
             {expanded ? "Full menu" : `${daypart.label} picks`}
           </p>
-          <h3 className="mt-1 flex items-center gap-2 text-lg font-black leading-tight text-gray-950">
+          <h3 className="mt-1 flex items-center gap-2 text-lg font-semibold leading-tight text-gray-950">
             <UtensilsCrossed size={18} className="text-primary-600" />
             {expanded
               ? `${categories.length} categor${categories.length === 1 ? "y" : "ies"}`
@@ -768,7 +770,7 @@ function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
           </h3>
         </div>
         {expanded && (
-          <motion.button
+          <m.button
             type="button"
             onClick={onToggle}
             whileTap={{ scale: 0.95 }}
@@ -776,13 +778,13 @@ function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
           >
             <ChevronUp size={14} />
             Close
-          </motion.button>
+          </m.button>
         )}
       </div>
 
       <AnimatePresence mode="wait" initial={false}>
         {loading ? (
-          <motion.ul
+          <m.ul
             key="skeleton"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -801,11 +803,11 @@ function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
                 </div>
               </li>
             ))}
-          </motion.ul>
+          </m.ul>
         ) : !expanded ? (
-          // Collapsed: 2×2 grid of featured items.
+          // Collapsed: 2Ã—2 grid of featured items.
           hasFeatured ? (
-            <motion.ul
+            <m.ul
               key="featured-items"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -814,7 +816,7 @@ function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
               className="grid grid-cols-2 gap-3"
             >
               {featuredItems.map((item, idx) => (
-                <motion.li
+                <m.li
                   key={item._id || item.name}
                   initial={{ opacity: 0, y: 14 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -825,11 +827,11 @@ function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
                   }}
                 >
                   <FeaturedItemCard slug={slug} token={token} item={item} />
-                </motion.li>
+                </m.li>
               ))}
-            </motion.ul>
+            </m.ul>
           ) : (
-            <motion.div
+            <m.div
               key="empty-featured"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -840,11 +842,11 @@ function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
               <p className="mt-1 text-xs font-semibold text-gray-400">
                 The restaurant hasn&apos;t published items yet.
               </p>
-            </motion.div>
+            </m.div>
           )
         ) : (
           // Expanded: full categories list (slides in as hero exits).
-          <motion.ul
+          <m.ul
             key="full-categories"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -853,7 +855,7 @@ function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
             className="space-y-3"
           >
             {categories.map((cat, idx) => (
-              <motion.li
+              <m.li
                 key={cat._id || cat.name}
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -895,14 +897,14 @@ function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
                     <ChevronRight size={16} />
                   </div>
                 </Link>
-              </motion.li>
+              </m.li>
             ))}
-          </motion.ul>
+          </m.ul>
         )}
       </AnimatePresence>
 
       {(categories.length > 0 || expanded) && (
-        <motion.button
+        <m.button
           type="button"
           onClick={onToggle}
           whileTap={{ scale: 0.97 }}
@@ -911,9 +913,9 @@ function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
           {expanded
             ? "Show less"
             : moreCount > 0
-              ? `View full menu · ${moreCount} categor${moreCount === 1 ? "y" : "ies"}`
+              ? `View full menu Â· ${moreCount} categor${moreCount === 1 ? "y" : "ies"}`
               : "View full menu"}
-          <motion.span
+          <m.span
             animate={
               expanded
                 ? { rotate: 180, y: 0 }
@@ -927,15 +929,15 @@ function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
             className="inline-flex"
           >
             <ChevronDown size={18} />
-          </motion.span>
-        </motion.button>
+          </m.span>
+        </m.button>
       )}
     </section>
   );
 }
 
 /**
- * Card used in the 2×2 featured grid. Falls back to the category image when
+ * Card used in the 2Ã—2 featured grid. Falls back to the category image when
  * the item itself has no photo, so the grid never looks empty.
  */
 function FeaturedItemCard({ slug, token, item }) {

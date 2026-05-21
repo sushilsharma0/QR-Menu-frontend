@@ -93,7 +93,7 @@ const StatusPill = ({ status }) => {
   const meta = statusMeta[status] || statusMeta.pending;
   const Icon = meta.icon;
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${meta.pill}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${meta.pill}`}>
       <Icon className="h-3.5 w-3.5" />
       {meta.label}
     </span>
@@ -112,8 +112,8 @@ const MetricCard = ({ label, value, sub, icon: Icon, tone = "primary" }) => {
     <div className="rounded-2xl border border-surface-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
-          <p className="mt-2 text-2xl font-black text-gray-950 dark:text-gray-50">{value}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
+          <p className="mt-2 text-2xl font-semibold text-gray-950 dark:text-gray-50">{value}</p>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{sub}</p>
         </div>
         <span className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${tones[tone]} text-white shadow-sm`}>
@@ -139,7 +139,7 @@ const AccountCard = ({ row, active, onView }) => {
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="truncate text-base font-black text-gray-950 dark:text-gray-50">{row.name}</p>
+            <p className="truncate text-base font-semibold text-gray-950 dark:text-gray-50">{row.name}</p>
             <StatusPill status={row.status} />
           </div>
           <p className="mt-1 truncate text-sm text-gray-500 dark:text-gray-400">{row.email}</p>
@@ -148,21 +148,21 @@ const AccountCard = ({ row, active, onView }) => {
 
       <div className="mt-4 grid grid-cols-2 gap-3">
         <div className="rounded-xl bg-surface-50 p-3 dark:bg-gray-950/50">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Balance</p>
-          <p className={`mt-1 text-lg font-black ${owed > 0 ? "text-amber-700 dark:text-amber-300" : "text-gray-950 dark:text-gray-100"}`}>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Balance</p>
+          <p className={`mt-1 text-lg font-semibold ${owed > 0 ? "text-amber-700 dark:text-amber-300" : "text-gray-950 dark:text-gray-100"}`}>
             {money(owed)}
           </p>
         </div>
         <div className="rounded-xl bg-surface-50 p-3 dark:bg-gray-950/50">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Open bills</p>
-          <p className="mt-1 text-lg font-black text-gray-950 dark:text-gray-100">{row.openCreditOrders || 0}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Open bills</p>
+          <p className="mt-1 text-lg font-semibold text-gray-950 dark:text-gray-100">{row.openCreditOrders || 0}</p>
         </div>
       </div>
 
       <div className="mt-4">
         <div className="mb-1 flex items-center justify-between text-xs">
           <span className="font-semibold text-gray-500 dark:text-gray-400">Credit limit</span>
-          <span className={`font-bold ${usage.over ? "text-red-600 dark:text-red-300" : "text-gray-600 dark:text-gray-300"}`}>
+          <span className={`font-semibold ${usage.over ? "text-red-600 dark:text-red-300" : "text-gray-600 dark:text-gray-300"}`}>
             {usage.label}
           </span>
         </div>
@@ -188,8 +188,8 @@ const DetailLine = ({ icon: Icon, label, value }) => (
       <Icon className="h-4 w-4" />
     </span>
     <div className="min-w-0">
-      <p className="text-[11px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
-      <p className="mt-0.5 break-words text-sm font-bold text-gray-950 dark:text-gray-100">{value || "Not provided"}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
+      <p className="mt-0.5 break-words text-sm font-semibold text-gray-950 dark:text-gray-100">{value || "Not provided"}</p>
     </div>
   </div>
 );
@@ -213,11 +213,11 @@ const LedgerOrderCard = ({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-2.5 py-1 text-xs font-black text-primary-700 dark:bg-primary-950/40 dark:text-primary-200">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-950/40 dark:text-primary-200">
               <FiHash className="h-3.5 w-3.5" />
               {order.orderNumber}
             </span>
-            <span className="rounded-full bg-surface-100 px-2.5 py-1 text-xs font-bold capitalize text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+            <span className="rounded-full bg-surface-100 px-2.5 py-1 text-xs font-semibold capitalize text-gray-600 dark:bg-gray-800 dark:text-gray-300">
               {order.status}
             </span>
           </div>
@@ -227,8 +227,8 @@ const LedgerOrderCard = ({
           </p>
         </div>
         <div className="text-right">
-          <p className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Balance</p>
-          <p className={`mt-0.5 text-lg font-black ${due > 0 ? "text-amber-700 dark:text-amber-300" : "text-emerald-700 dark:text-emerald-300"}`}>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Balance</p>
+          <p className={`mt-0.5 text-lg font-semibold ${due > 0 ? "text-amber-700 dark:text-amber-300" : "text-emerald-700 dark:text-emerald-300"}`}>
             {money(due)}
           </p>
         </div>
@@ -236,23 +236,23 @@ const LedgerOrderCard = ({
 
       <div className="mt-4 grid grid-cols-3 gap-2 rounded-2xl bg-surface-50 p-3 dark:bg-gray-950/50">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Bill</p>
-          <p className="mt-1 text-sm font-black text-gray-950 dark:text-gray-100">{money(total)}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Bill</p>
+          <p className="mt-1 text-sm font-semibold text-gray-950 dark:text-gray-100">{money(total)}</p>
         </div>
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Paid</p>
-          <p className="mt-1 text-sm font-black text-emerald-700 dark:text-emerald-300">{money(paid)}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Paid</p>
+          <p className="mt-1 text-sm font-semibold text-emerald-700 dark:text-emerald-300">{money(paid)}</p>
         </div>
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Status</p>
-          <p className="mt-1 text-sm font-black capitalize text-gray-950 dark:text-gray-100">{order.paymentStatus || "credit"}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Status</p>
+          <p className="mt-1 text-sm font-semibold capitalize text-gray-950 dark:text-gray-100">{order.paymentStatus || "credit"}</p>
         </div>
       </div>
 
       <div className="mt-4 border-t border-surface-100 pt-4 dark:border-gray-800">
         <div className="mb-2 flex items-center justify-between gap-3">
-          <p className="text-xs font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">Transactions</p>
-          <span className="rounded-full bg-surface-50 px-2.5 py-1 text-xs font-bold text-gray-600 dark:bg-gray-950 dark:text-gray-300">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Transactions</p>
+          <span className="rounded-full bg-surface-50 px-2.5 py-1 text-xs font-semibold text-gray-600 dark:bg-gray-950 dark:text-gray-300">
             {transactions.length}
           </span>
         </div>
@@ -261,14 +261,14 @@ const LedgerOrderCard = ({
             {transactions.map((tx) => (
               <div key={tx._id} className="flex items-center justify-between gap-3 rounded-xl bg-surface-50 px-3 py-2 dark:bg-gray-950/50">
                 <div className="min-w-0">
-                  <p className="truncate text-xs font-black capitalize text-gray-800 dark:text-gray-100">
+                  <p className="truncate text-xs font-semibold capitalize text-gray-800 dark:text-gray-100">
                     {tx.paymentMethod} payment
                   </p>
                   <p className="truncate text-[11px] font-semibold text-gray-500 dark:text-gray-400">
                     {formatDateTime(tx.createdAt)} · {tx.status}
                   </p>
                 </div>
-                <p className="shrink-0 text-sm font-black text-emerald-700 dark:text-emerald-300">{money(tx.amount)}</p>
+                <p className="shrink-0 text-sm font-semibold text-emerald-700 dark:text-emerald-300">{money(tx.amount)}</p>
               </div>
             ))}
           </div>
@@ -282,18 +282,18 @@ const LedgerOrderCard = ({
       {canPay && (
         <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50/70 p-3 dark:border-amber-900/60 dark:bg-amber-950/20">
           <div className="grid gap-2 sm:grid-cols-[120px_1fr]">
-            <label className="text-xs font-bold text-gray-700 dark:text-gray-200">
+            <label className="text-xs font-semibold text-gray-700 dark:text-gray-200">
               Method
               <select
                 value={form.paymentMethod}
                 onChange={(e) => onChangeForm(order._id, { paymentMethod: e.target.value })}
-                className="mt-1 w-full rounded-xl border border-amber-200 bg-white px-2 py-2 text-xs font-bold dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                className="mt-1 w-full rounded-xl border border-amber-200 bg-white px-2 py-2 text-xs font-semibold dark:border-gray-700 dark:bg-gray-900 dark:text-white"
               >
                 <option value="cash">Cash</option>
                 <option value="online">Online</option>
               </select>
             </label>
-            <label className="text-xs font-bold text-gray-700 dark:text-gray-200">
+            <label className="text-xs font-semibold text-gray-700 dark:text-gray-200">
               Payment amount
               <div className="mt-1 flex gap-2">
                 <input
@@ -302,7 +302,7 @@ const LedgerOrderCard = ({
                   step="0.01"
                   value={form.amount}
                   onChange={(e) => onChangeForm(order._id, { amount: e.target.value })}
-                  className="min-w-0 flex-1 rounded-xl border border-amber-200 bg-white px-2 py-2 text-xs font-bold outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                  className="min-w-0 flex-1 rounded-xl border border-amber-200 bg-white px-2 py-2 text-xs font-semibold outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
                 />
                 <Button type="button" size="sm" disabled={paying} onClick={() => onRecordPayment(order)}>
                   {paying ? "Saving..." : "Collect"}
@@ -497,11 +497,11 @@ export default function CreditCustomers() {
         <div className="border-b border-surface-100 bg-gradient-to-r from-primary-50 via-white to-emerald-50 p-5 dark:border-gray-800 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 md:p-7">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-white/80 px-3 py-1 text-xs font-bold uppercase tracking-wide text-primary-700 shadow-sm dark:border-primary-900 dark:bg-gray-950 dark:text-primary-300">
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-700 shadow-sm dark:border-primary-900 dark:bg-gray-950 dark:text-primary-300">
                 <FiShield className="h-4 w-4" />
                 House Account Control
               </div>
-              <h1 className="mt-3 text-3xl font-black tracking-tight text-gray-950 dark:text-gray-50">Credit customers</h1>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-gray-950 dark:text-gray-50">Credit customers</h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-400">
                 Review applications, approve credit accounts, track balances, and manage limits for customers who use pay later.
               </p>
@@ -550,7 +550,7 @@ export default function CreditCustomers() {
                       setStatusFilter(filter.value);
                       setPagination((prev) => ({ ...prev, page: 1 }));
                     }}
-                    className={`rounded-xl px-3 py-2 text-sm font-bold transition ${
+                    className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
                       statusFilter === filter.value
                         ? "bg-primary-600 text-white shadow-sm"
                         : "bg-surface-50 text-gray-600 hover:bg-surface-100 dark:bg-gray-950 dark:text-gray-300 dark:hover:bg-gray-800"
@@ -573,7 +573,7 @@ export default function CreditCustomers() {
               <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-50 text-primary-700 dark:bg-gray-950 dark:text-primary-300">
                 <FiUser className="h-7 w-7" />
               </span>
-              <h2 className="mt-4 text-lg font-black text-gray-950 dark:text-gray-50">No credit accounts found</h2>
+              <h2 className="mt-4 text-lg font-semibold text-gray-950 dark:text-gray-50">No credit accounts found</h2>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Try another status filter or search term.</p>
             </div>
           ) : (
@@ -591,7 +591,7 @@ export default function CreditCustomers() {
                   <select
                     value={pagination.limit}
                     onChange={(e) => setPagination((prev) => ({ ...prev, page: 1, limit: Number(e.target.value) || 24 }))}
-                    className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-bold text-gray-700 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200"
+                    className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200"
                   >
                     <option value={12}>12 / page</option>
                     <option value={24}>24 / page</option>
@@ -628,7 +628,7 @@ export default function CreditCustomers() {
               <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-50 text-primary-700 dark:bg-gray-950 dark:text-primary-300">
                 <FiFileText className="h-7 w-7" />
               </span>
-              <h2 className="mt-4 text-lg font-black text-gray-950 dark:text-gray-50">Select a customer</h2>
+              <h2 className="mt-4 text-lg font-semibold text-gray-950 dark:text-gray-50">Select a customer</h2>
               <p className="mt-1 max-w-xs text-sm text-gray-500 dark:text-gray-400">
                 Customer details, bills, and transactions will appear here after opening an account.
               </p>
@@ -639,7 +639,7 @@ export default function CreditCustomers() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <StatusPill status={selected.status} />
-                    <h2 className="mt-3 truncate text-2xl font-black text-gray-950 dark:text-gray-50">{selected.name}</h2>
+                    <h2 className="mt-3 truncate text-2xl font-semibold text-gray-950 dark:text-gray-50">{selected.name}</h2>
                     <p className="mt-1 text-sm font-semibold text-gray-600 dark:text-gray-400">
                       {ledgerLoading ? "Loading ledger..." : `${ledger?.summary?.orderCount || 0} bills · ${ledger?.transactions?.length || 0} payments`}
                     </p>
@@ -653,12 +653,12 @@ export default function CreditCustomers() {
               <div className="space-y-5 p-5">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 dark:border-amber-900/60 dark:bg-amber-950/30">
-                    <p className="text-xs font-bold uppercase tracking-wide text-amber-700 dark:text-amber-300">Balance owed</p>
-                    <p className="mt-2 text-2xl font-black text-amber-800 dark:text-amber-200">{money(selectedOwed)}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">Balance owed</p>
+                    <p className="mt-2 text-2xl font-semibold text-amber-800 dark:text-amber-200">{money(selectedOwed)}</p>
                   </div>
                   <div className="rounded-2xl border border-surface-200 bg-surface-50 p-4 dark:border-gray-800 dark:bg-gray-950/50">
-                    <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Open bills</p>
-                    <p className="mt-2 text-2xl font-black text-gray-950 dark:text-gray-50">{selected.openCreditOrders || 0}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Open bills</p>
+                    <p className="mt-2 text-2xl font-semibold text-gray-950 dark:text-gray-50">{selected.openCreditOrders || 0}</p>
                   </div>
                 </div>
 
@@ -674,12 +674,12 @@ export default function CreditCustomers() {
                 <div className="rounded-2xl border border-surface-200 p-4 dark:border-gray-800">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Credit limit health</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Credit limit health</p>
                       <p className="mt-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
                         {selectedLimit > 0 ? `${money(selectedOwed)} of ${money(selectedLimit)}` : "Set a limit to monitor account usage."}
                       </p>
                     </div>
-                    <span className={`rounded-full px-3 py-1 text-xs font-bold ${selectedUsage.over ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"}`}>
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${selectedUsage.over ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"}`}>
                       {selectedUsage.over ? "Over limit" : selectedUsage.label}
                     </span>
                   </div>
@@ -694,7 +694,7 @@ export default function CreditCustomers() {
                 <div className="rounded-2xl border border-surface-200 bg-surface-50/70 p-4 dark:border-gray-800 dark:bg-gray-950/30">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-gray-500">
+                      <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
                         <FiCreditCard className="h-4 w-4" />
                         Credit transaction history
                       </p>
@@ -702,7 +702,7 @@ export default function CreditCustomers() {
                         {ledgerLoading ? "Loading account activity..." : `${ledger?.summary?.orderCount || 0} credit bills tracked`}
                       </p>
                     </div>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-gray-600 shadow-sm dark:bg-gray-900 dark:text-gray-300">
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-600 shadow-sm dark:bg-gray-900 dark:text-gray-300">
                       Paid {money(ledger?.summary?.totalPaid || 0)}
                     </span>
                   </div>
@@ -737,7 +737,7 @@ export default function CreditCustomers() {
                     ) : (
                       <div className="rounded-2xl border border-dashed border-surface-300 bg-white p-6 text-center dark:border-gray-700 dark:bg-gray-900">
                         <FiFileText className="mx-auto h-7 w-7 text-gray-400" />
-                        <p className="mt-2 text-sm font-bold text-gray-700 dark:text-gray-200">No credit bills yet</p>
+                        <p className="mt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">No credit bills yet</p>
                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Future pay-later bills and collections will be listed here.</p>
                       </div>
                     )}
@@ -745,7 +745,7 @@ export default function CreditCustomers() {
                 </div>
 
                 <div className="space-y-3">
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-200">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
                     Credit limit
                     <input
                       type="number"
@@ -756,7 +756,7 @@ export default function CreditCustomers() {
                       placeholder="0.00"
                     />
                   </label>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-200">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
                     Internal notes
                     <textarea
                       value={draftNotes}
@@ -774,7 +774,7 @@ export default function CreditCustomers() {
 
                 {selected.rejectedReason && (
                   <div className="rounded-2xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-200">
-                    <p className="font-bold">Rejected reason</p>
+                    <p className="font-semibold">Rejected reason</p>
                     <p className="mt-1">{selected.rejectedReason}</p>
                   </div>
                 )}

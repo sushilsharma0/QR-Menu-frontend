@@ -52,8 +52,8 @@ export default function BranchLogin() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-primary-50 px-4 py-16 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       <div className="mx-auto max-w-md rounded-3xl border border-amber-100 bg-white/90 p-8 shadow-xl backdrop-blur dark:border-gray-800 dark:bg-gray-900/90">
-        <p className="text-xs font-black uppercase tracking-widest text-primary-700 dark:text-primary-300">Branch access</p>
-        <h1 className="mt-2 text-2xl font-black text-gray-950 dark:text-gray-100">Sign in to your branch</h1>
+        <p className="text-xs font-semibold uppercase tracking-widest text-primary-700 dark:text-primary-300">Branch access</p>
+        <h1 className="mt-2 text-2xl font-semibold text-gray-950 dark:text-gray-100">Sign in to your branch</h1>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
           {hasRouteLink
             ? 'Use the username and password from your branch manager.'

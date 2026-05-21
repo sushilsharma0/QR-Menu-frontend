@@ -194,15 +194,14 @@ const MenuItems = () => {
           {showSearch ? (
             <FramerMotion.motion.div
               key="search"
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: "100%", opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
+              initial={{ scaleX: 0, opacity: 0 }}
+              animate={{ scaleX: 1, opacity: 1 }}
+              exit={{ scaleX: 0, opacity: 0 }}
               transition={{ duration: 0.25, ease: "easeInOut" }}
-              className="flex flex-1 items-center gap-2 overflow-hidden rounded-xl bg-gray-100 px-3"
+              className="flex flex-1 origin-left items-center gap-2 overflow-hidden rounded-xl bg-gray-100 px-3"
             >
               <Search size={15} className="shrink-0 text-gray-400" />
               <input
-                autoFocus
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -232,10 +231,10 @@ const MenuItems = () => {
               transition={{ duration: 0.18 }}
               className="flex-1 text-center"
             >
-              <h1 className="truncate text-base font-black tracking-tight text-gray-900">
+              <h1 className="truncate text-base font-semibold tracking-tight text-gray-900">
                 {decodedCategory || "Menu"}
               </h1>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400">
                 {sortedItems.length} {sortedItems.length === 1 ? "dish" : "dishes"}
               </p>
             </FramerMotion.motion.div>
@@ -289,7 +288,7 @@ const MenuItems = () => {
                 type="button"
                 onClick={() => setTypeChip(chip.id)}
                 aria-pressed={active}
-                className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-bold transition-all ${
+                className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-all ${
                   active
                     ? `${chip.active} shadow-sm`
                     : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
@@ -361,7 +360,7 @@ const MenuItems = () => {
                       />
                     </div>
                     {(item.isBestseller || item.highlightTag === "trending") && (
-                      <span className="absolute bottom-1 left-1 flex items-center gap-0.5 rounded-md bg-attention-300/95 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-primary-900 shadow-sm">
+                      <span className="absolute bottom-1 left-1 flex items-center gap-0.5 rounded-md bg-attention-300/95 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-primary-900 shadow-sm">
                         <Sparkles size={9} />
                         Hot
                       </span>
@@ -373,7 +372,7 @@ const MenuItems = () => {
                       to={`/item-detail/${slug}/${token}/${item._id}`}
                       className="block"
                     >
-                      <h3 className="line-clamp-1 text-sm font-black text-gray-900">
+                      <h3 className="line-clamp-1 text-sm font-semibold text-gray-900">
                         {item.name}
                       </h3>
                       <p className="mt-0.5 line-clamp-2 text-[11px] leading-relaxed text-gray-500">
@@ -382,11 +381,11 @@ const MenuItems = () => {
                     </Link>
                     <div className="mt-2 flex items-end justify-between">
                       <div>
-                        <span className="text-base font-black text-gray-900">
+                        <span className="text-base font-semibold text-gray-900">
                           Rs. {item.price}
                         </span>
                         {item.originalPrice && item.originalPrice > item.price && (
-                          <span className="ml-1.5 text-[10px] font-bold text-gray-400 line-through">
+                          <span className="ml-1.5 text-[10px] font-semibold text-gray-400 line-through">
                             Rs. {item.originalPrice}
                           </span>
                         )}
@@ -453,7 +452,7 @@ function CardQuantityControl({
         type="button"
         whileTap={{ scale: 0.9 }}
         onClick={onCustomize}
-        className="rounded-xl border border-primary-200 bg-primary-50 px-3 py-1.5 text-[11px] font-black text-primary-700 transition active:bg-primary-100"
+        className="rounded-xl border border-primary-200 bg-primary-50 px-3 py-1.5 text-[11px] font-semibold text-primary-700 transition active:bg-primary-100"
       >
         Customize
       </FramerMotion.motion.button>
@@ -472,7 +471,7 @@ function CardQuantityControl({
           whileTap={{ scale: 0.9 }}
           transition={{ type: "spring", stiffness: 320, damping: 24 }}
           onClick={onAdd}
-          className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-1.5 text-xs font-black text-white shadow-md shadow-emerald-600/25 transition active:from-emerald-600"
+          className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md shadow-emerald-600/25 transition active:from-emerald-600"
           aria-label="Add to cart"
         >
           <Plus size={14} strokeWidth={3} />
@@ -481,9 +480,9 @@ function CardQuantityControl({
       ) : (
         <FramerMotion.motion.div
           key="stepper"
-          initial={{ opacity: 0, scale: 0.85, width: 0 }}
-          animate={{ opacity: 1, scale: 1, width: "auto" }}
-          exit={{ opacity: 0, scale: 0.85, width: 0 }}
+          initial={{ opacity: 0, scale: 0.85 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.85 }}
           transition={{ type: "spring", stiffness: 320, damping: 24 }}
           className="flex items-center gap-1.5 rounded-xl border border-primary-100 bg-primary-50/80 px-1.5 py-1"
         >
@@ -500,7 +499,7 @@ function CardQuantityControl({
             initial={{ scale: 0.85, opacity: 0.6 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 360, damping: 22 }}
-            className="w-5 text-center text-xs font-black tabular-nums text-primary-800"
+            className="w-5 text-center text-xs font-semibold tabular-nums text-primary-800"
           >
             {quantity}
           </FramerMotion.motion.span>
@@ -548,7 +547,7 @@ function EmptyState({ isSearching, onClearSearch, onClearFilters }) {
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100">
         <Search size={24} className="text-gray-300" />
       </div>
-      <p className="mt-3 text-sm font-black text-gray-700">
+      <p className="mt-3 text-sm font-semibold text-gray-700">
         {isSearching ? "No items found" : "Choose different filters"}
       </p>
       <p className="mt-1 text-xs font-semibold text-gray-400">
@@ -558,7 +557,7 @@ function EmptyState({ isSearching, onClearSearch, onClearFilters }) {
       </p>
       <button
         onClick={isSearching ? onClearSearch : onClearFilters}
-        className="mt-4 rounded-full border border-primary-200 bg-primary-50 px-4 py-1.5 text-[11px] font-black text-primary-700"
+        className="mt-4 rounded-full border border-primary-200 bg-primary-50 px-4 py-1.5 text-[11px] font-semibold text-primary-700"
       >
         {isSearching ? "Clear search" : "Clear filters"}
       </button>

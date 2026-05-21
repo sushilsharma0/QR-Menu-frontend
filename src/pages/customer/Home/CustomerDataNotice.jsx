@@ -64,11 +64,11 @@ export default function CustomerDataNotice() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#fafaf7] p-6 text-center dark:bg-gray-950">
         <Shield className="h-12 w-12 text-gray-400" />
-        <h1 className="text-xl font-black text-gray-900 dark:text-gray-100">Privacy policy unavailable</h1>
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Privacy policy unavailable</h1>
         <p className="max-w-xs text-sm text-gray-500 dark:text-gray-400">
           We couldn&apos;t load this restaurant&apos;s privacy policy. Please try again later.
         </p>
-        <Link to={homePath} className="rounded-2xl bg-primary-600 px-4 py-2 text-sm font-bold text-white">
+        <Link to={homePath} className="rounded-2xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white">
           Back home
         </Link>
         <Navigation />
@@ -79,7 +79,7 @@ export default function CustomerDataNotice() {
   const renderEmptyState = () => (
     <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-6 text-center dark:border-gray-700 dark:bg-gray-900">
       <Shield className="mx-auto mb-3 h-10 w-10 text-gray-400" />
-      <h2 className="font-bold text-gray-800 dark:text-gray-100">
+      <h2 className="font-semibold text-gray-800 dark:text-gray-100">
         {restaurantName} hasn&apos;t published a privacy policy yet
       </h2>
       <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
@@ -95,7 +95,7 @@ export default function CustomerDataNotice() {
         <div className="flex items-center justify-center gap-3">
           <Shield size={32} />
           <div>
-            <h1 className="text-2xl font-bold">Privacy Policy</h1>
+            <h1 className="text-2xl font-semibold">Privacy Policy</h1>
             <p className="mt-1 text-sm opacity-90">
               {lastUpdated ? `Last Updated: ${lastUpdated}` : restaurantName}
             </p>
@@ -118,7 +118,7 @@ export default function CustomerDataNotice() {
               key={`${section.title}-${index}`}
               className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900"
             >
-              <h2 className="mb-3 font-bold text-gray-800 dark:text-gray-100">{section.title}</h2>
+              <h2 className="mb-3 font-semibold text-gray-800 dark:text-gray-100">{section.title}</h2>
               {section.content && (
                 <p className="whitespace-pre-line text-sm leading-relaxed text-gray-600 dark:text-gray-300">
                   {section.content}
@@ -130,7 +130,7 @@ export default function CustomerDataNotice() {
 
         {enabled && (privacy?.contactEmail || privacy?.contactPhone || privacy?.contactAddress) && (
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-            <h2 className="mb-3 font-bold text-gray-800 dark:text-gray-100">Contact Us</h2>
+            <h2 className="mb-3 font-semibold text-gray-800 dark:text-gray-100">Contact Us</h2>
             <div className="space-y-3">
               {privacy.contactEmail && (
                 <div className="flex items-center gap-3">
@@ -141,7 +141,7 @@ export default function CustomerDataNotice() {
                     <p className="text-xs text-gray-500 dark:text-gray-400">Email</p>
                     <a
                       href={`mailto:${privacy.contactEmail}`}
-                      className="text-sm font-bold text-gray-800 dark:text-gray-100"
+                      className="text-sm font-semibold text-gray-800 dark:text-gray-100"
                     >
                       {privacy.contactEmail}
                     </a>
@@ -155,7 +155,7 @@ export default function CustomerDataNotice() {
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Phone</p>
-                    <p className="text-sm font-bold text-gray-800 dark:text-gray-100">
+                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
                       {privacy.contactPhone}
                     </p>
                   </div>
@@ -168,7 +168,7 @@ export default function CustomerDataNotice() {
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Address</p>
-                    <p className="whitespace-pre-line text-sm font-bold text-gray-800 dark:text-gray-100">
+                    <p className="whitespace-pre-line text-sm font-semibold text-gray-800 dark:text-gray-100">
                       {privacy.contactAddress}
                     </p>
                   </div>

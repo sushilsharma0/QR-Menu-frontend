@@ -31,8 +31,8 @@ function writeOpenSections(state) {
   }
 }
 
-function isNavItemActive(item, location) {
-  const pathname = location.pathname.replace(/\/+$/, '')
+function isNavItemActive(item, routerLocation) {
+  const pathname = routerLocation.pathname.replace(/\/+$/, '')
   const [pathOnly, itemSearch = ''] = String(item.path || '').split('?')
   const base = pathOnly.replace(/\/+$/, '')
 
@@ -40,7 +40,7 @@ function isNavItemActive(item, location) {
 
   if (itemSearch) {
     const want = new URLSearchParams(itemSearch)
-    const have = new URLSearchParams(location.search || '')
+    const have = new URLSearchParams(routerLocation.search || '')
     for (const [key, value] of want.entries()) {
       if (have.get(key) !== value) return false
     }
@@ -49,7 +49,7 @@ function isNavItemActive(item, location) {
 
   if (base === '/platform/cms') {
     if (pathname !== base) return false
-    const tab = new URLSearchParams(location.search || '').get('tab')
+    const tab = new URLSearchParams(routerLocation.search || '').get('tab')
     return !tab || tab === 'blocks' || tab === 'guide'
   }
 
@@ -82,7 +82,9 @@ function Badge({ value, collapsed }) {
   )
 }
 
-function NavItem({ item, collapsed, nested = false, badgeCounts = {}, onNavigate, onTooltip, onTooltipLeave }) {
+const EMPTY_BADGE_COUNTS = {}
+
+function NavItem({ item, collapsed, nested = false, badgeCounts = EMPTY_BADGE_COUNTS, onNavigate, onTooltip, onTooltipLeave }) {
   const Icon = item.icon
   const badgeValue = item.badgeKey ? badgeCounts[item.badgeKey] : 0
 
@@ -152,15 +154,15 @@ function NavSection({
   isOpen,
   onToggle,
   isMobile,
-  badgeCounts = {},
+  badgeCounts = EMPTY_BADGE_COUNTS,
   onClose,
   onTooltip,
   onTooltipLeave,
 }) {
-  const location = useLocation()
+  const routerLocation = useLocation()
   const SectionIcon = section.icon
   const firstItem = items[0]
-  const hasActiveChild = items.some((item) => isNavItemActive(item, location))
+  const hasActiveChild = items.some((item) => isNavItemActive(item, routerLocation))
   const sectionBadge = items.reduce(
     (sum, item) => sum + Number(item.badgeKey ? badgeCounts[item.badgeKey] || 0 : 0),
     0,
@@ -168,7 +170,7 @@ function NavSection({
 
   if (collapsed && hideLabels) {
     const target = firstItem?.path || '#'
-    const active = firstItem && isNavItemActive(firstItem, location)
+    const active = firstItem && isNavItemActive(firstItem, routerLocation)
 
     return (
       <NavLink
@@ -272,7 +274,7 @@ function Brand({ collapsed, isMobile }) {
       <FiCoffee className="h-5 w-5" />
       </div>
       <div className="min-w-0">
-        <h1 className="truncate text-base font-black leading-none text-gray-950 dark:text-gray-100">QR Restro Nepal</h1>
+        <h1 className="truncate text-base font-semibold leading-none text-gray-950 dark:text-gray-100">QR Restro Nepal</h1>
         <p className="mt-1 truncate text-xs font-medium text-gray-500 dark:text-gray-400">Platform Portal</p>
       </div>
     </div>
@@ -291,8 +293,8 @@ function SidebarContent({
   onTooltipLeave,
 }) {
   const hideLabels = collapsed && !isMobile
-  const location = useLocation()
-  const pathname = location.pathname
+  const routerLocation = useLocation()
+  const pathname = routerLocation.pathname
 
   const [openSections, setOpenSections] = useState(() => {
     const saved = readOpenSections()
@@ -331,7 +333,7 @@ function SidebarContent({
     <div className="flex h-full flex-col">
       <div
         className={`flex flex-shrink-0 items-center border-b border-gray-100 bg-white/95 dark:border-gray-800 dark:bg-gray-900 ${
-          hideLabels ? 'justify-center px-3 py-5' : 'justify-between px-5 py-5'
+          hideLabels ? 'justify-center px-3 py-5' : 'justify-between p-5'
         }`}
       >
         <Brand collapsed={collapsed} isMobile={isMobile} />
@@ -388,7 +390,7 @@ function SidebarContent({
       </nav>
 
       {user && !hideLabels && (
-        <div className="flex-shrink-0 border-t border-gray-100 px-4 py-4 dark:border-gray-800">
+        <div className="flex-shrink-0 border-t border-gray-100 p-4 dark:border-gray-800">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary-600 to-secondary-500 text-sm font-bold text-white">
               {user.name?.charAt(0) || 'A'}
@@ -442,6 +444,7 @@ const PlatformSidebar = () => {
     let cancelled = false
     const fetchCounts = async () => {
       try {
+        if (cancelled) return
         const [kycRes, requestsRes, paymentsRes] = await Promise.all([
           api.get('/platform/kyc/stats', { skipErrorToast: true }).catch(() => null),
           api.get('/platform/subscriptions/requests/pending', { skipErrorToast: true }).catch(() => null),
@@ -507,7 +510,7 @@ const PlatformSidebar = () => {
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary-600 to-secondary-500 text-white">
             <FiAward className="h-4 w-4" />
           </div>
-          <h1 className="truncate text-sm font-black text-gray-950 dark:text-gray-100">Platform Console</h1>
+          <h1 className="truncate text-sm font-semibold text-gray-950 dark:text-gray-100">Platform Console</h1>
         </div>
       </div>
 

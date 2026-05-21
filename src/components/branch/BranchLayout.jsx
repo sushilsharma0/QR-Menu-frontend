@@ -8,6 +8,8 @@ import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { BranchProvider } from '../../context/BranchContext'
 import { branchPortalBase } from '../../utils/tenantPaths'
 
+const BRANCH_OUTLET = <Outlet />
+
 const BranchLayout = () => {
   const { user } = useAuth()
   const location = useLocation()
@@ -40,8 +42,6 @@ const BranchLayout = () => {
     return <Navigate to={`${base}/dashboard`} replace />
   }
 
-  const main = <Outlet />
-
   if (isPosRoute) {
     return (
       <BranchProvider>
@@ -60,7 +60,7 @@ const BranchLayout = () => {
           <Header />
           <main className="flex-1 overflow-y-auto bg-gray-50 p-6 dark:bg-gray-950">
             <RestaurantTrialKycBanner />
-            {main}
+            {BRANCH_OUTLET}
           </main>
         </div>
       </div>

@@ -198,8 +198,8 @@ const BranchSettings = () => {
   return (
     <form onSubmit={submit} className="mx-auto max-w-5xl space-y-6">
       <div className="rounded-3xl border border-primary-100 bg-gradient-to-r from-white via-surface-50 to-primary-50 p-6 shadow-sm dark:border-gray-800 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-primary-700 dark:text-primary-300">Branch control</p>
-        <h1 className="mt-2 text-3xl font-black text-gray-950 dark:text-gray-100">{branch?.name || 'Branch'} Settings</h1>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-700 dark:text-primary-300">Branch control</p>
+        <h1 className="mt-2 text-3xl font-semibold text-gray-950 dark:text-gray-100">{branch?.name || 'Branch'} Settings</h1>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Customize this branch without changing the main restaurant profile.</p>
       </div>
 
@@ -240,7 +240,7 @@ const BranchSettings = () => {
                 type="button"
                 onClick={() => updateThemeDraft({ mode: value }, true)}
                 disabled={themeSaving}
-                className={`flex items-center justify-between rounded-lg border px-4 py-3 text-sm font-bold transition ${
+                className={`flex items-center justify-between rounded-lg border px-4 py-3 text-sm font-semibold transition ${
                   themeDraft.mode === value ? 'border-primary-500 bg-primary-50 text-primary-800' : 'border-gray-200 bg-white text-gray-700'
                 }`}
               >
@@ -261,7 +261,7 @@ const BranchSettings = () => {
                   themeDraft.activeTheme === theme.id ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-100' : 'border-gray-100 bg-white'
                 }`}
               >
-                <p className="font-black text-gray-950">{theme.name}</p>
+                <p className="font-semibold text-gray-950">{theme.name}</p>
                 <div className="mt-4 flex gap-2">
                   {['primary', 'secondary', 'accent', 'attention', 'surface'].map((key) => (
                     <span key={key} className="h-7 w-7 rounded-full border border-white shadow-sm ring-1 ring-black/5" style={{ backgroundColor: theme.palette[key] }} />
@@ -271,7 +271,7 @@ const BranchSettings = () => {
             ))}
           </div>
 
-          <label className="block text-sm font-bold text-gray-700">
+          <label className="block text-sm font-semibold text-gray-700">
             Font family
             <select
               value={themeDraft.fontFamily}
@@ -324,7 +324,7 @@ const BranchSettings = () => {
 function ImageUpload({ id, label, preview, onChange, hint, wide }) {
   return (
     <div className="rounded-2xl border border-surface-200 bg-white p-4">
-      <p className="font-black text-gray-950">{label}</p>
+      <p className="font-semibold text-gray-950">{label}</p>
       {hint && <p className="mt-1 text-xs font-semibold text-gray-500">{hint}</p>}
       {preview && (
         <div className={`mt-3 overflow-hidden rounded-xl border border-gray-100 bg-gray-50 ${wide ? 'h-32' : 'h-28 w-28'}`}>
@@ -333,7 +333,7 @@ function ImageUpload({ id, label, preview, onChange, hint, wide }) {
       )}
       <div className="mt-3 rounded-xl border-2 border-dashed border-gray-200 p-5 text-center">
         <input id={id} type="file" accept="image/*" className="hidden" onChange={onChange} />
-        <label htmlFor={id} className="inline-flex cursor-pointer items-center gap-2 text-sm font-black text-primary-700">
+        <label htmlFor={id} className="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-primary-700">
           <FiUpload className="h-4 w-4" />
           Upload image
         </label>

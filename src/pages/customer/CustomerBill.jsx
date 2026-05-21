@@ -156,11 +156,11 @@ const CustomerBill = () => {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-surface-50/80 px-6 text-center">
         <ReceiptText size={40} className="text-gray-300" />
-        <p className="mt-4 text-base font-black text-gray-900">Bill not found</p>
+        <p className="mt-4 text-base font-semibold text-gray-900">Bill not found</p>
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="mt-6 rounded-2xl bg-primary-600 px-6 py-3 text-sm font-black text-white shadow-lg"
+          className="mt-6 rounded-2xl bg-primary-600 px-6 py-3 text-sm font-semibold text-white shadow-lg"
         >
           Go back
         </button>
@@ -183,8 +183,8 @@ const CustomerBill = () => {
           <ArrowLeft size={20} />
         </motion.button>
         <div className="min-w-0 flex-1 text-center">
-          <h1 className="truncate text-sm font-black">Your bill</h1>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+          <h1 className="truncate text-sm font-semibold">Your bill</h1>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
             #{order.orderNumber}
           </p>
         </div>
@@ -232,18 +232,18 @@ const CustomerBill = () => {
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <h2 className="truncate text-2xl font-black tracking-tight">
+                  <h2 className="truncate text-2xl font-semibold tracking-tight">
                     {order.restaurant?.name || "Restaurant"}
                   </h2>
-                  <p className="mt-1 text-[11px] font-black uppercase tracking-[0.28em] text-white/55 print:text-gray-500">
+                  <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-white/55 print:text-gray-500">
                     Tax invoice / receipt
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase ${statusClass(order.paymentStatus)} print:ring-0`}>
+                    <span className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase ${statusClass(order.paymentStatus)} print:ring-0`}>
                       {order.paymentStatus || "pending"}
                     </span>
                     {paid && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-3 py-1 text-[10px] font-black text-emerald-100 print:text-emerald-800 print:bg-emerald-50">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-3 py-1 text-[10px] font-semibold text-emerald-100 print:text-emerald-800 print:bg-emerald-50">
                         <Check size={12} strokeWidth={3} />
                         Paid
                       </span>
@@ -263,10 +263,10 @@ const CustomerBill = () => {
                     key={cell.k}
                     className="rounded-2xl bg-white/10 p-3 print:bg-gray-50"
                   >
-                    <p className="font-black uppercase text-white/50 print:text-gray-500">
+                    <p className="font-semibold uppercase text-white/50 print:text-gray-500">
                       {cell.k}
                     </p>
-                    <p className="mt-1 font-black capitalize text-white print:text-gray-950">
+                    <p className="mt-1 font-semibold capitalize text-white print:text-gray-950">
                       {cell.v}
                     </p>
                   </div>
@@ -278,12 +278,12 @@ const CustomerBill = () => {
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <ShieldCheck size={18} className="text-emerald-600" />
-                  <span className="text-sm font-black text-gray-900">Itemized bill</span>
+                  <span className="text-sm font-semibold text-gray-900">Itemized bill</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setItemsExpanded((e) => !e)}
-                  className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-[11px] font-black text-gray-700 print:hidden"
+                  className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-[11px] font-semibold text-gray-700 print:hidden"
                 >
                   {itemsExpanded ? "Collapse" : "Expand"}
                   {itemsExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -299,7 +299,7 @@ const CustomerBill = () => {
                     transition={{ duration: 0.22 }}
                     className="overflow-hidden rounded-2xl border border-gray-100"
                   >
-                    <div className="grid grid-cols-[1fr_44px_88px] bg-gray-50 px-3 py-2.5 text-[10px] font-black uppercase tracking-wide text-gray-400 sm:px-4">
+                    <div className="grid grid-cols-[1fr_44px_88px] bg-gray-50 px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400 sm:px-4">
                       <span>Item</span>
                       <span className="text-center">Qty</span>
                       <span className="text-right">Amount</span>
@@ -314,7 +314,7 @@ const CustomerBill = () => {
                           className="grid grid-cols-[1fr_44px_88px] items-start border-t border-gray-100 px-3 py-3 text-sm sm:px-4"
                         >
                           <div className="min-w-0 pr-2">
-                            <p className="font-black text-gray-900">{item.name}</p>
+                            <p className="font-semibold text-gray-900">{item.name}</p>
                             <p className="mt-0.5 text-xs font-semibold text-gray-400">
                               {formatMoney(item.price)} each
                             </p>
@@ -326,8 +326,8 @@ const CustomerBill = () => {
                               </p>
                             )}
                           </div>
-                          <p className="text-center font-bold text-gray-700">{item.quantity}</p>
-                          <p className="text-right font-black text-gray-900">
+                          <p className="text-center font-semibold text-gray-700">{item.quantity}</p>
+                          <p className="text-right font-semibold text-gray-900">
                             {formatMoney(lineTotal)}
                           </p>
                         </div>
@@ -350,14 +350,14 @@ const CustomerBill = () => {
                 )}
                 <div className="my-2 border-t border-dashed border-gray-200" />
                 <div className="flex items-center justify-between text-lg">
-                  <span className="font-black text-gray-950">Grand total</span>
-                  <span className="font-black text-primary-700">{formatMoney(totals.grandTotal)}</span>
+                  <span className="font-semibold text-gray-950">Grand total</span>
+                  <span className="font-semibold text-primary-700">{formatMoney(totals.grandTotal)}</span>
                 </div>
               </div>
 
               {/* Payment methods — UI ready */}
               <div className="mt-5 rounded-2xl border border-gray-100 bg-white p-4 print:hidden">
-                <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
                   Accepted at counter
                 </p>
                 <div className="mt-3 grid grid-cols-3 gap-2">
@@ -371,7 +371,7 @@ const CustomerBill = () => {
                       className="flex flex-col items-center gap-1 rounded-xl border border-gray-100 bg-gray-50/80 py-3"
                     >
                       <Icon size={18} className="text-primary-700" />
-                      <span className="text-[10px] font-black text-gray-700">{label}</span>
+                      <span className="text-[10px] font-semibold text-gray-700">{label}</span>
                     </div>
                   ))}
                 </div>
@@ -380,7 +380,7 @@ const CustomerBill = () => {
               {/* QR payment placeholder */}
               <div className="mt-4 rounded-2xl border border-dashed border-primary-200 bg-primary-50/40 p-4 text-center print:hidden">
                 <QrCode className="mx-auto text-primary-600" size={28} />
-                <p className="mt-2 text-xs font-black text-primary-900">Scan to pay</p>
+                <p className="mt-2 text-xs font-semibold text-primary-900">Scan to pay</p>
                 <p className="mt-1 text-[11px] font-semibold text-primary-800/80">
                   When your restaurant enables QR checkout, the live payment QR will appear here.
                 </p>
@@ -393,7 +393,7 @@ const CustomerBill = () => {
                   onClick={() => setSplitOpen((o) => !o)}
                   className="flex w-full items-center justify-between px-4 py-3 text-left"
                 >
-                  <span className="flex items-center gap-2 text-sm font-black text-gray-900">
+                  <span className="flex items-center gap-2 text-sm font-semibold text-gray-900">
                     <Users size={18} className="text-secondary-600" />
                     Split bill
                   </span>
@@ -409,15 +409,15 @@ const CustomerBill = () => {
                     >
                       <div className="grid gap-2 p-4 sm:grid-cols-2">
                         <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 text-center">
-                          <p className="text-[10px] font-black uppercase text-gray-400">Party A</p>
-                          <p className="mt-1 text-lg font-black text-gray-900">
+                          <p className="text-[10px] font-semibold uppercase text-gray-400">Party A</p>
+                          <p className="mt-1 text-lg font-semibold text-gray-900">
                             {formatMoney(totals.grandTotal / 2)}
                           </p>
                           <p className="mt-1 text-[10px] font-semibold text-gray-500">50% share (preview)</p>
                         </div>
                         <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 text-center">
-                          <p className="text-[10px] font-black uppercase text-gray-400">Party B</p>
-                          <p className="mt-1 text-lg font-black text-gray-900">
+                          <p className="text-[10px] font-semibold uppercase text-gray-400">Party B</p>
+                          <p className="mt-1 text-lg font-semibold text-gray-900">
                             {formatMoney(totals.grandTotal / 2)}
                           </p>
                           <p className="mt-1 text-[10px] font-semibold text-gray-500">50% share (preview)</p>
@@ -430,7 +430,7 @@ const CustomerBill = () => {
 
               <div className="mt-6 rounded-2xl border border-gray-100 bg-gradient-to-br from-gray-50 to-white p-5 text-center">
                 <ReceiptText size={24} className="mx-auto text-gray-400" />
-                <p className="mt-2 text-sm font-black text-gray-900">Thank you for dining with us</p>
+                <p className="mt-2 text-sm font-semibold text-gray-900">Thank you for dining with us</p>
                 <p className="mt-1 text-xs font-semibold text-gray-500">
                   Show this bill at the counter if payment is still pending.
                 </p>
@@ -444,15 +444,15 @@ const CustomerBill = () => {
       <div className="fixed inset-x-0 bottom-[5.25rem] z-[92] border-t border-gray-200 bg-white/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl print:hidden">
         <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
           <div>
-            <p className="text-[10px] font-black uppercase text-gray-400">Amount due</p>
-            <p className="text-xl font-black text-primary-700">{formatMoney(totals.grandTotal)}</p>
+            <p className="text-[10px] font-semibold uppercase text-gray-400">Amount due</p>
+            <p className="text-xl font-semibold text-primary-700">{formatMoney(totals.grandTotal)}</p>
           </div>
           <div className="flex gap-2">
             <motion.button
               type="button"
               whileTap={{ scale: 0.96 }}
               onClick={downloadBill}
-              className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-black text-gray-800"
+              className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-semibold text-gray-800"
             >
               Download
             </motion.button>
@@ -460,7 +460,7 @@ const CustomerBill = () => {
               type="button"
               whileTap={{ scale: 0.96 }}
               onClick={printBill}
-              className="rounded-xl bg-primary-600 px-4 py-2.5 text-xs font-black text-white shadow-lg"
+              className="rounded-xl bg-primary-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg"
             >
               Print
             </motion.button>
@@ -493,7 +493,7 @@ function Row({ label, value, accent = "text-gray-900" }) {
   return (
     <div className="flex justify-between py-0.5">
       <span className="font-semibold text-gray-500">{label}</span>
-      <span className={`font-black ${accent}`}>{value}</span>
+      <span className={`font-semibold ${accent}`}>{value}</span>
     </div>
   );
 }

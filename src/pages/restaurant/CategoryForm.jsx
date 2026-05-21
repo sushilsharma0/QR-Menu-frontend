@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { useForm } from 'react-hook-form'
@@ -16,7 +16,7 @@ const CategoryForm = () => {
   const { restaurantBase } = useTenantRoutes()
   const [loading, setLoading] = useState(false)
   const [imagePreview, setImagePreview] = useState(null)
-  const [selectedFile, setSelectedFile] = useState(null)
+  const selectedFileRef = useRef(null)
   const { register, handleSubmit, setValue, formState: { errors } } = useForm()
 
   useEffect(() => {
@@ -48,8 +48,8 @@ const CategoryForm = () => {
       if (data.sortOrder) formData.append('sortOrder', data.sortOrder)
 
       // Append image file if selected
-      if (selectedFile) {
-        formData.append('image', selectedFile)
+      if (selectedFileRef.current) {
+        formData.append('image', selectedFileRef.current)
       }
 
       if (id) {
@@ -76,20 +76,20 @@ const CategoryForm = () => {
         e.target.value = ''
         return
       }
-      setSelectedFile(file)
+      selectedFileRef.current = file
       setImagePreview(URL.createObjectURL(file))
     }
   }
 
   const handleRemoveImage = () => {
-    setSelectedFile(null)
+    selectedFileRef.current = null
     setImagePreview(null)
   }
 
   return (
     <div className="max-w-md mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">{id ? 'Edit' : 'Add'} Category</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">{id ? 'Edit' : 'Add'} Category</h1>
         <p className="text-gray-500 mt-1">Create or update menu category</p>
       </div>
 
@@ -118,7 +118,7 @@ const CategoryForm = () => {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Category Image</label>
+            <p className="block text-sm font-medium text-gray-700 mb-1">Category Image</p>
             <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
               <div className="space-y-1 text-center">
                 {imagePreview ? (

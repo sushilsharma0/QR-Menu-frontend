@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence, LazyMotion, domAnimation, m } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import {
   FiAlertTriangle,
@@ -60,18 +60,18 @@ function statusLabel(currentPlan) {
 
 function MetricTile({ label, value, sub, icon: Icon, accent }) {
   return (
-    <motion.div whileHover={{ y: -3 }} className="rounded-2xl border border-surface-200 bg-white/90 p-4 shadow-sm">
+    <m.div whileHover={{ y: -3 }} className="rounded-2xl border border-surface-200 bg-white/90 p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
-          <p className="mt-2 text-2xl font-bold text-gray-950">{value}</p>
+          <p className="mt-2 text-2xl font-semibold text-gray-950">{value}</p>
           {sub && <p className="mt-1 text-xs text-gray-500">{sub}</p>}
         </div>
         <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${accent} text-white shadow-md`}>
           <Icon className="h-5 w-5" />
         </div>
       </div>
-    </motion.div>
+    </m.div>
   )
 }
 
@@ -84,17 +84,17 @@ function Notice({ tone = 'amber', icon: Icon = FiAlertTriangle, title, children 
   }
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={`flex gap-3 rounded-2xl border px-4 py-3 text-sm ${styles[tone]}`}
     >
       <Icon className="mt-0.5 h-5 w-5 flex-shrink-0" />
       <div>
-        <p className="font-bold">{title}</p>
+        <p className="font-semibold">{title}</p>
         <div className="mt-1 leading-6">{children}</div>
       </div>
-    </motion.div>
+    </m.div>
   )
 }
 
@@ -105,7 +105,7 @@ function PlanCard({ plan, currentPlan, disabled, requesting, onSelect }) {
     ['awaiting_proof', 'pending_review'].includes(currentPlan?.planRequestStatus)
 
   return (
-    <motion.article
+    <m.article
       layout
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
@@ -115,19 +115,19 @@ function PlanCard({ plan, currentPlan, disabled, requesting, onSelect }) {
       }`}
     >
       {plan.isPopular && (
-        <div className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-primary-600 px-3 py-1 text-xs font-bold text-white">
+        <div className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-primary-600 px-3 py-1 text-xs font-semibold text-white">
           <FiStar className="h-3.5 w-3.5" /> Popular
         </div>
       )}
 
       <div className="pr-20">
-        <h3 className="text-xl font-black text-gray-950">{plan.name}</h3>
+        <h3 className="text-xl font-semibold text-gray-950">{plan.name}</h3>
         <p className="mt-1 text-sm text-gray-500">{plan.durationLabel || 'Subscription plan'}</p>
       </div>
 
       <div className="mt-5 rounded-2xl bg-surface-50 p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Grand total</p>
-        <p className="mt-1 text-3xl font-black text-primary-700">
+        <p className="mt-1 text-3xl font-semibold text-primary-700">
           {formatRestaurantCurrency(planTotal(plan), planSymbol(plan))}
         </p>
         {plan.pricing && (
@@ -139,8 +139,8 @@ function PlanCard({ plan, currentPlan, disabled, requesting, onSelect }) {
       </div>
 
       <div className="mt-5 space-y-2">
-        {(plan.features || []).slice(0, 6).map((feature, idx) => (
-          <div key={idx} className="flex items-center gap-2 text-sm">
+        {(plan.features || []).slice(0, 6).map((feature) => (
+          <div key={feature} className="flex items-center gap-2 text-sm">
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-green-700">
               <FiCheck className="h-3.5 w-3.5" />
             </span>
@@ -157,7 +157,7 @@ function PlanCard({ plan, currentPlan, disabled, requesting, onSelect }) {
       >
         {isCurrent ? 'Current Plan' : isRequested ? 'Payment Pending' : 'Choose Plan'}
       </Button>
-    </motion.article>
+    </m.article>
   )
 }
 
@@ -347,8 +347,9 @@ const Subscription = () => {
   if (loading) return <RestaurantPageLoader />
 
   return (
+    <LazyMotion features={domAnimation}>
     <div className="space-y-6">
-      <motion.section
+      <m.section
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: 'easeOut' }}
@@ -362,7 +363,7 @@ const Subscription = () => {
                 <FiCreditCard className="h-4 w-4" />
                 Subscription Center
               </div>
-              <h1 className="mt-3 text-3xl font-bold tracking-tight text-gray-950">Subscription & billing</h1>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-gray-950">Subscription & billing</h1>
               <p className="mt-2 max-w-3xl text-sm text-gray-500">
                 Choose plans, upload payment proof, monitor verification, and review official billing history.
               </p>
@@ -419,7 +420,7 @@ const Subscription = () => {
             />
           </div>
         </div>
-      </motion.section>
+      </m.section>
 
       <div className="flex flex-wrap gap-2 rounded-2xl border border-surface-200 bg-white p-2 shadow-sm">
         {tabs.map((tab) => (
@@ -439,15 +440,15 @@ const Subscription = () => {
 
       <AnimatePresence mode="wait">
         {activeTab === 'billing' ? (
-          <motion.div key="billing" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
+          <m.div key="billing" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
             <SubscriptionBillingPanel />
-          </motion.div>
+          </m.div>
         ) : activeTab === 'payments' ? (
-          <motion.div key="payments" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
+          <m.div key="payments" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
             <PaymentHistoryTable payments={payments} />
-          </motion.div>
+          </m.div>
         ) : (
-          <motion.div key="plans" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="space-y-6">
+          <m.div key="plans" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="space-y-6">
             {currentPlan?.planFeatureFlags && (
               <PlanFeaturesIncluded
                 featureFlags={currentPlan.planFeatureFlags}
@@ -484,17 +485,17 @@ const Subscription = () => {
             )}
 
             {(awaitingProof || pendingReview) && currentPlan?.requestedPlan && (
-              <motion.section
+              <m.section
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 shadow-sm"
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>
-                    <div className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
                       <FiClock /> {pendingReview ? 'Pending Review' : 'Payment Proof Needed'}
                     </div>
-                    <h2 className="mt-3 text-xl font-black text-gray-950">{currentPlan.requestedPlan.name}</h2>
+                    <h2 className="mt-3 text-xl font-semibold text-gray-950">{currentPlan.requestedPlan.name}</h2>
                     {currentPlan.requestedPlan.pricing && (
                       <p className="mt-2 text-sm text-gray-600">
                         Pay{' '}
@@ -531,16 +532,18 @@ const Subscription = () => {
                   </div>
                   {!pendingReview && (
                     <div className="rounded-2xl border border-amber-200 bg-white p-4">
-                      <label className="block text-sm font-semibold text-gray-700">Statement reference ID</label>
+                      <label htmlFor="statement-reference-id" className="block text-sm font-semibold text-gray-700">Statement reference ID</label>
                       <input
+                        id="statement-reference-id"
                         type="text"
                         value={statementReferenceId}
                         onChange={(e) => setStatementReferenceId(e.target.value)}
                         placeholder="Enter bank/app statement reference"
                         className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                       />
-                      <label className="mt-3 block text-sm font-semibold text-gray-700">Statement screenshot / proof</label>
+                      <label htmlFor="statement-proof-file" className="mt-3 block text-sm font-semibold text-gray-700">Statement screenshot / proof</label>
                       <input
+                        id="statement-proof-file"
                         type="file"
                         accept="image/*,.pdf"
                         className="mt-2 text-sm"
@@ -567,11 +570,11 @@ const Subscription = () => {
                     Statement reference: <span className="font-semibold text-gray-700">{currentPlan.planPaymentReferenceId}</span>
                   </p>
                 )}
-              </motion.section>
+              </m.section>
             )}
 
             {(currentPlan?.currentPlan || currentPlan?.planAssignmentSource === 'custom') && (
-              <motion.section
+              <m.section
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="rounded-3xl border border-surface-200 bg-white p-5 shadow-sm"
@@ -579,7 +582,7 @@ const Subscription = () => {
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Current plan</p>
-                    <h2 className="mt-1 text-2xl font-black text-primary-700">
+                    <h2 className="mt-1 text-2xl font-semibold text-primary-700">
                       {currentPlan?.planAssignmentSource === 'custom'
                         ? currentPlan?.customPlanLabel || 'Custom plan'
                         : currentPlan?.currentPlan?.name}
@@ -603,7 +606,7 @@ const Subscription = () => {
                     </Button>
                   </div>
                 </div>
-              </motion.section>
+              </m.section>
             )}
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -618,10 +621,11 @@ const Subscription = () => {
                 />
               ))}
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>
+    </LazyMotion>
   )
 }
 

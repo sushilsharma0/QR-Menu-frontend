@@ -115,7 +115,7 @@ function EmployeeAvatar({ employee, size = 'lg' }) {
     .toUpperCase()
 
   return (
-    <div className={`overflow-hidden border-4 border-white bg-primary-50 font-black text-primary-700 shadow-sm ${sizes[size]}`}>
+    <div className={`overflow-hidden border-4 border-white bg-primary-50 font-semibold text-primary-700 shadow-sm ${sizes[size]}`}>
       {employee.profileImage ? (
         <img src={employee.profileImage} alt={employee.name} className="h-full w-full object-cover" />
       ) : (
@@ -131,7 +131,7 @@ function MetricTile({ label, value, sub, icon: Icon, accent }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
-          <p className="mt-2 text-2xl font-bold text-gray-950">{value}</p>
+          <p className="mt-2 text-2xl font-semibold text-gray-950">{value}</p>
           {sub && <p className="mt-1 text-xs text-gray-500">{sub}</p>}
         </div>
         <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${accent} text-white shadow-md`}>
@@ -147,21 +147,21 @@ function EmployeeActions({ employee, onEdit, onDelete, onResetPassword }) {
     <div className="flex items-center gap-2">
       <button
         onClick={() => onResetPassword(employee._id)}
-        className="rounded-lg p-2 text-gray-400 transition hover:bg-yellow-50 hover:text-yellow-600"
+        className="rounded-lg p-2 text-yellow-700 transition hover:bg-yellow-50 hover:text-yellow-800"
         title="Reset Password"
       >
         <FiKey className="h-4 w-4" />
       </button>
       <button
         onClick={() => onEdit(employee)}
-        className="rounded-lg p-2 text-gray-400 transition hover:bg-blue-50 hover:text-blue-600"
+        className="rounded-lg p-2 text-blue-700 transition hover:bg-blue-50 hover:text-blue-800"
         title="Edit"
       >
         <FiEdit2 className="h-4 w-4" />
       </button>
       <button
         onClick={() => onDelete(employee)}
-        className="rounded-lg p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+        className="rounded-lg p-2 text-red-700 transition hover:bg-red-50 hover:text-red-800"
         title="Delete"
       >
         <FiTrash2 className="h-4 w-4" />
@@ -286,7 +286,7 @@ const Employees = () => {
                 <FiUsers className="h-4 w-4" />
                 Team Directory
               </div>
-              <h1 className="mt-3 text-3xl font-bold tracking-tight text-gray-950">Employees</h1>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-gray-950">Employees</h1>
               <p className="mt-2 max-w-3xl text-sm text-gray-500">
                 Manage restaurant staff profiles, roles, access, and login credentials in one polished workspace.
               </p>
@@ -337,8 +337,9 @@ const Employees = () => {
             onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
           />
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Role</label>
+            <label htmlFor="employee-role-filter" className="mb-1 block text-sm font-medium text-gray-700">Role</label>
             <select
+              id="employee-role-filter"
               value={filters.role}
               onChange={(e) => setFilters((f) => ({ ...f, role: e.target.value }))}
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 outline-none transition focus:ring-2 focus:ring-primary-500"
@@ -353,8 +354,9 @@ const Employees = () => {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Status</label>
+            <label htmlFor="employee-status-filter" className="mb-1 block text-sm font-medium text-gray-700">Status</label>
             <select
+              id="employee-status-filter"
               value={filters.status}
               onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 outline-none transition focus:ring-2 focus:ring-primary-500"
@@ -421,7 +423,7 @@ const Employees = () => {
                     />
                   </div>
                   <div className="mt-4">
-                    <h3 className="text-xl font-bold text-gray-950">{emp.name}</h3>
+                    <h3 className="text-xl font-semibold text-gray-950">{emp.name}</h3>
                     <p className="text-sm text-gray-500">@{emp.username}</p>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -462,7 +464,7 @@ const Employees = () => {
                       <div className="flex items-center gap-3">
                         <EmployeeAvatar employee={emp} size="sm" />
                         <div>
-                          <p className="font-bold text-gray-950">{emp.name}</p>
+                          <p className="font-semibold text-gray-950">{emp.name}</p>
                           <p className="text-sm text-gray-500">{emp.email}</p>
                         </div>
                       </div>
@@ -517,18 +519,18 @@ const Employees = () => {
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-red-50 text-red-600 ring-8 ring-red-50/70">
                 <FiTrash2 className="h-7 w-7" />
               </div>
-              <h3 className="mt-6 text-2xl font-black tracking-tight text-gray-950">
+              <h3 className="mt-6 text-2xl font-semibold tracking-tight text-gray-950">
                 Delete employee?
               </h3>
               <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-gray-500">
-                This will remove <span className="font-bold text-gray-900">{deleteTarget.name || deleteTarget.username}</span> from this branch.
+                This will remove <span className="font-semibold text-gray-900">{deleteTarget.name || deleteTarget.username}</span> from this branch.
               </p>
               <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <button
                   type="button"
                   onClick={() => setDeleteTarget(null)}
                   disabled={deleteLoading}
-                  className="rounded-2xl border border-surface-200 bg-white px-5 py-3 text-sm font-black text-gray-700 transition hover:bg-surface-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-2xl border border-surface-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:bg-surface-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Cancel
                 </button>
@@ -536,7 +538,7 @@ const Employees = () => {
                   type="button"
                   onClick={handleDelete}
                   disabled={deleteLoading}
-                  className="rounded-2xl bg-red-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-red-900/20 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="rounded-2xl bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-red-900/20 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {deleteLoading ? 'Deleting...' : 'Confirm delete'}
                 </button>

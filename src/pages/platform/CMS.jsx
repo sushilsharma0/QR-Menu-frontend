@@ -106,7 +106,7 @@ const CMS = () => {
           <button
             type="button"
             onClick={() => handleEdit(row)}
-            className="rounded-lg p-2 text-gray-400 transition hover:bg-blue-50 hover:text-blue-600"
+            className="rounded-lg p-2 text-blue-700 transition hover:bg-blue-50 hover:text-blue-800"
             title="Edit"
           >
             <FiEdit2 className="h-4 w-4" />
@@ -183,13 +183,13 @@ const CMS = () => {
   const guideTab = (
     <div className="space-y-6">
       <div className="rounded-xl border border-amber-200 bg-amber-50/90 p-5 dark:border-amber-900/50 dark:bg-amber-950/30">
-        <p className="text-sm font-bold text-amber-950 dark:text-amber-100">Restaurant offer banner — recommended copy</p>
+        <p className="text-sm font-bold text-amber-950 dark:text-amber-100">Restaurant offer banner: recommended copy</p>
         <ul className="mt-3 space-y-2 text-sm text-amber-900/90 dark:text-amber-100/90">
           <li>
             <strong>Key:</strong> offer_first_10 (must include offer, promo, deal, or free)
           </li>
           <li>
-            <strong>Eyebrow:</strong> Limited launch offer · Nepal
+            <strong>Eyebrow:</strong> Limited launch offer Â· Nepal
           </li>
           <li>
             <strong>Headline:</strong> First 10 restaurants get 1 month free
@@ -201,7 +201,7 @@ const CMS = () => {
             <strong>Extra content:</strong> first line = button label; next lines = bullets (e.g. Free onboarding, QR menu included)
           </li>
           <li>
-            <strong>Image:</strong> warm restaurant interior or guests dining — 1200×800, high quality
+            <strong>Image:</strong> warm restaurant interior or guests dining, 1200 x 800, high quality
           </li>
         </ul>
       </div>

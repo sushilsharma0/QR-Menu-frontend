@@ -41,7 +41,7 @@ const NotificationPage = () => {
   return (
     <div className="space-y-4 text-gray-900 dark:text-gray-100">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Notifications</h1>
+        <h1 className="text-2xl font-semibold">Notifications</h1>
         <button className="text-sm px-3 py-2 rounded bg-primary-600 text-white" onClick={async () => {
           await markAllNotificationsRead()
           fetchPage(1)
@@ -55,7 +55,7 @@ const NotificationPage = () => {
           <FiSearch className="text-gray-400 dark:text-gray-500" />
           <input
             className="ml-2 w-full outline-none text-sm bg-transparent text-gray-900 dark:text-gray-100"
-            placeholder="Search notifications..."
+            placeholder="Search notifications…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -84,7 +84,7 @@ const NotificationPage = () => {
 
       <div className="space-y-2">
         {loading ? (
-          <div className="text-sm text-gray-500 dark:text-gray-400">Loading...</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400">Loading…</div>
         ) : grouped.length === 0 ? (
           <div className="bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl p-8 text-center text-gray-500 dark:text-gray-400">
             <FiBell className="mx-auto mb-2" /> No notifications found

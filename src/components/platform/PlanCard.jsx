@@ -23,7 +23,7 @@ const PlanCard = ({ plan, onEdit, onDelete }) => {
         </div>
       )}
       <div className="text-center mb-4">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{plan.name}</h3>
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{plan.name}</h3>
         <p className="text-sm text-gray-500 dark:text-gray-400">{plan.durationLabel}</p>
         {p ? (
           <div className="mx-auto mt-3 max-w-[220px] space-y-1 text-left text-sm text-gray-600 dark:text-gray-300">
@@ -39,8 +39,8 @@ const PlanCard = ({ plan, onEdit, onDelete }) => {
         )}
       </div>
       <div className="space-y-2 mb-6">
-        {plan.features?.slice(0, 5).map((feature, idx) => (
-          <div key={idx} className="flex items-center gap-2 text-sm">
+        {plan.features?.slice(0, 5).map((feature) => (
+          <div key={feature} className="flex items-center gap-2 text-sm">
             <FiCheck className="text-green-500 flex-shrink-0" />
             <span className="text-gray-600 dark:text-gray-300">{feature}</span>
           </div>

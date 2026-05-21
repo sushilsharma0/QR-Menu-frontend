@@ -1,5 +1,5 @@
 import React from 'react'
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import { FiClock, FiMapPin, FiMonitor, FiShield, FiSlash } from 'react-icons/fi'
 import Button from '../../common/Button'
 import DeviceAlertBadges from './DeviceAlertBadges'
@@ -8,7 +8,7 @@ import { listItemVariants } from './deviceAnimations'
 
 export default function DeviceSessionCard({ session, onRevoke, revoking, index = 0 }) {
   return (
-    <motion.div
+    <m.div
       variants={listItemVariants}
       whileHover={{ y: -2 }}
       className={`rounded-xl border p-4 transition-shadow hover:shadow-md ${
@@ -18,7 +18,7 @@ export default function DeviceSessionCard({ session, onRevoke, revoking, index =
       }`}
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <motion.div
+        <m.div
           className="min-w-0"
           initial={{ opacity: 0, x: -6 }}
           animate={{ opacity: 1, x: 0 }}
@@ -64,7 +64,7 @@ export default function DeviceSessionCard({ session, onRevoke, revoking, index =
           <div className="mt-3">
             <DeviceAlertBadges alerts={session.alerts} />
           </div>
-        </motion.div>
+        </m.div>
         <div className="flex flex-wrap gap-2">
           {!session.isCurrent && (
             <Button
@@ -80,6 +80,6 @@ export default function DeviceSessionCard({ session, onRevoke, revoking, index =
           )}
         </div>
       </div>
-    </motion.div>
+    </m.div>
   )
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { useSearchParams } from 'react-router-dom'
 import toast from '@utils/toast'
@@ -38,11 +38,11 @@ const Settings = () => {
   const [backgroundFile, setBackgroundFile] = useState(null)
   const [faviconPreview, setFaviconPreview] = useState(null)
   const [brandBackgroundPreview, setBrandBackgroundPreview] = useState(null)
-  const [faviconFile, setFaviconFile] = useState(null)
-  const [brandBackgroundFile, setBrandBackgroundFile] = useState(null)
+  const faviconFileRef = useRef(null)
+  const brandBackgroundFileRef = useRef(null)
   const [showLogoPreview, setShowLogoPreview] = useState(false)
   const [showBackgroundPreview, setShowBackgroundPreview] = useState(false)
-  const [themeDraft, setThemeDraft] = useState(normalizeThemeSettings(DEFAULT_THEME_SETTINGS))
+  const [themeDraft, setThemeDraft] = useState(() => normalizeThemeSettings(DEFAULT_THEME_SETTINGS))
   const [themeSaving, setThemeSaving] = useState(false)
   const [backupBusy, setBackupBusy] = useState(false)
   const [backupHistory, setBackupHistory] = useState([])
@@ -347,11 +347,11 @@ const Settings = () => {
       if (backgroundFile) {
         formData.append('backgroundPhoto', backgroundFile)
       }
-      if (faviconFile) {
-        formData.append('favicon', faviconFile)
+      if (faviconFileRef.current) {
+        formData.append('favicon', faviconFileRef.current)
       }
-      if (brandBackgroundFile) {
-        formData.append('brandBackgroundImage', brandBackgroundFile)
+      if (brandBackgroundFileRef.current) {
+        formData.append('brandBackgroundImage', brandBackgroundFileRef.current)
       }
       formData.append('themeSettings', JSON.stringify(themeDraft))
       
@@ -377,8 +377,8 @@ const Settings = () => {
       toast.success('Settings updated successfully')
       setLogoFile(null)
       setBackgroundFile(null)
-      setFaviconFile(null)
-      setBrandBackgroundFile(null)
+      faviconFileRef.current = null
+      brandBackgroundFileRef.current = null
       await fetchRestaurant()
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update settings')
@@ -593,8 +593,8 @@ const Settings = () => {
             brandBackgroundPreview={brandBackgroundPreview}
             onResetTheme={resetThemeDraft}
             onUpdateTheme={updateThemeDraft}
-            onFaviconChange={handleBrandAssetChange(setFaviconFile, setFaviconPreview)}
-            onBrandBackgroundChange={handleBrandAssetChange(setBrandBackgroundFile, setBrandBackgroundPreview)}
+            onFaviconChange={handleBrandAssetChange((file) => { faviconFileRef.current = file }, setFaviconPreview)}
+            onBrandBackgroundChange={handleBrandAssetChange((file) => { brandBackgroundFileRef.current = file }, setBrandBackgroundPreview)}
           />
         )
       case 'profile':

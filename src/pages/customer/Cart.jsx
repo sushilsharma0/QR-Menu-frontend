@@ -310,7 +310,7 @@ const Cart = () => {
           <ArrowLeft size={20} />
         </button>
         <div className="text-center">
-          <h1 className="text-base font-black tracking-tight">Checkout</h1>
+          <h1 className="text-base font-semibold tracking-tight">Checkout</h1>
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
             Step {stepIndex + 1} of {STEPS.length} · {STEPS[stepIndex].label}
           </p>
@@ -510,7 +510,7 @@ const Cart = () => {
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-100 text-emerald-700">
                 <ChefHat size={30} className="animate-pulse" />
               </div>
-              <h2 className="mt-4 text-xl font-black text-gray-950">
+              <h2 className="mt-4 text-xl font-semibold text-gray-950">
                 Sending to kitchen
               </h2>
               <p className="mt-2 text-sm leading-6 text-gray-500">
@@ -560,7 +560,7 @@ function ReviewStep({
           {["1. Review", "2. Details", "3. Send"].map((label) => (
             <span
               key={label}
-              className="rounded-xl bg-white/10 px-2 py-2 backdrop-blur"
+              className="rounded-xl bg-white/10 p-2 backdrop-blur"
             >
               {label}
             </span>
@@ -729,7 +729,7 @@ function DetailsStep({ customerDetails, setCustomerDetails, subtotal, total, pro
   return (
     <div className="px-5 space-y-4">
       <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-        <h3 className="text-xs font-black uppercase tracking-[0.18em] text-gray-400">
+        <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
           Customer Details
         </h3>
         <p className="mt-1 text-xs font-semibold text-gray-500">
@@ -769,7 +769,7 @@ function DetailsStep({ customerDetails, setCustomerDetails, subtotal, total, pro
       </div>
 
       <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-        <h3 className="flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.18em] text-gray-400">
+        <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
           <Receipt size={12} />
           Bill summary
         </h3>
@@ -797,7 +797,7 @@ function ConfirmStep({ items, customerDetails, subtotal, total, promoDiscount, a
   return (
     <div className="px-5 space-y-4">
       <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-        <h3 className="text-xs font-black uppercase tracking-[0.18em] text-gray-400">
+        <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
           Order summary
         </h3>
         <ul className="mt-3 divide-y divide-gray-100">
@@ -830,7 +830,7 @@ function ConfirmStep({ items, customerDetails, subtotal, total, promoDiscount, a
       </div>
 
       <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-        <h3 className="text-xs font-black uppercase tracking-[0.18em] text-gray-400">
+        <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
           Customer
         </h3>
         <div className="mt-3 space-y-1 text-sm font-bold text-gray-800">
@@ -845,7 +845,7 @@ function ConfirmStep({ items, customerDetails, subtotal, total, promoDiscount, a
       </div>
 
       <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-        <h3 className="text-xs font-black uppercase tracking-[0.18em] text-gray-400">
+        <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
           Total
         </h3>
         <div className="mt-3 space-y-2 text-sm">
@@ -883,7 +883,7 @@ function SuccessOverlay({ order }) {
         className="w-full max-w-sm rounded-[2rem] bg-white p-7 text-center shadow-2xl"
       >
         <motion.div
-          initial={{ scale: 0, rotate: -90 }}
+          initial={{ scale: 0.95, rotate: -90, opacity: 0 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ delay: 0.1, type: "spring", stiffness: 280, damping: 18 }}
           className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-500/30"
@@ -935,7 +935,7 @@ function SuccessOverlay({ order }) {
           className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-[11px] font-black text-emerald-700"
         >
           <Sparkles size={12} />
-          Opening live tracking...
+          Opening live tracking…
         </motion.p>
       </motion.div>
     </motion.div>

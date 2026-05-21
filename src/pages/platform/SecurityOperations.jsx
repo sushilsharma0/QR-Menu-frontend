@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   FiAlertTriangle,
   FiActivity,
@@ -12,15 +12,6 @@ import {
   FiSlash,
   FiUserX,
 } from 'react-icons/fi'
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
 import toast from '@utils/toast'
 import api from '../../services/api'
 import { useAuth } from '../../hooks/useAuth'
@@ -56,6 +47,14 @@ const ALERT_TYPES = [
   'unusual_sales_spike',
 ]
 
+const CartesianGrid = React.lazy(() => import('recharts').then((module) => ({ default: module.CartesianGrid })))
+const Line = React.lazy(() => import('recharts').then((module) => ({ default: module.Line })))
+const LineChart = React.lazy(() => import('recharts').then((module) => ({ default: module.LineChart })))
+const ResponsiveContainer = React.lazy(() => import('recharts').then((module) => ({ default: module.ResponsiveContainer })))
+const Tooltip = React.lazy(() => import('recharts').then((module) => ({ default: module.Tooltip })))
+const XAxis = React.lazy(() => import('recharts').then((module) => ({ default: module.XAxis })))
+const YAxis = React.lazy(() => import('recharts').then((module) => ({ default: module.YAxis })))
+
 function extractIpFromAlert(alert) {
   const evidence = alert?.evidence || {}
   return evidence.ipAddress || evidence.ip || evidence.clientIp || null
@@ -75,6 +74,96 @@ const sessionAlertLabels = (alerts = {}) => [
   alerts.impossibleTravel && 'Impossible travel',
   alerts.suspiciousConcurrentSessions && 'Many sessions',
 ].filter(Boolean)
+
+function ClientDateTime({ value, prefix = '' }) {
+  const [label, setLabel] = useState('')
+
+  useEffect(() => {
+    if (!value) return
+    setLabel(new Date(value).toLocaleString())
+  }, [value])
+
+  return <span suppressHydrationWarning>{label ? `${prefix}${label}` : ''}</span>
+}
+
+function SecurityAlertActions({
+  alert,
+  actionBusy,
+  blockAlertActivity,
+  updateAlertStatus,
+  forceLogout,
+  suspendRestaurant,
+}) {
+  const restaurantId = alert.restaurantId?._id || alert.restaurantId
+  const isOpen = ['open', 'investigating'].includes(alert.status)
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {isOpen && (
+        <>
+          <button
+            type="button"
+            disabled={actionBusy}
+            onClick={() => blockAlertActivity(alert)}
+            className="rounded-lg bg-red-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+          >
+            Block activity
+          </button>
+          <button
+            type="button"
+            disabled={actionBusy}
+            onClick={() => updateAlertStatus(alert._id, 'investigating')}
+            className="rounded-lg bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-950 dark:text-amber-200"
+          >
+            <FiEye className="mr-1 inline" />
+            Investigate
+          </button>
+        </>
+      )}
+      {isOpen && (
+        <button
+          type="button"
+          disabled={actionBusy}
+          onClick={() => updateAlertStatus(alert._id, 'dismissed', 'Dismissed by admin')}
+          className="rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+        >
+          Dismiss
+        </button>
+      )}
+      {alert.status !== 'resolved' && (
+        <button
+          type="button"
+          disabled={actionBusy}
+          onClick={() => updateAlertStatus(alert._id, 'resolved', 'Resolved by admin')}
+          className="rounded-lg bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
+        >
+          <FiCheck className="mr-1 inline" />
+          Resolve
+        </button>
+      )}
+      {restaurantId && isOpen && (
+        <>
+          <button
+            type="button"
+            disabled={actionBusy}
+            onClick={() => forceLogout(restaurantId)}
+            className="rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-700 dark:border-gray-700 dark:text-gray-300"
+          >
+            Force logout
+          </button>
+          <button
+            type="button"
+            disabled={actionBusy}
+            onClick={() => suspendRestaurant(restaurantId)}
+            className="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-700 dark:border-red-900 dark:text-red-300"
+          >
+            Suspend
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
 
 export default function SecurityOperations() {
   const { user } = useAuth()
@@ -426,78 +515,6 @@ export default function SecurityOperations() {
     { id: 'locks', label: 'Active Blocks' },
   ]
 
-  const renderAlertActions = (alert) => {
-    const restaurantId = alert.restaurantId?._id || alert.restaurantId
-    const isOpen = ['open', 'investigating'].includes(alert.status)
-
-    return (
-      <div className="flex flex-wrap gap-1.5">
-        {isOpen && (
-          <>
-            <button
-              type="button"
-              disabled={actionBusy}
-              onClick={() => blockAlertActivity(alert)}
-              className="rounded-lg bg-red-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50"
-            >
-              Block activity
-            </button>
-            <button
-              type="button"
-              disabled={actionBusy}
-              onClick={() => updateAlertStatus(alert._id, 'investigating')}
-              className="rounded-lg bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800 dark:bg-amber-950 dark:text-amber-200"
-            >
-              <FiEye className="mr-1 inline" />
-              Investigate
-            </button>
-          </>
-        )}
-        {isOpen && (
-          <button
-            type="button"
-            disabled={actionBusy}
-            onClick={() => updateAlertStatus(alert._id, 'dismissed', 'Dismissed by admin')}
-            className="rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-bold text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-          >
-            Dismiss
-          </button>
-        )}
-        {alert.status !== 'resolved' && (
-          <button
-            type="button"
-            disabled={actionBusy}
-            onClick={() => updateAlertStatus(alert._id, 'resolved', 'Resolved by admin')}
-            className="rounded-lg bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
-          >
-            <FiCheck className="mr-1 inline" />
-            Resolve
-          </button>
-        )}
-        {restaurantId && isOpen && (
-          <>
-            <button
-              type="button"
-              disabled={actionBusy}
-              onClick={() => forceLogout(restaurantId)}
-              className="rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-bold text-gray-700 dark:border-gray-700 dark:text-gray-300"
-            >
-              Force logout
-            </button>
-            <button
-              type="button"
-              disabled={actionBusy}
-              onClick={() => suspendRestaurant(restaurantId)}
-              className="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-bold text-red-700 dark:border-red-900 dark:text-red-300"
-            >
-              Suspend
-            </button>
-          </>
-        )}
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-6">
       <PlatformPageHeader
@@ -531,7 +548,7 @@ export default function SecurityOperations() {
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id)}
-            className={`border-b-2 px-4 py-2 text-sm font-bold transition ${
+            className={`border-b-2 px-4 py-2 text-sm font-semibold transition ${
               activeTab === tab.id
                 ? 'border-primary-600 text-primary-700 dark:border-primary-400 dark:text-primary-300'
                 : 'border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'
@@ -559,6 +576,7 @@ export default function SecurityOperations() {
                 <PlatformEmptyState title="No failed login trend" description="No failed login events in this window." icon={FiLock} />
               ) : (
                 <div className="h-72">
+                  <Suspense fallback={<div className="h-full rounded-2xl bg-surface-50 dark:bg-gray-900" />}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={trend}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -568,6 +586,7 @@ export default function SecurityOperations() {
                       <Line type="monotone" dataKey="failed" stroke="#b33b19" strokeWidth={3} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
+                  </Suspense>
                 </div>
               )}
             </Card>
@@ -596,10 +615,10 @@ export default function SecurityOperations() {
                   ) : ipBlocks.map((block) => (
                     <div key={block._id} className="flex items-center justify-between gap-2 rounded-lg bg-gray-50 px-3 py-2 text-sm dark:bg-gray-950">
                       <div className="min-w-0">
-                        <p className="truncate font-bold text-gray-900 dark:text-gray-100">{block.ipAddress}</p>
+                        <p className="truncate font-semibold text-gray-900 dark:text-gray-100">{block.ipAddress}</p>
                         <p className="truncate text-xs text-gray-500">{block.reason || 'Blocked'}</p>
                       </div>
-                      <button type="button" onClick={() => unblockIp(block._id)} className="text-xs font-bold text-primary-700 dark:text-primary-300">
+                      <button type="button" onClick={() => unblockIp(block._id)} className="text-xs font-semibold text-primary-700 dark:text-primary-300">
                         Unblock
                       </button>
                     </div>
@@ -628,23 +647,23 @@ export default function SecurityOperations() {
                     <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                       {data.topSuspiciousIps.map((row) => (
                         <tr key={row._id}>
-                          <td className="px-4 py-3 font-bold text-gray-900 dark:text-gray-100">{row._id}</td>
+                          <td className="px-4 py-3 font-semibold text-gray-900 dark:text-gray-100">{row._id}</td>
                           <td className="px-4 py-3">{row.count}</td>
                           <td className="px-4 py-3 text-xs text-gray-500">{(row.actions || []).map(formatAction).join(', ')}</td>
-                          <td className="px-4 py-3 text-gray-500">{new Date(row.lastSeen).toLocaleString()}</td>
+                          <td className="px-4 py-3 text-gray-500"><ClientDateTime value={row.lastSeen} /></td>
                           <td className="px-4 py-3 text-right space-x-2">
                             <button
                               type="button"
                               onClick={() => createLock({ subjectType: 'ip', subjectId: row._id, reason: 'Suspicious IP lock', lockMinutes: 60, blockIpAlso: true })}
                               disabled={actionBusy}
-                              className="text-xs font-bold text-amber-700"
+                              className="text-xs font-semibold text-amber-700"
                             >
                               Lock
                             </button>
                             <button
                               type="button"
                               onClick={() => submitBlockIp(row._id, 'Blocked from suspicious IP tracking')}
-                              className="text-xs font-bold text-red-600"
+                              className="text-xs font-semibold text-red-600"
                             >
                               Block IP
                             </button>
@@ -664,9 +683,9 @@ export default function SecurityOperations() {
                 <div className="space-y-2">
                   {data.alertsByType.map((row) => (
                     <div key={row._id} className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3 dark:bg-gray-950">
-                      <p className="text-sm font-bold capitalize text-gray-800 dark:text-gray-100">{formatType(row._id)}</p>
+                      <p className="text-sm font-semibold capitalize text-gray-800 dark:text-gray-100">{formatType(row._id)}</p>
                       <div className="text-right">
-                        <p className="font-black text-gray-900 dark:text-gray-100">{row.count}</p>
+                        <p className="font-semibold text-gray-900 dark:text-gray-100">{row.count}</p>
                         {row.critical > 0 && <p className="text-xs text-red-600">{row.critical} critical</p>}
                       </div>
                     </div>
@@ -685,11 +704,11 @@ export default function SecurityOperations() {
                   {data.failedPaymentsByRestaurant.map((row) => (
                     <div key={row._id} className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3 dark:bg-gray-950">
                       <div>
-                        <p className="font-bold text-gray-900 dark:text-gray-100">{row.restaurantName || 'Unknown restaurant'}</p>
+                        <p className="font-semibold text-gray-900 dark:text-gray-100">{row.restaurantName || 'Unknown restaurant'}</p>
                         <p className="text-xs text-gray-500">{row.restaurantEmail || row._id}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-black text-red-600">{row.count}</p>
+                        <p className="font-semibold text-red-600">{row.count}</p>
                         <p className="text-xs text-gray-500">failed</p>
                       </div>
                     </div>
@@ -705,8 +724,8 @@ export default function SecurityOperations() {
                 <div className="space-y-2">
                   {data.blockedByPath.map((row) => (
                     <div key={row._id} className="flex items-center justify-between gap-3 rounded-xl bg-gray-50 px-4 py-3 dark:bg-gray-950">
-                      <p className="truncate text-sm font-bold text-gray-800 dark:text-gray-100">{row._id}</p>
-                      <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-black text-primary-700 dark:bg-gray-800 dark:text-primary-300">{row.count}</span>
+                      <p className="truncate text-sm font-semibold text-gray-800 dark:text-gray-100">{row._id}</p>
+                      <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700 dark:bg-gray-800 dark:text-primary-300">{row.count}</span>
                     </div>
                   ))}
                 </div>
@@ -755,7 +774,7 @@ export default function SecurityOperations() {
             </div>
 
             {alertsLoading ? (
-              <p className="text-sm text-gray-500">Loading alerts...</p>
+              <p className="text-sm text-gray-500">Loading alerts…</p>
             ) : alerts.length === 0 ? (
               <PlatformEmptyState title="No suspicious activities" description="No fraud alerts match your filters." icon={FiShield} />
             ) : (
@@ -765,20 +784,20 @@ export default function SecurityOperations() {
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-bold text-gray-950 dark:text-gray-100">{alert.title}</p>
+                          <p className="font-semibold text-gray-950 dark:text-gray-100">{alert.title}</p>
                           <PlatformPill className={severityStyle[alert.severity] || severityStyle.medium}>{alert.severity}</PlatformPill>
                           <PlatformPill className={statusStyle[alert.status] || statusStyle.open}>{alert.status}</PlatformPill>
                         </div>
                         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{alert.message}</p>
                         <p className="mt-2 text-xs text-gray-400">
-                          {alert.restaurantId?.name || 'Platform-wide'} · {formatType(alert.type)} · {new Date(alert.createdAt).toLocaleString()}
+                          {alert.restaurantId?.name || 'Platform-wide'} · {formatType(alert.type)} · <ClientDateTime value={alert.createdAt} />
                         </p>
                         {extractIpFromAlert(alert) && (
                           <p className="mt-1 text-xs font-mono text-gray-500">IP: {extractIpFromAlert(alert)}</p>
                         )}
                       </div>
                     </div>
-                    <div className="mt-3">{renderAlertActions(alert)}</div>
+                    <div className="mt-3"><SecurityAlertActions alert={alert} actionBusy={actionBusy} blockAlertActivity={blockAlertActivity} updateAlertStatus={updateAlertStatus} forceLogout={forceLogout} suspendRestaurant={suspendRestaurant} /></div>
                   </div>
                 ))}
               </div>
@@ -803,7 +822,7 @@ export default function SecurityOperations() {
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                     {data.recentAudit.map((log) => (
                       <tr key={log._id}>
-                        <td className="px-4 py-3 text-gray-500">{new Date(log.timestamp).toLocaleString()}</td>
+                        <td className="px-4 py-3 text-gray-500"><ClientDateTime value={log.timestamp} /></td>
                         <td className="px-4 py-3">
                           <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium dark:bg-gray-800">{formatAction(log.action)}</span>
                         </td>
@@ -817,7 +836,7 @@ export default function SecurityOperations() {
                               type="button"
                               disabled={actionBusy}
                               onClick={() => submitBlockIp(log.ipAddress, `Blocked from audit: ${log.action}`)}
-                              className="text-xs font-bold text-red-600"
+                              className="text-xs font-semibold text-red-600"
                             >
                               Block IP
                             </button>
@@ -841,11 +860,11 @@ export default function SecurityOperations() {
                 {data.activeAttacks.map((alert) => (
                   <div key={alert._id} className="rounded-2xl border border-red-100 bg-red-50/50 p-4 dark:border-red-900 dark:bg-red-950/20">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-bold text-gray-950 dark:text-gray-100">{alert.title}</p>
+                      <p className="font-semibold text-gray-950 dark:text-gray-100">{alert.title}</p>
                       <PlatformPill className={severityStyle[alert.severity] || severityStyle.medium}>{alert.severity}</PlatformPill>
                     </div>
                     <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{alert.message}</p>
-                    <div className="mt-3">{renderAlertActions(alert)}</div>
+                    <div className="mt-3"><SecurityAlertActions alert={alert} actionBusy={actionBusy} blockAlertActivity={blockAlertActivity} updateAlertStatus={updateAlertStatus} forceLogout={forceLogout} suspendRestaurant={suspendRestaurant} /></div>
                   </div>
                 ))}
               </div>
@@ -897,7 +916,7 @@ export default function SecurityOperations() {
             </div>
 
             {sessionsLoading ? (
-              <p className="text-sm text-gray-500">Loading active sessions...</p>
+              <p className="text-sm text-gray-500">Loading active sessions…</p>
             ) : activeSessions.length === 0 ? (
               <PlatformEmptyState
                 title="No active logins"
@@ -923,10 +942,10 @@ export default function SecurityOperations() {
                       return (
                         <tr key={session.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                           <td className="px-4 py-3">
-                            <p className="font-bold text-gray-900 dark:text-gray-100">{session.restaurantName}</p>
+                            <p className="font-semibold text-gray-900 dark:text-gray-100">{session.restaurantName}</p>
                             <p className="text-xs text-gray-500">{session.restaurantEmail}</p>
                             {!session.restaurantActive && (
-                              <span className="mt-1 inline-block rounded-full bg-red-50 px-2 py-0.5 text-xs font-bold text-red-700 dark:bg-red-950 dark:text-red-200">
+                              <span className="mt-1 inline-block rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-950 dark:text-red-200">
                                 Suspended
                               </span>
                             )}
@@ -945,12 +964,12 @@ export default function SecurityOperations() {
                             <p className="text-xs text-gray-500">{formatLocation(session.loginLocation)}</p>
                           </td>
                           <td className="px-4 py-3 text-gray-500">
-                            <p>{new Date(session.lastActiveAt).toLocaleString()}</p>
-                            <p className="text-xs">Since {new Date(session.createdAt).toLocaleString()}</p>
+                            <p><ClientDateTime value={session.lastActiveAt} /></p>
+                            <p className="text-xs"><ClientDateTime value={session.createdAt} prefix="Since " /></p>
                           </td>
                           <td className="px-4 py-3">
                             {labels.length === 0 ? (
-                              <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200">
+                              <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200">
                                 Trusted
                               </span>
                             ) : (
@@ -958,7 +977,7 @@ export default function SecurityOperations() {
                                 {labels.map((label) => (
                                   <span
                                     key={label}
-                                    className="rounded-full bg-amber-50 px-2 py-1 text-xs font-bold text-amber-800 dark:bg-amber-950 dark:text-amber-200"
+                                    className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-950 dark:text-amber-200"
                                   >
                                     {label}
                                   </span>
@@ -972,7 +991,7 @@ export default function SecurityOperations() {
                                 type="button"
                                 disabled={actionBusy}
                                 onClick={() => revokeSession(session.id)}
-                                className="text-xs font-bold text-red-600"
+                                className="text-xs font-semibold text-red-600"
                               >
                                 Revoke
                               </button>
@@ -981,7 +1000,7 @@ export default function SecurityOperations() {
                                   type="button"
                                   disabled={actionBusy}
                                   onClick={() => submitBlockIp(session.ipAddress, `Blocked from active login (${session.restaurantEmail})`)}
-                                  className="text-xs font-bold text-orange-700"
+                                  className="text-xs font-semibold text-orange-700"
                                 >
                                   Block IP
                                 </button>
@@ -990,7 +1009,7 @@ export default function SecurityOperations() {
                                 type="button"
                                 disabled={actionBusy}
                                 onClick={() => forceLogout(session.restaurantId)}
-                                className="text-xs font-bold text-gray-600 dark:text-gray-300"
+                                className="text-xs font-semibold text-gray-600 dark:text-gray-300"
                               >
                                 Logout all
                               </button>
@@ -1150,7 +1169,7 @@ export default function SecurityOperations() {
                     {activeLocks.map((lock) => (
                       <tr key={lock._id}>
                         <td className="px-4 py-3">
-                          <p className="font-bold text-gray-900 dark:text-gray-100">{lock.subjectType}</p>
+                          <p className="font-semibold text-gray-900 dark:text-gray-100">{lock.subjectType}</p>
                           <p className="font-mono text-xs text-gray-500">{lock.subjectId}</p>
                         </td>
                         <td className="px-4 py-3 text-gray-600">
@@ -1160,7 +1179,7 @@ export default function SecurityOperations() {
                           )}
                         </td>
                         <td className="max-w-xs truncate px-4 py-3 text-gray-500">{lock.reason}</td>
-                        <td className="px-4 py-3 text-gray-500">{new Date(lock.lockedUntil).toLocaleString()}</td>
+                        <td className="px-4 py-3 text-gray-500"><ClientDateTime value={lock.lockedUntil} /></td>
                         <td className="px-4 py-3 text-right">
                           {['Restaurant', 'Employee'].includes(lock.subjectType) && !isSuperAdmin ? (
                             <span className="text-xs text-gray-400">Super admin only</span>
@@ -1169,7 +1188,7 @@ export default function SecurityOperations() {
                               type="button"
                               disabled={actionBusy}
                               onClick={() => releaseLock(lock)}
-                              className="text-xs font-bold text-primary-700 dark:text-primary-300"
+                              className="text-xs font-semibold text-primary-700 dark:text-primary-300"
                             >
                               {lock.subjectType === 'Restaurant' ? 'Unlock restaurant' : 'Release'}
                             </button>
@@ -1191,10 +1210,10 @@ export default function SecurityOperations() {
                 {ipBlocks.map((block) => (
                   <div key={block._id} className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3 dark:bg-gray-950">
                     <div>
-                      <p className="font-bold text-gray-900 dark:text-gray-100">{block.ipAddress}</p>
+                      <p className="font-semibold text-gray-900 dark:text-gray-100">{block.ipAddress}</p>
                       <p className="text-xs text-gray-500">{block.reason}</p>
                     </div>
-                    <button type="button" onClick={() => unblockIp(block._id)} disabled={actionBusy} className="text-xs font-bold text-primary-700">
+                    <button type="button" onClick={() => unblockIp(block._id)} disabled={actionBusy} className="text-xs font-semibold text-primary-700">
                       Unblock
                     </button>
                   </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { Suspense, useEffect, useMemo, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import toast from '@utils/toast'
 import {
@@ -11,26 +11,34 @@ import {
   FiTrendingUp,
   FiUsers,
 } from 'react-icons/fi'
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
 import { fetchPosReports } from '../../../services/posApi'
 import { usePosAccess } from '../../../hooks/usePosAccess'
 
 const COLORS = ['#8f2800', '#f59e0b', '#10b981', '#2563eb', '#9333ea', '#dc2626', '#64748b']
+const Area = React.lazy(() => import('recharts').then((module) => ({ default: module.Area })))
+const AreaChart = React.lazy(() => import('recharts').then((module) => ({ default: module.AreaChart })))
+const Bar = React.lazy(() => import('recharts').then((module) => ({ default: module.Bar })))
+const BarChart = React.lazy(() => import('recharts').then((module) => ({ default: module.BarChart })))
+const CartesianGrid = React.lazy(() => import('recharts').then((module) => ({ default: module.CartesianGrid })))
+const Cell = React.lazy(() => import('recharts').then((module) => ({ default: module.Cell })))
+const Line = React.lazy(() => import('recharts').then((module) => ({ default: module.Line })))
+const LineChart = React.lazy(() => import('recharts').then((module) => ({ default: module.LineChart })))
+const Pie = React.lazy(() => import('recharts').then((module) => ({ default: module.Pie })))
+const PieChart = React.lazy(() => import('recharts').then((module) => ({ default: module.PieChart })))
+const ResponsiveContainer = React.lazy(() => import('recharts').then((module) => ({ default: module.ResponsiveContainer })))
+const Tooltip = React.lazy(() => import('recharts').then((module) => ({ default: module.Tooltip })))
+const XAxis = React.lazy(() => import('recharts').then((module) => ({ default: module.XAxis })))
+const YAxis = React.lazy(() => import('recharts').then((module) => ({ default: module.YAxis })))
+
+function ClientDateTime({ value }) {
+  const [text, setText] = useState('')
+
+  useEffect(() => {
+    if (value) setText(new Date(value).toLocaleString())
+  }, [value])
+
+  return <span suppressHydrationWarning>{text || 'Pending'}</span>
+}
 
 function money(value) {
   return `Rs. ${Number(value || 0).toFixed(2)}`
@@ -41,8 +49,8 @@ function Metric({ label, value, sub, icon: Icon, tone = 'bg-primary-600' }) {
     <section className="rounded-3xl border border-surface-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-wide text-gray-500">{label}</p>
-          <p className="mt-2 text-3xl font-black text-gray-950">{value}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
+          <p className="mt-2 text-3xl font-semibold text-gray-950">{value}</p>
           {sub && <p className="mt-1 text-sm font-semibold text-gray-500">{sub}</p>}
         </div>
         <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-white ${tone}`}>
@@ -56,7 +64,7 @@ function Metric({ label, value, sub, icon: Icon, tone = 'bg-primary-600' }) {
 function Panel({ title, children, className = '', bodyClassName = '' }) {
   return (
     <section className={`rounded-3xl border border-surface-200 bg-white p-5 shadow-sm ${className}`}>
-      <p className="text-xs font-black uppercase tracking-wide text-gray-500">{title}</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{title}</p>
       <div className={`mt-4 ${bodyClassName}`}>{children}</div>
     </section>
   )
@@ -111,25 +119,26 @@ export default function PosReports() {
   }, [data])
 
   if (!canReports) return <Navigate to=".." replace />
-  if (loading) return <div className="flex h-full items-center justify-center text-primary-700">Loading reports...</div>
+  if (loading) return <div className="flex h-full items-center justify-center text-primary-700">Loading reports…</div>
 
   return (
+    <Suspense fallback={<div className="h-full rounded-2xl bg-surface-50" />}>
     <div className="h-full overflow-y-auto p-4">
       <div className="mx-auto max-w-7xl space-y-4">
         <section className="rounded-3xl border border-surface-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full bg-primary-50 px-3 py-1 text-xs font-black uppercase tracking-wide text-primary-700">
+              <span className="inline-flex items-center gap-2 rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-700">
                 <FiBarChart2 className="h-4 w-4" />
                 Analytics
               </span>
-              <h1 className="mt-3 text-3xl font-black text-gray-950">POS analytics</h1>
+              <h1 className="mt-3 text-3xl font-semibold text-gray-950">POS analytics</h1>
               <p className="mt-1 text-sm text-gray-500">Register performance, payment mix, item velocity, shifts, and unpaid balance.</p>
             </div>
             <button
               type="button"
               onClick={load}
-              className="inline-flex items-center gap-2 rounded-xl border border-surface-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 hover:bg-surface-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-surface-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-surface-50"
             >
               <FiRefreshCw className="h-4 w-4" />
               Refresh
@@ -162,7 +171,7 @@ export default function PosReports() {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={paymentData} dataKey="total" nameKey="name" outerRadius={110} label>
-                  {paymentData.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
+                  {paymentData.map((row, index) => <Cell key={row.name} fill={COLORS[index % COLORS.length]} />)}
                 </Pie>
                 <Tooltip formatter={(value) => money(value)} />
               </PieChart>
@@ -214,10 +223,10 @@ export default function PosReports() {
               {(data?.today?.topItems || []).map((row, index) => (
                 <div key={row._id} className="flex items-center justify-between gap-4 py-3 text-sm">
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-xs font-black text-primary-700">{index + 1}</span>
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-xs font-semibold text-primary-700">{index + 1}</span>
                     <span className="truncate font-semibold text-gray-800">{row._id}</span>
                   </div>
-                  <span className="shrink-0 font-black text-primary-700">{row.qty} - {money(row.revenue)}</span>
+                  <span className="shrink-0 font-semibold text-primary-700">{row.qty} - {money(row.revenue)}</span>
                 </div>
               ))}
               {(data?.today?.topItems || []).length === 0 && (
@@ -233,10 +242,10 @@ export default function PosReports() {
               {(data?.today?.staffCollections || []).map((row) => (
                 <div key={row._id || row.name} className="flex items-center justify-between gap-4 py-3 text-sm">
                   <div className="min-w-0">
-                    <p className="truncate font-black text-gray-900">{row.name}</p>
+                    <p className="truncate font-semibold text-gray-900">{row.name}</p>
                     <p className="text-xs text-gray-500">{row.role || 'owner'} - {row.payments} payment{row.payments === 1 ? '' : 's'}</p>
                   </div>
-                  <span className="shrink-0 font-black text-primary-700">{money(row.total)}</span>
+                  <span className="shrink-0 font-semibold text-primary-700">{money(row.total)}</span>
                 </div>
               ))}
               {(data?.today?.staffCollections || []).length === 0 && <p className="py-6 text-center text-sm text-gray-500">No collections yet.</p>}
@@ -249,16 +258,16 @@ export default function PosReports() {
                 <div key={shift._id} className="rounded-2xl border border-surface-200 bg-surface-50 p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-black text-gray-950">{shift.operatorName}</p>
+                      <p className="font-semibold text-gray-950">{shift.operatorName}</p>
                       <p className="text-xs font-semibold capitalize text-gray-500">{shift.operatorRole} - {shift.operatorType}</p>
                       <p className="mt-2 flex items-center gap-1 text-xs text-gray-500">
                         <FiClock className="h-3.5 w-3.5" />
-                        Opened {new Date(shift.openedAt).toLocaleString()}
+                        Opened <ClientDateTime value={shift.openedAt} />
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs font-black uppercase text-gray-500">Float</p>
-                      <p className="text-lg font-black text-primary-700">{money(shift.openingCash)}</p>
+                      <p className="text-xs font-semibold uppercase text-gray-500">Float</p>
+                      <p className="text-lg font-semibold text-primary-700">{money(shift.openingCash)}</p>
                     </div>
                   </div>
                 </div>
@@ -274,5 +283,6 @@ export default function PosReports() {
         </div>
       </div>
     </div>
+    </Suspense>
   )
 }

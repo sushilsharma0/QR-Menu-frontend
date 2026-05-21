@@ -118,7 +118,7 @@ const SubscriptionPayments = () => {
         }
       >
         {loading ? (
-          <p className="text-sm text-gray-500">Loading payments...</p>
+          <p className="text-sm text-gray-500">Loading payments…</p>
         ) : payments.length === 0 ? (
           <PlatformEmptyState title="No payment requests found" description="Gateway payments submitted by restaurants will appear here." icon={FiCreditCard} />
         ) : (
@@ -194,8 +194,9 @@ const SubscriptionPayments = () => {
           <p className="text-sm text-gray-600 dark:text-gray-300">
             {review.payment?.restaurantId?.name} - {review.payment?.planId?.name} - {formatMoney(review.payment?.amount)}
           </p>
-          <label className="mt-4 block text-sm font-semibold text-gray-700 dark:text-gray-200">Admin note</label>
+          <label htmlFor="subscription-payment-admin-note" className="mt-4 block text-sm font-semibold text-gray-700 dark:text-gray-200">Admin note</label>
           <textarea
+            id="subscription-payment-admin-note"
             className="mt-2 min-h-28 w-full rounded-xl border border-surface-300 bg-white p-3 text-sm outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-900"
             value={review.note}
             onChange={(e) => setReview((prev) => ({ ...prev, note: e.target.value }))}

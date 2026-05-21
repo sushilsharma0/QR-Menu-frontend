@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { LazyMotion, domAnimation, m } from 'framer-motion'
 import {
   FiArrowLeft,
   FiCheck,
@@ -61,7 +61,7 @@ const SubscriptionCheckout = () => {
   const [loading, setLoading] = useState(true)
   const [manualReferenceId, setManualReferenceId] = useState('')
   const [manualNote, setManualNote] = useState('')
-  const [manualProof, setManualProof] = useState(null)
+  const manualProofRef = useRef(null)
   const [manualSubmitting, setManualSubmitting] = useState(false)
 
   const { slug, restaurantId } = getTenantSegments(user)
@@ -121,7 +121,7 @@ const SubscriptionCheckout = () => {
 
   const handleManualSubmit = async () => {
     if (manualSubmitting || isLocked) return
-    if (!manualProof) {
+    if (!manualProofRef.current) {
       toast.error('Please upload payment proof before submitting.')
       return
     }
@@ -134,7 +134,7 @@ const SubscriptionCheckout = () => {
       setManualSubmitting(true)
       const formData = new FormData()
       formData.append('planId', planId)
-      formData.append('paymentProof', manualProof)
+      formData.append('paymentProof', manualProofRef.current)
       formData.append('referenceId', manualReferenceId.trim())
       if (manualNote.trim()) formData.append('note', manualNote.trim())
 
@@ -143,7 +143,7 @@ const SubscriptionCheckout = () => {
       if (payment) {
         setPayments((prev) => [payment, ...prev])
       }
-      setManualProof(null)
+      manualProofRef.current = null
       setManualReferenceId('')
       setManualNote('')
       toast.success('Manual payment submitted for platform review.')
@@ -159,16 +159,17 @@ const SubscriptionCheckout = () => {
     if (file && file.size > FILE_MAX_BYTES) {
       toast.error('Payment proof must be less than 1 MB')
       event.target.value = ''
-      setManualProof(null)
+      manualProofRef.current = null
       return
     }
-    setManualProof(file)
+    manualProofRef.current = file
   }
 
   if (loading) return <RestaurantPageLoader />
   if (!plan) return null
 
   return (
+    <LazyMotion features={domAnimation}>
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link to={subscriptionPath}>
@@ -184,7 +185,7 @@ const SubscriptionCheckout = () => {
         )}
       </div>
 
-      <motion.section
+      <m.section
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         className="relative overflow-hidden rounded-3xl border border-surface-200 bg-white shadow-sm"
@@ -192,11 +193,11 @@ const SubscriptionCheckout = () => {
         <div className="absolute inset-x-0 top-0 h-48 bg-gradient-to-r from-primary-50 via-surface-50 to-white" />
         <div className="relative grid gap-6 p-5 lg:grid-cols-[1.25fr_.75fr] lg:p-7">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-wide text-primary-700 shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-white/90 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-700 shadow-sm">
               <FiCreditCard className="h-4 w-4" />
               Subscription checkout
             </div>
-            <h1 className="mt-4 text-3xl font-black tracking-tight text-gray-950">{plan.name}</h1>
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-gray-950">{plan.name}</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
               Review the plan details and choose a secure gateway. Your subscription activates only after the platform verifies the payment.
             </p>
@@ -205,25 +206,25 @@ const SubscriptionCheckout = () => {
               <div className="rounded-2xl border border-surface-200 bg-white/90 p-4">
                 <FiClock className="h-5 w-5 text-primary-600" />
                 <p className="mt-3 text-xs font-semibold uppercase text-gray-500">Duration</p>
-                <p className="mt-1 text-lg font-black text-gray-950">{plan.durationLabel || `${plan.duration} days`}</p>
+                <p className="mt-1 text-lg font-semibold text-gray-950">{plan.durationLabel || `${plan.duration} days`}</p>
               </div>
               <div className="rounded-2xl border border-surface-200 bg-white/90 p-4">
                 <FiZap className="h-5 w-5 text-primary-600" />
                 <p className="mt-3 text-xs font-semibold uppercase text-gray-500">Plan type</p>
-                <p className="mt-1 text-lg font-black capitalize text-gray-950">{plan.planType}</p>
+                <p className="mt-1 text-lg font-semibold capitalize text-gray-950">{plan.planType}</p>
               </div>
               <div className="rounded-2xl border border-surface-200 bg-white/90 p-4">
                 <FiShield className="h-5 w-5 text-primary-600" />
                 <p className="mt-3 text-xs font-semibold uppercase text-gray-500">Verification</p>
-                <p className="mt-1 text-lg font-black text-gray-950">Admin review</p>
+                <p className="mt-1 text-lg font-semibold text-gray-950">Admin review</p>
               </div>
             </div>
 
             <div className="mt-6 rounded-2xl border border-surface-200 bg-white p-5">
-              <h2 className="text-lg font-black text-gray-950">Included features</h2>
+              <h2 className="text-lg font-semibold text-gray-950">Included features</h2>
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                {(plan.features || []).map((feature, index) => (
-                  <div key={index} className="flex items-start gap-2 text-sm text-gray-700">
+                {(plan.features || []).map((feature) => (
+                  <div key={feature} className="flex items-start gap-2 text-sm text-gray-700">
                     <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-green-100 text-green-700">
                       <FiCheck className="h-3.5 w-3.5" />
                     </span>
@@ -239,7 +240,7 @@ const SubscriptionCheckout = () => {
 
           <aside className="rounded-3xl border border-surface-200 bg-white p-5 shadow-sm">
             <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Payment summary</p>
-            <p className="mt-3 text-4xl font-black text-primary-700">
+            <p className="mt-3 text-4xl font-semibold text-primary-700">
               {formatRestaurantCurrency(total, symbol)}
             </p>
 
@@ -362,10 +363,10 @@ const SubscriptionCheckout = () => {
             </p>
           </aside>
         </div>
-      </motion.section>
+      </m.section>
 
       <section className="rounded-3xl border border-surface-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-black text-gray-950">Recent payment attempts</h2>
+        <h2 className="text-lg font-semibold text-gray-950">Recent payment attempts</h2>
         <div className="mt-4 overflow-x-auto">
           <table className="min-w-full divide-y divide-surface-200 text-sm">
             <thead className="bg-surface-50">
@@ -403,6 +404,7 @@ const SubscriptionCheckout = () => {
         </div>
       </section>
     </div>
+    </LazyMotion>
   )
 }
 

@@ -185,7 +185,7 @@ function Brand({ collapsed, branchName }) {
   }
   return (
     <div className="min-w-0">
-      <h1 className="truncate text-base font-black leading-none text-gray-950 dark:text-gray-100">Branch portal</h1>
+      <h1 className="truncate text-base font-semibold leading-none text-gray-950 dark:text-gray-100">Branch portal</h1>
       <p className="mt-1 truncate text-xs font-medium text-gray-500 dark:text-gray-400">{branchName || 'Your branch'}</p>
     </div>
   )
@@ -195,13 +195,16 @@ function SidebarContent({ collapsed, setCollapsed, pendingCount, restaurantBase,
   const hideLabels = collapsed && !isMobile
 
   const filteredGroups = useMemo(() => {
-    return NAV_GROUPS.filter((g) => !g.ownerOnly || canManageTheme).map((g) => ({
-      ...g,
-      items: g.items.filter((item) => {
+    return NAV_GROUPS.reduce((groups, group) => {
+      if (group.ownerOnly && !canManageTheme) return groups
+      const items = group.items.reduce((rows, item) => {
         const key = segmentToModuleKey(item.segment)
-        return modules[key] !== false
-      }),
-    })).filter((g) => g.items.length > 0)
+        if (modules[key] !== false) rows.push(item)
+        return rows
+      }, [])
+      if (items.length > 0) groups.push({ ...group, items })
+      return groups
+    }, [])
   }, [canManageTheme, modules])
 
   return (
@@ -272,12 +275,15 @@ const BranchSidebar = () => {
   const { restaurantBase, hasTenant } = useTenantRoutes()
   const [pendingCount, setPendingCount] = useState(0)
   const [collapsed, setCollapsed] = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const [mobileOpenFor, setMobileOpenFor] = useState(null)
   const [tooltip, setTooltip] = useState(null)
 
   const modules = user?.enabledModules || {}
   const branchName = user?.branchName || user?.branchSlug
   const canManageTheme = user?.role === 'branch_admin'
+  const mobileOpen = mobileOpenFor === restaurantBase
+  const openMobile = () => setMobileOpenFor(restaurantBase)
+  const closeMobile = () => setMobileOpenFor(null)
 
   const fetchPendingCount = async () => {
     try {
@@ -302,20 +308,16 @@ const BranchSidebar = () => {
     }
   }, [socket])
 
-  useEffect(() => {
-    setMobileOpen(false)
-  }, [restaurantBase])
-
   if (!user || user.scope !== 'branch_user' || !hasTenant) return null
 
   return (
     <>
       <div className="fixed left-0 right-0 top-0 z-[60] flex h-14 items-center gap-3 border-b border-gray-200 bg-white px-4 dark:border-gray-800 dark:bg-gray-900 lg:hidden">
-        <button type="button" onClick={() => setMobileOpen(true)} className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-surface-50 dark:bg-gray-800">
+        <button type="button" onClick={openMobile} className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-surface-50 dark:bg-gray-800">
           <FiMenu className="h-5 w-5 text-gray-700 dark:text-gray-200" />
         </button>
         <div className="min-w-0">
-          <h1 className="truncate text-sm font-black text-gray-950 dark:text-gray-100">Branch</h1>
+          <h1 className="truncate text-sm font-semibold text-gray-950 dark:text-gray-100">Branch</h1>
           <p className="truncate text-xs text-gray-500">{branchName}</p>
         </div>
         {pendingCount > 0 && (
@@ -325,7 +327,7 @@ const BranchSidebar = () => {
         )}
       </div>
 
-      {mobileOpen && <div className="fixed inset-0 z-[65] bg-black/50 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)} role="presentation" />}
+      {mobileOpen && <div className="fixed inset-0 z-[65] bg-black/50 backdrop-blur-sm lg:hidden" onClick={closeMobile} role="presentation" />}
 
       <div
         className={`fixed left-0 top-0 z-[70] h-full w-72 transform bg-white shadow-2xl transition-transform duration-300 ease-in-out dark:bg-gray-900 lg:hidden ${
@@ -340,7 +342,7 @@ const BranchSidebar = () => {
           branchName={branchName}
           modules={modules}
           canManageTheme={canManageTheme}
-          onClose={() => setMobileOpen(false)}
+          onClose={closeMobile}
           isMobile
           onTooltip={setTooltip}
           onTooltipLeave={() => setTooltip(null)}

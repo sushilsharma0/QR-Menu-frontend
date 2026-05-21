@@ -29,7 +29,7 @@ const Blog = () => {
     if (!search) return posts
     return posts.filter((post) =>
       [post.title, post.content, post.metaDescription, post.key]
-        .filter(Boolean)
+        .flatMap((value) => (value ? [value] : []))
         .some((value) => String(value).toLowerCase().includes(search)),
     )
   }, [posts, query])
@@ -42,9 +42,9 @@ const Blog = () => {
             <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-white">
               <QrCode className="h-5 w-5" />
             </span>
-            <span className="text-lg font-black">QR Restro Nepal</span>
+            <span className="text-lg font-semibold">QR Restro Nepal</span>
           </Link>
-          <Link to="/" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+          <Link to="/" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
             <ArrowLeft className="h-4 w-4" />
             Back Home
           </Link>
@@ -54,11 +54,11 @@ const Blog = () => {
       <main>
         <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-2 text-sm font-black text-emerald-700 shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-emerald-700 shadow-sm">
               <FileText className="h-4 w-4" />
               Restaurant Learning Center
             </div>
-            <h1 className="mt-6 text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">
+            <h1 className="mt-6 text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
               QR menu, restaurant SaaS, and digital ordering guides.
             </h1>
             <p className="mt-5 text-base leading-8 text-slate-600 sm:text-lg">
@@ -91,7 +91,7 @@ const Blog = () => {
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
-                <p className="text-lg font-black text-slate-950">No matching blog posts found.</p>
+                <p className="text-lg font-semibold text-slate-950">No matching blog posts found.</p>
                 <p className="mt-2 text-sm text-slate-500">Try a different search or publish more active Blog entries from the CMS.</p>
               </div>
             )}

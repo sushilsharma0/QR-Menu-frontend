@@ -5,6 +5,11 @@ const CATALOG_URL =
   'https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/master/json/countries.json'
 const CACHE_KEY = 'qr_menu_countries_catalog_v1'
 const CACHE_TTL_MS = 1000 * 60 * 60 * 24
+const CURRENCY_SYMBOL_FORMATTER = new Intl.NumberFormat('en', {
+  style: 'currency',
+  currency: 'USD',
+  currencyDisplay: 'narrowSymbol',
+})
 
 function flagEmoji(iso2) {
   const code = String(iso2 || '').toUpperCase()
@@ -16,11 +21,13 @@ function currencySymbol(code, apiSymbol) {
   const sym = String(apiSymbol || '').trim()
   if (sym && sym.length <= 8) return sym
   try {
-    const parts = new Intl.NumberFormat('en', {
-      style: 'currency',
-      currency: code,
-      currencyDisplay: 'narrowSymbol',
-    }).formatToParts(0)
+    const parts = CURRENCY_SYMBOL_FORMATTER.resolvedOptions().currency === code
+      ? CURRENCY_SYMBOL_FORMATTER.formatToParts(0)
+      : new Intl.NumberFormat('en', {
+          style: 'currency',
+          currency: code,
+          currencyDisplay: 'narrowSymbol',
+        }).formatToParts(0)
     return parts.find((p) => p.type === 'currency')?.value || code
   } catch {
     return code
@@ -30,18 +37,19 @@ function currencySymbol(code, apiSymbol) {
 function buildRowsFromApi(data) {
   if (!Array.isArray(data)) return []
   return data
-    .map((row) => {
+    .flatMap((row) => {
       const country = String(row?.name || '').trim()
-      if (!country) return null
+      if (!country) return []
       const cca2 = String(row?.iso2 || '').trim().toUpperCase()
       const currencyCode = String(row?.currency || '').trim().toUpperCase()
-      const zones = (row?.timezones || [])
-        .map((tz) => String(tz?.zoneName || tz || '').trim())
-        .filter(Boolean)
+      const zones = (row?.timezones || []).flatMap((tz) => {
+        const zone = String(tz?.zoneName || tz || '').trim()
+        return zone ? [zone] : []
+      })
       const currency = currencySymbol(currencyCode, row?.currency_symbol)
       const timezone = zones[0] || 'UTC'
       const flag = String(row?.emoji || '').trim() || flagEmoji(cca2)
-      return {
+      return [{
         country,
         cca2,
         currencyCode,
@@ -50,9 +58,8 @@ function buildRowsFromApi(data) {
         timezones: zones.length ? zones : [timezone],
         flag,
         label: `${flag ? `${flag} ` : ''}${country}`,
-      }
+      }]
     })
-    .filter(Boolean)
     .sort((a, b) => a.country.localeCompare(b.country))
 }
 

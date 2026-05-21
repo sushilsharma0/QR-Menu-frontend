@@ -56,7 +56,7 @@ export default function ThemeSettingsSection({
         </div>
 
         <div>
-          <h3 className="text-sm font-black uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
             Palettes
           </h3>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -97,7 +97,7 @@ export default function ThemeSettingsSection({
           </div>
 
           <div className="rounded-lg border border-gray-100 bg-app-card p-4 shadow-sm dark:border-gray-800">
-            <h3 className="font-bold text-gray-900 dark:text-gray-100">Live preview</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Live preview</h3>
             <div className="mt-4 overflow-hidden rounded-lg border border-app-border bg-app-background">
               <div className="flex">
                 <div className="w-24 bg-primary-700 p-3 text-white">

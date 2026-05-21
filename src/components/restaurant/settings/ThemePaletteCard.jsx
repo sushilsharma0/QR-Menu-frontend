@@ -1,11 +1,12 @@
 import React from 'react'
-import { motion } from 'framer-motion'
+import { LazyMotion, domAnimation, m } from 'framer-motion'
 import { FiCheck } from 'react-icons/fi'
 
 export default function ThemePaletteCard({ theme, selected, onSelect }) {
   const colors = ['primary', 'secondary', 'accent', 'attention', 'surface']
   return (
-    <motion.button
+    <LazyMotion features={domAnimation}>
+    <m.button
       type="button"
       onClick={onSelect}
       whileHover={{ y: -4 }}
@@ -57,6 +58,7 @@ export default function ThemePaletteCard({ theme, selected, onSelect }) {
           </div>
         </div>
       </div>
-    </motion.button>
+    </m.button>
+    </LazyMotion>
   )
 }

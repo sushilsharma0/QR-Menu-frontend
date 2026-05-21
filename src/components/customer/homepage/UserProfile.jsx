@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, LazyMotion, domAnimation, m } from 'framer-motion';
 import { X, User, LogOut, CreditCard, Gift, BadgePlus, Loader2, Mail, ShieldCheck } from 'lucide-react';
 
 const UserProfile = ({
@@ -83,12 +83,13 @@ const UserProfile = ({
   };
 
   return (
+    <LazyMotion features={domAnimation}>
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-start justify-end overflow-y-auto p-4 pt-12 sm:p-6 sm:pt-20">
-          <div className="fixed inset-0" onClick={onClose} />
+          <button type="button" className="fixed inset-0" onClick={onClose} aria-label="Close profile" />
 
-          <motion.div
+          <m.div
             initial={{ opacity: 0, scale: 0.9, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: -20 }}
@@ -107,7 +108,7 @@ const UserProfile = ({
                 <p className="mx-auto mb-2 inline-flex rounded-full bg-white/15 px-3 py-1 text-[10px] font-black uppercase tracking-widest">
                   {isLoggedIn ? 'Customer ID' : 'Guest session'}
                 </p>
-                <h3 className="text-lg font-black leading-tight">{customerId || guestId || 'Guest'}</h3>
+                <h3 className="text-lg font-semibold leading-tight">{customerId || guestId || 'Guest'}</h3>
                 {customer?.name && <p className="mt-1 text-sm font-bold text-white/90">{customer.name}</p>}
               </div>
               <p className="relative mt-2 text-[10px] font-black uppercase tracking-widest opacity-85">
@@ -309,10 +310,11 @@ const UserProfile = ({
                 </>
               )}
             </div>
-          </motion.div>
+          </m.div>
         </div>
       )}
     </AnimatePresence>
+    </LazyMotion>
   );
 };
 
@@ -334,7 +336,7 @@ const OtpInput = ({ value, onChange, label }) => {
         <div className="grid grid-cols-6 gap-1.5">
           {digits.map((digit, index) => (
             <div
-              key={index}
+              key={`otp-${index}`}
               className={`flex aspect-square items-center justify-center rounded-2xl border text-lg font-black shadow-sm transition ${
                 digit ? 'border-primary-300 bg-primary-50 text-primary-700' : 'border-gray-200 bg-white text-gray-300'
               }`}

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import React, { useEffect, useReducer, useRef } from 'react'
+import { AnimatePresence, LazyMotion, domAnimation, m } from 'framer-motion'
 import { X, Star, Send, ThumbsUp, ThumbsDown, Meh, CheckCircle } from 'lucide-react'
 import { useParams } from 'react-router-dom'
 import toast from '@utils/toast'
@@ -14,26 +14,60 @@ const feedbackOptions = [
 
 const starLabels = ['Terrible', 'Bad', 'Okay', 'Good', 'Excellent']
 
+const initialFeedbackState = {
+  selectedRating: null,
+  hoveredStar: 0,
+  starRating: 0,
+  comment: '',
+  reviewPhotoUrl: '',
+  submitted: false,
+  submitting: false,
+  feedbackEnabled: true,
+}
+
+function feedbackReducer(state, action) {
+  switch (action.type) {
+    case 'patch':
+      return { ...state, ...action.payload }
+    case 'reset':
+      return {
+        ...state,
+        selectedRating: null,
+        hoveredStar: 0,
+        starRating: 0,
+        comment: '',
+        reviewPhotoUrl: '',
+        submitted: false,
+      }
+    default:
+      return state
+  }
+}
+
 export default function Feedback({ isOpen, onClose, qrToken, onSubmitted }) {
   const { slug, token, qrToken: routeQrToken } = useParams()
   const activeQrToken = qrToken || token || routeQrToken
-  const [selectedRating, setSelectedRating] = useState(null)
-  const [hoveredStar, setHoveredStar]       = useState(0)
-  const [starRating, setStarRating]         = useState(0)
-  const [comment, setComment]               = useState('')
-  const [reviewPhotoUrl, setReviewPhotoUrl] = useState('')
-  const [submitted, setSubmitted]           = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [feedbackEnabled, setFeedbackEnabled] = useState(true)
+  const closeTimeoutRef = useRef(null)
+  const [state, dispatch] = useReducer(feedbackReducer, initialFeedbackState)
+  const {
+    selectedRating,
+    hoveredStar,
+    starRating,
+    comment,
+    reviewPhotoUrl,
+    submitted,
+    submitting,
+    feedbackEnabled,
+  } = state
 
   useEffect(() => {
     const fetchSettings = async () => {
       if (!slug) return
       try {
         const res = await api.get(`/customer/feedback/settings/${slug}`, { skipErrorToast: true })
-        setFeedbackEnabled(res.data?.data?.feedbackEnabled !== false)
+        dispatch({ type: 'patch', payload: { feedbackEnabled: res.data?.data?.feedbackEnabled !== false } })
       } catch (error) {
-        setFeedbackEnabled(true)
+        dispatch({ type: 'patch', payload: { feedbackEnabled: true } })
       }
     }
     fetchSettings()
@@ -41,27 +75,30 @@ export default function Feedback({ isOpen, onClose, qrToken, onSubmitted }) {
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : 'unset'
-    return () => { document.body.style.overflow = 'unset' }
+    return () => {
+      document.body.style.overflow = 'unset'
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current)
+        closeTimeoutRef.current = null
+      }
+    }
   }, [isOpen])
 
   // Reset state when sheet closes
   useEffect(() => {
     if (!isOpen) {
-      setTimeout(() => {
-        setSubmitted(false)
-        setSelectedRating(null)
-        setStarRating(0)
-        setHoveredStar(0)
-        setComment('')
-        setReviewPhotoUrl('')
+      const timeoutId = setTimeout(() => {
+        dispatch({ type: 'reset' })
       }, 300)
+      return () => clearTimeout(timeoutId)
     }
+    return undefined
   }, [isOpen])
 
   const handleSubmit = async () => {
     if (!selectedRating || !starRating) return
     try {
-      setSubmitting(true)
+      dispatch({ type: 'patch', payload: { submitting: true } })
       let guestIdForFeedback = getStoredGuestId() || undefined
       try {
         const session = await ensureGuestSession(activeQrToken)
@@ -77,26 +114,27 @@ export default function Feedback({ isOpen, onClose, qrToken, onSubmitted }) {
         comment,
         reviewImages: reviewPhotoUrl.trim() ? [reviewPhotoUrl.trim()] : [],
       })
-      setSubmitted(true)
-      setTimeout(() => {
+      dispatch({ type: 'patch', payload: { submitted: true } })
+      closeTimeoutRef.current = setTimeout(() => {
         onClose()
         onSubmitted?.()
       }, 2500)
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to submit feedback')
     } finally {
-      setSubmitting(false)
+      dispatch({ type: 'patch', payload: { submitting: false } })
     }
   }
 
   const activeStars = hoveredStar || starRating
 
   return (
-    <AnimatePresence>
+    <LazyMotion features={domAnimation}>
+      <AnimatePresence>
       {isOpen && (
         <>
           {/* Backdrop */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -105,7 +143,7 @@ export default function Feedback({ isOpen, onClose, qrToken, onSubmitted }) {
           />
 
           {/* Bottom sheet */}
-          <motion.div
+          <m.div
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
@@ -124,7 +162,7 @@ export default function Feedback({ isOpen, onClose, qrToken, onSubmitted }) {
                   <Star size={18} className="text-orange-500" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-gray-800 leading-none">
+                  <h2 className="text-base font-semibold text-gray-800 leading-none">
                     Rate your experience
                   </h2>
                     <p className="text-[11px] text-gray-400 mt-0.5">Your feedback helps this restaurant improve</p>
@@ -147,7 +185,7 @@ export default function Feedback({ isOpen, onClose, qrToken, onSubmitted }) {
 
                 {/* ── Success state */}
                 {!feedbackEnabled ? (
-                  <motion.div
+                  <m.div
                     key="disabled"
                     initial={{ opacity: 0, scale: 0.96 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -157,33 +195,33 @@ export default function Feedback({ isOpen, onClose, qrToken, onSubmitted }) {
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-100 text-primary-600">
                       <Star size={30} />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-800">Feedback is closed right now</h3>
+                    <h3 className="text-lg font-semibold text-gray-800">Feedback is closed right now</h3>
                     <p className="mt-1 text-sm text-gray-400">The restaurant has disabled customer feedback for this portal.</p>
-                  </motion.div>
+                  </m.div>
                 ) : submitted ? (
-                  <motion.div
+                  <m.div
                     key="success"
                     initial={{ opacity: 0, scale: 0.92 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0 }}
                     className="flex flex-col items-center justify-center py-10 text-center"
                   >
-                    <motion.div
-                      initial={{ scale: 0 }}
+                    <m.div
+                      initial={{ scale: 0.95, opacity: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: 'spring', damping: 14 }}
                       className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mb-4"
                     >
                       <CheckCircle size={32} className="text-green-500" />
-                    </motion.div>
-                    <h3 className="text-lg font-bold text-gray-800">Thank you!</h3>
+                    </m.div>
+                    <h3 className="text-lg font-semibold text-gray-800">Thank you!</h3>
                     <p className="text-sm text-gray-400 mt-1">Your feedback has been submitted</p>
-                  </motion.div>
+                  </m.div>
 
                 ) : (
 
                   // ── Form state
-                  <motion.div
+                  <m.div
                     key="form"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -198,12 +236,12 @@ export default function Feedback({ isOpen, onClose, qrToken, onSubmitted }) {
                       </p>
                       <div className="flex items-center gap-2">
                         {[1, 2, 3, 4, 5].map((star) => (
-                          <motion.button
+                          <m.button
                             key={star}
                             whileTap={{ scale: 0.85 }}
-                            onClick={() => setStarRating(star)}
-                            onMouseEnter={() => setHoveredStar(star)}
-                            onMouseLeave={() => setHoveredStar(0)}
+                            onClick={() => dispatch({ type: 'patch', payload: { starRating: star } })}
+                            onMouseEnter={() => dispatch({ type: 'patch', payload: { hoveredStar: star } })}
+                            onMouseLeave={() => dispatch({ type: 'patch', payload: { hoveredStar: 0 } })}
                           >
                             <Star
                               size={32}
@@ -213,17 +251,17 @@ export default function Feedback({ isOpen, onClose, qrToken, onSubmitted }) {
                                   : 'text-gray-200 fill-gray-200'
                               }`}
                             />
-                          </motion.button>
+                          </m.button>
                         ))}
                         {/* Label */}
                         {activeStars > 0 && (
-                          <motion.span
+                          <m.span
                             initial={{ opacity: 0, x: -6 }}
                             animate={{ opacity: 1, x: 0 }}
                             className="text-sm font-semibold text-primary-600 ml-1"
                           >
                             {starLabels[activeStars - 1]}
-                          </motion.span>
+                          </m.span>
                         )}
                       </div>
                     </div>
@@ -237,10 +275,10 @@ export default function Feedback({ isOpen, onClose, qrToken, onSubmitted }) {
                         {feedbackOptions.map((opt) => {
                           const isSelected = selectedRating === opt.id
                           return (
-                            <motion.button
+                            <m.button
                               key={opt.id}
                               whileTap={{ scale: 0.93 }}
-                              onClick={() => setSelectedRating(opt.id)}
+                              onClick={() => dispatch({ type: 'patch', payload: { selectedRating: opt.id } })}
                               className={`flex-1 py-3 rounded-2xl border-2 flex flex-col items-center gap-1.5 transition-all ${
                                 isSelected
                                   ? `${opt.activeBg} ${opt.border} border-2`
@@ -254,7 +292,7 @@ export default function Feedback({ isOpen, onClose, qrToken, onSubmitted }) {
                               <span className={`text-xs font-semibold ${isSelected ? 'text-white' : 'text-gray-500'}`}>
                                 {opt.label}
                               </span>
-                            </motion.button>
+                            </m.button>
                           )
                         })}
                       </div>
@@ -268,7 +306,7 @@ export default function Feedback({ isOpen, onClose, qrToken, onSubmitted }) {
                       </p>
                       <textarea
                         value={comment}
-                        onChange={(e) => setComment(e.target.value)}
+                        onChange={(e) => dispatch({ type: 'patch', payload: { comment: e.target.value } })}
                         placeholder="What did you love or what can we improve?"
                         className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm resize-none focus:outline-none focus:border-orange-400 transition-colors placeholder:text-gray-300 text-gray-700"
                         rows={3}
@@ -279,14 +317,14 @@ export default function Feedback({ isOpen, onClose, qrToken, onSubmitted }) {
                       <input
                         type="url"
                         value={reviewPhotoUrl}
-                        onChange={(e) => setReviewPhotoUrl(e.target.value)}
+                        onChange={(e) => dispatch({ type: 'patch', payload: { reviewPhotoUrl: e.target.value } })}
                         placeholder="Link to a photo (e.g. Cloudinary or image URL)"
                         className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:border-orange-400 text-gray-700"
                       />
                     </div>
 
                     {/* Submit */}
-                    <motion.button
+                    <m.button
                       whileTap={{ scale: 0.97 }}
                       onClick={handleSubmit}
                       disabled={!selectedRating || !starRating || submitting}
@@ -297,16 +335,17 @@ export default function Feedback({ isOpen, onClose, qrToken, onSubmitted }) {
                       }`}
                     >
                       <Send size={15} />
-                      {submitting ? 'Submitting...' : 'Submit Feedback'}
-                    </motion.button>
+                      {submitting ? 'Submitting…' : 'Submit Feedback'}
+                    </m.button>
 
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
             </div>
-          </motion.div>
+          </m.div>
         </>
       )}
-    </AnimatePresence>
+      </AnimatePresence>
+    </LazyMotion>
   )
 }

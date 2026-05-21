@@ -110,11 +110,12 @@ const PlatformTickets = () => {
       <Card title="Filters">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
+            <label htmlFor="platform-ticket-status-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
             <select
+              id="platform-ticket-status-filter"
               value={filters.status}
               onChange={(e) => {
-                setFilters({ ...filters, status: e.target.value })
+                setFilters((prev) => ({ ...prev, status: e.target.value }))
                 setPage(1)
               }}
               className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm"
@@ -127,11 +128,12 @@ const PlatformTickets = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Priority</label>
+            <label htmlFor="platform-ticket-priority-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Priority</label>
             <select
+              id="platform-ticket-priority-filter"
               value={filters.priority}
               onChange={(e) => {
-                setFilters({ ...filters, priority: e.target.value })
+                setFilters((prev) => ({ ...prev, priority: e.target.value }))
                 setPage(1)
               }}
               className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm"
@@ -144,11 +146,12 @@ const PlatformTickets = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
+            <label htmlFor="platform-ticket-category-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
             <select
+              id="platform-ticket-category-filter"
               value={filters.category}
               onChange={(e) => {
-                setFilters({ ...filters, category: e.target.value })
+                setFilters((prev) => ({ ...prev, category: e.target.value }))
                 setPage(1)
               }}
               className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm"
@@ -182,14 +185,14 @@ const PlatformTickets = () => {
                 <div className="flex gap-2">
                   <button
                     disabled={page === 1}
-                    onClick={() => setPage(page - 1)}
+                    onClick={() => setPage((prev) => prev - 1)}
                     className="px-4 py-2 border dark:border-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800"
                   >
                     Previous
                   </button>
                   <button
                     disabled={page === pagination.pages}
-                    onClick={() => setPage(page + 1)}
+                    onClick={() => setPage((prev) => prev + 1)}
                     className="px-4 py-2 border dark:border-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800"
                   >
                     Next

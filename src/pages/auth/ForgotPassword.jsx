@@ -29,7 +29,7 @@ const ForgotPassword = () => {
     <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_left,#ecfeff,transparent_32%),linear-gradient(135deg,#f8fafc,#ffffff_44%,#f0fdf4)] p-4 text-gray-950 dark:bg-gray-950 dark:bg-none dark:text-gray-100">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-950 dark:text-white">Reset Password</h1>
+          <h1 className="text-3xl font-semibold text-gray-950 dark:text-white">Reset Password</h1>
           <p className="mt-2 text-gray-500 dark:text-gray-400">We will send a 6-digit code to your vendor email.</p>
         </div>
 

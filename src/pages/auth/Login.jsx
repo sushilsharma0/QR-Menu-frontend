@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, LazyMotion, domAnimation, m } from 'framer-motion'
 import {
   FiArrowRight,
   FiBriefcase,
@@ -199,18 +199,23 @@ const Login = () => {
   const isBranchLogin = role === 'restaurant' && String(watchEmail || '').toLowerCase().includes('@branch.com')
 
   useEffect(() => {
+    const nextRole =
+      location.pathname.startsWith('/platform') && VALID_ROLES.includes(roleQuery)
+        ? roleQuery
+        : roleFromPath
+    setRole(nextRole)
+    if (nextRole === 'employee' && restaurantIdFromUrl) {
+      setValue('restaurantId', restaurantIdFromUrl)
+    }
+  }, [location.pathname, restaurantIdFromUrl, roleFromPath, roleQuery, setValue])
+
+  /*
     if (location.pathname.startsWith('/platform') && VALID_ROLES.includes(roleQuery)) {
       setRole(roleQuery)
     } else {
       setRole(roleFromPath)
     }
-  }, [roleFromPath, roleQuery])
-
-  useEffect(() => {
-    if (role === 'employee' && restaurantIdFromUrl) {
-      setValue('restaurantId', restaurantIdFromUrl)
-    }
-  }, [role, restaurantIdFromUrl, setValue])
+  */
 
   const staffCopy = useMemo(() => {
     if (staffPortal === 'kitchen') return 'Kitchen staff can continue with their assigned username and restaurant ID.'
@@ -276,6 +281,7 @@ const Login = () => {
   const left = leftHeading[role]
 
   return (
+    <LazyMotion features={domAnimation}>
     <div className="flex h-screen overflow-hidden bg-white font-sans">
       {/* ── LEFT: dark restaurant image panel ── */}
       <div
@@ -344,7 +350,7 @@ const Login = () => {
               <FiCoffee className="h-5 w-5" />
             </span>
             <div>
-              <p className="text-sm font-bold text-white leading-tight">QR Restro</p>
+              <p className="text-sm font-semibold text-white leading-tight">QR Restro</p>
               <p className="text-xs tracking-[0.28em] text-[#ffc49b]">NEPAL</p>
             </div>
           </div>
@@ -352,8 +358,8 @@ const Login = () => {
           {/* Hero text */}
           <div className="mt-20 space-y-5 xl:mt-20">
             <div>
-              <h1 className="text-5xl font-bold leading-tight text-white">{left.greeting}</h1>
-              <h1 className="text-5xl font-bold leading-tight text-[#ff7a24]">
+              <h1 className="text-5xl font-semibold leading-tight text-white">{left.greeting}</h1>
+              <h1 className="text-5xl font-semibold leading-tight text-[#ff7a24]">
                 {left.name} <span aria-hidden="true">{'\u{1F44B}'}</span>
               </h1>
             </div>
@@ -409,7 +415,7 @@ const Login = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
               </svg>
             </span>
-            <span className="text-sm font-bold text-gray-900">QR Menu SaaS</span>
+            <span className="text-sm font-semibold text-gray-900">QR Menu SaaS</span>
           </Link>
 
           {/* Heading */}
@@ -418,7 +424,7 @@ const Login = () => {
               <PanelIcon className="h-9 w-9" />
             </span>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">{panel.title}</h2>
+              <h2 className="text-2xl font-semibold text-gray-900">{panel.title}</h2>
               <p className="text-sm text-gray-500">{panel.subtitle}</p>
             </div>
           </div>
@@ -454,7 +460,7 @@ const Login = () => {
           >
             <AnimatePresence mode="wait" initial={false}>
               {role === 'restaurant' && !isBranchLogin && (
-                <motion.div
+                <m.div
                   key="vendor-email-mode"
                   initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
                   animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
@@ -468,11 +474,11 @@ const Login = () => {
                     OR USE EMAIL
                     <span className="h-px flex-1 bg-gray-200" />
                   </div>
-                </motion.div>
+                </m.div>
               )}
 
               {role === 'restaurant' && isBranchLogin && (
-                <motion.div
+                <m.div
                   key="branch-mode"
                   initial={{ opacity: 0, y: 12, scale: 0.98, filter: 'blur(4px)' }}
                   animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
@@ -482,11 +488,11 @@ const Login = () => {
                 >
                   Branch outlet login: enter your <strong>@branch.com</strong> username,{' '}
                   <strong>Restaurant ID</strong>, and password.
-                </motion.div>
+                </m.div>
               )}
 
               {role === 'employee' && (
-                <motion.div
+                <m.div
                   key="employee-mode"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -494,11 +500,11 @@ const Login = () => {
                   className="rounded-xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-800"
                 >
                   {staffCopy}
-                </motion.div>
+                </m.div>
               )}
 
               {role === 'platform' && (
-                <motion.div
+                <m.div
                   key="platform-mode"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -506,13 +512,13 @@ const Login = () => {
                   className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600"
                 >
                   Platform access is intentionally separate from vendor and staff login.
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
           </div>
 
           {/* Form */}
-          <motion.form
+          <m.form
             layout
             transition={{ layout: { duration: 0.24, ease: 'easeOut' } }}
             onSubmit={handleSubmit(onSubmit)}
@@ -544,7 +550,7 @@ const Login = () => {
               <div className={`shrink-0 overflow-hidden ${isBranchLogin ? 'h-[76px]' : 'h-0'}`}>
                 <AnimatePresence initial={false}>
                   {isBranchLogin && (
-                    <motion.div
+                    <m.div
                       key="branch-restaurant-id"
                       initial={{ opacity: 0, height: 0, y: -10, scale: 0.98 }}
                       animate={{ opacity: 1, height: 'auto', y: 0, scale: 1 }}
@@ -559,7 +565,7 @@ const Login = () => {
                         error={errors.restaurantIdBranch?.message}
                         {...register('restaurantIdBranch', { required: 'Restaurant ID is required' })}
                       />
-                    </motion.div>
+                    </m.div>
                   )}
                 </AnimatePresence>
               </div>
@@ -628,7 +634,7 @@ const Login = () => {
               {panel.buttonLabel}
               {!loading && !googleLoading && <FiArrowRight className="h-4 w-4" />}
             </button>
-          </motion.form>
+          </m.form>
 
           {/* Secure access footer card */}
           <div className="flex items-start gap-4 rounded-xl border border-gray-100 bg-gray-50 p-4">
@@ -661,6 +667,7 @@ const Login = () => {
         </div>
       </div>
     </div>
+    </LazyMotion>
   )
 }
 

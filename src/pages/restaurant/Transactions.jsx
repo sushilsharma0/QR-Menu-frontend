@@ -186,10 +186,10 @@ function exportCSV(transactions) {
 
 // ── Transaction Detail Modal
 function TransactionDetail({ transaction, onClose, onRefunded }) {
-  if (!transaction) return null
-  
   const [refundReason, setRefundReason] = useState('')
   const [refunding, setRefunding] = useState(false)
+
+  if (!transaction) return null
 
   const handleRefund = async () => {
     if (!refundReason.trim()) {
@@ -222,7 +222,7 @@ function TransactionDetail({ transaction, onClose, onRefunded }) {
         {/* Header */}
         <div className="sticky top-0 flex items-center justify-between p-6 border-b border-gray-200 bg-gray-50">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Transaction Details</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Transaction Details</h2>
             <p className="text-sm text-gray-500 mt-1">{transaction.receiptNo}</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-lg transition">
@@ -319,8 +319,8 @@ function TransactionDetail({ transaction, onClose, onRefunded }) {
                 <FiClock size={14} /> Transaction History
               </p>
               <div className="relative">
-                {transaction.statusHistory.map((history, idx) => (
-                  <div key={idx} className="flex gap-4">
+                {transaction.statusHistory.map((history) => (
+                  <div key={`${history.status}-${history.createdAt || history.updatedAt || history.note || history.reason}`} className="flex gap-4">
                     {/* Timeline dot and line */}
                     <div className="flex flex-col items-center">
                       <div className={`w-3 h-3 rounded-full ${
@@ -511,7 +511,7 @@ const Transactions = () => {
       {/* ── Header */}
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Transactions</h1>
           <p className="text-gray-500 mt-1">View and manage all payment transactions</p>
         </div>
         <div className="flex gap-3">
@@ -574,8 +574,9 @@ const Transactions = () => {
       <Card title="Filters">
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+            <label htmlFor="transaction-method-filter" className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
             <select
+              id="transaction-method-filter"
               value={filters.method}
               onChange={(e) => { setFilters(f => ({ ...f, method: e.target.value })); setPage(1) }}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
@@ -589,8 +590,9 @@ const Transactions = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <label htmlFor="transaction-status-filter" className="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <select
+              id="transaction-status-filter"
               value={filters.status}
               onChange={(e) => { setFilters(f => ({ ...f, status: e.target.value })); setPage(1) }}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"

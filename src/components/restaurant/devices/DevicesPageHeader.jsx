@@ -1,5 +1,5 @@
 import React from 'react'
-import { motion } from 'framer-motion'
+import { LazyMotion, domAnimation, m } from 'framer-motion'
 import { FiRefreshCw, FiShield } from 'react-icons/fi'
 import Button from '../../common/Button'
 import { sectionMotion } from './deviceAnimations'
@@ -11,7 +11,8 @@ export default function DevicesPageHeader({
   revokingOthers,
 }) {
   return (
-    <motion.section
+    <LazyMotion features={domAnimation}>
+      <m.section
       {...sectionMotion}
       className="relative overflow-hidden rounded-3xl border border-surface-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900"
     >
@@ -23,7 +24,7 @@ export default function DevicesPageHeader({
               <FiShield className="h-4 w-4" />
               Security
             </div>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight text-gray-950 dark:text-gray-100">
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-gray-950 dark:text-gray-100">
               Active Devices
             </h1>
             <p className="mt-2 max-w-3xl text-sm text-gray-500 dark:text-gray-400">
@@ -47,6 +48,7 @@ export default function DevicesPageHeader({
           </div>
         </div>
       </div>
-    </motion.section>
+      </m.section>
+    </LazyMotion>
   )
 }

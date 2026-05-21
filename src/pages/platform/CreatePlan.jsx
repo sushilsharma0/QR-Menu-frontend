@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+﻿import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { FiArrowLeft, FiCreditCard, FiList, FiPlus, FiSliders, FiTag } from 'react-icons/fi'
@@ -120,9 +120,10 @@ const CreatePlan = () => {
     (flags) => {
       setSelectedFeatureFlags(flags)
       if (skipBulletsSyncRef.current) return
-      const current = (getValues('features') || [])
-        .map((row) => row?.feature)
-        .filter(Boolean)
+      const current = (getValues('features') || []).flatMap((row) => {
+        const feature = row?.feature
+        return feature ? [feature] : []
+      })
       applyMarketingBullets(flags, current)
     },
     [applyMarketingBullets, getValues],
@@ -217,7 +218,7 @@ const CreatePlan = () => {
         }
       }
 
-      const manualBullets = data.features?.map((f) => f.feature).filter(Boolean) || []
+      const manualBullets = data.features?.flatMap((f) => (f.feature ? [f.feature] : [])) || []
       const pricingBullets = mergeMarketingBullets({
         featureOptions,
         featureGroups,
@@ -295,10 +296,11 @@ const CreatePlan = () => {
               error={errors.name?.message}
             />
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="create-plan-tier" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Plan tier
               </label>
               <select
+                id="create-plan-tier"
                 {...register('planType', { required: 'Plan type is required' })}
                 className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
               >
@@ -416,13 +418,13 @@ const CreatePlan = () => {
         <Card title="Marketing bullets" icon={FiTag}>
           <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
             Shown on the public pricing page. Lines matching selected modules update automatically when you
-            toggle modules above. You can add extra bullets (e.g. &quot;Priority support&quot;) — they are kept
+            toggle modules above. You can add extra bullets (e.g. &quot;Priority support&quot;), they are kept
             unless they match a module name.
           </p>
           <button
             type="button"
             onClick={() => {
-              const current = (getValues('features') || []).map((row) => row?.feature).filter(Boolean)
+              const current = (getValues('features') || []).flatMap((row) => (row?.feature ? [row.feature] : []))
               applyMarketingBullets(selectedFeatureFlags, current)
               toast.success('Pricing bullets synced from modules')
             }}

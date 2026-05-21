@@ -106,7 +106,7 @@ const CashierDashboard = () => {
     <div className="w-full space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50 sm:text-3xl">Payments</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-50 sm:text-3xl">Payments</h1>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 sm:text-base">
             Record cash or online payments, post to house credit, print bills, and review what every cashier has closed.
           </p>
@@ -212,7 +212,7 @@ const CashierDashboard = () => {
                 >
                   <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <h3 className="font-bold text-gray-900 dark:text-gray-100">#{order.orderNumber}</h3>
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100">#{order.orderNumber}</h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
                         Table: {order.table?.tableNumber}
                         {order.isCreditSale ? (
@@ -252,7 +252,7 @@ const CashierDashboard = () => {
               >
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <h3 className="font-bold text-gray-900 dark:text-gray-100">#{order.orderNumber}</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">#{order.orderNumber}</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Table: {order.table?.tableNumber}</p>
                   </div>
                   <div className="text-left sm:text-right">

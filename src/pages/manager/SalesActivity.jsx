@@ -1,18 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { FiBarChart2, FiCalendar, FiRefreshCw, FiTrendingUp } from 'react-icons/fi'
 import { TbCurrencyRupee } from 'react-icons/tb'
-import {
-  Area,
-  Bar,
-  CartesianGrid,
-  ComposedChart,
-  Legend,
-  Line,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
 import toast from '@utils/toast'
 import api from '../../services/api'
 import Button from '../../components/common/Button'
@@ -28,6 +16,17 @@ const PERIODS = [
   { value: '14', label: '14 days' },
   { value: '30', label: '30 days' },
 ]
+
+const Area = React.lazy(() => import('recharts').then((module) => ({ default: module.Area })))
+const Bar = React.lazy(() => import('recharts').then((module) => ({ default: module.Bar })))
+const CartesianGrid = React.lazy(() => import('recharts').then((module) => ({ default: module.CartesianGrid })))
+const ComposedChart = React.lazy(() => import('recharts').then((module) => ({ default: module.ComposedChart })))
+const Legend = React.lazy(() => import('recharts').then((module) => ({ default: module.Legend })))
+const Line = React.lazy(() => import('recharts').then((module) => ({ default: module.Line })))
+const ResponsiveContainer = React.lazy(() => import('recharts').then((module) => ({ default: module.ResponsiveContainer })))
+const Tooltip = React.lazy(() => import('recharts').then((module) => ({ default: module.Tooltip })))
+const XAxis = React.lazy(() => import('recharts').then((module) => ({ default: module.XAxis })))
+const YAxis = React.lazy(() => import('recharts').then((module) => ({ default: module.YAxis })))
 
 const ManagerSalesActivity = () => {
   const { selectedBranchId, loading: branchesLoading } = useBranch()
@@ -85,7 +84,7 @@ const ManagerSalesActivity = () => {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary-700">Analytics</p>
-          <h1 className="text-2xl font-black text-gray-950 dark:text-gray-100">Sales activity</h1>
+          <h1 className="text-2xl font-semibold text-gray-950 dark:text-gray-100">Sales activity</h1>
           <p className="mt-1 text-sm text-gray-500">Paid revenue and order volume over time.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -133,7 +132,7 @@ const ManagerSalesActivity = () => {
               </span>
               <div>
                 <p className="text-xs font-semibold uppercase text-gray-500">{item.label}</p>
-                <p className="text-xl font-black text-gray-950 dark:text-gray-100">{item.value}</p>
+                <p className="text-xl font-semibold text-gray-950 dark:text-gray-100">{item.value}</p>
               </div>
             </div>
           </div>
@@ -141,27 +140,29 @@ const ManagerSalesActivity = () => {
       </div>
 
       <section className="rounded-3xl border border-surface-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <h2 className="text-lg font-bold text-gray-950 dark:text-gray-100">Revenue & orders</h2>
+        <h2 className="text-lg font-semibold text-gray-950 dark:text-gray-100">Revenue & orders</h2>
         <div className="mt-4 h-80">
           {salesData.length ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={salesData}>
-                <CartesianGrid strokeDasharray="4 6" vertical={false} />
-                <XAxis dataKey="date" tickFormatter={formatRestaurantShortDate} tick={{ fontSize: 11 }} />
-                <YAxis yAxisId="left" tick={{ fontSize: 11 }} />
-                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} />
-                <Tooltip
-                  labelFormatter={formatRestaurantShortDate}
-                  formatter={(v, name) =>
-                    name === 'revenue' ? [formatRestaurantCurrency(v), 'Revenue'] : [v, 'Orders']
-                  }
-                />
-                <Legend />
-                <Area yAxisId="left" type="monotone" dataKey="revenue" fill="#8f280022" stroke="#8f2800" />
-                <Bar yAxisId="right" dataKey="orders" fill="#059669" barSize={16} radius={[4, 4, 0, 0]} />
-                <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="#8f2800" dot={false} />
-              </ComposedChart>
-            </ResponsiveContainer>
+            <React.Suspense fallback={<div className="h-full rounded-2xl bg-surface-50" />}>
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={salesData}>
+                  <CartesianGrid strokeDasharray="4 6" vertical={false} />
+                  <XAxis dataKey="date" tickFormatter={formatRestaurantShortDate} tick={{ fontSize: 11 }} />
+                  <YAxis yAxisId="left" tick={{ fontSize: 11 }} />
+                  <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} />
+                  <Tooltip
+                    labelFormatter={formatRestaurantShortDate}
+                    formatter={(v, name) =>
+                      name === 'revenue' ? [formatRestaurantCurrency(v), 'Revenue'] : [v, 'Orders']
+                    }
+                  />
+                  <Legend />
+                  <Area yAxisId="left" type="monotone" dataKey="revenue" fill="#8f280022" stroke="#8f2800" />
+                  <Bar yAxisId="right" dataKey="orders" fill="#059669" barSize={16} radius={[4, 4, 0, 0]} />
+                  <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="#8f2800" dot={false} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </React.Suspense>
           ) : (
             <p className="flex h-full items-center justify-center text-sm text-gray-500">No sales data for this period.</p>
           )}
@@ -169,7 +170,7 @@ const ManagerSalesActivity = () => {
       </section>
 
       <section className="rounded-3xl border border-surface-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <h2 className="text-lg font-bold text-gray-950 dark:text-gray-100">Top menu items</h2>
+        <h2 className="text-lg font-semibold text-gray-950 dark:text-gray-100">Top menu items</h2>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[480px] text-left text-sm">
             <thead>
@@ -184,7 +185,7 @@ const ManagerSalesActivity = () => {
                 <tr key={row._id || idx} className="border-b border-surface-50 dark:border-gray-800">
                   <td className="py-3 pr-4 font-semibold text-gray-900 dark:text-gray-100">{row.name || 'Item'}</td>
                   <td className="py-3 pr-4">{row.totalQuantity || 0}</td>
-                  <td className="py-3 font-bold text-primary-800">
+                  <td className="py-3 font-semibold text-primary-800">
                     {formatRestaurantCurrency(row.totalRevenue)}
                   </td>
                 </tr>

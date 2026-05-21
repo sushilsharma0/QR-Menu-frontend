@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Mail, User, Phone } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navigation from "../../components/customer/Navigation";
@@ -9,7 +9,7 @@ import toast from "@utils/toast";
 export default function CreditApply() {
   const { slug, token } = useParams();
   const navigate = useNavigate();
-  const [guestId, setGuestId] = useState("");
+  const guestIdRef = useRef("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -22,12 +22,14 @@ export default function CreditApply() {
   useEffect(() => {
     if (!token) return;
     ensureGuestSession(token)
-      .then((s) => setGuestId(s.guestId || ""))
+      .then((s) => {
+        guestIdRef.current = s.guestId || "";
+      })
       .catch(() => {});
   }, [token]);
 
   const submit = async () => {
-    if (!guestId || !slug || !token) {
+    if (!guestIdRef.current || !slug || !token) {
       toast.error("Session not ready — open this page from your table QR.");
       return;
     }
@@ -39,7 +41,7 @@ export default function CreditApply() {
       setBusy(true);
       const res = await applyRestaurantCreditAccount({
         qrToken: token,
-        guestId,
+        guestId: guestIdRef.current,
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim(),
@@ -67,13 +69,13 @@ export default function CreditApply() {
           <ArrowLeft size={20} />
         </button>
         <div>
-          <h1 className="text-lg font-black">House credit application</h1>
+          <h1 className="text-lg font-semibold">House credit application</h1>
           <p className="text-[11px] font-semibold text-gray-400">Restaurant must approve before you can use “Pay later”.</p>
         </div>
       </header>
 
       <div className="mx-5 mt-6 space-y-4 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400">
+        <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400">
           Full name
           <div className="relative mt-1">
             <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -84,7 +86,7 @@ export default function CreditApply() {
             />
           </div>
         </label>
-        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400">
+        <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400">
           Email (notifications & verification)
           <div className="relative mt-1">
             <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -96,7 +98,7 @@ export default function CreditApply() {
             />
           </div>
         </label>
-        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400">
+        <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400">
           Phone
           <div className="relative mt-1">
             <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -111,7 +113,7 @@ export default function CreditApply() {
           type="button"
           disabled={busy}
           onClick={submit}
-          className="w-full rounded-2xl bg-primary-600 py-3.5 text-sm font-black text-white disabled:opacity-50"
+          className="w-full rounded-2xl bg-primary-600 py-3.5 text-sm font-semibold text-white disabled:opacity-50"
         >
           {busy ? "Submitting…" : "Submit application"}
         </button>

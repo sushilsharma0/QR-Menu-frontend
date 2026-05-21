@@ -141,6 +141,7 @@ export const SocketProvider = ({ children }) => {
       setConnectionError(error.message)
       setIsConnected(false)
       if (error?.message === 'Unauthorized socket') {
+        newSocket.removeAllListeners()
         newSocket.disconnect()
         clearAuthSession()
         setSocket(null)

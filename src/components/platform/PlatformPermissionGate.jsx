@@ -34,7 +34,7 @@ export function PlatformAccessDenied({ title = 'Access restricted', message }) {
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">
           <FiLock className="h-7 w-7" />
         </div>
-        <h2 className="text-lg font-bold text-gray-950 dark:text-gray-100">{title}</h2>
+        <h2 className="text-lg font-semibold text-gray-950 dark:text-gray-100">{title}</h2>
         <p className="max-w-md text-sm text-gray-500 dark:text-gray-400">
           {message || 'Your account does not have permission for this area. Contact a super admin to request access.'}
         </p>

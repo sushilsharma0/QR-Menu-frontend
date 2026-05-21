@@ -26,14 +26,19 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
 
   const modal = (
     <div className="fixed inset-0 z-[9999] overflow-hidden">
-      <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-sm dark:bg-black/70" onClick={onClose} />
+      <button
+        type="button"
+        aria-label="Close modal"
+        className="absolute inset-0 bg-slate-950/45 backdrop-blur-sm dark:bg-black/70"
+        onClick={onClose}
+      />
 
       <div className="relative flex h-full items-center justify-center p-4">
         <div className={`flex max-h-[calc(100vh-2rem)] w-full flex-col overflow-hidden rounded-3xl border border-white/70 bg-white text-left shadow-[0_30px_90px_-36px_rgba(15,23,42,0.75)] ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900 ${sizes[size]}`}>
           <div className="flex shrink-0 items-center justify-between border-b border-gray-100 bg-gradient-to-r from-white via-primary-50/40 to-white px-6 py-4 dark:border-gray-800 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary-600 dark:text-primary-300">QR Restro Nepal</p>
-              <h3 className="mt-1 text-lg font-black text-gray-950 dark:text-gray-100">{title}</h3>
+              <h3 className="mt-1 text-lg font-semibold text-gray-950 dark:text-gray-100">{title}</h3>
             </div>
             <button
               type="button"

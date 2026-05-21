@@ -74,9 +74,11 @@ const getStoredGuestSessionToken = (qrToken) => {
   const map = readStoredGuestSessionMap()
   const row = qrToken ? map[String(qrToken)] : null
   if (row?.guestSessionToken) return row.guestSessionToken
-  const recent = Object.values(map)
-    .filter((entry) => entry?.guestSessionToken)
-    .sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0))[0]
+  const recent = Object.values(map).reduce((latest, entry) => {
+    if (!entry?.guestSessionToken) return latest
+    if (!latest || Number(entry.updatedAt || 0) > Number(latest.updatedAt || 0)) return entry
+    return latest
+  }, null)
   return recent?.guestSessionToken || ''
 }
 
@@ -469,9 +471,7 @@ export const getStoredCustomerOrders = async ({ qrToken }) => {
     ),
   )
 
-  return settled
-    .filter((entry) => entry.status === 'fulfilled' && entry.value)
-    .map((entry) => entry.value)
+  return settled.flatMap((entry) => (entry.status === 'fulfilled' && entry.value ? [entry.value] : []))
 }
 
 export const applyRestaurantCreditAccount = async ({ qrToken, guestId, name, email, phone = '' }) => {

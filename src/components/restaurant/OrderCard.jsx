@@ -16,7 +16,7 @@ const OrderCard = ({ order, onView, onStatusUpdate }) => {
     <Card className="hover:shadow-lg transition-shadow">
       <div className="flex justify-between items-start mb-3">
         <div>
-          <h3 className="font-bold text-gray-900">#{order.orderNumber}</h3>
+          <h3 className="font-semibold text-gray-900">#{order.orderNumber}</h3>
           <p className="text-sm text-gray-500">Table: {order.table?.tableNumber}</p>
           <p className="text-sm text-gray-500">{customerLabel}</p>
         </div>

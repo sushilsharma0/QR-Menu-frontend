@@ -15,11 +15,8 @@ const EmployeeLayout = () => {
   const location = useLocation()
   const { socket } = useSocket()
   const [pendingCount, setPendingCount] = useState(0)
+  const [currentYear, setCurrentYear] = useState('')
   const isPosRoute = /\/pos(\/|$)/.test(location.pathname || '')
-
-  if (user?.scope === 'employee' && user?.mustChangePassword) {
-    return <Navigate to="/employee/change-password" replace state={{ from: location }} />
-  }
 
   const handleLogout = () => {
     logout({ loginRole: 'employee' })
@@ -101,6 +98,14 @@ const EmployeeLayout = () => {
       socket.off('order_updated', refreshPendingCount)
     }
   }, [socket, user?.role])
+
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear())
+  }, [])
+
+  if (user?.scope === 'employee' && user?.mustChangePassword) {
+    return <Navigate to="/employee/change-password" replace state={{ from: location }} />
+  }
 
   return (
     <div className={`employee-portal ${isPosRoute ? 'h-screen overflow-hidden' : 'min-h-screen'} flex flex-col bg-gray-50 dark:bg-gray-950`}>
@@ -223,7 +228,7 @@ const EmployeeLayout = () => {
         <footer className="mt-8 w-full border-t border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-900">
           <div className="mx-auto max-w-[1920px] px-3 py-4 sm:px-5 lg:px-8">
             <p className="text-center text-xs text-gray-500 dark:text-gray-400 sm:text-sm">
-              &copy; {new Date().getFullYear()} QR Restro Nepal. All rights reserved.
+              &copy; {currentYear} QR Restro Nepal. All rights reserved.
             </p>
           </div>
         </footer>

@@ -71,7 +71,7 @@ const MetricTile = ({ label, value, sub, icon: Icon, accent }) => (
     <div className="flex items-start justify-between gap-3">
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
-        <p className="mt-2 text-2xl font-bold text-gray-950">{value}</p>
+        <p className="mt-2 text-2xl font-semibold text-gray-950">{value}</p>
         {sub && <p className="mt-1 text-xs text-gray-500">{sub}</p>}
       </div>
       <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${accent} text-white shadow-md`}>
@@ -165,7 +165,7 @@ const RestaurantTickets = () => {
                 <FiLifeBuoy className="h-4 w-4" />
                 Support Desk
               </div>
-              <h1 className="mt-3 text-3xl font-bold tracking-tight text-gray-950">Support Tickets</h1>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-gray-950">Support Tickets</h1>
               <p className="mt-2 max-w-3xl text-sm text-gray-500">
                 Track issues, reply to support, and keep every request moving from open to resolved.
               </p>
@@ -284,11 +284,11 @@ const RestaurantTickets = () => {
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-sm font-bold text-primary-700">{ticket.ticketNumber || 'TKT-N/A'}</span>
+                    <span className="font-mono text-sm font-semibold text-primary-700">{ticket.ticketNumber || 'TKT-N/A'}</span>
                     <Pill value={ticket.status || 'open'} styles={statusStyles} />
                     <Pill value={ticket.priority || 'medium'} styles={priorityStyles} />
                   </div>
-                  <h2 className="mt-3 text-lg font-bold text-gray-950">{ticket.subject || 'Untitled ticket'}</h2>
+                  <h2 className="mt-3 text-lg font-semibold text-gray-950">{ticket.subject || 'Untitled ticket'}</h2>
                   <p className="mt-1 line-clamp-2 max-w-4xl text-sm text-gray-500">{ticket.description || 'No description provided.'}</p>
                 </div>
                 <Button type="button" variant="secondary" onClick={() => goToTicket(ticket)} className="shrink-0">
@@ -300,19 +300,19 @@ const RestaurantTickets = () => {
               <div className="mt-5 grid grid-cols-2 gap-3 rounded-2xl bg-surface-50/70 p-4 lg:grid-cols-4">
                 <div>
                   <p className="text-xs text-gray-500">Category</p>
-                  <p className="mt-1 font-bold capitalize text-gray-950">{formatLabel(ticket.category)}</p>
+                  <p className="mt-1 font-semibold capitalize text-gray-950">{formatLabel(ticket.category)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Replies</p>
-                  <p className="mt-1 font-bold text-gray-950">{ticket.replies?.length || 0}</p>
+                  <p className="mt-1 font-semibold text-gray-950">{ticket.replies?.length || 0}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Assigned to</p>
-                  <p className="mt-1 truncate font-bold text-gray-950">{ticket.assignedTo?.name || 'Unassigned'}</p>
+                  <p className="mt-1 truncate font-semibold text-gray-950">{ticket.assignedTo?.name || 'Unassigned'}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Last activity</p>
-                  <p className="mt-1 font-bold text-gray-950">{formatDate(ticket.lastReplyAt || ticket.updatedAt || ticket.createdAt)}</p>
+                  <p className="mt-1 font-semibold text-gray-950">{formatDate(ticket.lastReplyAt || ticket.updatedAt || ticket.createdAt)}</p>
                 </div>
               </div>
             </motion.article>
@@ -333,11 +333,11 @@ const RestaurantTickets = () => {
             <tbody className="divide-y divide-surface-200 bg-white">
               {tickets.map((ticket) => (
                 <tr key={ticket._id} className="transition hover:bg-surface-50">
-                  <td className="whitespace-nowrap px-5 py-4 font-mono text-sm font-bold text-primary-700">
+                  <td className="whitespace-nowrap px-5 py-4 font-mono text-sm font-semibold text-primary-700">
                     {ticket.ticketNumber || 'TKT-N/A'}
                   </td>
                   <td className="px-5 py-4">
-                    <p className="max-w-sm truncate font-bold text-gray-950">{ticket.subject || 'Untitled ticket'}</p>
+                    <p className="max-w-sm truncate font-semibold text-gray-950">{ticket.subject || 'Untitled ticket'}</p>
                     <p className="max-w-sm truncate text-xs text-gray-500">{ticket.description || 'No description provided.'}</p>
                   </td>
                   <td className="px-5 py-4"><Pill value={ticket.status || 'open'} styles={statusStyles} /></td>

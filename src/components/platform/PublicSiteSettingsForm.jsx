@@ -134,33 +134,37 @@ export default function PublicSiteSettingsForm() {
           <p className="mt-2 text-2xl font-black text-gray-950 dark:text-gray-100">{feedbackSummary?.averageSystemRating || 0}/5</p>
         </div>
       </div>
-      <label className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+      <div className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
         <div>
           <p className="text-sm font-bold text-gray-900 dark:text-gray-100">Enable customer feedback</p>
           <p className="mt-1 text-xs text-gray-500">After paid orders, guests can rate their experience.</p>
         </div>
         <button
           type="button"
+          aria-label="Enable customer feedback"
+          aria-pressed={feedbackEnabled}
           onClick={() => setFeedbackEnabled((c) => !c)}
           className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${feedbackEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-700'}`}
         >
           <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${feedbackEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
         </button>
-      </label>
-      <label className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+      </div>
+      <div className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
         <div>
           <p className="text-sm font-bold text-gray-900 dark:text-gray-100">Show on landing page</p>
           <p className="mt-1 text-xs text-gray-500">Approved public feedback appears on the marketing site.</p>
         </div>
         <button
           type="button"
+          aria-label="Show customer feedback on landing page"
+          aria-pressed={showFeedbackOnLanding && feedbackEnabled}
           onClick={() => setShowFeedbackOnLanding((c) => !c)}
           disabled={!feedbackEnabled}
           className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${showFeedbackOnLanding && feedbackEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-700'}`}
         >
           <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${showFeedbackOnLanding && feedbackEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
         </button>
-      </label>
+      </div>
     </div>
   )
 
@@ -189,7 +193,7 @@ export default function PublicSiteSettingsForm() {
       </div>
 
       <div>
-        <h3 className="mb-3 text-xs font-black uppercase tracking-wide text-gray-500">Brand &amp; contact</h3>
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Brand &amp; contact</h3>
         <div className="grid gap-4 md:grid-cols-2">
           <Input label="Software / brand name" {...register('softwareName')} placeholder="QR Restro Nepal" />
           <Input label="Subtitle (under logo)" {...register('brandSubtitle')} placeholder="Nepal" />
@@ -197,8 +201,9 @@ export default function PublicSiteSettingsForm() {
           <Input label="Support email" type="email" {...register('supportEmail')} />
           <Input label="Contact phone on landing" {...register('contactPhone')} placeholder="+977 …" />
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Color theme</label>
+            <label htmlFor="public-site-landing-theme" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Color theme</label>
             <select
+              id="public-site-landing-theme"
               {...register('landingTheme')}
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
             >
@@ -213,7 +218,7 @@ export default function PublicSiteSettingsForm() {
       </div>
 
       <div>
-        <h3 className="mb-1 text-xs font-black uppercase tracking-wide text-gray-500">Hero (optional overrides)</h3>
+        <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">Hero (optional overrides)</h3>
         <p className="mb-3 text-xs text-gray-500">Leave blank to use CMS hero banner content.</p>
         <div className="grid gap-4 md:grid-cols-2">
           <Input label="Eyebrow" {...register('heroEyebrow')} placeholder="Digital dining platform" />
@@ -231,7 +236,7 @@ export default function PublicSiteSettingsForm() {
       </div>
 
       <div>
-        <h3 className="mb-3 text-xs font-black uppercase tracking-wide text-gray-500">Footer</h3>
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Footer</h3>
         <div className="grid gap-4 md:grid-cols-2">
           <Textarea label="Tagline under logo" rows={2} className="md:col-span-2" {...register('footerTagline')} />
           <Input label="CTA heading" {...register('footerCtaTitle')} />
@@ -240,15 +245,16 @@ export default function PublicSiteSettingsForm() {
       </div>
 
       <div>
-        <h3 className="mb-3 text-xs font-black uppercase tracking-wide text-gray-500">WhatsApp / chat widget</h3>
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">WhatsApp / chat widget</h3>
         <label className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-800 dark:text-gray-200">
           <input type="checkbox" {...register('chatWidgetEnabled')} className="h-4 w-4 rounded border-gray-400" />
           Show floating chat on landing page
         </label>
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Channel</label>
+            <label htmlFor="public-site-chat-widget-mode" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Channel</label>
             <select
+              id="public-site-chat-widget-mode"
               {...register('chatWidgetMode')}
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
             >
@@ -264,7 +270,7 @@ export default function PublicSiteSettingsForm() {
       </div>
 
       <div className="border-t border-gray-200 pt-8 dark:border-gray-800">
-        <h3 className="mb-4 text-xs font-black uppercase tracking-wide text-gray-500">Customer feedback</h3>
+        <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-gray-500">Customer feedback</h3>
         {feedbackPanel}
       </div>
 

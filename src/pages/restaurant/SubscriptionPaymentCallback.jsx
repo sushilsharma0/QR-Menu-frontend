@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { FiAlertTriangle, FiCheckCircle, FiClock } from 'react-icons/fi'
 import api from '../../services/api'
 import Button from '../../components/common/Button'
@@ -28,7 +28,8 @@ const copy = {
 }
 
 const SubscriptionPaymentCallback = ({ gateway, failed = false }) => {
-  const location = useLocation()
+  const [searchParams] = useSearchParams()
+  const callbackSearch = searchParams.toString()
   const navigate = useNavigate()
   const { user } = useAuth()
   const [state, setState] = useState(failed ? 'failed' : 'processing')
@@ -37,7 +38,7 @@ const SubscriptionPaymentCallback = ({ gateway, failed = false }) => {
   useEffect(() => {
     let isMounted = true
     const verify = async () => {
-      const params = new URLSearchParams(location.search)
+      const params = new URLSearchParams(callbackSearch)
       // skipErrorToast — the global axios interceptor would otherwise show
       // a toast and redirect on 401 (e.g. after gateway redirect when the
       // browser tab session is gone). The callback page handles UX itself.
@@ -109,7 +110,7 @@ const SubscriptionPaymentCallback = ({ gateway, failed = false }) => {
     return () => {
       isMounted = false
     }
-  }, [failed, gateway, location.search, navigate, user])
+  }, [callbackSearch, failed, gateway, navigate, user])
 
   const view = copy[state]
   const Icon = view.icon
@@ -121,7 +122,7 @@ const SubscriptionPaymentCallback = ({ gateway, failed = false }) => {
           <div className={`mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border ${view.tone}`}>
             <Icon className="h-8 w-8" />
           </div>
-          <h1 className="mt-5 text-2xl font-black text-gray-950">{view.title}</h1>
+          <h1 className="mt-5 text-2xl font-semibold text-gray-950">{view.title}</h1>
           <p className="mt-2 text-sm leading-6 text-gray-600">{message || view.message}</p>
           <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
             <Link to="/login?role=restaurant">

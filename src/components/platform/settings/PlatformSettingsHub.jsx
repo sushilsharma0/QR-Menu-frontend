@@ -1,13 +1,14 @@
 import React from 'react'
-import { motion } from 'framer-motion'
+import { LazyMotion, domAnimation, m } from 'framer-motion'
 import { FiChevronRight, FiInfo, FiSettings } from 'react-icons/fi'
 import { PLATFORM_ACCOUNT_SECTIONS } from './platformSettingsConfig'
 import { listContainerVariants, listItemVariants, sectionMotion } from '../../restaurant/devices/deviceAnimations'
 
 export default function PlatformSettingsHub({ onSelectSection }) {
   return (
-    <div className="space-y-6">
-      <motion.section
+    <LazyMotion features={domAnimation}>
+      <div className="space-y-6">
+      <m.section
         {...sectionMotion}
         className="relative overflow-hidden rounded-3xl border border-surface-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900"
       >
@@ -17,12 +18,12 @@ export default function PlatformSettingsHub({ onSelectSection }) {
             <FiSettings className="h-4 w-4" />
             My account
           </div>
-          <h1 className="mt-3 text-3xl font-bold tracking-tight text-gray-950 dark:text-gray-100">Settings</h1>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-gray-950 dark:text-gray-100">Settings</h1>
           <p className="mt-2 max-w-3xl text-sm text-gray-500 dark:text-gray-400">
             Account overview, profile, and sign-in credentials. Other platform tools stay in the sidebar so nothing is configured twice.
           </p>
         </div>
-      </motion.section>
+      </m.section>
 
       <div className="flex gap-3 rounded-2xl border border-primary-100 bg-primary-50/70 p-4 text-sm text-primary-950 dark:border-primary-900/40 dark:bg-primary-950/25 dark:text-primary-100">
         <FiInfo className="mt-0.5 h-5 w-5 shrink-0 opacity-90" aria-hidden />
@@ -32,7 +33,7 @@ export default function PlatformSettingsHub({ onSelectSection }) {
         </p>
       </div>
 
-      <motion.div
+      <m.div
         variants={listContainerVariants}
         initial="hidden"
         animate="show"
@@ -41,7 +42,7 @@ export default function PlatformSettingsHub({ onSelectSection }) {
         {PLATFORM_ACCOUNT_SECTIONS.map((section) => {
           const Icon = section.icon
           return (
-            <motion.button
+            <m.button
               key={section.id}
               type="button"
               variants={listItemVariants}
@@ -62,10 +63,11 @@ export default function PlatformSettingsHub({ onSelectSection }) {
                 </div>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{section.description}</p>
               </div>
-            </motion.button>
+            </m.button>
           )
         })}
-      </motion.div>
+      </m.div>
     </div>
+    </LazyMotion>
   )
 }

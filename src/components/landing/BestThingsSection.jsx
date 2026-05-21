@@ -1,5 +1,5 @@
 import React from 'react'
-import { motion } from 'framer-motion'
+import { LazyMotion, domAnimation, m } from 'framer-motion'
 import SectionHeader from './SectionHeader'
 
 const BestThingsSection = ({ items }) => (
@@ -10,7 +10,8 @@ const BestThingsSection = ({ items }) => (
         title="Built for Faster Service and Better Restaurant Operations"
         description="Every feature is designed to help restaurant teams work faster while giving guests a smoother dining experience."
       />
-      <motion.div
+      <LazyMotion features={domAnimation}>
+      <m.div
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, margin: '-60px' }}
@@ -23,7 +24,7 @@ const BestThingsSection = ({ items }) => (
         {items.map((item) => {
           const Icon = item.icon
           return (
-            <motion.div
+            <m.div
               key={item.value}
               variants={{
                 hidden: { opacity: 0, y: 24 },
@@ -35,12 +36,13 @@ const BestThingsSection = ({ items }) => (
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-white shadow-lg shadow-primary-900/20 transition-all duration-300 group-hover:rotate-6 group-hover:bg-secondary-600 sm:h-12 sm:w-12">
                 <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
               </span>
-              <h3 className="mt-4 text-xl font-black text-slate-950 sm:mt-5 sm:text-2xl">{item.value}</h3>
+              <h3 className="mt-4 text-xl font-semibold text-slate-950 sm:mt-5 sm:text-2xl">{item.value}</h3>
               <p className="mt-2 text-sm leading-7 text-slate-600 sm:mt-3">{item.label}</p>
-            </motion.div>
+            </m.div>
           )
         })}
-      </motion.div>
+      </m.div>
+      </LazyMotion>
     </div>
   </section>
 )

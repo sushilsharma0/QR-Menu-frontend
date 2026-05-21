@@ -230,6 +230,7 @@ export default function AdminPrivilegeEditor({ value, onChange, disabled = false
                         {defs.map((def) => (
                           <label
                             key={def.key}
+                            aria-label={`${def.label} privilege`}
                             className={clsx(
                               'group relative flex cursor-pointer gap-3 rounded-xl border p-3.5 shadow-sm transition-all sm:p-4',
                               value[def.key]

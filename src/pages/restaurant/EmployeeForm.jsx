@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { useForm } from 'react-hook-form'
@@ -16,7 +16,7 @@ const EmployeeForm = () => {
   const { restaurantBase } = useTenantRoutes()
   const [loading, setLoading] = useState(false)
   const [photoPreview, setPhotoPreview] = useState('')
-  const [photoFile, setPhotoFile] = useState(null)
+  const photoFileRef = useRef(null)
   const { register, handleSubmit, setValue, formState: { errors } } = useForm()
 
   useEffect(() => {
@@ -57,9 +57,10 @@ const EmployeeForm = () => {
     if (file.size > IMAGE_MAX_BYTES) {
       toast.error('Employee photo must be less than 1 MB')
       event.target.value = ''
+      photoFileRef.current = null
       return
     }
-    setPhotoFile(file)
+    photoFileRef.current = file
     setPhotoPreview(URL.createObjectURL(file))
   }
 
@@ -70,7 +71,7 @@ const EmployeeForm = () => {
       Object.entries(data).forEach(([key, value]) => {
         if (value !== undefined && value !== null) formData.append(key, value)
       })
-      if (photoFile) formData.append('employeePhoto', photoFile)
+      if (photoFileRef.current) formData.append('employeePhoto', photoFileRef.current)
 
       const config = { headers: { 'Content-Type': 'multipart/form-data' } }
       if (id) {
@@ -98,7 +99,7 @@ const EmployeeForm = () => {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">{id ? 'Edit' : 'Add'} Employee</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">{id ? 'Edit' : 'Add'} Employee</h1>
         <p className="mt-1 text-gray-500">Create a polished staff profile for the restaurant team.</p>
       </div>
 
@@ -109,15 +110,16 @@ const EmployeeForm = () => {
               {photoPreview ? (
                 <img src={photoPreview} alt="Employee preview" className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-3xl font-black text-primary-600">
+                <div className="flex h-full w-full items-center justify-center text-3xl font-semibold text-primary-600">
                   ?
                 </div>
               )}
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700">Employee Photo</label>
+              <label htmlFor="employee-photo" className="block text-sm font-medium text-gray-700">Employee Photo</label>
               <p className="mb-2 text-xs text-gray-500">Shown in restaurant employee cards. Square 4x4 style, recommended 512x512 px. Max 1 MB.</p>
               <input
+                id="employee-photo"
                 type="file"
                 accept="image/*"
                 onChange={onPhotoChange}
@@ -152,8 +154,9 @@ const EmployeeForm = () => {
           />
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Role</label>
+            <label htmlFor="employee-role" className="mb-1 block text-sm font-medium text-gray-700">Role</label>
             <select
+              id="employee-role"
               {...register('role', { required: 'Role is required' })}
               className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-primary-500"
             >

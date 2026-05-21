@@ -38,7 +38,7 @@ const QRScannerModal = ({ isOpen, onClose, onScanSuccess }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-200 bg-black flex flex-col items-center justify-center p-6">
+    <div className="fixed inset-0 z-200 bg-gray-950 flex flex-col items-center justify-center p-6">
       <button
         onClick={onClose}
         className="absolute top-10 right-6 p-2 bg-white/10 rounded-full text-white"
@@ -47,7 +47,7 @@ const QRScannerModal = ({ isOpen, onClose, onScanSuccess }) => {
       </button>
 
       <div className="text-center mb-8">
-        <h2 className="text-xl font-bold text-white">Scan Table QR</h2>
+        <h2 className="text-xl font-semibold text-white">Scan Table QR</h2>
         <p className="text-gray-400 text-sm">
           Align the QR code within the frame
         </p>

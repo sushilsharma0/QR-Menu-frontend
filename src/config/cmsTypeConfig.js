@@ -1,4 +1,4 @@
-/** CMS content types — field labels and help match landing page usage. */
+/** CMS content types â€” field labels and help match landing page usage. */
 
 export const CMS_TYPES = [
   { value: 'banner', label: 'Banner', description: 'Hero image strip or promotional offer on the landing page.' },
@@ -66,13 +66,13 @@ export function getCmsFieldsForType(type) {
         metaDescription: {
           show: true,
           label: 'Short description',
-          help: '1–2 sentences under the headline.',
+          help: '1â€“2 sentences under the headline.',
           placeholder: 'Register early and start free for the first month.',
         },
         image: {
           show: true,
           label: 'Image URL',
-          help: 'Wide restaurant photo, 1200×800 recommended. HTTPS URL.',
+          help: 'Wide restaurant photo, 1200Ã—800 recommended. HTTPS URL.',
           placeholder: 'https://images.unsplash.com/...',
         },
         content: {
@@ -122,8 +122,8 @@ export function getCmsFieldsForType(type) {
         metaDescription: {
           show: true,
           label: 'Excerpt / summary',
-          help: 'Short preview on landing and blog list (2–3 sentences).',
-          placeholder: 'Learn how digital menus help during busy hours…',
+          help: 'Short preview on landing and blog list (2â€“3 sentences).',
+          placeholder: 'Learn how digital menus help during busy hoursâ€¦',
         },
         image: {
           show: true,
@@ -135,7 +135,7 @@ export function getCmsFieldsForType(type) {
           show: true,
           label: 'Article body',
           help: 'Full post text. Use blank lines between paragraphs.',
-          placeholder: 'Restaurants across Nepal are switching to QR ordering…',
+          placeholder: 'Restaurants across Nepal are switching to QR orderingâ€¦',
           rows: 10,
         },
         metaKeywords: { show: false },
@@ -157,7 +157,7 @@ export function getCmsFieldsForType(type) {
           show: true,
           label: 'Body text (short)',
           help: 'For About: main paragraph. For "best": stat label under the number.',
-          placeholder: 'We help restaurants digitize menus, kitchen, and billing…',
+          placeholder: 'We help restaurants digitize menus, kitchen, and billingâ€¦',
         },
         content: {
           show: true,
@@ -188,7 +188,7 @@ export function getCmsFieldsForType(type) {
           label: 'Answer',
           help: 'Clear answer in plain language.',
           rows: 4,
-          placeholder: 'Most restaurants go live within 1–2 days…',
+          placeholder: 'Most restaurants go live within 1â€“2 daysâ€¦',
         },
         metaDescription: { show: false },
         image: { show: false },
@@ -206,7 +206,7 @@ export function getCmsFieldsForType(type) {
   }
 }
 
-/** Content ideas for admins — shown in guide tab. */
+/** Content ideas for admins â€” shown in guide tab. */
 export const CMS_CONTENT_GUIDE = [
   {
     type: 'banner',
@@ -214,7 +214,7 @@ export const CMS_CONTENT_GUIDE = [
     key: 'hero_main',
     tips: [
       'Keep key without offer/promo/deal/free.',
-      'Eyebrow: "Digital dining platform · Nepal"',
+      'Eyebrow: "Digital dining platform Â· Nepal"',
       'Headline: value proposition in one line.',
       'Image: bright restaurant interior or staff with tablet.',
     ],
@@ -228,7 +228,7 @@ export const CMS_CONTENT_GUIDE = [
       'Example headline: "First 10 restaurants get 1 month free"',
       'Line 1 of Extra content = button text (e.g. Claim free month).',
       'Following lines = benefit bullets shown on the offer card.',
-      'Image: happy diners or busy restaurant — conveys success.',
+      'Image: happy diners or busy restaurant â€” conveys success.',
     ],
   },
   {
@@ -237,7 +237,7 @@ export const CMS_CONTENT_GUIDE = [
     key: 'feature_*',
     tips: [
       'Add 6 cards: QR menu, Menu management, Kitchen, Billing, Wait time, Guest experience.',
-      'Sort order 0, 1, 2… controls left-to-right order on landing.',
+      'Sort order 0, 1, 2â€¦ controls left-to-right order on landing.',
     ],
   },
   {
@@ -263,7 +263,10 @@ export function parseOfferBannerContent(content) {
   if (!raw) {
     return { ctaLabel: 'Claim free month', bullets: [], badgeTitle: '1 Month Free', badgeSubtitle: 'Launch offer' }
   }
-  const lines = raw.split('\n').map((l) => l.trim()).filter(Boolean)
+  const lines = raw.split('\n').flatMap((line) => {
+    const trimmed = line.trim()
+    return trimmed ? [trimmed] : []
+  })
   const first = lines[0] || ''
   let ctaLabel = 'Claim free month'
   let restStart = 0
@@ -288,9 +291,10 @@ export function parseOfferBannerContent(content) {
     badgeTitle = badgeParts[0] || badgeTitle
     badgeSubtitle = badgeParts[1] || badgeSubtitle
   }
-  const bullets = bulletLines
-    .map((l) => l.replace(/^[-•]\s*/, '').trim())
-    .filter(Boolean)
+  const bullets = bulletLines.flatMap((line) => {
+    const bullet = line.replace(/^[-•]\s*/, '').trim()
+    return bullet ? [bullet] : []
+  })
   return {
     ctaLabel,
     bullets,

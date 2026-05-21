@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
+﻿import React, { useEffect, useMemo, useState } from 'react'
+import { LazyMotion, domAnimation, m } from 'framer-motion'
 import { featuredRestaurants, landingStats } from './landingDefaults'
 import api from '../../services/api'
 
@@ -56,7 +56,8 @@ const RestaurantProofSection = () => {
   return (
     <section className="py-14 sm:py-18 lg:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <motion.div
+        <LazyMotion features={domAnimation}>
+        <m.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
@@ -67,13 +68,13 @@ const RestaurantProofSection = () => {
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-primary-700 sm:text-sm sm:tracking-[0.24em]">
               Trust / Stats Section
             </p>
-            <h2 className="mt-3 text-2xl font-black leading-tight tracking-tight text-slate-950 sm:text-3xl md:text-4xl lg:text-5xl">
+            <h2 className="mt-3 text-2xl font-semibold leading-tight tracking-tight text-slate-950 sm:text-3xl md:text-4xl lg:text-5xl">
               Restaurants Across Nepal Are Moving to Digital Ordering
             </h2>
             <p className="mx-auto mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:mt-4 sm:text-base">
               Restaurants are using QR Restro Nepal daily to simplify operations, reduce waiting time, and improve customer satisfaction.
             </p>
-            <motion.span
+            <m.span
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
@@ -81,10 +82,10 @@ const RestaurantProofSection = () => {
               className="mt-4 inline-flex items-center rounded-full border border-primary-200 bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-primary-700 shadow-sm sm:mt-5 sm:px-4 sm:py-2 sm:text-xs"
             >
               Growing Every Week
-            </motion.span>
+            </m.span>
           </div>
 
-          <motion.div
+          <m.div
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, margin: '-60px' }}
@@ -95,7 +96,7 @@ const RestaurantProofSection = () => {
             className="mt-8 grid gap-3 sm:mt-10 sm:gap-4 sm:grid-cols-3"
           >
             {landingStats.map((stat) => (
-              <motion.div
+              <m.div
                 key={stat.label}
                 variants={{
                   hidden: { opacity: 0, y: 16 },
@@ -111,9 +112,9 @@ const RestaurantProofSection = () => {
                 <p className="relative mt-1.5 text-xs font-bold uppercase tracking-wide text-slate-600 sm:mt-2 sm:text-sm">
                   {stat.label}
                 </p>
-              </motion.div>
+              </m.div>
             ))}
-          </motion.div>
+          </m.div>
 
           <div className="mt-8 overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-sm landing-logo-marquee-track sm:mt-10">
             <div className="border-b border-surface-200 bg-surface-50/70 px-3 py-2.5 sm:px-4 sm:py-3">
@@ -127,9 +128,9 @@ const RestaurantProofSection = () => {
               </div>
             </div>
             <div className="landing-logo-marquee flex items-center gap-3 px-3 py-3 sm:gap-6 sm:px-4 sm:py-4">
-              {marqueeItems.map((restaurant, index) => (
+              {marqueeItems.map((restaurant) => (
                 <div
-                  key={`${restaurant.name}-${index}`}
+                  key={`${restaurant.name}-${restaurant.code || restaurant.logo || 'restaurant'}`}
                   className="inline-flex min-w-max items-center gap-2.5 rounded-xl border border-surface-200 bg-surface-50 px-3 py-2 transition-all duration-300 hover:border-primary-200 hover:bg-white hover:shadow-md sm:gap-3 sm:px-4 sm:py-2.5"
                 >
                   {restaurant.logo ? (
@@ -144,7 +145,8 @@ const RestaurantProofSection = () => {
               ))}
             </div>
           </div>
-        </motion.div>
+        </m.div>
+        </LazyMotion>
       </div>
     </section>
   )

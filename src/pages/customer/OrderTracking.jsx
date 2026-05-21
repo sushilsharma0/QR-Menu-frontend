@@ -67,7 +67,7 @@ const TRACK_STEPS = [
   {
     key: "done",
     label: "Served / completed",
-    caption: "Enjoy — pay when you are ready",
+    caption: "Enjoy, pay when you are ready",
     statuses: ["served", "completed"],
     Icon: PackageCheck,
   },
@@ -88,13 +88,13 @@ const getStatusHeadline = (order) => {
   const paymentStatus = order?.paymentStatus;
   if (status === "cancelled") return "Order cancelled";
   if (status === "completed" || (status === "served" && paymentStatus === "paid"))
-    return "Thank you — all set!";
+    return "Thank you, all set!";
   if (status === "pending") return "Order received";
   if (status === "confirmed") return "Restaurant accepted";
   if (status === "preparing" || status === "cooking") return "Preparing your food";
   if (status === "ready") return "Ready for you";
   if (status === "served" && paymentStatus !== "paid" && order?.guestPaymentPreferenceAt)
-    return "Served — payment choice sent";
+    return "Served, payment choice sent";
   if (status === "served") return "Served at your table";
   return "Live order tracking";
 };
@@ -166,19 +166,24 @@ const OrderTracking = () => {
       reconnectionAttempts: 5,
     });
 
-    socket.on("connect", () => {
+    const handleConnect = () => {
       setIsLive(true);
       socket.emit("join:order", { orderId: order.orderId, orderToken: qrToken });
-    });
-
-    socket.on("disconnect", () => setIsLive(false));
-
-    socket.on("order_status", (payload) => {
+    };
+    const handleDisconnect = () => setIsLive(false);
+    const handleOrderStatus = (payload) => {
       setOrder((current) => normalizeRealtimeOrder(payload, current));
       setLastUpdatedAt(new Date());
-    });
+    };
+
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("order_status", handleOrderStatus);
 
     return () => {
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("order_status", handleOrderStatus);
       socket.disconnect();
       setIsLive(false);
     };
@@ -352,7 +357,7 @@ const OrderTracking = () => {
             <ArrowLeft size={20} />
           </motion.button>
           <div className="min-w-0 flex-1 text-center">
-            <h1 className="truncate text-sm font-black tracking-tight text-gray-900">
+            <h1 className="truncate text-sm font-semibold tracking-tight text-gray-900">
               Track order
             </h1>
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
@@ -435,7 +440,7 @@ const OrderTracking = () => {
               <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/60">
                 Current status
               </p>
-              <h2 className="mt-2 text-2xl font-black leading-tight tracking-tight">
+              <h2 className="mt-2 text-2xl font-semibold leading-tight tracking-tight">
                 {getStatusHeadline(order)}
               </h2>
               <p className="mt-2 text-sm font-medium leading-relaxed text-white/85">
@@ -443,7 +448,7 @@ const OrderTracking = () => {
                   ? `Estimated ready around ${new Date(order.estimatedCompletionTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`
                   : order.estimatedWaitTime
                     ? `Typical prep window: about ${order.estimatedWaitTime} minutes.`
-                    : "Stay on this screen — we update every stage in real time."}
+                    : "Stay on this screen, we update every stage in real time."}
               </p>
             </div>
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
@@ -529,9 +534,9 @@ const OrderTracking = () => {
         >
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h3 className="text-base font-black text-gray-900">Order timeline</h3>
+              <h3 className="text-base font-semibold text-gray-900">Order timeline</h3>
               <p className="text-xs font-semibold text-gray-400">
-                {isLive ? "Connected — live" : "Reconnecting…"}
+                {isLive ? "Connected, live" : "Reconnecting…"}
               </p>
             </div>
             <span
@@ -598,7 +603,7 @@ const OrderTracking = () => {
 
         {/* Order items */}
         <section className="rounded-[1.75rem] border border-gray-100 bg-white p-5 shadow-sm">
-          <h3 className="text-sm font-black text-gray-900">Your order</h3>
+          <h3 className="text-sm font-semibold text-gray-900">Your order</h3>
           <p className="text-xs font-semibold text-gray-400">
             {order.items?.length || 0} line{(order.items?.length || 0) !== 1 ? "s" : ""}
           </p>
@@ -609,7 +614,7 @@ const OrderTracking = () => {
               );
               return (
                 <motion.li
-                  key={`${item.name}-${index}`}
+                  key={item._id || item.id || item.itemId || `${item.name}-${item.quantity}-${lineTotal}`}
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.04 }}
@@ -636,10 +641,10 @@ const OrderTracking = () => {
         <section className="rounded-2xl border border-primary-100 bg-primary-50/50 p-4">
           <div className="flex gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-primary-600 shadow-sm">
-              <Bell size={20} className="animate-bounce" />
+              <Bell size={20} className="transition-transform duration-500 ease-out" />
             </div>
             <p className="text-xs font-semibold leading-relaxed text-primary-900">
-              No need to flag down staff for status — this screen refreshes when the kitchen
+              No need to flag down staff for status, this screen refreshes when the kitchen
               moves your order forward.
             </p>
           </div>
@@ -663,13 +668,13 @@ const OrderTracking = () => {
 
         {canShowBill && (
           <section className="overflow-hidden rounded-[1.75rem] border border-gray-200 bg-white shadow-lg">
-            <div className="bg-gradient-to-r from-gray-950 to-gray-900 px-5 py-5 text-white">
+            <div className="bg-gradient-to-r from-gray-950 to-gray-900 p-5 text-white">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
                     Bill preview
                   </p>
-                  <h3 className="mt-1 text-lg font-black">Order #{order.orderNumber}</h3>
+                  <h3 className="mt-1 text-lg font-semibold">Order #{order.orderNumber}</h3>
                 </div>
                 <ReceiptText size={26} className="text-surface-100" />
               </div>
@@ -774,14 +779,18 @@ function EditOrderModal({ open, order, guestId, editSecondsRemaining, onClose, o
     (async () => {
       try {
         setLoadingMenu(true);
+        if (cancelled) return;
         const res = await api.get(`/restaurant/menu/public/${order.restaurantSlug}`, {
           params: { qrToken: order.tableQrToken },
           skipErrorToast: true,
         });
         if (cancelled) return;
-        const flatItems = (res?.data?.data?.menu || [])
-          .flatMap((category) => category.items || [])
-          .filter((item) => item?._id && item?.name);
+        const flatItems = (res?.data?.data?.menu || []).reduce((items, category) => {
+          for (const item of category.items || []) {
+            if (item?._id && item?.name) items.push(item);
+          }
+          return items;
+        }, []);
         setMenuItems(flatItems);
       } catch (err) {
         console.error("Failed to load menu for edit", err);

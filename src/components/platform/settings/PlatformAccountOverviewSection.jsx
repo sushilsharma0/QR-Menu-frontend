@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useReducer } from 'react'
 import toast from '@utils/toast'
 import api from '../../../services/api'
 import Card from '../../common/Card'
@@ -16,21 +16,24 @@ function formatDt(value) {
 }
 
 export default function PlatformAccountOverviewSection() {
-  const [loading, setLoading] = useState(true)
-  const [row, setRow] = useState(null)
+  const [state, dispatch] = useReducer((current, patch) => ({ ...current, ...patch }), {
+    loading: true,
+    row: null,
+  })
+  const { loading, row } = state
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       try {
-        setLoading(true)
+        dispatch({ loading: true })
         const res = await api.get('/platform/auth/profile')
         const data = res.data?.data
-        if (!cancelled && data) setRow(data)
+        if (!cancelled && data) dispatch({ row: data })
       } catch (e) {
         toast.error(e.response?.data?.message || 'Failed to load account overview')
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) dispatch({ loading: false })
       }
     })()
     return () => {

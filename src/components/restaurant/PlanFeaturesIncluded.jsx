@@ -2,7 +2,9 @@ import React from 'react'
 import { FiCheck, FiX } from 'react-icons/fi'
 import { PLAN_FEATURE_LABELS } from '../../constants/planFeatureMap'
 
-export default function PlanFeaturesIncluded({ featureFlags = {}, planName = 'Your plan' }) {
+const EMPTY_FEATURE_FLAGS = {}
+
+export default function PlanFeaturesIncluded({ featureFlags = EMPTY_FEATURE_FLAGS, planName = 'Your plan' }) {
   const entries = Object.entries(PLAN_FEATURE_LABELS)
 
   if (!entries.length) return null
@@ -12,7 +14,7 @@ export default function PlanFeaturesIncluded({ featureFlags = {}, planName = 'Yo
 
   return (
     <div className="rounded-2xl border border-surface-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-      <h3 className="text-sm font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
         Modules included in {planName}
       </h3>
       <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">

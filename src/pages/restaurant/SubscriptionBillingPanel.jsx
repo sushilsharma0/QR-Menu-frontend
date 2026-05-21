@@ -23,7 +23,7 @@ function BillingSection({ title, subtitle, icon: Icon, children }) {
           <Icon className="h-5 w-5" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-gray-950">{title}</h2>
+          <h2 className="text-lg font-semibold text-gray-950">{title}</h2>
           <p className="text-sm text-gray-500">{subtitle}</p>
         </div>
       </div>
@@ -96,7 +96,7 @@ export default function SubscriptionBillingPanel() {
     {
       header: 'Grand total',
       render: (row) => (
-        <span className="font-bold text-primary-700">
+        <span className="font-semibold text-primary-700">
           {formatRestaurantCurrency(row.totalInclVat, row.issuerSnapshot?.currencySymbol || DEFAULT_CURRENCY_SYMBOL)}
         </span>
       ),

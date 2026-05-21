@@ -1,12 +1,12 @@
 import React from 'react'
-import { motion } from 'framer-motion'
+import { LazyMotion, domAnimation, m } from 'framer-motion'
 import { FiAlertTriangle, FiClock, FiMonitor, FiShield } from 'react-icons/fi'
 import { sectionMotionDelayed } from './deviceAnimations'
 import { countSuspiciousSessions } from './deviceUtils'
 
 function MetricTile({ label, value, sub, icon: Icon, accent }) {
   return (
-    <motion.div
+    <m.div
       whileHover={{ y: -3 }}
       className="rounded-2xl border border-surface-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900"
     >
@@ -18,26 +18,30 @@ function MetricTile({ label, value, sub, icon: Icon, accent }) {
           <p className="mt-2 text-2xl font-bold text-gray-950 dark:text-gray-100">{value}</p>
           {sub && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{sub}</p>}
         </div>
-        <motion.div
+        <m.div
           className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${accent} text-white shadow-md`}
           whileHover={{ scale: 1.05 }}
         >
           <Icon className="h-5 w-5" />
-        </motion.div>
+        </m.div>
       </div>
-    </motion.div>
+    </m.div>
   )
 }
 
-export default function DevicesSummarySection({ sessions = [], history = [], loading }) {
+const EMPTY_SESSIONS = []
+const EMPTY_HISTORY = []
+
+export default function DevicesSummarySection({ sessions = EMPTY_SESSIONS, history = EMPTY_HISTORY, loading }) {
   const suspicious = countSuspiciousSessions(sessions)
   const otherDevices = sessions.filter((s) => !s.isCurrent).length
 
   return (
-    <motion.section
+    <LazyMotion features={domAnimation}>
+      <m.section
       {...sectionMotionDelayed(0.08)}
       className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"
-    >
+      >
       <MetricTile
         label="Active sessions"
         value={loading ? '—' : sessions.length}
@@ -66,6 +70,7 @@ export default function DevicesSummarySection({ sessions = [], history = [], loa
         icon={FiClock}
         accent="from-emerald-500 to-teal-500"
       />
-    </motion.section>
+      </m.section>
+    </LazyMotion>
   )
 }

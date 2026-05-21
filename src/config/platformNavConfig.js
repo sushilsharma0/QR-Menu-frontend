@@ -114,10 +114,11 @@ export function canSeeNavItem(item, hasPermission, isSuperAdmin) {
 }
 
 export function filterPlatformNavSections(hasPermission, isSuperAdmin) {
-  return PLATFORM_NAV_SECTIONS.map((section) => ({
-    ...section,
-    items: section.items.filter((item) => canSeeNavItem(item, hasPermission, isSuperAdmin)),
-  })).filter((section) => section.items.length > 0)
+  return PLATFORM_NAV_SECTIONS.reduce((sections, section) => {
+    const items = section.items.filter((item) => canSeeNavItem(item, hasPermission, isSuperAdmin))
+    if (items.length) sections.push({ ...section, items })
+    return sections
+  }, [])
 }
 
 /** Dashboard as a pinned top link; everything else is a collapsible group. */

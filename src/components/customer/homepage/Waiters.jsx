@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import { X, MessageCircle, Star } from "lucide-react";
 import MessageBox from "./MessageBox";
 
-// ── Static waiter data — replace with API: GET /api/restaurant/employees?role=waiter
+// Static waiter data; replace with API: GET /api/restaurant/employees?role=waiter
 const WAITERS_DATA = [
   {
     id: 1,
@@ -60,11 +60,12 @@ export default function Waiters({ isOpen, onClose }) {
 
   return (
     <>
-      <AnimatePresence>
-        {isOpen && (
-          <>
+      <LazyMotion features={domAnimation}>
+        <AnimatePresence>
+          {isOpen && (
+            <>
             {/* Backdrop */}
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -73,7 +74,7 @@ export default function Waiters({ isOpen, onClose }) {
             />
 
             {/* Bottom sheet */}
-            <motion.div
+            <m.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
@@ -89,7 +90,7 @@ export default function Waiters({ isOpen, onClose }) {
               <div className="bg-orange-500 mx-4 mt-4 rounded-2xl p-4 text-white">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-xl font-bold">Waiters</h2>
+                    <h2 className="text-xl font-semibold">Waiters</h2>
                     <p className="text-sm opacity-90">
                       Select a waiter to message
                     </p>
@@ -148,12 +149,13 @@ export default function Waiters({ isOpen, onClose }) {
                   </div>
                 ))}
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+            </m.div>
+            </>
+          )}
+        </AnimatePresence>
+      </LazyMotion>
 
-      {/* MessageBox — rendered outside sheet so it layers above everything */}
+      {/* MessageBox rendered outside sheet so it layers above everything */}
       <MessageBox waiter={activeWaiter} onClose={() => setActiveWaiter(null)} />
     </>
   );

@@ -12,11 +12,11 @@ export function FinancePageHeader({ title, subtitle, actions }) {
     <div className="rounded-2xl border border-surface-200 bg-gradient-to-br from-surface-50 via-white to-primary-50/40 px-5 py-5 shadow-sm dark:border-gray-800 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 lg:px-6 lg:py-6">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
         <div className="min-w-0">
-          <span className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-wide text-primary-800 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-primary-300 sm:text-xs">
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary-800 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-primary-300 sm:text-xs">
             <FiBarChart2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             Accounting
           </span>
-          <h1 className="mt-3 text-2xl font-black tracking-tight text-gray-950 dark:text-gray-100 lg:text-[1.65rem] xl:text-3xl">
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight text-gray-950 dark:text-gray-100 lg:text-[1.65rem] xl:text-3xl">
             {title}
           </h1>
           {subtitle && (
@@ -50,11 +50,11 @@ export function FinanceMetric({ label, value, sub, icon: Icon, tone = 'primary' 
     <div className="rounded-2xl border border-surface-200 bg-white p-3.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-4 dark:border-gray-800 dark:bg-gray-900">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-black uppercase leading-snug tracking-wide text-gray-500 sm:text-[11px] dark:text-gray-400">
+          <p className="text-[10px] font-semibold uppercase leading-snug tracking-wide text-gray-500 sm:text-[11px] dark:text-gray-400">
             {label}
           </p>
           <p
-            className="mt-1.5 truncate text-base font-black leading-tight tabular-nums text-gray-950 sm:mt-2 sm:text-lg laptop:text-xl 2xl:text-2xl dark:text-gray-100"
+            className="mt-1.5 truncate text-base font-semibold leading-tight tabular-nums text-gray-950 sm:mt-2 sm:text-lg laptop:text-xl 2xl:text-2xl dark:text-gray-100"
             title={String(value ?? '—')}
           >
             {value ?? '—'}
@@ -79,7 +79,7 @@ export function FinancePanel({ title, children, actions, className = '', bodyCla
       {(title || actions) && (
         <div className="flex flex-col gap-2 border-b border-surface-100 px-4 py-3 dark:border-gray-800 sm:px-5 sm:py-3.5 md:flex-row md:items-center md:justify-between">
           {title && (
-            <h2 className="inline-flex items-center gap-2 text-base font-bold text-gray-950 dark:text-gray-100 sm:text-lg">
+            <h2 className="inline-flex items-center gap-2 text-base font-semibold text-gray-950 dark:text-gray-100 sm:text-lg">
               <FiBarChart2 className="h-4 w-4 text-primary-700 dark:text-primary-300 sm:h-5 sm:w-5" />
               {title}
             </h2>
@@ -106,7 +106,7 @@ export function FinanceRow({ title, meta, amount, status, action, danger = false
           </span>
         )}
         {amount && (
-          <span className={`font-bold ${danger ? 'text-red-600' : 'text-primary-700 dark:text-primary-300'}`}>
+          <span className={`font-semibold ${danger ? 'text-red-600' : 'text-primary-700 dark:text-primary-300'}`}>
             {amount}
           </span>
         )}
@@ -163,7 +163,7 @@ export function FinanceTooltip({ active, payload, label, labelFormatter, valuePr
         {payload.map((item) => (
           <p key={item.dataKey} className="flex items-center justify-between gap-6 text-sm">
             <span className="text-gray-500 dark:text-gray-400">{item.name || item.dataKey}</span>
-            <span className="font-bold text-primary-700 dark:text-primary-300">
+            <span className="font-semibold text-primary-700 dark:text-primary-300">
               {typeof item.value === 'number'
                 ? `${valuePrefix}${Number(item.value || 0).toLocaleString('en-IN')}${valueSuffix}`
                 : item.value}

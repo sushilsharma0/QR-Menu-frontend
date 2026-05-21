@@ -1,15 +1,16 @@
 import React from 'react'
-import { motion } from 'framer-motion'
+import { LazyMotion, domAnimation, m } from 'framer-motion'
 import { FiInbox } from 'react-icons/fi'
 
 export function PlatformPageHeader({ badge, title, description, icon: Icon, actions }) {
   return (
-    <motion.section
+    <LazyMotion features={domAnimation}>
+      <m.section
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: 'easeOut' }}
       className="relative overflow-hidden rounded-3xl border border-surface-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900"
-    >
+      >
       <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-r from-primary-50 via-surface-50 to-emerald-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900" />
       <div className="relative p-5 md:p-7">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -20,22 +21,24 @@ export function PlatformPageHeader({ badge, title, description, icon: Icon, acti
                 {badge}
               </div>
             )}
-            <h1 className="mt-3 text-3xl font-bold tracking-tight text-gray-950 dark:text-gray-100">{title}</h1>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-gray-950 dark:text-gray-100">{title}</h1>
             {description && <p className="mt-2 max-w-3xl text-sm text-gray-500 dark:text-gray-400">{description}</p>}
           </div>
           {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
         </div>
       </div>
-    </motion.section>
+      </m.section>
+    </LazyMotion>
   )
 }
 
 export function PlatformMetric({ label, value, sub, icon: Icon, accent = 'from-primary-600 to-secondary-500' }) {
   return (
-    <motion.div
+    <LazyMotion features={domAnimation}>
+      <m.div
       whileHover={{ y: -3 }}
       className="rounded-2xl border border-surface-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900"
-    >
+      >
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
@@ -48,7 +51,8 @@ export function PlatformMetric({ label, value, sub, icon: Icon, accent = 'from-p
           </div>
         )}
       </div>
-    </motion.div>
+      </m.div>
+    </LazyMotion>
   )
 }
 

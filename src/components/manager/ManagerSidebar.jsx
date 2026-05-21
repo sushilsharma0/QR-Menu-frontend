@@ -89,11 +89,11 @@ function SidebarContent({
   isMobile,
 }) {
   const hideLabels = collapsed && !isMobile
-  const location = useLocation()
+  const routerLocation = useLocation()
   const activeTail = useMemo(() => {
-    const m = String(location.pathname || '').match(/^\/manager\/[^/]+\/[^/]+\/(.*)$/)
+    const m = String(routerLocation.pathname || '').match(/^\/manager\/[^/]+\/[^/]+\/(.*)$/)
     return m?.[1] || ''
-  }, [location.pathname])
+  }, [routerLocation.pathname])
 
   const [openSections, setOpenSections] = useState(() => {
     const saved = readOpenSections()
@@ -141,7 +141,7 @@ function SidebarContent({
               <FiBriefcase className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <h1 className="truncate text-base font-black text-gray-950 dark:text-gray-100">Manager</h1>
+              <h1 className="truncate text-base font-semibold text-gray-950 dark:text-gray-100">Manager</h1>
               <p className="truncate text-xs text-gray-500 dark:text-gray-400">Operations hub</p>
             </div>
           </div>
@@ -301,7 +301,12 @@ const ManagerSidebar = () => {
       </div>
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-[65] bg-black/50 lg:hidden" onClick={() => setMobileOpen(false)} />
+        <button
+          type="button"
+          aria-label="Close manager navigation"
+          className="fixed inset-0 z-[65] bg-black/50 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
       )}
 
       <div

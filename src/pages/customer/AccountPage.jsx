@@ -30,8 +30,8 @@ const AccountPage = () => {
   const { slug, token } = useParams();
   const [showFeedback, setShowFeedback] = useState(false);
   const [guestId, setGuestId] = useState('');
-  const [customerId, setCustomerId] = useState(getStoredCustomerId());
-  const [customer, setCustomer] = useState(getStoredCustomerProfile());
+  const [customerId, setCustomerId] = useState(() => getStoredCustomerId());
+  const [customer, setCustomer] = useState(() => getStoredCustomerProfile());
   const [loyalty, setLoyalty] = useState(null);
   const [restaurantInfo, setRestaurantInfo] = useState(null);
 
@@ -108,14 +108,14 @@ const AccountPage = () => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(255,255,255,0.12),transparent_34%)]" />
         <div className="relative flex flex-col items-center px-6 pb-6 pt-8 text-center">
           <div className="rounded-2xl bg-black/38 px-5 py-2 shadow-lg backdrop-blur-[2px] ring-1 ring-white/15">
-            <h1 className="text-2xl font-black tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]">More</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]">More</h1>
             <p className="mt-1 text-[11px] font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">Shortcuts & account</p>
           </div>
 
           <div className="mt-7 flex h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-white/95 text-primary-700 shadow-[0_18px_45px_rgba(57,16,0,0.28)] ring-4 ring-white/25">
             <User size={34} />
           </div>
-          <h2 className="mt-2 max-w-full break-all rounded-full bg-black/45 px-5 py-1.5 text-center text-base font-black text-white shadow-lg backdrop-blur-[2px] ring-1 ring-white/15 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">
+          <h2 className="mt-2 max-w-full break-all rounded-full bg-black/45 px-5 py-1.5 text-center text-base font-semibold text-white shadow-lg backdrop-blur-[2px] ring-1 ring-white/15 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">
             {customer?.name || customerId || guestId || 'Guest'}
           </h2>
           <p className="mt-1 rounded-full bg-black/38 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-[2px] ring-1 ring-white/10 drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
@@ -152,13 +152,13 @@ const AccountPage = () => {
 
           if (item.to) {
             return (
-              <Link key={index} to={item.to} className={className}>
+              <Link key={item.label} to={item.to} className={className}>
                 {Inner}
               </Link>
             );
           }
           return (
-            <button key={index} type="button" className={className} onClick={item.onClick}>
+            <button key={item.label} type="button" className={className} onClick={item.onClick}>
               {Inner}
             </button>
           );

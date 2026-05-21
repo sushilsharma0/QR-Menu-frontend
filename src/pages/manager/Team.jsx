@@ -45,7 +45,7 @@ const ManagerTeam = () => {
     <div className="mx-auto max-w-[1200px] space-y-6">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary-700">Team</p>
-        <h1 className="text-2xl font-black text-gray-950 dark:text-gray-100">Branch staff</h1>
+        <h1 className="text-2xl font-semibold text-gray-950 dark:text-gray-100">Branch staff</h1>
         <p className="mt-1 text-sm text-gray-500">
           {activeCount} active of {staff.length} assigned to this branch. Contact your owner for HR changes.
         </p>
@@ -67,7 +67,7 @@ const ManagerTeam = () => {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="truncate font-bold text-gray-950 dark:text-gray-100">{member.name}</h2>
+                  <h2 className="truncate font-semibold text-gray-950 dark:text-gray-100">{member.name}</h2>
                   <Badge variant={roleColors[member.role] || 'default'}>{member.role}</Badge>
                   {member.isActive === false && <Badge variant="red">Inactive</Badge>}
                 </div>

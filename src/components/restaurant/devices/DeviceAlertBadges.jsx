@@ -1,6 +1,8 @@
 import React from 'react'
 import { FiAlertTriangle } from 'react-icons/fi'
 
+const EMPTY_ALERTS = {}
+
 const sessionAlertLabels = (alerts = {}) =>
   [
     alerts.unknownDevice && 'Unknown device',
@@ -8,7 +10,7 @@ const sessionAlertLabels = (alerts = {}) =>
     alerts.suspiciousConcurrentSessions && 'Many sessions',
   ].filter(Boolean)
 
-export default function DeviceAlertBadges({ alerts = {} }) {
+export default function DeviceAlertBadges({ alerts = EMPTY_ALERTS }) {
   const activeAlerts = sessionAlertLabels(alerts)
 
   if (!activeAlerts.length) {

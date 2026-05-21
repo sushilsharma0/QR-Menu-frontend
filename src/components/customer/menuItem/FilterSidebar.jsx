@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { LazyMotion, domAnimation, m, AnimatePresence } from "framer-motion";
 import { X, ChevronDown, Check } from "lucide-react";
 
 const filterOptions = {
@@ -107,11 +107,12 @@ const FilterSidebar = ({ isOpen, onClose, onApply, currentFilters }) => {
   };
 
   return (
-    <AnimatePresence>
+    <LazyMotion features={domAnimation}>
+      <AnimatePresence>
       {isOpen && (
         <>
           {/* Backdrop */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -120,7 +121,7 @@ const FilterSidebar = ({ isOpen, onClose, onApply, currentFilters }) => {
           />
 
           {/* Sidebar */}
-          <motion.div
+          <m.div
             initial={{ x: "108%", opacity: 0.7, scale: 0.98 }}
             animate={{ x: 0, opacity: 1, scale: 1 }}
             exit={{ x: "108%", opacity: 0, scale: 0.98 }}
@@ -128,12 +129,12 @@ const FilterSidebar = ({ isOpen, onClose, onApply, currentFilters }) => {
             className="fixed right-0 top-0 z-50 flex h-full w-[70vw] min-w-[17rem] max-w-md flex-col overflow-hidden rounded-l-[2rem] bg-white shadow-[-24px_0_60px_-28px_rgba(15,23,42,0.55)] ring-1 ring-black/5"
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-gray-100 bg-white/95 px-5 py-5 backdrop-blur">
+            <div className="flex items-center justify-between border-b border-gray-100 bg-white/95 p-5 backdrop-blur">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-500">
                   Refine menu
                 </p>
-                <h2 className="mt-0.5 text-lg font-black text-gray-900">Filters</h2>
+                <h2 className="mt-0.5 text-lg font-semibold text-gray-900">Filters</h2>
               </div>
               <button
                 onClick={onClose}
@@ -267,10 +268,11 @@ const FilterSidebar = ({ isOpen, onClose, onApply, currentFilters }) => {
                 Clear All
               </button>
             </div>
-          </motion.div>
+          </m.div>
         </>
       )}
-    </AnimatePresence>
+      </AnimatePresence>
+    </LazyMotion>
   );
 };
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, LazyMotion, domAnimation, m } from 'framer-motion'
 import { FiEdit2, FiGrid, FiList, FiPlus, FiRefreshCw, FiSearch, FiTrash2, FiTag } from 'react-icons/fi'
 import toast from '@utils/toast'
 import Card from '../../components/common/Card'
@@ -178,8 +178,9 @@ const Promotions = () => {
   if (loading) return <RestaurantPageLoader />
 
   return (
+    <LazyMotion features={domAnimation}>
     <div className="space-y-6">
-      <motion.section
+      <m.section
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -193,7 +194,7 @@ const Promotions = () => {
           </div>
           <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-gray-950">Promotions</h1>
+              <h1 className="text-3xl font-semibold tracking-tight text-gray-950">Promotions</h1>
               <p className="mt-1 text-sm text-gray-500">
                 Manage offer campaigns with cleaner filters, better visibility, and faster updates.
               </p>
@@ -215,18 +216,18 @@ const Promotions = () => {
               { label: 'Active promotions', value: activeCount },
               { label: 'Filtered result', value: filteredPromotions.length },
             ].map((stat) => (
-              <motion.div
+              <m.div
                 key={stat.label}
                 whileHover={{ y: -3 }}
                 className="rounded-2xl border border-surface-200 bg-white/90 p-4 shadow-sm"
               >
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{stat.label}</p>
-                <p className="mt-1 text-2xl font-bold text-gray-950">{stat.value}</p>
-              </motion.div>
+                <p className="mt-1 text-2xl font-semibold text-gray-950">{stat.value}</p>
+              </m.div>
             ))}
           </div>
         </div>
-      </motion.section>
+      </m.section>
 
       <Modal
         isOpen={isFormModalOpen}
@@ -478,7 +479,7 @@ const Promotions = () => {
 
         <AnimatePresence mode="wait">
           {paginatedPromotions.length === 0 ? (
-            <motion.div
+            <m.div
               key="empty"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -489,10 +490,10 @@ const Promotions = () => {
                 <FiSearch className="h-6 w-6" />
               </div>
               <h3 className="mt-4 text-lg font-semibold text-gray-950">No promotions found</h3>
-              <p className="mt-1 text-sm text-gray-500">Try changing filters or create a new promotion.</p>
-            </motion.div>
+              <p className="mt-1 text-sm text-gray-500">Try changing filters or create a new prom.</p>
+            </m.div>
           ) : viewMode === 'card' ? (
-            <motion.div
+            <m.div
               key="cards"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -500,7 +501,7 @@ const Promotions = () => {
               className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
             >
               {paginatedPromotions.map((promo, index) => (
-                <motion.article
+                <m.article
                   key={promo._id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -512,7 +513,7 @@ const Promotions = () => {
                   <div className="space-y-3 p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="font-bold text-gray-950">{promo.name}</p>
+                        <p className="font-semibold text-gray-950">{promo.name}</p>
                         <p className="mt-1 font-mono text-sm text-primary-600">{promo.code}</p>
                       </div>
                       <PromoStatusPill active={promo.isActive} />
@@ -547,11 +548,11 @@ const Promotions = () => {
                       </button>
                     </div>
                   </div>
-                </motion.article>
+                </m.article>
               ))}
-            </motion.div>
+            </m.div>
           ) : (
-            <motion.div
+            <m.div
               key="list"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -606,7 +607,7 @@ const Promotions = () => {
                   ))}
                 </tbody>
               </table>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
 
@@ -638,6 +639,7 @@ const Promotions = () => {
         )}
       </Card>
     </div>
+    </LazyMotion>
   )
 }
 

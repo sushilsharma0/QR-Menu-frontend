@@ -32,8 +32,8 @@ export default function Settings() {
   const homePath = slug && token ? `/home/${slug}/${token}` : '/'
   const { isDark, toggleTheme } = useTheme()
   const [guestId, setGuestId] = useState('')
-  const [customerId, setCustomerId] = useState(getStoredCustomerId())
-  const [customer, setCustomer] = useState(getStoredCustomerProfile())
+  const [customerId, setCustomerId] = useState(() => getStoredCustomerId())
+  const [customer, setCustomer] = useState(() => getStoredCustomerProfile())
   const [prefs, setPrefs] = useState(readPrefs)
   const [panel, setPanel] = useState(null)
   const [profileForm, setProfileForm] = useState({ name: '', phone: '', email: '' })
@@ -118,12 +118,18 @@ export default function Settings() {
     { section: 'Support', icon: HelpCircle, label: 'Help Center', description: 'FAQs and support', action: () => setPanel('help') },
     { section: 'Support', icon: Info, label: 'About', description: 'App version 1.0.4', action: () => setPanel('about') },
   ]
-  const sections = [...new Set(rows.map((row) => row.section))]
+  const sections = rows.reduce((groups, row) => {
+    if (!groups.some((group) => group.section === row.section)) {
+      groups.push({ section: row.section, items: [] })
+    }
+    groups[groups.length - 1].items.push(row)
+    return groups
+  }, [])
 
   return (
     <div className="min-h-screen bg-[#fafaf7] pb-28 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       <div className="relative bg-gradient-to-br from-primary-600 to-primary-800 p-6 text-center text-white">
-        <h1 className="text-2xl font-bold">Settings</h1>
+        <h1 className="text-2xl font-semibold">Settings</h1>
         <p className="mt-1 text-sm opacity-90">Customize your experience</p>
         <Link to={homePath} className="absolute left-4 top-4 z-10 rounded-lg bg-white/20 p-2 text-white transition-colors hover:bg-white/30">
           <X size={20} />
@@ -131,11 +137,11 @@ export default function Settings() {
       </div>
 
       <div className="space-y-6 p-4">
-        {sections.map((section) => (
+        {sections.map(({ section, items }) => (
           <div key={section}>
-            <h2 className="mb-2 px-1 text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">{section}</h2>
+            <h2 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{section}</h2>
             <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-              {rows.filter((row) => row.section === section).map((item, idx, list) => (
+              {items.map((item, idx, list) => (
                 <button
                   key={item.label}
                   type="button"
@@ -183,7 +189,7 @@ function SettingsPanel({ panel, setPanel, customerId, customer, profileForm, set
     <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/45 px-4 pb-6 pt-12">
       <div className="max-h-[82vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl dark:bg-gray-900">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-black capitalize text-gray-950 dark:text-gray-100">{panel === 'password' ? 'Change password' : panel}</h3>
+          <h3 className="text-lg font-semibold capitalize text-gray-950 dark:text-gray-100">{panel === 'password' ? 'Change password' : panel}</h3>
           <button onClick={close} className="rounded-xl bg-gray-100 p-2 dark:bg-gray-800"><X size={18} /></button>
         </div>
         {panel === 'profile' && (

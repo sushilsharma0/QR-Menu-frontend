@@ -1,13 +1,14 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { LazyMotion, domAnimation, m } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import SectionHeader from './SectionHeader'
 
 const FeaturesSection = ({ features }) => (
   <section id="features" className="py-14 sm:py-20 lg:py-24">
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <motion.div
+      <LazyMotion features={domAnimation}>
+      <m.div
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-80px' }}
@@ -32,7 +33,7 @@ const FeaturesSection = ({ features }) => (
 
         <div className="mt-5 grid gap-2 sm:mt-6 sm:gap-3 sm:grid-cols-3">
           {['QR ordering', 'Live kitchen flow', 'Fast cashier billing'].map((pill, idx) => (
-            <motion.div
+            <m.div
               key={pill}
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -41,12 +42,12 @@ const FeaturesSection = ({ features }) => (
               className="rounded-xl border border-surface-200 bg-white px-3 py-2.5 text-center text-xs font-black text-slate-700 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary-200 hover:text-primary-700 hover:shadow-md sm:px-4 sm:py-3 sm:text-sm"
             >
               {pill}
-            </motion.div>
+            </m.div>
           ))}
         </div>
-      </motion.div>
+      </m.div>
 
-      <motion.div
+      <m.div
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, margin: '-60px' }}
@@ -65,8 +66,8 @@ const FeaturesSection = ({ features }) => (
               : 'bg-accent-500'
 
           return (
-            <motion.article
-              key={`${feature.title}-${index}`}
+            <m.article
+              key={feature.title}
               variants={{
                 hidden: { opacity: 0, y: 26 },
                 show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
@@ -78,12 +79,13 @@ const FeaturesSection = ({ features }) => (
               <span className={`relative flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 sm:h-12 sm:w-12 ${iconTone}`}>
                 <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
               </span>
-              <h3 className="relative mt-4 text-lg font-black text-slate-950 sm:mt-5 sm:text-xl">{feature.title}</h3>
+              <h3 className="relative mt-4 text-lg font-semibold text-slate-950 sm:mt-5 sm:text-xl">{feature.title}</h3>
               <p className="relative mt-2 text-sm leading-7 text-slate-600 sm:mt-3">{feature.text}</p>
-            </motion.article>
+            </m.article>
           )
         })}
-      </motion.div>
+      </m.div>
+      </LazyMotion>
     </div>
   </section>
 )

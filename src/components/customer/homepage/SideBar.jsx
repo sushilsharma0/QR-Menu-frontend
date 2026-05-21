@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import {
   X,
   Info,
@@ -51,10 +51,11 @@ const Sidebar = ({
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
+    <LazyMotion features={domAnimation}>
+      <AnimatePresence>
+        {isOpen && (
+          <>
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -62,7 +63,7 @@ const Sidebar = ({
             className="fixed inset-0 z-[1000] bg-black/40 backdrop-blur-sm"
           />
 
-          <motion.div
+          <m.div
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
@@ -70,7 +71,7 @@ const Sidebar = ({
             className="fixed left-0 top-0 z-[1001] flex h-full w-[80%] max-w-xs flex-col bg-white shadow-2xl"
           >
             <div className="flex items-center justify-between px-6 pb-4 pt-6">
-              <h2 className="text-xl font-black text-gray-800">Explore</h2>
+              <h2 className="text-xl font-semibold text-gray-800">Explore</h2>
               <button
                 type="button"
                 onClick={onClose}
@@ -81,7 +82,7 @@ const Sidebar = ({
               </button>
             </div>
 
-            {/* Quick actions — moved here from the floating bar on the Home
+            {/* Quick actions moved here from the floating bar on the Home
                 page so the home view stays focused on the menu. Each button
                 closes the sidebar first, then triggers its action. */}
             {(onCallAssist || onOffers || onFeedback) && (
@@ -143,15 +144,16 @@ const Sidebar = ({
                 Version 1.0.4
               </p>
             </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+          </m.div>
+          </>
+        )}
+      </AnimatePresence>
+    </LazyMotion>
   );
 };
 
 const QuickActionTile = ({ icon, label, badge, onClick, disabled }) => (
-  <motion.button
+  <m.button
     type="button"
     whileTap={disabled ? undefined : { scale: 0.94 }}
     onClick={onClick}
@@ -167,7 +169,7 @@ const QuickActionTile = ({ icon, label, badge, onClick, disabled }) => (
       {icon}
     </span>
     <span className="text-[10px] font-black text-gray-800">{label}</span>
-  </motion.button>
+  </m.button>
 );
 
 const SidebarItem = ({ icon, label, trailing, disabled }) => (

@@ -150,7 +150,7 @@ function MetricTile({ label, value, sub, icon: Icon, accent }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
-          <p className="mt-2 text-2xl font-bold text-gray-950">{value}</p>
+          <p className="mt-2 text-2xl font-semibold text-gray-950">{value}</p>
           {sub && <p className="mt-1 text-xs text-gray-500">{sub}</p>}
         </div>
         <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${accent} text-white shadow-md`}>
@@ -170,7 +170,7 @@ function TableActions({ table, onQr, onRegenerate, onEdit, onDelete }) {
       <button
         type="button"
         onClick={() => onRegenerate(table._id)}
-        className="rounded-lg p-2 text-gray-500 transition hover:bg-blue-50 hover:text-blue-600"
+        className="rounded-lg p-2 text-blue-700 transition hover:bg-blue-50 hover:text-blue-800"
         title="Regenerate QR"
       >
         <FiRefreshCw className="h-4 w-4" />
@@ -178,7 +178,7 @@ function TableActions({ table, onQr, onRegenerate, onEdit, onDelete }) {
       <button
         type="button"
         onClick={() => onEdit(table)}
-        className="rounded-lg p-2 text-gray-500 transition hover:bg-green-50 hover:text-green-600"
+        className="rounded-lg p-2 text-green-700 transition hover:bg-green-50 hover:text-green-800"
         title="Edit Table"
       >
         <FiEdit2 className="h-4 w-4" />
@@ -186,7 +186,7 @@ function TableActions({ table, onQr, onRegenerate, onEdit, onDelete }) {
       <button
         type="button"
         onClick={() => onDelete(table._id)}
-        className="rounded-lg p-2 text-gray-500 transition hover:bg-red-50 hover:text-red-600"
+        className="rounded-lg p-2 text-red-700 transition hover:bg-red-50 hover:text-red-800"
         title="Delete Table"
       >
         <FiTrash2 className="h-4 w-4" />
@@ -331,7 +331,7 @@ const Tables = () => {
                 <FiGrid className="h-4 w-4" />
                 Table QR Studio
               </div>
-              <h1 className="mt-3 text-3xl font-bold tracking-tight text-gray-950">Tables & QR Codes</h1>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-gray-950">Tables & QR Codes</h1>
               <p className="mt-2 max-w-3xl text-sm text-gray-500">
                 Manage dining areas, table capacity, and branded QR stands with your restaurant logo in the center.
               </p>
@@ -393,8 +393,9 @@ const Tables = () => {
             placeholder="Table, area, floor, or type"
           />
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Status</label>
+            <label htmlFor="table-status-filter" className="mb-1 block text-sm font-medium text-gray-700">Status</label>
             <select
+              id="table-status-filter"
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value)}
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500"
@@ -405,8 +406,9 @@ const Tables = () => {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Floor / area</label>
+            <label htmlFor="table-floor-filter" className="mb-1 block text-sm font-medium text-gray-700">Floor / area</label>
             <select
+              id="table-floor-filter"
               value={floorFilter}
               onChange={(event) => setFloorFilter(event.target.value)}
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500"
@@ -460,7 +462,7 @@ const Tables = () => {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <h3 className="text-2xl font-bold text-gray-950">Table {table.tableNumber}</h3>
+                      <h3 className="text-2xl font-semibold text-gray-950">Table {table.tableNumber}</h3>
                       <p className="mt-1 text-sm text-gray-500">
                         {table.capacity || 4} seats - {table.tableType || "regular"}
                       </p>
@@ -512,7 +514,7 @@ const Tables = () => {
                 <tbody className="divide-y divide-surface-200 bg-white">
                   {paginatedTables.map((table) => (
                     <tr key={table._id} className="transition hover:bg-surface-50">
-                      <td className="px-5 py-4 font-bold text-gray-950">Table {table.tableNumber}</td>
+                      <td className="px-5 py-4 font-semibold text-gray-950">Table {table.tableNumber}</td>
                       <td className="px-5 py-4 text-gray-600">{table.capacity || 4} seats</td>
                       <td className="px-5 py-4 text-gray-600">{table.floor || "ground"}</td>
                       <td className="px-5 py-4 capitalize text-gray-600">{table.tableType || "regular"}</td>
@@ -564,7 +566,7 @@ const Tables = () => {
                 className="mx-auto mb-3 h-16 w-16 rounded-2xl border-4 border-white object-cover shadow-md"
               />
             )}
-            <h3 className="text-xl font-bold text-gray-950">{restaurant?.name || "Restaurant"}</h3>
+            <h3 className="text-xl font-semibold text-gray-950">{restaurant?.name || "Restaurant"}</h3>
             <p className="mt-1 text-sm text-gray-500">Scan to view menu and order from your table</p>
             <div className="my-5 flex justify-center">
               {qrModal.table?.qrToken ? (
@@ -575,7 +577,7 @@ const Tables = () => {
                 </div>
               )}
             </div>
-            <p className="text-lg font-bold tracking-wide text-primary-700">
+            <p className="text-lg font-semibold tracking-wide text-primary-700">
               TABLE {qrModal.table?.tableNumber || ""}
             </p>
           </div>

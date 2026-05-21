@@ -483,9 +483,9 @@ function CreateBranchWizard({
       <div className="space-y-4">
         <div className="rounded-2xl border border-primary-200 bg-gradient-to-br from-primary-50 via-white to-amber-50 px-4 py-4 shadow-sm dark:border-primary-900/50 dark:from-primary-950/30 dark:via-gray-900 dark:to-gray-900">
           <div className="mb-3 flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary-700 text-sm font-black text-white shadow-md shadow-primary-900/20">1</span>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary-700 text-sm font-semibold text-white shadow-md shadow-primary-900/20">1</span>
             <div>
-              <p className="text-xs font-black uppercase tracking-wide text-primary-800 dark:text-primary-200">Step 1 / 2 - Verify owner</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary-800 dark:text-primary-200">Step 1 / 2 - Verify owner</p>
               <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">Branch basics and Gmail verification</p>
             </div>
           </div>
@@ -496,7 +496,7 @@ function CreateBranchWizard({
         {devOtpHint ? (
           <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100">
             <strong>Development only:</strong> SMTP is not configured on the server. Your verification code is{' '}
-            <span className="font-mono text-lg font-black tracking-widest">{devOtpHint}</span>
+            <span className="font-mono text-lg font-semibold tracking-widest">{devOtpHint}</span>
             . In production, configure <span className="font-mono">SMTP_USER</span> and <span className="font-mono">SMTP_PASS</span>.
           </div>
         ) : null}
@@ -568,13 +568,13 @@ function CreateBranchWizard({
     >
       <div className="rounded-2xl border border-surface-200 bg-gradient-to-br from-white to-surface-50 p-4 text-sm shadow-sm dark:border-gray-700 dark:from-gray-900 dark:to-gray-800/50">
         <div className="mb-3 flex items-center gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary-700 text-sm font-black text-white shadow-md shadow-primary-900/20">2</span>
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary-700 text-sm font-semibold text-white shadow-md shadow-primary-900/20">2</span>
           <div>
-            <p className="text-xs font-black uppercase tracking-wide text-primary-700 dark:text-primary-300">Step 2 / 2 - Branch details</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary-700 dark:text-primary-300">Step 2 / 2 - Branch details</p>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Owner Gmail is already verified. Finish portal access, contact info, and modules below.</p>
           </div>
         </div>
-        <p className="mt-3 font-bold text-gray-900 dark:text-gray-100">Summary from step 1</p>
+        <p className="mt-3 font-semibold text-gray-900 dark:text-gray-100">Summary from step 1</p>
         <ul className="mt-2 space-y-1 text-gray-600 dark:text-gray-300">
           <li><span className="font-semibold">Branch:</span> {form.name || '—'}</li>
           {form.branchCode && <li><span className="font-semibold">Code:</span> {form.branchCode}</li>}
@@ -587,7 +587,7 @@ function CreateBranchWizard({
         </Button>
       </div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <Input label="Custom branch username" value={form.branchUsername} onChange={set('branchUsername')} placeholder="e.g. pokhara (becomes …@branch.com)" />
+        <Input label="Custom branch username" value={form.branchUsername} onChange={set('branchUsername')} placeholder="e.g. pokhara (becomes ...@branch.com)" />
         <label className="flex items-center gap-2 self-end text-sm font-semibold text-gray-700 dark:text-gray-200 md:pb-2">
           <input
             type="checkbox"
@@ -972,8 +972,8 @@ const Branches = () => {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 rounded-2xl border border-amber-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-wide text-primary-700 dark:text-primary-300">Enterprise</p>
-          <h1 className="mt-1 text-3xl font-black text-gray-950 dark:text-gray-100">Branch Management</h1>
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary-700 dark:text-primary-300">Enterprise</p>
+          <h1 className="mt-1 text-3xl font-semibold text-gray-950 dark:text-gray-100">Branch Management</h1>
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Create, switch, monitor, and protect independent branch operations.</p>
         </div>
         {canManageBranches ? (
@@ -981,7 +981,7 @@ const Branches = () => {
             <FiPlus className="mr-2 h-4 w-4" /> Add branch
           </Button>
         ) : (
-          <span className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
+          <span className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
             Main branch permission required
           </span>
         )}
@@ -997,7 +997,7 @@ const Branches = () => {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1.2fr]">
         <section className="rounded-2xl border border-surface-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <div className="border-b border-surface-100 px-5 py-4 dark:border-gray-800">
-            <h2 className="text-lg font-bold text-gray-950 dark:text-gray-100">Branch list</h2>
+            <h2 className="text-lg font-semibold text-gray-950 dark:text-gray-100">Branch list</h2>
           </div>
           <div className="divide-y divide-surface-100 dark:divide-gray-800">
             {branches.map((branch) => (
@@ -1017,11 +1017,11 @@ const Branches = () => {
                 }`}
               >
                 <div className="min-w-0">
-                  <p className="truncate font-black text-gray-950 dark:text-gray-100">{branch.name}</p>
+                  <p className="truncate font-semibold text-gray-950 dark:text-gray-100">{branch.name}</p>
                   <p className="mt-1 truncate text-xs text-gray-500 dark:text-gray-400">{branch.city || branch.address || branch.slug}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${branch.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${branch.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
                     {branch.status}
                   </span>
                   {canManageBranches && !branch.isDefault && (
@@ -1052,10 +1052,10 @@ const Branches = () => {
         <section className="rounded-2xl border border-surface-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold text-gray-950 dark:text-gray-100">{selectedBranch?.name || 'Branch'} analytics</h2>
+              <h2 className="text-lg font-semibold text-gray-950 dark:text-gray-100">{selectedBranch?.name || 'Branch'} analytics</h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">Revenue and order trend for selected branch.</p>
             </div>
-            {loadingAnalytics && <span className="text-xs font-bold text-gray-400">Loading</span>}
+            {loadingAnalytics && <span className="text-xs font-semibold text-gray-400">Loading</span>}
           </div>
           <div className="mt-5 h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -1074,8 +1074,8 @@ const Branches = () => {
       <section className="rounded-2xl border border-surface-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="flex flex-col gap-2 border-b border-surface-100 pb-4 dark:border-gray-800 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-black uppercase tracking-wide text-primary-700 dark:text-primary-300">Report section</p>
-            <h2 className="mt-1 text-xl font-black text-gray-950 dark:text-gray-100">{selectedBranch?.name || 'Branch'} detailed report</h2>
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary-700 dark:text-primary-300">Report section</p>
+            <h2 className="mt-1 text-xl font-semibold text-gray-950 dark:text-gray-100">{selectedBranch?.name || 'Branch'} detailed report</h2>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Selecting a branch here only changes this report. It does not switch your whole system branch or header data.
             </p>
@@ -1090,7 +1090,7 @@ const Branches = () => {
               <FiDownload className={`mr-2 h-4 w-4 ${downloadingBranchId ? 'animate-pulse' : ''}`} />
               {downloadingBranchId ? 'Preparing PDF' : 'Download report'}
             </Button>
-            <span className={`w-fit rounded-full px-3 py-1 text-xs font-bold capitalize ${selectedBranch?.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+            <span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold capitalize ${selectedBranch?.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
               {selectedBranch?.status || 'unknown'}
             </span>
           </div>
@@ -1098,7 +1098,7 @@ const Branches = () => {
 
         <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div className="rounded-2xl bg-surface-50 p-4 dark:bg-gray-800/50">
-            <p className="text-xs font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">Branch details</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Branch details</p>
             <dl className="mt-3 space-y-2 text-sm">
               <ReportRow label="Public ID" value={selectedBranch?.publicBranchId || selectedBranch?._id} />
               <ReportRow label="Slug" value={selectedBranch?.slug} />
@@ -1109,7 +1109,7 @@ const Branches = () => {
           </div>
 
           <div className="rounded-2xl bg-surface-50 p-4 dark:bg-gray-800/50">
-            <p className="text-xs font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">Location</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Location</p>
             <dl className="mt-3 space-y-2 text-sm">
               <ReportRow label="Address" value={selectedBranch?.address} />
               <ReportRow label="City" value={selectedBranch?.city} />
@@ -1119,7 +1119,7 @@ const Branches = () => {
           </div>
 
           <div className="rounded-2xl bg-surface-50 p-4 dark:bg-gray-800/50">
-            <p className="text-xs font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">Performance</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Performance</p>
             <dl className="mt-3 space-y-2 text-sm">
               <ReportRow label="Revenue" value={money(summary.revenue)} />
               <ReportRow label="Expenses" value={money(summary.expenses)} />
@@ -1143,10 +1143,10 @@ const Branches = () => {
         <div className="mt-5 rounded-2xl border border-primary-100 bg-gradient-to-br from-primary-50 via-white to-emerald-50 p-5 dark:border-primary-900/40 dark:from-primary-950/20 dark:via-gray-900 dark:to-gray-900">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-wide text-primary-700 dark:text-primary-300">Executive snapshot</p>
-              <h3 className="mt-1 text-lg font-black text-gray-950 dark:text-gray-100">Branch health and operating signals</h3>
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary-700 dark:text-primary-300">Executive snapshot</p>
+              <h3 className="mt-1 text-lg font-semibold text-gray-950 dark:text-gray-100">Branch health and operating signals</h3>
             </div>
-            <span className={`w-fit rounded-full px-3 py-1 text-xs font-black ${Number(summary.netProfit || 0) >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-700'}`}>
+            <span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${Number(summary.netProfit || 0) >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-700'}`}>
               {Number(summary.netProfit || 0) >= 0 ? 'Profitable' : 'Loss making'}
             </span>
           </div>
@@ -1347,10 +1347,10 @@ const Branches = () => {
                   <tbody className="divide-y divide-surface-100 dark:divide-gray-800">
                     {reportModel.recentOrders.map((order) => (
                       <tr key={order._id}>
-                        <td className="px-3 py-3 font-bold text-gray-950 dark:text-gray-100">#{order.orderNumber}</td>
+                        <td className="px-3 py-3 font-semibold text-gray-950 dark:text-gray-100">#{order.orderNumber}</td>
                         <td className="px-3 py-3 text-gray-600 dark:text-gray-300">{order.customerName || 'Guest'}</td>
                         <td className="px-3 py-3"><StatusBadge value={order.status} /></td>
-                        <td className="px-3 py-3 text-right font-bold text-primary-700">{money(order.grandTotal)}</td>
+                        <td className="px-3 py-3 text-right font-semibold text-primary-700">{money(order.grandTotal)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1367,11 +1367,11 @@ const Branches = () => {
                 {reportModel.lowStockItems.map((item) => (
                   <div key={item._id} className="flex items-center justify-between gap-4 rounded-2xl bg-surface-50 px-4 py-3 dark:bg-gray-800/60">
                     <div className="min-w-0">
-                      <p className="truncate font-black text-gray-950 dark:text-gray-100">{item.name}</p>
+                      <p className="truncate font-semibold text-gray-950 dark:text-gray-100">{item.name}</p>
                       <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{prettyLabel(item.category)} · Min {item.minimumStock || 0} {item.unit}</p>
                     </div>
                     <div className="shrink-0 text-right">
-                      <p className="text-sm font-black text-amber-700">{Number(item.quantity || 0)} {item.unit}</p>
+                      <p className="text-sm font-semibold text-amber-700">{Number(item.quantity || 0)} {item.unit}</p>
                       <p className="text-xs text-gray-400">{money(Number(item.quantity || 0) * Number(item.costPerUnit || 0))}</p>
                     </div>
                   </div>
@@ -1382,10 +1382,10 @@ const Branches = () => {
         </div>
 
         <div className="mt-4 rounded-2xl border border-surface-100 p-4 dark:border-gray-800">
-          <p className="text-xs font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">Enabled modules</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Enabled modules</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {enabledModuleList.map((label) => (
-              <span key={label} className="rounded-full bg-primary-50 px-3 py-1 text-xs font-bold text-primary-700 dark:bg-primary-950/30 dark:text-primary-200">
+              <span key={label} className="rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-950/30 dark:text-primary-200">
                 {label}
               </span>
             ))}
@@ -1395,14 +1395,14 @@ const Branches = () => {
 
       <section className="rounded-2xl border border-surface-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-950 dark:text-gray-100">Branch activity</h2>
-          {loadingActivity && <span className="text-xs font-bold text-gray-400">Loading</span>}
+          <h2 className="text-lg font-semibold text-gray-950 dark:text-gray-100">Branch activity</h2>
+          {loadingActivity && <span className="text-xs font-semibold text-gray-400">Loading</span>}
         </div>
         <ul className="mt-4 max-h-72 space-y-3 overflow-y-auto text-sm">
           {activity.length === 0 && <li className="text-gray-500">No recent audit events.</li>}
           {activity.map((row) => (
             <li key={`${row._id || row.timestamp}`} className="rounded-xl border border-surface-100 px-3 py-2 dark:border-gray-800">
-              <span className="font-bold text-gray-900 dark:text-gray-100">{row.action}</span>
+              <span className="font-semibold text-gray-900 dark:text-gray-100">{row.action}</span>
               <span className="text-gray-500 dark:text-gray-400"> · {row.timestamp ? new Date(row.timestamp).toLocaleString() : ''}</span>
               {row.ipAddress && <span className="block text-xs text-gray-400">{row.ipAddress}</span>}
             </li>
@@ -1450,14 +1450,14 @@ const Branches = () => {
           <p className="text-gray-600 dark:text-gray-300">Share these credentials with the branch manager. The password is shown only once.</p>
           {credentials && (
             <div className="rounded-xl bg-surface-50 p-4 font-mono text-xs dark:bg-gray-800">
-              <p><span className="font-sans font-bold">Branch owner Gmail:</span> {credentials.ownerEmail || '—'}</p>
-              <p><span className="font-sans font-bold">Restaurant ID (sign-in):</span> {credentials.publicRestaurantId || credentials.restaurantId}</p>
-              <p><span className="font-sans font-bold">Branch login email:</span> {credentials.branchEmail || '—'}</p>
-              <p><span className="font-sans font-bold">Branch security key:</span> {credentials.branchPortalKey}</p>
-              <p><span className="font-sans font-bold">Public branch ID:</span> {credentials.publicBranchId}</p>
-              <p><span className="font-sans font-bold">Branch slug:</span> {credentials.branchSlug}</p>
-              <p><span className="font-sans font-bold">Local username:</span> {credentials.username}</p>
-              <p><span className="font-sans font-bold">Password:</span> {credentials.password}</p>
+              <p><span className="font-sans font-semibold">Branch owner Gmail:</span> {credentials.ownerEmail || '—'}</p>
+              <p><span className="font-sans font-semibold">Restaurant ID (sign-in):</span> {credentials.publicRestaurantId || credentials.restaurantId}</p>
+              <p><span className="font-sans font-semibold">Branch login email:</span> {credentials.branchEmail || '—'}</p>
+              <p><span className="font-sans font-semibold">Branch security key:</span> {credentials.branchPortalKey}</p>
+              <p><span className="font-sans font-semibold">Public branch ID:</span> {credentials.publicBranchId}</p>
+              <p><span className="font-sans font-semibold">Branch slug:</span> {credentials.branchSlug}</p>
+              <p><span className="font-sans font-semibold">Local username:</span> {credentials.username}</p>
+              <p><span className="font-sans font-semibold">Password:</span> {credentials.password}</p>
               <p className="mt-2 break-all font-sans text-gray-500">
                 Sign-in URL:{' '}
                 <span className="font-mono text-gray-700 dark:text-gray-300">
@@ -1481,8 +1481,8 @@ function Metric({ icon: Icon, label, value }) {
     <div className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
-          <p className="mt-2 truncate text-2xl font-black text-gray-950 dark:text-gray-100">{value}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
+          <p className="mt-2 truncate text-2xl font-semibold text-gray-950 dark:text-gray-100">{value}</p>
         </div>
         <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-700 text-white">
           <Icon className="h-5 w-5" />
@@ -1495,8 +1495,8 @@ function Metric({ icon: Icon, label, value }) {
 function InsightTile({ label, value, detail }) {
   return (
     <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm dark:border-gray-800 dark:bg-gray-900/70">
-      <p className="text-[11px] font-black uppercase tracking-wide text-gray-400">{label}</p>
-      <p className="mt-1 truncate text-lg font-black text-gray-950 dark:text-gray-100" title={String(value || '')}>{value}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{label}</p>
+      <p className="mt-1 truncate text-lg font-semibold text-gray-950 dark:text-gray-100" title={String(value || '')}>{value}</p>
       <p className="mt-1 max-h-9 overflow-hidden text-xs font-semibold text-gray-500 dark:text-gray-400">{detail}</p>
     </div>
   )
@@ -1507,7 +1507,7 @@ function ChartPanel({ title, subtitle, empty, children }) {
     <div className="rounded-2xl border border-surface-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-black text-gray-950 dark:text-gray-100">{title}</h3>
+          <h3 className="text-sm font-semibold text-gray-950 dark:text-gray-100">{title}</h3>
           {subtitle ? <p className="mt-1 text-xs font-semibold text-gray-400">{subtitle}</p> : null}
         </div>
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-700 dark:bg-primary-950/30 dark:text-primary-200">
@@ -1518,7 +1518,7 @@ function ChartPanel({ title, subtitle, empty, children }) {
         {empty ? (
           <div className="flex h-full flex-col items-center justify-center rounded-2xl bg-surface-50 text-center dark:bg-gray-800/50">
             <FiBarChart2 className="h-7 w-7 text-primary-600" />
-            <p className="mt-2 text-sm font-black text-gray-900 dark:text-gray-100">No chart data yet</p>
+            <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-gray-100">No chart data yet</p>
             <p className="mt-1 max-w-xs text-xs text-gray-500">This chart fills when this branch has matching records.</p>
           </div>
         ) : (
@@ -1536,7 +1536,7 @@ function ReportTable({ title, icon: Icon, children }) {
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-50 text-primary-700 dark:bg-primary-950/30 dark:text-primary-200">
           <Icon className="h-4 w-4" />
         </div>
-        <h3 className="text-sm font-black text-gray-950 dark:text-gray-100">{title}</h3>
+        <h3 className="text-sm font-semibold text-gray-950 dark:text-gray-100">{title}</h3>
       </div>
       {children}
     </div>
@@ -1561,14 +1561,14 @@ function StatusBadge({ value }) {
         : status === 'pending'
           ? 'bg-amber-50 text-amber-700'
           : 'bg-blue-50 text-blue-700'
-  return <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${className}`}>{prettyLabel(status)}</span>
+  return <span className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${className}`}>{prettyLabel(status)}</span>
 }
 
 function ReportRow({ label, value }) {
   return (
     <div className="flex items-start justify-between gap-3">
       <dt className="shrink-0 text-gray-500 dark:text-gray-400">{label}</dt>
-      <dd className="min-w-0 break-words text-right font-bold text-gray-900 dark:text-gray-100">
+      <dd className="min-w-0 break-words text-right font-semibold text-gray-900 dark:text-gray-100">
         {value || '-'}
       </dd>
     </div>

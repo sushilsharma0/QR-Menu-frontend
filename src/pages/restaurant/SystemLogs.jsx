@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
+import { LazyMotion, domAnimation, m } from 'framer-motion'
 import toast from '@utils/toast'
 import {
   FiAlertCircle,
@@ -135,18 +135,18 @@ const OutcomePill = ({ log }) => {
 }
 
 const MetricTile = ({ label, value, sub, icon: Icon, accent }) => (
-  <motion.div whileHover={{ y: -3 }} className="rounded-2xl border border-surface-200 bg-white p-4 shadow-sm">
+  <m.div whileHover={{ y: -3 }} className="rounded-2xl border border-surface-200 bg-white p-4 shadow-sm">
     <div className="flex items-start justify-between gap-3">
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
-        <p className="mt-2 text-2xl font-bold text-gray-950">{value}</p>
+        <p className="mt-2 text-2xl font-semibold text-gray-950">{value}</p>
         {sub && <p className="mt-1 text-xs text-gray-500">{sub}</p>}
       </div>
       <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${accent} text-white shadow-md`}>
         <Icon className="h-5 w-5" />
       </div>
     </div>
-  </motion.div>
+  </m.div>
 )
 
 const LogCard = ({ log, index }) => {
@@ -156,7 +156,7 @@ const LogCard = ({ log, index }) => {
   const operation = operationActions.has(log.action)
 
   return (
-    <motion.article
+    <m.article
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.28, delay: Math.min(index * 0.025, 0.15) }}
@@ -173,7 +173,7 @@ const LogCard = ({ log, index }) => {
               <OutcomePill log={log} />
               {operation && <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">Operation</span>}
             </div>
-            <h2 className="mt-3 text-lg font-bold text-gray-950">{getActorName(log)}</h2>
+            <h2 className="mt-3 text-lg font-semibold text-gray-950">{getActorName(log)}</h2>
             <p className="mt-1 text-sm text-gray-500">{getActorSubtext(log)}</p>
           </div>
         </div>
@@ -202,7 +202,7 @@ const LogCard = ({ log, index }) => {
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Details</p>
         <p className="mt-2 break-words text-sm leading-6 text-gray-700">{getLogMessage(log)}</p>
       </div>
-    </motion.article>
+    </m.article>
   )
 }
 
@@ -312,8 +312,9 @@ const SystemLogs = () => {
   }
 
   return (
+    <LazyMotion features={domAnimation}>
     <div className="space-y-6">
-      <motion.section
+      <m.section
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -327,7 +328,7 @@ const SystemLogs = () => {
                 <FiShield className="h-4 w-4" />
                 Audit Console
               </div>
-              <h1 className="mt-3 text-3xl font-bold tracking-tight text-gray-950">Employee System Logs</h1>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-gray-950">Employee System Logs</h1>
               <p className="mt-2 max-w-3xl text-sm text-gray-500">
                 Monitor logins, blocked access, order acceptance/status changes, payment collection, and refunds.
               </p>
@@ -351,7 +352,7 @@ const SystemLogs = () => {
             <MetricTile label="Successful" value={counts.success} sub="Completed activity on page" icon={FiCheckCircle} accent="from-emerald-500 to-teal-500" />
           </div>
         </div>
-      </motion.section>
+      </m.section>
 
       <Card
         title="Filters"
@@ -371,8 +372,9 @@ const SystemLogs = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Event type</label>
+            <label htmlFor="system-log-event-type" className="mb-1 block text-sm font-medium text-gray-700">Event type</label>
             <select
+              id="system-log-event-type"
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value)
@@ -385,8 +387,9 @@ const SystemLogs = () => {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Action</label>
+            <label htmlFor="system-log-action" className="mb-1 block text-sm font-medium text-gray-700">Action</label>
             <select
+              id="system-log-action"
               value={actionFilter}
               onChange={(e) => {
                 setActionFilter(e.target.value)
@@ -483,6 +486,7 @@ const SystemLogs = () => {
         </div>
       )}
     </div>
+    </LazyMotion>
   )
 }
 

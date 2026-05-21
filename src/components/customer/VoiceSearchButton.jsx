@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Mic } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { LazyMotion, domAnimation, m, AnimatePresence } from "framer-motion";
 
 /**
  * Inline microphone button designed to sit inside a search input.
@@ -41,7 +41,7 @@ export default function VoiceSearchButton({
     };
   }, []);
 
-  const handleClick = () => {
+  const toggleVoiceSearch = () => {
     if (listening) {
       try {
         recognizerRef.current?.stop?.();
@@ -75,9 +75,10 @@ export default function VoiceSearchButton({
   if (!supported) return null;
 
   return (
-    <motion.button
+    <LazyMotion features={domAnimation}>
+    <m.button
       type="button"
-      onClick={handleClick}
+      onClick={toggleVoiceSearch}
       whileTap={{ scale: 0.88 }}
       aria-label={ariaLabel}
       aria-pressed={listening}
@@ -91,7 +92,7 @@ export default function VoiceSearchButton({
       <AnimatePresence>
         {listening && (
           <>
-            <motion.span
+            <m.span
               key="ring-1"
               aria-hidden
               initial={{ scale: 0.7, opacity: 0.5 }}
@@ -100,7 +101,7 @@ export default function VoiceSearchButton({
               transition={{ duration: 1.1, repeat: Infinity, ease: "easeOut" }}
               className="absolute inset-0 rounded-lg bg-primary-500/60"
             />
-            <motion.span
+            <m.span
               key="ring-2"
               aria-hidden
               initial={{ scale: 0.7, opacity: 0.35 }}
@@ -122,6 +123,7 @@ export default function VoiceSearchButton({
         strokeWidth={listening ? 2.5 : 2}
         className="relative z-10"
       />
-    </motion.button>
+    </m.button>
+    </LazyMotion>
   );
 }

@@ -271,8 +271,9 @@ export default function MenuRecipeModal({ isOpen, onClose, menuItem, onSaved }) 
                     <p className="mt-1 text-sm font-semibold text-gray-900">{r.name}</p>
                   </div>
                   <div className="w-28">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-gray-500">Qty</label>
+                    <label htmlFor={`recipe-quantity-${r.key}`} className="text-xs font-semibold uppercase tracking-wide text-gray-500">Qty</label>
                     <Input
+                      id={`recipe-quantity-${r.key}`}
                       type="number"
                       step="any"
                       min="0"
@@ -282,8 +283,9 @@ export default function MenuRecipeModal({ isOpen, onClose, menuItem, onSaved }) 
                     />
                   </div>
                   <div className="w-36">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-gray-500">Unit</label>
+                    <label htmlFor={`recipe-unit-${r.key}`} className="text-xs font-semibold uppercase tracking-wide text-gray-500">Unit</label>
                     <select
+                      id={`recipe-unit-${r.key}`}
                       value={r.unit}
                       onChange={(e) => updateRow(r.key, { unit: e.target.value })}
                       className="mt-1 w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-400"

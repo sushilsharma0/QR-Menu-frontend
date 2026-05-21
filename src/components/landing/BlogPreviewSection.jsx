@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { LazyMotion, domAnimation, m } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import BlogCard from './BlogCard'
 import SectionHeader from './SectionHeader'
@@ -24,7 +24,8 @@ const BlogPreviewSection = ({ blogs }) => (
         </Link>
       </div>
 
-      <motion.div
+      <LazyMotion features={domAnimation}>
+      <m.div
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, margin: '-60px' }}
@@ -37,7 +38,8 @@ const BlogPreviewSection = ({ blogs }) => (
         {blogs.map((post, index) => (
           <BlogCard key={post._id || post.key || post.title} post={post} index={index} />
         ))}
-      </motion.div>
+      </m.div>
+      </LazyMotion>
     </div>
   </section>
 )

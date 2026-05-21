@@ -46,7 +46,7 @@ const Profile = () => {
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
-        <h1 className="text-2xl font-black text-gray-900 dark:text-gray-100">Profile & Security</h1>
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Profile & Security</h1>
         <p className="mt-1 text-gray-500 dark:text-gray-400">
           {user?.scope === 'branch_user'
             ? 'Branch login — update your password. Other settings are managed by head office.'
@@ -64,7 +64,7 @@ const Profile = () => {
                 <FiUser className="h-10 w-10 text-primary-600 dark:text-primary-300" />
               )}
             </div>
-            <h2 className="mt-5 text-xl font-black text-gray-950 dark:text-gray-100">{user?.name || 'Restaurant account'}</h2>
+            <h2 className="mt-5 text-xl font-semibold text-gray-950 dark:text-gray-100">{user?.name || 'Restaurant account'}</h2>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{user?.email}</p>
             <div className="mt-5 grid w-full gap-3 text-left">
               <div className="flex items-center gap-3 rounded-2xl bg-gray-50 p-3 dark:bg-gray-800">

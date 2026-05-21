@@ -113,7 +113,7 @@ const PlatformTicketDetail = () => {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Ticket Number</p>
-              <p className="text-lg font-mono font-bold text-gray-900 dark:text-gray-100">{ticket.ticketNumber}</p>
+              <p className="text-lg font-mono font-semibold text-gray-900 dark:text-gray-100">{ticket.ticketNumber}</p>
             </div>
             <div className="flex gap-2 flex-wrap justify-end">
               <PlatformPill className={platformStatusStyles[ticket.status]}>
@@ -134,7 +134,7 @@ const PlatformTicketDetail = () => {
           </div>
 
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{ticket.subject}</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{ticket.subject}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Created on {new Date(ticket.createdAt).toLocaleDateString()}
             </p>
@@ -164,8 +164,9 @@ const PlatformTicketDetail = () => {
       <Card title="Actions">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Change Status</label>
+            <label htmlFor="platform-ticket-status" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Change Status</label>
             <select
+              id="platform-ticket-status"
               value={ticket.status}
               onChange={(e) => handleStatusChange(e.target.value)}
               disabled={statusLoading || ticket.status === 'closed'}
@@ -224,7 +225,7 @@ const PlatformTicketDetail = () => {
             <textarea
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
-              placeholder="Write your response..."
+              placeholder="Write your response…"
               className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 h-24"
             />
             <Button

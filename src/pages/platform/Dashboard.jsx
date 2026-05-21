@@ -12,24 +12,23 @@ import {
 } from 'react-icons/fi'
 import { TbCurrencyRupee } from 'react-icons/tb'
 import { motion } from 'framer-motion'
-import {
-  Area,
-  Bar,
-  CartesianGrid,
-  ComposedChart,
-  Legend,
-  Line,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
 import toast from '@utils/toast'
 import api from '../../services/api'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import { RestaurantPageLoader } from '../../components/restaurant/RestaurantUI'
 import { DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
+
+const Area = React.lazy(() => import('recharts').then((module) => ({ default: module.Area })))
+const Bar = React.lazy(() => import('recharts').then((module) => ({ default: module.Bar })))
+const CartesianGrid = React.lazy(() => import('recharts').then((module) => ({ default: module.CartesianGrid })))
+const ComposedChart = React.lazy(() => import('recharts').then((module) => ({ default: module.ComposedChart })))
+const Legend = React.lazy(() => import('recharts').then((module) => ({ default: module.Legend })))
+const Line = React.lazy(() => import('recharts').then((module) => ({ default: module.Line })))
+const ResponsiveContainer = React.lazy(() => import('recharts').then((module) => ({ default: module.ResponsiveContainer })))
+const Tooltip = React.lazy(() => import('recharts').then((module) => ({ default: module.Tooltip })))
+const XAxis = React.lazy(() => import('recharts').then((module) => ({ default: module.XAxis })))
+const YAxis = React.lazy(() => import('recharts').then((module) => ({ default: module.YAxis })))
 
 const monthLabel = (value) => {
   const parsed = new Date(`${value}-01`)
@@ -69,7 +68,7 @@ function SevenDayTooltip({ active, payload, label }) {
       <div className="mt-2 space-y-1.5 text-sm">
         <p className="flex justify-between gap-8">
           <span className="text-gray-500 dark:text-gray-400">Revenue</span>
-          <span className="font-bold text-primary-700 dark:text-primary-300">{formatFullCurrency(row?.revenue)}</span>
+          <span className="font-semibold text-primary-700 dark:text-primary-300">{formatFullCurrency(row?.revenue)}</span>
         </p>
         <p className="flex justify-between gap-8">
           <span className="text-gray-500 dark:text-gray-400">Invoices</span>
@@ -179,7 +178,9 @@ const Dashboard = () => {
 
   const topSubscription = useMemo(() => {
     if (!subscriptionData.length) return null
-    return [...subscriptionData].sort((a, b) => Number(b.value || 0) - Number(a.value || 0))[0]
+    return subscriptionData.reduce((best, item) =>
+      Number(item.value || 0) > Number(best?.value || 0) ? item : best,
+    null)
   }, [subscriptionData])
 
   const sevenDayRollup = useMemo(() => {
@@ -213,7 +214,7 @@ const Dashboard = () => {
                 <FiActivity className="h-4 w-4" />
                 Platform command center
               </div>
-              <h1 className="mt-3 text-3xl font-bold tracking-tight text-gray-950 dark:text-gray-100">Dashboard</h1>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-gray-950 dark:text-gray-100">Dashboard</h1>
               <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-400">
                 Seven-day pulse on revenue and signups, plus performance for the full year ahead.
               </p>
@@ -221,7 +222,7 @@ const Dashboard = () => {
             <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-surface-200 bg-white/95 px-4 py-3 shadow-sm dark:border-gray-700 dark:bg-gray-800/90">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Lifetime revenue</p>
-                <p className="text-xl font-bold text-gray-950 dark:text-gray-100">{formatCompactCurrency(stats?.revenue?.total)}</p>
+                <p className="text-xl font-semibold text-gray-950 dark:text-gray-100">{formatCompactCurrency(stats?.revenue?.total)}</p>
                 <p className="text-[11px] text-gray-500 dark:text-gray-500">Today: {formatCompactCurrency(stats?.revenue?.today)}</p>
               </div>
               <Button variant="secondary" onClick={() => fetchDashboardData(true)} disabled={refreshing}>
@@ -246,7 +247,7 @@ const Dashboard = () => {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{stat.title}</p>
-                <p className="mt-2 text-2xl font-bold text-gray-950 dark:text-gray-100">{stat.value}</p>
+                <p className="mt-2 text-2xl font-semibold text-gray-950 dark:text-gray-100">{stat.value}</p>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{stat.help}</p>
               </div>
               <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${stat.tone} text-white shadow-md`}>
@@ -270,7 +271,7 @@ const Dashboard = () => {
                 <FiCalendar className="h-5 w-5" />
               </span>
               <div>
-                <h2 className="text-lg font-bold text-gray-950 dark:text-gray-100">Last 7 days</h2>
+                <h2 className="text-lg font-semibold text-gray-950 dark:text-gray-100">Last 7 days</h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   Subscription invoice revenue, invoice count, and new restaurant signups by day.
                 </p>
@@ -291,8 +292,9 @@ const Dashboard = () => {
         </div>
         <div className="h-80 p-4 sm:h-96 sm:p-5">
           {trend7d.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={trend7d} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <React.Suspense fallback={<div className="h-full rounded-2xl bg-surface-50" />}>
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={trend7d} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="platRev7d" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#c2410c" stopOpacity={0.35} />
@@ -356,8 +358,9 @@ const Dashboard = () => {
                   activeDot={{ r: 5 }}
                   animationDuration={900}
                 />
-              </ComposedChart>
-            </ResponsiveContainer>
+                </ComposedChart>
+              </ResponsiveContainer>
+            </React.Suspense>
           ) : (
             <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 text-center dark:border-gray-700 dark:bg-gray-900/40">
               <FiBarChart2 className="h-10 w-10 text-gray-400" />
@@ -373,8 +376,9 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card title="Revenue by month (this year)" icon={FiTrendingUp} className="lg:col-span-2">
           <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={revenueData}>
+            <React.Suspense fallback={<div className="h-full rounded-2xl bg-surface-50" />}>
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={revenueData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#d1d5db" className="dark:stroke-gray-700" vertical={false} />
                 <XAxis dataKey="name" tickFormatter={monthLabel} tick={{ fontSize: 11 }} />
                 <YAxis yAxisId="left" tickFormatter={(v) => formatCompactCurrency(v)} width={72} />
@@ -388,8 +392,9 @@ const Dashboard = () => {
                   contentStyle={{ borderRadius: 12 }}
                 />
                 <Bar yAxisId="left" dataKey="revenue" name="Revenue" fill="#8f2800" radius={[8, 8, 0, 0]} animationDuration={800} />
-              </ComposedChart>
-            </ResponsiveContainer>
+                </ComposedChart>
+              </ResponsiveContainer>
+            </React.Suspense>
           </div>
         </Card>
 
@@ -397,16 +402,16 @@ const Dashboard = () => {
           <div className="space-y-3">
             <div className="rounded-xl border border-surface-200 bg-surface-50 p-4 dark:border-gray-800 dark:bg-gray-800/50">
               <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Revenue YTD chart</p>
-              <p className="mt-1 text-2xl font-bold text-gray-950 dark:text-gray-100">{formatFullCurrency(totalMonthlyRevenue)}</p>
+              <p className="mt-1 text-2xl font-semibold text-gray-950 dark:text-gray-100">{formatFullCurrency(totalMonthlyRevenue)}</p>
               <p className="text-[11px] text-gray-500 dark:text-gray-500">Summed monthly buckets shown left</p>
             </div>
             <div className="rounded-xl border border-surface-200 bg-surface-50 p-4 dark:border-gray-800 dark:bg-gray-800/50">
               <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Invoices tracked (YTD)</p>
-              <p className="mt-1 text-2xl font-bold text-gray-950 dark:text-gray-100">{totalMonthlyInvoices.toLocaleString('en-IN')}</p>
+              <p className="mt-1 text-2xl font-semibold text-gray-950 dark:text-gray-100">{totalMonthlyInvoices.toLocaleString('en-IN')}</p>
             </div>
             <div className="rounded-xl border border-surface-200 bg-surface-50 p-4 dark:border-gray-800 dark:bg-gray-800/50">
               <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Top subscription plan</p>
-              <p className="mt-1 text-lg font-bold text-gray-950 dark:text-gray-100">
+              <p className="mt-1 text-lg font-semibold text-gray-950 dark:text-gray-100">
                 {topSubscription ? `${topSubscription.name} (${topSubscription.value})` : 'No data'}
               </p>
             </div>
@@ -420,7 +425,7 @@ const Dashboard = () => {
             subscriptionData.map((item) => (
               <div key={item.name} className="rounded-xl border border-surface-200 bg-surface-50 p-4 dark:border-gray-800 dark:bg-gray-800/50">
                 <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{item.name}</p>
-                <p className="mt-1 text-xl font-bold text-primary-700 dark:text-primary-300">{item.value}</p>
+                <p className="mt-1 text-xl font-semibold text-primary-700 dark:text-primary-300">{item.value}</p>
               </div>
             ))
           ) : (

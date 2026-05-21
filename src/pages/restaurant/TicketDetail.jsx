@@ -55,7 +55,7 @@ const InfoBlock = ({ label, value, icon: Icon }) => (
       {Icon && <Icon className="h-4 w-4 text-primary-600" />}
       {label}
     </div>
-    <p className="mt-2 break-words text-sm font-bold capitalize text-gray-950">{value || 'N/A'}</p>
+    <p className="mt-2 break-words text-sm font-semibold capitalize text-gray-950">{value || 'N/A'}</p>
   </div>
 )
 
@@ -152,7 +152,7 @@ const TicketDetail = () => {
               <FiLifeBuoy className="h-4 w-4" />
               New Support Request
             </div>
-            <h1 className="mt-3 text-3xl font-bold text-gray-950">Create Support Ticket</h1>
+            <h1 className="mt-3 text-3xl font-semibold text-gray-950">Create Support Ticket</h1>
             <p className="mt-2 max-w-2xl text-sm text-gray-500">
               Share the issue, choose the urgency, and the platform team can reply directly in this thread.
             </p>
@@ -168,8 +168,9 @@ const TicketDetail = () => {
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Category</label>
+                <label htmlFor="ticket-category" className="mb-1 block text-sm font-medium text-gray-700">Category</label>
                 <select
+                  id="ticket-category"
                   {...register('category')}
                   className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500"
                 >
@@ -182,8 +183,9 @@ const TicketDetail = () => {
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Priority</label>
+                <label htmlFor="ticket-priority" className="mb-1 block text-sm font-medium text-gray-700">Priority</label>
                 <select
+                  id="ticket-priority"
                   {...register('priority')}
                   className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500"
                 >
@@ -196,8 +198,9 @@ const TicketDetail = () => {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Description</label>
+              <label htmlFor="ticket-description" className="mb-1 block text-sm font-medium text-gray-700">Description</label>
               <textarea
+                id="ticket-description"
                 {...register('description', { required: 'Description is required' })}
                 placeholder="Add what happened, what you expected, and any order number or screen where you saw it."
                 className="min-h-40 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500"
@@ -255,18 +258,18 @@ const TicketDetail = () => {
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-mono text-sm font-bold text-primary-700">{ticket.ticketNumber || 'TKT-N/A'}</span>
+                <span className="font-mono text-sm font-semibold text-primary-700">{ticket.ticketNumber || 'TKT-N/A'}</span>
                 <Pill value={ticket.status || 'open'} styles={statusStyles} />
                 <Pill value={ticket.priority || 'medium'} styles={priorityStyles} />
               </div>
-              <h1 className="mt-3 text-3xl font-bold tracking-tight text-gray-950">{ticket.subject || 'Untitled ticket'}</h1>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-gray-950">{ticket.subject || 'Untitled ticket'}</h1>
               <p className="mt-2 max-w-3xl text-sm text-gray-500">
                 Created {formatDateTime(ticket.createdAt)} - Last activity {formatDateTime(ticket.lastReplyAt || ticket.updatedAt || ticket.createdAt)}
               </p>
             </div>
             <div className="rounded-2xl border border-white/80 bg-white/90 px-5 py-4 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Conversation</p>
-              <p className="mt-1 text-3xl font-bold text-primary-700">{replies.length}</p>
+              <p className="mt-1 text-3xl font-semibold text-primary-700">{replies.length}</p>
               <p className="text-xs text-gray-500">replies</p>
             </div>
           </div>
@@ -278,7 +281,7 @@ const TicketDetail = () => {
           <Card className="rounded-2xl border-surface-200 shadow-sm">
             <div className="space-y-5">
               <div>
-                <h2 className="text-lg font-bold text-gray-950">Issue Description</h2>
+                <h2 className="text-lg font-semibold text-gray-950">Issue Description</h2>
                 <div className="mt-3 rounded-2xl bg-surface-50/70 p-4">
                   <p className="whitespace-pre-wrap text-sm leading-6 text-gray-700">{ticket.description || 'No description provided.'}</p>
                 </div>
@@ -313,7 +316,7 @@ const TicketDetail = () => {
                     >
                       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-2">
-                          <span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${isPlatform ? 'bg-blue-600 text-white' : 'bg-primary-600 text-white'}`}>
+                          <span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold ${isPlatform ? 'bg-blue-600 text-white' : 'bg-primary-600 text-white'}`}>
                             {name.slice(0, 1).toUpperCase()}
                           </span>
                           <div>

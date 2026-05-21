@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { LazyMotion, domAnimation, m, AnimatePresence } from "framer-motion";
 import {
   Search,
   BellRing,
@@ -39,7 +39,7 @@ const MenuCategories = () => {
   const [categories, setCategories] = useState([]);
   const [restaurantInfo, setRestaurantInfo] = useState(null);
   const [insights, setInsights] = useState(null);
-  const [guestId, setGuestId] = useState("");
+  const guestIdRef = React.useRef("");
   const [showOffers, setShowOffers] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showGuestAssist, setShowGuestAssist] = useState(false);
@@ -62,7 +62,7 @@ const MenuCategories = () => {
       if (!slug || !token) return;
       try {
         const s = await ensureGuestSession(token);
-        setGuestId(s.guestId || "");
+        guestIdRef.current = s.guestId || "";
         const data = await getDiningInsights({
           restaurantSlug: slug,
           guestId: s.guestId,
@@ -92,10 +92,10 @@ const MenuCategories = () => {
   }, [slug]);
 
   const sendGuestRequest = async (requestType) => {
-    if (!guestId || !token) return;
+    if (!guestIdRef.current || !token) return;
     try {
       setAssistSending(true);
-      await postGuestTableRequest({ qrToken: token, guestId, requestType });
+      await postGuestTableRequest({ qrToken: token, guestId: guestIdRef.current, requestType });
       setShowGuestAssist(false);
     } catch (err) {
       console.error("Could not send guest request", err);
@@ -169,6 +169,7 @@ const MenuCategories = () => {
 
   return (
     <PageTransition>
+      <LazyMotion features={domAnimation}>
       <div className="min-h-screen bg-surface-50/60 pb-44 text-gray-950">
         <Header
           showSearch={showSearch}
@@ -222,14 +223,14 @@ const MenuCategories = () => {
         />
         {showGuestAssist && (
           <>
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowGuestAssist(false)}
               className="fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px]"
             />
-            <motion.div
+            <m.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
@@ -245,7 +246,7 @@ const MenuCategories = () => {
                     <BellRing size={18} className="text-orange-500" />
                   </div>
                   <div>
-                    <h2 className="text-base font-bold leading-none text-gray-800">Need something?</h2>
+                    <h2 className="text-base font-semibold leading-none text-gray-800">Need something?</h2>
                     <p className="mt-0.5 text-[11px] text-gray-400">We alert the restaurant in real time</p>
                   </div>
                 </div>
@@ -277,19 +278,20 @@ const MenuCategories = () => {
                   </button>
                 ))}
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
         <Offers isOpen={showOffers} onClose={() => setShowOffers(false)} slug={slug} />
         <Feedback isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
       </div>
+      </LazyMotion>
     </PageTransition>
   );
 };
 
-/* ──────────────────────────────────────────────────────────────────────────
-   Header — sticky, glassy, with sliding search input
-   ────────────────────────────────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   Header â€” sticky, glassy, with sliding search input
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function Header({
   showSearch,
@@ -303,7 +305,7 @@ function Header({
     <header className="sticky top-0 z-20 border-b border-gray-100 bg-white/95 px-4 pt-12 pb-4 backdrop-blur-xl">
       <div className="mx-auto flex max-w-md items-center justify-between gap-2">
         {!showSearch ? (
-          <motion.button
+          <m.button
             type="button"
             whileTap={{ scale: 0.88 }}
             onClick={onMenu}
@@ -311,14 +313,14 @@ function Header({
             aria-label="Open menu"
           >
             <MenuIcon size={20} />
-          </motion.button>
+          </m.button>
         ) : (
           <div className="h-10 w-2" />
         )}
 
         <AnimatePresence mode="wait" initial={false}>
           {showSearch ? (
-            <motion.div
+            <m.div
               key="search"
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: "100%", opacity: 1 }}
@@ -328,7 +330,6 @@ function Header({
             >
               <Search size={15} className="shrink-0 text-gray-400" />
               <input
-                autoFocus
                 type="text"
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
@@ -349,9 +350,9 @@ function Header({
                 onTranscript={(text) => onSearchChange(text.trim())}
                 ariaLabel="Voice search menu"
               />
-            </motion.div>
+            </m.div>
           ) : (
-            <motion.div
+            <m.div
               key="title"
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -359,18 +360,18 @@ function Header({
               transition={{ duration: 0.2 }}
               className="flex-1 text-center"
             >
-              <h1 className="truncate text-base font-black tracking-tight text-gray-900">
+              <h1 className="truncate text-base font-semibold tracking-tight text-gray-900">
                 {restaurantName || "Our Menu"}
               </h1>
               <p className="flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-[0.18em] text-primary-700">
                 <UtensilsCrossed size={10} strokeWidth={2.5} />
                 Browse categories
               </p>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
 
-        <motion.button
+        <m.button
           type="button"
           whileTap={{ scale: 0.88 }}
           onClick={onSearchToggle}
@@ -378,7 +379,7 @@ function Header({
           aria-label={showSearch ? "Close search" : "Open search"}
         >
           <AnimatePresence mode="wait">
-            <motion.div
+            <m.div
               key={showSearch ? "close" : "search"}
               initial={{ rotate: -90, opacity: 0 }}
               animate={{ rotate: 0, opacity: 1 }}
@@ -386,18 +387,18 @@ function Header({
               transition={{ duration: 0.18 }}
             >
               {showSearch ? <X size={18} /> : <Search size={18} />}
-            </motion.div>
+            </m.div>
           </AnimatePresence>
-        </motion.button>
+        </m.button>
       </div>
     </header>
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────────────
-   Restaurant Banner — replaces the heavy dark hero with a warm, light
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   Restaurant Banner â€” replaces the heavy dark hero with a warm, light
    glassmorphic surface that breathes with the rest of the design.
-   ────────────────────────────────────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function RestaurantBanner({ info, totalDishes, categoryCount, loading }) {
   const tagline =
@@ -408,7 +409,7 @@ function RestaurantBanner({ info, totalDishes, categoryCount, loading }) {
 
   return (
     <section className="px-4 pt-4">
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.32 }}
@@ -466,7 +467,7 @@ function RestaurantBanner({ info, totalDishes, categoryCount, loading }) {
           {/* Decorative utensil icons floating in the cover */}
           {!hasCover && (
             <>
-              <motion.div
+              <m.div
                 aria-hidden
                 initial={{ rotate: -8, y: -2 }}
                 animate={{ rotate: -2, y: 2 }}
@@ -474,8 +475,8 @@ function RestaurantBanner({ info, totalDishes, categoryCount, loading }) {
                 className="absolute right-4 top-3 text-white/20"
               >
                 <UtensilsCrossed size={42} strokeWidth={1.5} />
-              </motion.div>
-              <motion.div
+              </m.div>
+              <m.div
                 aria-hidden
                 initial={{ rotate: 12, y: 0 }}
                 animate={{ rotate: 6, y: -3 }}
@@ -483,11 +484,11 @@ function RestaurantBanner({ info, totalDishes, categoryCount, loading }) {
                 className="absolute right-16 bottom-2 text-white/15"
               >
                 <ChefHat size={36} strokeWidth={1.5} />
-              </motion.div>
+              </m.div>
             </>
           )}
 
-          {/* Welcome ribbon — top-left */}
+          {/* Welcome ribbon â€” top-left */}
           <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-white/95 ring-1 ring-white/20 backdrop-blur">
             <Sparkles size={10} strokeWidth={2.5} />
             Welcome to our menu
@@ -521,12 +522,12 @@ function RestaurantBanner({ info, totalDishes, categoryCount, loading }) {
           <div className="mt-3 grid grid-cols-3 gap-2">
             <StatChip
               label="Sections"
-              value={loading ? "…" : categoryCount}
+              value={loading ? "â€¦" : categoryCount}
               tone="primary"
             />
             <StatChip
               label="Dishes"
-              value={loading ? "…" : totalDishes || "—"}
+              value={loading ? "â€¦" : totalDishes || "â€”"}
               tone="accent"
             />
             <StatChip
@@ -546,7 +547,7 @@ function RestaurantBanner({ info, totalDishes, categoryCount, loading }) {
           </div>
           </div>
         </div>
-      </motion.div>
+      </m.div>
     </section>
   );
 }
@@ -573,18 +574,18 @@ function StatChip({ label, value, tone = "primary", small }) {
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────────────
-   Insight Strip — pairing tips from server, presented as soft cards
-   ────────────────────────────────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   Insight Strip â€” pairing tips from server, presented as soft cards
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function InsightStrip({ pairs }) {
   return (
     <section className="px-4 pt-4">
       <SectionTitle icon={Sparkles} label="You may also like" />
       <div className="mt-2 space-y-2 rounded-2xl border border-primary-100/60 bg-gradient-to-br from-white to-surface-50/70 p-3 shadow-sm">
-        {pairs.slice(0, 2).map((p, i) => (
+        {pairs.slice(0, 2).map((p) => (
           <p
-            key={i}
+            key={`${p.name || p.title || p.label}-${p.reason || p.description || ''}`}
             className="flex items-start gap-2 text-xs font-semibold leading-snug text-gray-700"
           >
             <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
@@ -598,9 +599,9 @@ function InsightStrip({ pairs }) {
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────────────
-   Trending Strip — horizontal scroll, with rank badge + today count
-   ────────────────────────────────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   Trending Strip â€” horizontal scroll, with rank badge + today count
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function TrendingStrip({ items, daypart, slug, token }) {
   return (
@@ -677,9 +678,9 @@ function SectionTitle({ icon: Icon, label, tone = "default" }) {
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────────────
-   Categories Section — grid of cards
-   ────────────────────────────────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   Categories Section â€” grid of cards
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function CategoriesSection({
   loading,
@@ -713,7 +714,7 @@ function CategoriesSection({
               onClearSearch={onClearSearch}
             />
           ) : (
-            <motion.div
+            <m.div
               variants={gridVariants}
               initial="hidden"
               animate="visible"
@@ -728,7 +729,7 @@ function CategoriesSection({
                   index={idx}
                 />
               ))}
-            </motion.div>
+            </m.div>
           )}
         </div>
       </div>
@@ -757,7 +758,7 @@ const cardVariants = {
 function CategoryCard({ cat, slug, token, index }) {
   const itemCount = cat.itemCount ?? (cat.items?.length || 0);
   return (
-    <motion.div variants={cardVariants}>
+    <m.div variants={cardVariants}>
       <Link
         to={`/item/${slug}/${token}/${encodeURIComponent(cat.name)}`}
         className="group relative block overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-[0_2px_12px_rgba(15,23,42,0.05)] transition-all active:scale-[0.97]"
@@ -812,13 +813,13 @@ function CategoryCard({ cat, slug, token, index }) {
           </span>
         </div>
       </Link>
-    </motion.div>
+    </m.div>
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Skeleton + Empty states
-   ────────────────────────────────────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function CategoryGridSkeleton() {
   return (
@@ -841,7 +842,7 @@ function CategoryGridSkeleton() {
 
 function EmptyState({ searching, onClearSearch }) {
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className="relative overflow-hidden rounded-3xl border border-dashed border-primary-200/70 bg-gradient-to-br from-white via-surface-50/50 to-primary-50/40 px-6 py-14 text-center"
@@ -862,15 +863,15 @@ function EmptyState({ searching, onClearSearch }) {
           : "The kitchen hasn't published any dishes. Please check back in a bit."}
       </p>
       {searching && (
-        <motion.button
+        <m.button
           whileTap={{ scale: 0.96 }}
           onClick={onClearSearch}
           className="relative mx-auto mt-4 inline-flex items-center gap-1.5 rounded-2xl border border-primary-200 bg-primary-50 px-4 py-2 text-[11px] font-black text-primary-700"
         >
           Clear search
-        </motion.button>
+        </m.button>
       )}
-    </motion.div>
+    </m.div>
   );
 }
 

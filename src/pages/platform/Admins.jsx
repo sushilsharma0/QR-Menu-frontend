@@ -47,15 +47,15 @@ const Admins = () => {
   const [loading, setLoading] = useState(true)
   const [createOpen, setCreateOpen] = useState(false)
   const [privilegeAdmin, setPrivilegeAdmin] = useState(null)
-  const [privileges, setPrivileges] = useState(emptyPermissions())
+  const [privileges, setPrivileges] = useState(() => emptyPermissions())
   const [savingPrivileges, setSavingPrivileges] = useState(false)
-  const [createPermissions, setCreatePermissions] = useState(emptyPermissions())
+  const [createPermissions, setCreatePermissions] = useState(() => emptyPermissions())
   const [employeeCode, setEmployeeCode] = useState('')
   const [loadingCode, setLoadingCode] = useState(false)
-  const [hrFields, setHrFields] = useState(emptyHrProfile())
+  const [hrFields, setHrFields] = useState(() => emptyHrProfile())
 
   const [hrEditAdmin, setHrEditAdmin] = useState(null)
-  const [editHr, setEditHr] = useState(emptyHrProfile())
+  const [editHr, setEditHr] = useState(() => emptyHrProfile())
   const [editEmployeeCode, setEditEmployeeCode] = useState('')
   const [savingHr, setSavingHr] = useState(false)
 
@@ -230,7 +230,7 @@ const Admins = () => {
           <button
             type="button"
             onClick={() => openHrEdit(row)}
-            className="rounded-lg p-2 text-gray-400 transition hover:bg-blue-50 hover:text-blue-600"
+            className="rounded-lg p-2 text-blue-700 transition hover:bg-blue-50 hover:text-blue-800"
             title="Edit HR profile"
           >
             <FiEdit2 className="h-4 w-4" />
@@ -238,7 +238,7 @@ const Admins = () => {
           <button
             type="button"
             onClick={() => openPrivileges(row)}
-            className="rounded-lg p-2 text-gray-400 transition hover:bg-violet-50 hover:text-violet-600"
+            className="rounded-lg p-2 text-violet-700 transition hover:bg-violet-50 hover:text-violet-800"
             title="Edit privileges"
           >
             <FiKey className="h-4 w-4" />
@@ -246,7 +246,7 @@ const Admins = () => {
           <button
             type="button"
             onClick={() => handleToggleStatus(row._id, row.isActive)}
-            className="rounded-lg p-2 text-gray-400 transition hover:bg-yellow-50 hover:text-yellow-600"
+            className="rounded-lg p-2 text-yellow-700 transition hover:bg-yellow-50 hover:text-yellow-800"
             title={row.isActive ? 'Deactivate' : 'Activate'}
           >
             {row.isActive ? <FiUserX className="h-4 w-4" /> : <FiUserCheck className="h-4 w-4" />}

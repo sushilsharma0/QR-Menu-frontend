@@ -39,7 +39,7 @@ const ManagerHeader = () => {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary-700 dark:text-primary-300">
             Manager Portal
           </p>
-          <h1 className="truncate text-xl font-black text-gray-950 dark:text-gray-100 md:text-2xl">
+          <h1 className="truncate text-xl font-semibold text-gray-950 dark:text-gray-100 md:text-2xl">
             {user?.restaurantName || user?.name || 'Branch Operations'}
           </h1>
           {selectedBranch?.name && (
@@ -93,7 +93,7 @@ const ManagerHeader = () => {
       {confirmLogout && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900">
-            <h3 className="text-lg font-bold text-gray-950 dark:text-gray-100">Sign out?</h3>
+            <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100">Sign out?</h3>
             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">You will need to sign in again to access the manager portal.</p>
             <div className="mt-6 flex justify-end gap-2">
               <button

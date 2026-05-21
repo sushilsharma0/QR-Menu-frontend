@@ -32,10 +32,14 @@ const PLAN_PRESETS = {
   },
 }
 
+const EMPTY_OPTIONS = []
+const EMPTY_GROUPS = []
+const EMPTY_FLAGS = {}
+
 export default function PlanFeatureSelector({
-  options = [],
-  groups = [],
-  flags = {},
+  options = EMPTY_OPTIONS,
+  groups = EMPTY_GROUPS,
+  flags = EMPTY_FLAGS,
   onChange,
   disabled = false,
 }) {
@@ -68,9 +72,11 @@ export default function PlanFeatureSelector({
 
   const setGroup = (groupId, value) => {
     const next = { ...flags }
-    options.filter((o) => o.group === groupId).forEach((o) => {
-      next[o.key] = value
-    })
+    for (const option of options) {
+      if (option.group === groupId) {
+        next[option.key] = value
+      }
+    }
     onChange?.(next)
   }
 
@@ -102,7 +108,7 @@ export default function PlanFeatureSelector({
             Restaurant modules
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {enabledCount} of {options.length} enabled — unchecked modules are hidden in the restaurant sidebar and blocked on the API.
+            {enabledCount} of {options.length} enabled; unchecked modules are hidden in the restaurant sidebar and blocked on the API.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -148,7 +154,7 @@ export default function PlanFeatureSelector({
           >
             <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
               <div>
-                <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100">{section.label}</h4>
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{section.label}</h4>
                 {section.description ? (
                   <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{section.description}</p>
                 ) : null}

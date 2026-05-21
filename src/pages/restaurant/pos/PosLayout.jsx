@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, LazyMotion, domAnimation, m } from 'framer-motion'
 import { FiArrowLeft, FiChevronDown, FiCoffee, FiCreditCard, FiLayers, FiLogOut, FiMail, FiMoon, FiPieChart, FiRotateCcw, FiSettings, FiShield, FiShoppingCart, FiSun } from 'react-icons/fi'
 import { useTenantRoutes } from '../../../hooks/useTenantRoutes'
 import { useAuth } from '../../../hooks/useAuth'
@@ -150,9 +150,10 @@ export default function PosLayout() {
   )
 
   return (
+    <LazyMotion features={domAnimation}>
     <div className="flex h-full min-h-0 flex-col bg-surface-50">
       <header className="shrink-0 border-b border-[#ead8cb] bg-[#fffaf5] text-gray-950 shadow-[0_18px_45px_-36px_rgba(83,35,13,0.55)] dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-stretch gap-3 px-3 py-3 sm:px-5 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:px-6">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-stretch gap-3 p-3 sm:px-5 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:px-6">
           <div className="flex min-w-0 overflow-hidden rounded-2xl border border-[#ead8cb] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 lg:w-[360px]">
             <button
               type="button"
@@ -165,12 +166,12 @@ export default function PosLayout() {
             </button>
             <div className="min-w-0 px-4 py-3">
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-md bg-[#fff1e8] px-2 py-1 text-[10px] font-black uppercase tracking-wide text-primary-800 dark:bg-primary-950/40 dark:text-primary-200">
+                <span className="inline-flex items-center gap-1.5 rounded-md bg-[#fff1e8] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary-800 dark:bg-primary-950/40 dark:text-primary-200">
                   <FiCoffee className="h-3.5 w-3.5" />
                   POS
                 </span>
                 <span
-                  className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-black uppercase tracking-wide ${
+                  className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ${
                     meta?.shift
                       ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200'
                       : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-300'
@@ -180,7 +181,7 @@ export default function PosLayout() {
                   {meta?.shift ? 'Open' : 'Closed'}
                 </span>
               </div>
-              <h1 className="mt-2 truncate text-xl font-black leading-tight tracking-tight">
+              <h1 className="mt-2 truncate text-xl font-semibold leading-tight tracking-tight">
                 {meta?.restaurant?.name || 'POS'}
               </h1>
               <p className="mt-1 truncate text-xs font-medium text-gray-500 dark:text-gray-400">
@@ -191,16 +192,16 @@ export default function PosLayout() {
 
           <div className="hidden min-w-0 grid-cols-3 gap-2 lg:grid">
             <div className="rounded-2xl border border-[#ead8cb] bg-white px-4 py-3 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-              <p className="text-[10px] font-black uppercase tracking-wide text-gray-400">Mode</p>
-              <p className="mt-1 truncate text-sm font-black text-gray-900 dark:text-gray-100">Restaurant POS</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Mode</p>
+              <p className="mt-1 truncate text-sm font-semibold text-gray-900 dark:text-gray-100">Restaurant POS</p>
             </div>
             <div className="rounded-2xl border border-[#ead8cb] bg-white px-4 py-3 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-              <p className="text-[10px] font-black uppercase tracking-wide text-gray-400">Active tables</p>
-              <p className="mt-1 text-sm font-black text-gray-900 dark:text-gray-100">{meta?.activeTables ?? '-'}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Active tables</p>
+              <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{meta?.activeTables ?? '-'}</p>
             </div>
             <div className="rounded-2xl border border-[#ead8cb] bg-white px-4 py-3 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-              <p className="text-[10px] font-black uppercase tracking-wide text-gray-400">Access</p>
-              <p className="mt-1 truncate text-sm font-black capitalize text-gray-900 dark:text-gray-100">{roleLabel}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Access</p>
+              <p className="mt-1 truncate text-sm font-semibold capitalize text-gray-900 dark:text-gray-100">{roleLabel}</p>
             </div>
           </div>
 
@@ -226,7 +227,7 @@ export default function PosLayout() {
               >
                 {avatar}
                 <span className="hidden min-w-0 md:block">
-                  <span className="block max-w-40 truncate text-sm font-black">{displayName}</span>
+                  <span className="block max-w-40 truncate text-sm font-semibold">{displayName}</span>
                   <span className="block max-w-40 truncate text-xs text-gray-500">{displayEmail}</span>
                 </span>
                 <FiChevronDown className={`hidden h-4 w-4 text-gray-400 transition min-[380px]:block ${profileOpen ? 'rotate-180' : ''}`} />
@@ -234,7 +235,7 @@ export default function PosLayout() {
 
               <AnimatePresence>
                 {profileOpen && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, y: -8, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -8, scale: 0.98 }}
@@ -245,11 +246,11 @@ export default function PosLayout() {
                       <div className="flex items-center gap-3">
                         {avatar}
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-black">{displayName}</p>
+                          <p className="truncate text-sm font-semibold">{displayName}</p>
                           <p className="truncate text-xs capitalize text-gray-500 dark:text-gray-400">{roleLabel}</p>
                         </div>
                       </div>
-                      <div className="mt-4 flex items-center gap-2 rounded-2xl border border-surface-100 bg-white px-3 py-3 text-xs text-gray-600 shadow-sm dark:border-gray-800 dark:bg-gray-950/60 dark:text-gray-300">
+                      <div className="mt-4 flex items-center gap-2 rounded-2xl border border-surface-100 bg-white p-3 text-xs text-gray-600 shadow-sm dark:border-gray-800 dark:bg-gray-950/60 dark:text-gray-300">
                         <FiMail className="h-4 w-4 shrink-0 text-[#9a3412]" />
                         <span className="truncate">{displayEmail}</span>
                       </div>
@@ -258,7 +259,7 @@ export default function PosLayout() {
                       <Link
                         to={settingsTo}
                         onClick={() => setProfileOpen(false)}
-                        className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold text-gray-700 transition hover:bg-surface-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                        className="flex items-center gap-3 rounded-2xl p-3 text-sm font-semibold text-gray-700 transition hover:bg-surface-50 dark:text-gray-200 dark:hover:bg-gray-800"
                       >
                         <FiSettings className="h-4 w-4 text-[#9a3412]" />
                         Restaurant settings
@@ -266,7 +267,7 @@ export default function PosLayout() {
                       <Link
                         to={securityTo}
                         onClick={() => setProfileOpen(false)}
-                        className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold text-gray-700 transition hover:bg-surface-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                        className="flex items-center gap-3 rounded-2xl p-3 text-sm font-semibold text-gray-700 transition hover:bg-surface-50 dark:text-gray-200 dark:hover:bg-gray-800"
                       >
                         <FiShield className="h-4 w-4 text-[#9a3412]" />
                         Account security
@@ -277,13 +278,13 @@ export default function PosLayout() {
                           setProfileOpen(false)
                           setConfirmLogout(true)
                         }}
-                        className="flex items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-bold text-red-600 transition hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950/30"
+                        className="flex items-center gap-3 rounded-2xl p-3 text-left text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950/30"
                       >
                         <FiLogOut className="h-4 w-4" />
                         Logout
                       </button>
                     </div>
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
             </div>
@@ -296,7 +297,7 @@ export default function PosLayout() {
           !hasOpenShift && metaLoaded && to !== shiftPath ? (
             <span
               key={to}
-              className="flex shrink-0 cursor-not-allowed items-center gap-2 border-b-2 border-transparent px-4 py-2.5 text-sm font-bold text-gray-300 dark:text-gray-700"
+              className="flex shrink-0 cursor-not-allowed items-center gap-2 border-b-2 border-transparent px-4 py-2.5 text-sm font-semibold text-gray-300 dark:text-gray-700"
               title="Open a shift first"
             >
               <Icon className="h-4 w-4" />
@@ -308,7 +309,7 @@ export default function PosLayout() {
               to={to}
               end={end}
               className={({ isActive }) =>
-                `flex shrink-0 items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-bold transition-all ${
+                `flex shrink-0 items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition-all ${
                   isActive
                     ? 'border-primary-700 bg-white text-primary-800 shadow-sm dark:border-primary-300 dark:bg-gray-900 dark:text-primary-200'
                     : 'border-transparent text-gray-600 hover:bg-white/70 hover:text-primary-700 dark:text-gray-300 dark:hover:bg-gray-900'
@@ -322,7 +323,7 @@ export default function PosLayout() {
         ))}
       </nav>
 
-      <motion.div
+      <m.div
         className="min-h-0 flex-1 overflow-y-auto bg-surface-50"
         initial={{ opacity: 0.96 }}
         animate={{ opacity: 1 }}
@@ -334,19 +335,19 @@ export default function PosLayout() {
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-50 text-primary-700 sm:h-16 sm:w-16">
                 <FiLayers className="h-6 w-6 sm:h-7 sm:w-7" />
               </div>
-              <h2 className="mt-5 text-xl font-black text-gray-950 sm:text-2xl">Open a shift first</h2>
+              <h2 className="mt-5 text-xl font-semibold text-gray-950 sm:text-2xl">Open a shift first</h2>
               <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-500 sm:text-base sm:leading-7">
                 POS register, orders, billing, returns, reports, and saved carts are locked until a cashier or manager opens the current shift.
               </p>
               {canShift ? (
                 <Link
                   to={shiftPath}
-                  className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-primary-600 px-5 py-3 text-sm font-black text-white transition hover:bg-primary-700 sm:w-auto"
+                  className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-primary-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-700 sm:w-auto"
                 >
                   Go to Shift
                 </Link>
               ) : (
-                <p className="mt-6 rounded-2xl bg-surface-50 px-4 py-3 text-sm font-bold leading-6 text-gray-600">
+                <p className="mt-6 rounded-2xl bg-surface-50 px-4 py-3 text-sm font-semibold leading-6 text-gray-600">
                   Ask a cashier, manager, or owner to open the shift.
                 </p>
               )}
@@ -355,19 +356,19 @@ export default function PosLayout() {
         ) : (
           <Outlet context={{ posBase, meta, setMeta }} />
         )}
-      </motion.div>
+      </m.div>
 
       {typeof document !== 'undefined' &&
         createPortal(
           <AnimatePresence>
             {confirmLogout && (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="fixed inset-0 z-[9999] grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm"
               >
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, y: 20, scale: 0.96 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 20, scale: 0.96 }}
@@ -377,7 +378,7 @@ export default function PosLayout() {
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-red-50 text-red-600 ring-8 ring-red-50/70 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-950/20">
                     <FiLogOut className="h-7 w-7" />
                   </div>
-                  <h3 className="mt-6 text-2xl font-black tracking-tight text-gray-950 dark:text-gray-100">
+                  <h3 className="mt-6 text-2xl font-semibold tracking-tight text-gray-950 dark:text-gray-100">
                     Logout?
                   </h3>
                   <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-gray-500 dark:text-gray-400">
@@ -387,24 +388,25 @@ export default function PosLayout() {
                     <button
                       type="button"
                       onClick={() => setConfirmLogout(false)}
-                      className="rounded-2xl border border-surface-200 bg-white px-5 py-3 text-sm font-black text-gray-700 transition hover:bg-surface-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+                      className="rounded-2xl border border-surface-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:bg-surface-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
                     >
                       Stay logged in
                     </button>
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="rounded-2xl bg-red-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-red-900/20 transition hover:bg-red-700"
+                      className="rounded-2xl bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-red-900/20 transition hover:bg-red-700"
                     >
                       Logout
                     </button>
                   </div>
-                </motion.div>
-              </motion.div>
+                </m.div>
+              </m.div>
             )}
           </AnimatePresence>,
           document.body,
         )}
     </div>
+    </LazyMotion>
   )
 }

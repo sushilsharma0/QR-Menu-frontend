@@ -56,7 +56,7 @@ const LandingChatPopup = () => {
                 <div>
                   <p className="text-xs font-black uppercase tracking-wide text-white/80">Chat with us</p>
                   <p className="mt-1 text-lg font-black">{softwareName || 'Support'}</p>
-                  <p className="mt-0.5 text-sm text-white/85">Choose a channel — we respond as soon as we can.</p>
+                  <p className="mt-0.5 text-sm text-white/85">Choose a channel, we respond as soon as we can.</p>
                 </div>
                 <button
                   type="button"

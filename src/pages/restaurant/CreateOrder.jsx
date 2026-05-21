@@ -167,7 +167,7 @@ const CreateOrder = () => {
             <FiArrowLeft className="mr-2" /> Back
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Create Order (Manual)</h1>
+            <h1 className="text-2xl font-semibold text-gray-900">Create Order (Manual)</h1>
             <p className="text-gray-500 mt-1">Use this when a customer can’t place an order via QR.</p>
           </div>
         </div>
@@ -181,8 +181,9 @@ const CreateOrder = () => {
           <Card title="Customer & Table">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Table *</label>
+                <label htmlFor="manual-order-table" className="block text-sm font-medium text-gray-700 mb-1">Table *</label>
                 <select
+                  id="manual-order-table"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                   value={tableId}
                   onChange={(e) => setTableId(e.target.value)}
@@ -218,8 +219,9 @@ const CreateOrder = () => {
                 placeholder="e.g. customer@email.com"
               />
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Special requests (optional)</label>
+                <label htmlFor="manual-order-special-requests" className="block text-sm font-medium text-gray-700 mb-1">Special requests (optional)</label>
                 <textarea
+                  id="manual-order-special-requests"
                   rows={3}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                   value={specialRequests}
@@ -309,8 +311,9 @@ const CreateOrder = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Quantity</label>
+                        <label htmlFor={`manual-order-quantity-${i.menuItemId}`} className="block text-xs font-medium text-gray-600 mb-1">Quantity</label>
                         <input
+                          id={`manual-order-quantity-${i.menuItemId}`}
                           type="number"
                           min={1}
                           max={999}
@@ -320,8 +323,9 @@ const CreateOrder = () => {
                         />
                       </div>
                       <div className="md:col-span-2">
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Special instructions</label>
+                        <label htmlFor={`manual-order-instructions-${i.menuItemId}`} className="block text-xs font-medium text-gray-600 mb-1">Special instructions</label>
                         <input
+                          id={`manual-order-instructions-${i.menuItemId}`}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                           value={i.specialInstructions || ''}
                           onChange={(e) => updateInstruction(i.menuItemId, e.target.value)}

@@ -33,14 +33,14 @@ export default function ProfileSettingsSection({
     <Card title="Restaurant Information" icon={FiSettings}>
       <div className="space-y-6">
         <section className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-gray-900/60">
-          <h3 className="text-sm font-black uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
             Basic Details
           </h3>
           <div className="mt-4 space-y-4">
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Restaurant Name{' '}
-                <span className="text-xs text-gray-500 dark:text-gray-400">(Read-only — from PAN)</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">(Read-only, from PAN)</span>
               </label>
               <div className="cursor-not-allowed rounded-lg border border-gray-300 bg-gray-100 px-4 py-3 font-medium text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
                 {restaurant?.name || 'Loading...'}
@@ -58,7 +58,7 @@ export default function ProfileSettingsSection({
         </section>
 
         <section className="rounded-2xl border border-gray-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-          <h3 className="text-sm font-black uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
             Contact & Location
           </h3>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -90,7 +90,7 @@ export default function ProfileSettingsSection({
         <section className="rounded-2xl border border-primary-100 bg-primary-50/50 p-4 dark:border-gray-800 dark:bg-gray-900">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h3 className="text-sm font-black uppercase tracking-[0.16em] text-primary-700 dark:text-primary-300">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-primary-700 dark:text-primary-300">
                 Country & Currency
               </h3>
               <p className="mt-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
@@ -116,7 +116,7 @@ export default function ProfileSettingsSection({
         </section>
 
         <section className="rounded-2xl border border-gray-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-          <h3 className="text-sm font-black uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
             Opening Hours
           </h3>
           <div className="mt-4 grid grid-cols-2 gap-4">

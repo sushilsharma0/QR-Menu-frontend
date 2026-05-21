@@ -113,7 +113,7 @@ const CashierHouseCredit = () => {
     <div className="w-full space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50 sm:text-3xl">House credit</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-50 sm:text-3xl">House credit</h1>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
             Approved accounts and open credit bills. Payments are recorded here for extra control.
           </p>
@@ -171,7 +171,7 @@ const CashierHouseCredit = () => {
                 {expanded && (
                   <div className="border-t border-gray-100 bg-surface-50/80 px-4 py-4 dark:border-gray-800 dark:bg-gray-900/40 sm:px-5">
                     {loadingOrders ? (
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Loading bills...</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Loading bills…</p>
                     ) : orders.length === 0 ? (
                       <p className="text-sm text-gray-500 dark:text-gray-400">No unpaid credit bills.</p>
                     ) : (
@@ -244,7 +244,7 @@ const CashierHouseCredit = () => {
                                   </label>
                                 )}
                                 <Button size="sm" disabled={payingId === o._id || due <= 0} onClick={() => settleCreditOrder(c._id, o)}>
-                                  {payingId === o._id ? 'Saving...' : 'Record payment'}
+                                  {payingId === o._id ? 'Saving…' : 'Record payment'}
                                 </Button>
                               </div>
                             </li>

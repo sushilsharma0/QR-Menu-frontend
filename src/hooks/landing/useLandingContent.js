@@ -17,8 +17,10 @@ const firstParagraph = (value) => String(value || '').split('\n').filter(Boolean
 const splitPhrases = (value) =>
   String(value || '')
     .split(/[|\n,]/)
-    .map((item) => item.trim())
-    .filter(Boolean)
+    .flatMap((item) => {
+      const phrase = item.trim()
+      return phrase ? [phrase] : []
+    })
 
 const defaultHeroBullets = [
   'QR Menu Ordering',
@@ -45,6 +47,7 @@ export const useLandingContent = () => {
     let cancelled = false
     const run = async () => {
       try {
+        if (cancelled) return
         const [cmsRes, cfgRes] = await Promise.all([
           api.get('/platform/cms', { params: { isActive: true }, skipErrorToast: true }).catch(() => ({ data: { data: [] } })),
           api.get('/customer/landing/site-config', { skipErrorToast: true }).catch(() => ({ data: { data: null } })),
@@ -106,8 +109,10 @@ export const useLandingContent = () => {
 
     const bulletLines = String(ah.bulletPoints || '')
       .split('\n')
-      .map((s) => s.trim())
-      .filter(Boolean)
+      .flatMap((line) => {
+        const bullet = line.trim()
+        return bullet ? [bullet] : []
+      })
     const bullets = bulletLines.length ? bulletLines.slice(0, 4) : defaultHeroBullets
 
     const hero = {

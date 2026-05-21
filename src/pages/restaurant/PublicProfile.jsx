@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import toast from '@utils/toast'
 import {
   FiAward,
@@ -83,14 +83,24 @@ const emptyPrivacy = () => ({
   lastUpdated: null,
 })
 
+function ClientDateTime({ value }) {
+  const [label, setLabel] = useState('')
+
+  useEffect(() => {
+    if (value) setLabel(new Date(value).toLocaleString())
+  }, [value])
+
+  return <span suppressHydrationWarning>{label || 'Pending'}</span>
+}
+
 export default function PublicProfile() {
   const { user } = useAuth()
   const isBranchPortal = user?.scope === 'branch_user'
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [restaurant, setRestaurant] = useState(null)
-  const [about, setAbout] = useState(emptyAbout())
-  const [privacy, setPrivacy] = useState(emptyPrivacy())
+  const restaurantRef = useRef(null)
+  const [about, setAbout] = useState(() => emptyAbout())
+  const [privacy, setPrivacy] = useState(() => emptyPrivacy())
   const [galleryDraft, setGalleryDraft] = useState('')
   const [featureDraft, setFeatureDraft] = useState({ icon: 'Utensils', label: '' })
 
@@ -106,7 +116,7 @@ export default function PublicProfile() {
         isBranchPortal ? { skipBranchHeader: true } : undefined,
       )
       const data = res.data?.data || {}
-      setRestaurant(data)
+      restaurantRef.current = data
       const a = data.about || {}
       const p = data.privacyPolicy || {}
       setAbout({
@@ -230,9 +240,9 @@ export default function PublicProfile() {
       ...prev,
       enabled: true,
       sections: prev.sections.length > 0 ? prev.sections : DEFAULT_PRIVACY_SECTIONS.map((s) => ({ ...s })),
-      contactEmail: prev.contactEmail || restaurant?.email || '',
-      contactPhone: prev.contactPhone || restaurant?.phone || '',
-      contactAddress: prev.contactAddress || restaurant?.address || '',
+      contactEmail: prev.contactEmail || restaurantRef.current?.email || '',
+      contactPhone: prev.contactPhone || restaurantRef.current?.phone || '',
+      contactAddress: prev.contactAddress || restaurantRef.current?.address || '',
     }))
     toast.success('Loaded a starter privacy policy — edit to match your restaurant')
   }
@@ -278,7 +288,7 @@ export default function PublicProfile() {
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
           {isBranchPortal ? 'Branch About & Privacy' : 'Public profile & policies'}
         </h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -298,10 +308,11 @@ export default function PublicProfile() {
               onChange={(e) => updateAbout({ tagline: e.target.value })}
             />
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="about-description" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 About description
               </label>
               <textarea
+                id="about-description"
                 rows={5}
                 className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 outline-none transition-all focus:border-primary-500 focus:ring-2 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                 placeholder="Tell guests what makes your restaurant special — cuisine, story, ingredients, vibe…"
@@ -366,7 +377,7 @@ export default function PublicProfile() {
             )}
             {about.features.map((feature, idx) => (
               <div
-                key={`${feature.label}-${idx}`}
+                key={`${feature.icon}-${feature.label}`}
                 className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900"
               >
                 <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-300">
@@ -381,7 +392,7 @@ export default function PublicProfile() {
                 <button
                   type="button"
                   onClick={() => removeFeature(idx)}
-                  className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                  className="rounded-lg p-2 text-red-700 hover:bg-red-50 hover:text-red-800 dark:hover:bg-red-900/20"
                   aria-label="Remove feature"
                 >
                   <FiTrash2 className="h-4 w-4" />
@@ -443,7 +454,7 @@ export default function PublicProfile() {
             <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
               {about.gallery.map((url, idx) => (
                 <div
-                  key={`${url}-${idx}`}
+                  key={url}
                   className="group relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700"
                 >
                   <img src={url} alt="Gallery" className="h-28 w-full object-cover" />
@@ -530,7 +541,7 @@ export default function PublicProfile() {
               <span className="ml-1">
                 Last updated:{' '}
                 <span className="font-semibold">
-                  {new Date(privacy.lastUpdated).toLocaleString()}
+                  <ClientDateTime value={privacy.lastUpdated} />
                 </span>
               </span>
             )}
@@ -552,7 +563,7 @@ export default function PublicProfile() {
           <div className="space-y-3">
             {privacy.sections.map((section, idx) => (
               <div
-                key={idx}
+                key={`${section.title}-${section.content}`}
                 className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
               >
                 <div className="mb-3 flex items-start gap-3">
@@ -582,16 +593,17 @@ export default function PublicProfile() {
                   <button
                     type="button"
                     onClick={() => removePrivacySection(idx)}
-                    className="mt-7 rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                    className="mt-7 rounded-lg p-2 text-red-700 hover:bg-red-50 hover:text-red-800 dark:hover:bg-red-900/20"
                     aria-label="Remove section"
                   >
                     <FiTrash2 className="h-4 w-4" />
                   </button>
                 </div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label htmlFor={`privacy-section-content-${idx}`} className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Content
                 </label>
                 <textarea
+                  id={`privacy-section-content-${idx}`}
                   rows={4}
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none transition-all focus:border-primary-500 focus:ring-2 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                   placeholder="Explain this part of your privacy policy in plain English."
@@ -627,10 +639,11 @@ export default function PublicProfile() {
               onChange={(e) => setPrivacy((prev) => ({ ...prev, contactPhone: e.target.value }))}
             />
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="privacy-contact-address" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Contact address
               </label>
               <textarea
+                id="privacy-contact-address"
                 rows={2}
                 className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none transition-all focus:border-primary-500 focus:ring-2 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                 placeholder="Your restaurant address for privacy enquiries"

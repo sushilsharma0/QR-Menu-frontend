@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { Suspense, useEffect, useMemo, useState } from 'react'
 import {
   FiActivity,
   FiAlertTriangle,
@@ -20,20 +20,6 @@ import {
   FiTruck,
 } from 'react-icons/fi'
 import toast from '@utils/toast'
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
 import api from '../../../services/api'
 import Button from '../../../components/common/Button'
 import Input from '../../../components/common/Input'
@@ -52,6 +38,18 @@ const UNITS = ['kg', 'gram', 'liter', 'ml', 'piece', 'packet', 'bottle', 'carton
 const CATEGORIES = ['Vegetables', 'Meat', 'Drinks', 'Dairy', 'Frozen', 'Packaging', 'Spices', 'General']
 const TABS = ['Overview', 'Items', 'Stock update', 'Suppliers', 'Purchases', 'Transactions', 'Waste', 'Analytics']
 const chartColors = ['#8f2d0a', '#14b8a6', '#f97316', '#6366f1', '#ef4444', '#84cc16', '#0ea5e9']
+const Area = React.lazy(() => import('recharts').then((module) => ({ default: module.Area })))
+const AreaChart = React.lazy(() => import('recharts').then((module) => ({ default: module.AreaChart })))
+const Bar = React.lazy(() => import('recharts').then((module) => ({ default: module.Bar })))
+const BarChart = React.lazy(() => import('recharts').then((module) => ({ default: module.BarChart })))
+const CartesianGrid = React.lazy(() => import('recharts').then((module) => ({ default: module.CartesianGrid })))
+const Cell = React.lazy(() => import('recharts').then((module) => ({ default: module.Cell })))
+const Pie = React.lazy(() => import('recharts').then((module) => ({ default: module.Pie })))
+const PieChart = React.lazy(() => import('recharts').then((module) => ({ default: module.PieChart })))
+const ResponsiveContainer = React.lazy(() => import('recharts').then((module) => ({ default: module.ResponsiveContainer })))
+const Tooltip = React.lazy(() => import('recharts').then((module) => ({ default: module.Tooltip })))
+const XAxis = React.lazy(() => import('recharts').then((module) => ({ default: module.XAxis })))
+const YAxis = React.lazy(() => import('recharts').then((module) => ({ default: module.YAxis })))
 
 const emptyItem = {
   name: '',
@@ -230,14 +228,16 @@ const Inventory = () => {
   }, [cashBook.cashBalance, cashBook.bankBalance])
 
   const analytics = useMemo(() => {
-    const byCategory = CATEGORIES.map((cat) => {
+    const byCategory = CATEGORIES.flatMap((cat) => {
       const categoryItems = items.filter((item) => String(item.category || '').toLowerCase() === cat.toLowerCase())
-      return {
+      const row = {
         name: cat,
         value: categoryItems.reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.costPerUnit || 0), 0),
         count: categoryItems.length,
       }
-    }).filter((row) => row.value > 0 || row.count > 0)
+
+      return row.value > 0 || row.count > 0 ? [row] : []
+    })
 
     const usageMap = new Map()
     const wasteMap = new Map()
@@ -265,7 +265,7 @@ const Inventory = () => {
     const windowStart = Date.now() - FORECAST_MS
     const outTypes = ['usage', 'recipe_sale', 'stock_out', 'wastage']
     const forecast = items
-      .map((item) => {
+      .flatMap((item) => {
         const relevant = transactions.filter((txn) => {
           if (String(txn.inventoryItemId?._id || txn.inventoryItemId) !== String(item._id)) return false
           if (!outTypes.includes(txn.type)) return false
@@ -273,21 +273,21 @@ const Inventory = () => {
           return !Number.isNaN(t) && t >= windowStart
         })
         const usedInWindow = relevant.reduce((sum, txn) => sum + Number(txn.quantity || 0), 0)
-        if (usedInWindow <= 0) return null
+        if (usedInWindow <= 0) return []
         const activeDays = new Set(relevant.map((txn) => new Date(txn.createdAt).toISOString().slice(0, 10))).size
         const denomDays = Math.max(1, Math.min(30, activeDays))
         const dailyUsage = usedInWindow / denomDays
         const daysLeft = dailyUsage > 0 ? Math.floor(Number(item.quantity || 0) / dailyUsage) : null
-        return {
+        if (daysLeft === null) return []
+
+        return [{
           ...item,
           dailyUsage,
           daysLeft,
           usedInWindow,
           activeDays,
-        }
+        }]
       })
-      .filter(Boolean)
-      .filter((row) => row.daysLeft !== null)
       .sort((a, b) => a.daysLeft - b.daysLeft)
       .slice(0, 6)
     return { byCategory, mostUsed, wasteTrend, expensive, movement, forecast }
@@ -863,6 +863,7 @@ const Inventory = () => {
   })))
 
   return (
+    <Suspense fallback={<div className="min-h-96 rounded-2xl bg-surface-50" />}>
     <div className="space-y-6">
       <FinancePageHeader
         title="Inventory Control"
@@ -885,7 +886,7 @@ const Inventory = () => {
               setActiveTab(tab)
               if (tab !== 'Items') setItemFormAdvancedOpen(false)
             }}
-            className={`shrink-0 rounded-xl px-4 py-2 text-sm font-bold transition ${activeTab === tab ? 'bg-primary-700 text-white shadow-md' : 'text-gray-600 hover:bg-primary-50 dark:text-gray-300 dark:hover:bg-gray-800'}`}
+            className={`shrink-0 rounded-xl px-4 py-2 text-sm font-semibold transition ${activeTab === tab ? 'bg-primary-700 text-white shadow-md' : 'text-gray-600 hover:bg-primary-50 dark:text-gray-300 dark:hover:bg-gray-800'}`}
           >
             {tab}
           </button>
@@ -941,8 +942,8 @@ const Inventory = () => {
                 return (
                   <div key={`${item._id}-${item.expiryDate || 'stock'}`} className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="font-bold text-gray-950">{item.name}</p>
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${tone.cls}`}>{tone.label}</span>
+                      <p className="font-semibold text-gray-950">{item.name}</p>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${tone.cls}`}>{tone.label}</span>
                     </div>
                     <p className="mt-1 text-sm text-gray-600">{item.quantity} {item.unit} available, min {item.minimumStock}</p>
                     {item.expiryDate && <p className="mt-1 text-xs font-semibold text-orange-700">Expiry: {formatDate(item.expiryDate)}</p>}
@@ -957,9 +958,9 @@ const Inventory = () => {
             <div className="space-y-3">
               {analytics.forecast.map((item) => (
                 <div key={item._id} className="rounded-2xl border border-surface-200 p-4">
-                  <p className="font-bold text-gray-950 dark:text-gray-100">{item.name}</p>
+                  <p className="font-semibold text-gray-950 dark:text-gray-100">{item.name}</p>
                   <p className="mt-1 text-sm text-gray-500">
-                    Predicted finish in <span className="font-black text-primary-700">{item.daysLeft}</span> days
+                    Predicted finish in <span className="font-semibold text-primary-700">{item.daysLeft}</span> days
                   </p>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                     Last 30 days: {formatForecastQty(item.usedInWindow, item.unit)} out · avg{' '}
@@ -984,7 +985,7 @@ const Inventory = () => {
         <div className="flex flex-col gap-6">
           <section className="rounded-2xl border border-amber-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
             <div className="flex flex-col gap-1 border-b border-amber-100/80 px-4 py-4 dark:border-gray-800 sm:px-6">
-              <h2 className="text-lg font-black text-gray-950 dark:text-gray-100">
+              <h2 className="text-lg font-semibold text-gray-950 dark:text-gray-100">
                 {editingItemId ? 'Edit item' : 'Quick add item'}
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -1026,9 +1027,9 @@ const Inventory = () => {
                   type="button"
                   onClick={() => setItemFormAdvancedOpen((o) => !o)}
                   aria-expanded={itemFormAdvancedOpen}
-                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-surface-200 bg-surface-50 px-4 py-3 text-left text-sm font-bold text-gray-800 transition hover:bg-amber-50/80 dark:border-gray-700 dark:bg-gray-800/60 dark:text-gray-100 dark:hover:bg-gray-800"
+                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-surface-200 bg-surface-50 px-4 py-3 text-left text-sm font-semibold text-gray-800 transition hover:bg-amber-50/80 dark:border-gray-700 dark:bg-gray-800/60 dark:text-gray-100 dark:hover:bg-gray-800"
                 >
-                  <span>More fields — category, unit, quantity, cost, supplier…</span>
+                  <span>More fields: category, unit, quantity, cost, supplier…</span>
                   <FiChevronDown
                     className={`h-5 w-5 shrink-0 text-gray-500 transition-transform ${itemFormAdvancedOpen ? 'rotate-180' : ''}`}
                     aria-hidden
@@ -1090,7 +1091,7 @@ const Inventory = () => {
                       value={itemForm.supplierId || ''}
                       onValueChange={(value) => setItemForm((s) => ({ ...s, supplierId: value }))}
                       searchable
-                      searchPlaceholder="Search supplier…"
+                      searchPlaceholder="Search supplier..."
                       options={suppliers.map((s) => ({ label: s.name, value: String(s._id) }))}
                     />
                     <Input label="Notes" value={itemForm.notes} onChange={(e) => setItemForm((s) => ({ ...s, notes: e.target.value }))} />
@@ -1122,7 +1123,7 @@ const Inventory = () => {
           <section className="overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
             <div className="flex flex-col gap-4 border-b border-amber-100/80 px-4 py-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between sm:px-6">
               <div>
-                <h2 className="text-lg font-black text-gray-950 dark:text-gray-100">All items</h2>
+                <h2 className="text-lg font-semibold text-gray-950 dark:text-gray-100">All items</h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   {search.trim()
                     ? `${itemsListFilter.length} match${itemsListFilter.length === 1 ? '' : 'es'} for “${search.trim()}” (of ${items.length} loaded). Press Enter to fetch from server.`
@@ -1136,7 +1137,7 @@ const Inventory = () => {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && loadAll()}
-                  placeholder="Filter by name or category… (Enter = reload from server)"
+                  placeholder="Filter by name or category... (Enter = reload from server)"
                 />
               </div>
             </div>
@@ -1173,7 +1174,7 @@ const Inventory = () => {
                 value={rawUseForm.inventoryItemId || ''}
                 onValueChange={(value) => setRawUseForm((s) => ({ ...s, inventoryItemId: value }))}
                 searchable
-                searchPlaceholder="Search by item name…"
+                searchPlaceholder="Search by item name..."
                 options={items.map((i) => ({
                   label: `${i.name} (${i.quantity} ${i.unit} on hand)${i.category ? ` · ${i.category}` : ''}`,
                   value: String(i._id),
@@ -1223,7 +1224,7 @@ const Inventory = () => {
               </div>
               {rawUseSelectedItem && (
                 <div className="md:col-span-2 lg:col-span-3">
-                  <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
+                  <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
                     Current stock: {rawUseSelectedItem.quantity} {rawUseSelectedItem.unit} | After update: {rawUseProjectedStock} {rawUseSelectedItem.unit}
                   </div>
                 </div>
@@ -1345,7 +1346,7 @@ const Inventory = () => {
                 value={purchaseForm.inventoryItemId || ''}
                 onValueChange={(value) => setPurchaseForm((s) => ({ ...s, inventoryItemId: value }))}
                 searchable
-                searchPlaceholder="Search by item name…"
+                searchPlaceholder="Search by item name..."
                 options={items.map((i) => ({
                   label: `${i.name}${i.category ? ` · ${i.category}` : ''}`,
                   value: String(i._id),
@@ -1357,7 +1358,7 @@ const Inventory = () => {
                 value={purchaseForm.supplierId || ''}
                 onValueChange={(value) => setPurchaseForm((s) => ({ ...s, supplierId: value }))}
                 searchable
-                searchPlaceholder="Search supplier…"
+                searchPlaceholder="Search supplier..."
                 options={suppliers.map((s) => ({ label: s.name, value: String(s._id) }))}
               />
               <Input label="Quantity" type="number" value={purchaseForm.quantity} onChange={(e) => setPurchaseForm((s) => ({ ...s, quantity: Number(e.target.value) }))} />
@@ -1498,7 +1499,7 @@ const Inventory = () => {
                 value={movementForm.inventoryItemId || ''}
                 onValueChange={(value) => setMovementForm((s) => ({ ...s, inventoryItemId: value }))}
                 searchable
-                searchPlaceholder="Search by item name…"
+                searchPlaceholder="Search by item name..."
                 options={items.map((i) => ({
                   label: `${i.name} (${i.quantity} ${i.unit})${i.category ? ` · ${i.category}` : ''}`,
                   value: String(i._id),
@@ -1561,7 +1562,7 @@ const Inventory = () => {
                 value={wasteForm.inventoryItemId || ''}
                 onValueChange={(value) => setWasteForm((s) => ({ ...s, inventoryItemId: value }))}
                 searchable
-                searchPlaceholder="Search by item name…"
+                searchPlaceholder="Search by item name..."
                 options={items.map((i) => ({
                   label: `${i.name} (${i.quantity} ${i.unit} on hand)${i.category ? ` · ${i.category}` : ''}`,
                   value: String(i._id),
@@ -1623,7 +1624,7 @@ const Inventory = () => {
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie data={analytics.byCategory} dataKey="value" nameKey="name" outerRadius={105} label>
-                  {analytics.byCategory.map((_, index) => <Cell key={index} fill={chartColors[index % chartColors.length]} />)}
+                  {analytics.byCategory.map((row, index) => <Cell key={row.name} fill={chartColors[index % chartColors.length]} />)}
                 </Pie>
                 <Tooltip content={<FinanceTooltip />} />
               </PieChart>
@@ -1681,6 +1682,7 @@ const Inventory = () => {
         </div>
       )}
     </div>
+    </Suspense>
   )
 }
 
@@ -1689,7 +1691,7 @@ function InventoryItemsTable({ items, onEdit, onRemove }) {
     <div className="overflow-x-auto rounded-xl border border-surface-100 dark:border-gray-800">
       <table className="min-w-full text-sm">
         <thead>
-          <tr className="border-b border-surface-200 bg-surface-50/80 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-400">
+          <tr className="border-b border-surface-200 bg-surface-50/80 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-400">
             <th className="px-4 py-3">Item</th>
             <th className="px-4 py-3">Category</th>
             <th className="px-4 py-3">Status</th>
@@ -1712,7 +1714,7 @@ function InventoryItemsTable({ items, onEdit, onRemove }) {
                 <td className="px-4 py-3 font-semibold text-gray-950 dark:text-gray-100">{item.name}</td>
                 <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{item.category || 'General'}</td>
                 <td className="px-4 py-3">
-                  <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-bold ${tone.cls}`}>{tone.label}</span>
+                  <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${tone.cls}`}>{tone.label}</span>
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums text-gray-900 dark:text-gray-100">
                   {item.quantity} {item.unit}
@@ -1725,7 +1727,7 @@ function InventoryItemsTable({ items, onEdit, onRemove }) {
                     '—'
                   )}
                 </td>
-                <td className="px-4 py-3 text-right font-bold text-primary-800 dark:text-primary-300">{money(stockValue)}</td>
+                <td className="px-4 py-3 text-right font-semibold text-primary-800 dark:text-primary-300">{money(stockValue)}</td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex flex-wrap justify-end gap-2">
                     <Button type="button" size="sm" variant="secondary" onClick={() => onEdit(item)}>
@@ -1753,7 +1755,7 @@ function SuppliersListTable({ suppliers, onEdit, onDelete }) {
     <div className="overflow-x-auto rounded-xl border border-surface-100 dark:border-gray-800">
       <table className="min-w-full text-sm">
         <thead>
-          <tr className="border-b border-surface-200 bg-surface-50/80 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-400">
+          <tr className="border-b border-surface-200 bg-surface-50/80 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-400">
             <th className="px-4 py-3">Name</th>
             <th className="px-4 py-3">Phone</th>
             <th className="px-4 py-3">PAN / VAT</th>
@@ -1775,7 +1777,7 @@ function SuppliersListTable({ suppliers, onEdit, onDelete }) {
               <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-gray-100">{money(s.paymentDue)}</td>
               <td className="px-4 py-3">
                 <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                  className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                     Number(s.paymentDue || 0) > 0 ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-800'
                   }`}
                 >
@@ -1818,7 +1820,7 @@ function PurchaseHistoryListTable({ purchases, onEdit, onDelete }) {
     <div className="overflow-x-auto rounded-xl border border-surface-100 dark:border-gray-800">
       <table className="min-w-full text-sm">
         <thead>
-          <tr className="border-b border-surface-200 bg-surface-50/80 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-400">
+          <tr className="border-b border-surface-200 bg-surface-50/80 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-400">
             <th className="px-4 py-3">Date</th>
             <th className="px-4 py-3">Item</th>
             <th className="px-4 py-3 text-right">Qty</th>
@@ -1838,9 +1840,9 @@ function PurchaseHistoryListTable({ purchases, onEdit, onDelete }) {
                 {purchase.quantity} {purchase.inventoryItemId?.unit || ''}
               </td>
               <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{purchase.supplierId?.name || purchase.supplier || '—'}</td>
-              <td className="px-4 py-3 text-right font-bold text-primary-800 dark:text-primary-300">{money(purchaseGrandTotal(purchase))}</td>
+              <td className="px-4 py-3 text-right font-semibold text-primary-800 dark:text-primary-300">{money(purchaseGrandTotal(purchase))}</td>
               <td className="px-4 py-3">
-                <span className="rounded-full bg-surface-100 px-2 py-0.5 text-xs font-bold capitalize text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                <span className="rounded-full bg-surface-100 px-2 py-0.5 text-xs font-semibold capitalize text-gray-800 dark:bg-gray-800 dark:text-gray-200">
                   {purchase.paymentStatus || '—'}
                 </span>
               </td>
@@ -1877,7 +1879,7 @@ function TransactionTable({ transactions, onEdit, onDelete, editableTypes = [] }
     <div className="overflow-x-auto rounded-xl border border-surface-100 dark:border-gray-800">
       <table className="min-w-full text-sm">
         <thead>
-          <tr className="border-b border-surface-200 bg-surface-50/80 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-400">
+          <tr className="border-b border-surface-200 bg-surface-50/80 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-400">
             <th className="px-4 py-3">Date</th>
             <th className="px-4 py-3">Item</th>
             <th className="px-4 py-3">Action</th>
@@ -1893,10 +1895,10 @@ function TransactionTable({ transactions, onEdit, onDelete, editableTypes = [] }
               <td className="whitespace-nowrap px-4 py-3 text-gray-600 dark:text-gray-300">{formatDate(txn.createdAt)}</td>
               <td className="px-4 py-3 font-semibold text-gray-950 dark:text-gray-100">{txn.inventoryItemId?.name || '-'}</td>
               <td className="px-4 py-3">
-                <span className="rounded-full bg-primary-50 px-2 py-1 text-xs font-bold text-primary-700 dark:bg-gray-800 dark:text-primary-300">{txn.type}</span>
+                <span className="rounded-full bg-primary-50 px-2 py-1 text-xs font-semibold text-primary-700 dark:bg-gray-800 dark:text-primary-300">{txn.type}</span>
               </td>
               <td className="px-4 py-3 tabular-nums text-gray-800 dark:text-gray-200">{txn.quantity} {txn.inventoryItemId?.unit || ''}</td>
-              <td className="px-4 py-3 font-bold text-primary-800 dark:text-primary-300">{money(txn.totalCost)}</td>
+              <td className="px-4 py-3 font-semibold text-primary-800 dark:text-primary-300">{money(txn.totalCost)}</td>
               <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
                 <span className="block font-semibold text-gray-700 dark:text-gray-300">{txn.createdByName || '—'}</span>
                 <span className="text-xs">{txn.note || txn.referenceNumber || '—'}</span>

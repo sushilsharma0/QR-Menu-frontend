@@ -1,9 +1,13 @@
-import React, { useState } from "react";
+﻿import React, { useReducer } from "react";
 import { Link } from "react-router-dom";
 import { CreditCard, Landmark, ShieldCheck } from "lucide-react";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../common/ToastContainer";
 import { requestCreditCheckoutOtp, submitPostServeOrderPayment } from "../../services/customer";
+const paymentReducer = (state, action) => ({
+  ...state,
+  [action.field]: typeof action.value === "function" ? action.value(state[action.field]) : action.value,
+});
 
 export default function CustomerPostServePayment({
   restaurantSlug,
@@ -38,7 +42,7 @@ export default function CustomerPostServePayment({
       return;
     }
     if (!tableQrToken || !guestId) {
-      warning("Session missing — reopen from your table QR.");
+      warning("Session missing â€” reopen from your table QR.");
       return;
     }
     try {
@@ -46,7 +50,7 @@ export default function CustomerPostServePayment({
       await requestCreditCheckoutOtp({ qrToken: tableQrToken, guestId, email: em });
       success("Check your email for a 6-digit code.");
     } catch (err) {
-      error(err?.response?.data?.message || "Could not send code — is your account approved?");
+      error(err?.response?.data?.message || "Could not send code â€” is your account approved?");
     } finally {
       setOtpSending(false);
     }
@@ -90,9 +94,9 @@ export default function CustomerPostServePayment({
         customerEmail: String(initialEmail || "").trim(),
       });
       if (checkoutTiming === "credit") {
-        success("House account recorded — thank you!");
+        success("House account recorded â€” thank you!");
       } else {
-        success("Choice sent — staff will confirm when payment is received.");
+        success("Choice sent â€” staff will confirm when payment is received.");
       }
       onSuccess?.();
     } catch (err) {
@@ -116,7 +120,7 @@ export default function CustomerPostServePayment({
         <p className="text-xs font-black uppercase tracking-wider text-primary-700 dark:text-primary-400">Settle your bill</p>
         <p className="mt-1 text-sm font-semibold text-gray-600 dark:text-gray-400">
           Tell us how you plan to pay. A team member will record payment when they collect cash or confirm your online
-          payment — you are not charged from this screen alone.
+          payment â€” you are not charged from this screen alone.
         </p>
       </div>
 
@@ -137,7 +141,7 @@ export default function CustomerPostServePayment({
       ) : null}
 
       <div className="rounded-2xl border border-gray-100 bg-gray-50/80 p-4 dark:border-gray-800 dark:bg-gray-950/50">
-        <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">How do you want to pay?</h3>
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">How do you want to pay?</h3>
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
@@ -174,7 +178,7 @@ export default function CustomerPostServePayment({
 
       {checkoutTiming === "pay_now" && (
         <div className="rounded-2xl border border-gray-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-          <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Payment type</h3>
+          <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Payment type</h3>
           <div className="grid grid-cols-3 gap-2">
             {[
               { id: "cash", icon: Landmark, label: "Cash" },
@@ -230,7 +234,7 @@ export default function CustomerPostServePayment({
 
       {checkoutTiming === "credit" && (
         <div className="rounded-2xl border border-amber-100 bg-amber-50/80 p-4 dark:border-amber-900/40 dark:bg-amber-950/30">
-          <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-200">Verify house account</h3>
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-200">Verify house account</h3>
           <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300">
             Account email
             <input
@@ -247,14 +251,14 @@ export default function CustomerPostServePayment({
             onClick={sendCreditOtp}
             className="mt-3 w-full rounded-xl bg-amber-600 py-2.5 text-xs font-black text-white disabled:opacity-50"
           >
-            {otpSending ? "Sending…" : "Email me verification code"}
+            {otpSending ? "Sendingâ€¦" : "Email me verification code"}
           </button>
           <label className="mt-3 block text-[11px] font-bold text-gray-600 dark:text-gray-300">
             6-digit code
             <input
               value={creditOtp}
               onChange={(e) => setCreditOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              placeholder="••••••"
+              placeholder="â€¢â€¢â€¢â€¢â€¢â€¢"
               className="mt-1 w-full rounded-xl border border-amber-200 bg-white px-3 py-2.5 text-sm tracking-[0.4em] dark:border-amber-800 dark:bg-gray-900 dark:text-white"
             />
           </label>
@@ -272,7 +276,7 @@ export default function CustomerPostServePayment({
         onClick={submit}
         className="w-full rounded-2xl bg-primary-600 py-4 text-sm font-black text-white shadow-lg transition-all active:scale-[0.98] disabled:opacity-60"
       >
-        {submitting ? "Sending…" : checkoutTiming === "credit" ? "Verify & use house credit" : "Send choice to restaurant"}
+        {submitting ? "Sendingâ€¦" : checkoutTiming === "credit" ? "Verify & use house credit" : "Send choice to restaurant"}
       </button>
 
       <ToastContainer toasts={toasts} removeToast={removeToast} />

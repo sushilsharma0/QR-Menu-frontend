@@ -9,11 +9,11 @@ const Feedback = () => {
   if (submitted) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center p-8 text-center">
-        <div className="w-24 h-24 bg-orange-50 rounded-full flex items-center justify-center text-orange-500 mb-6 animate-bounce">
+        <div className="w-24 h-24 bg-orange-50 rounded-full flex items-center justify-center text-orange-500 mb-6 transition-transform duration-500 ease-out">
           <Heart size={48} fill="currentColor" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-800">Thank You!</h2>
-        <p className="text-gray-500 mt-2 leading-relaxed">
+        <h2 className="text-2xl font-semibold text-gray-800">Thank You!</h2>
+        <p className="text-orange-900 mt-2 leading-relaxed">
           Your feedback helps us serve you better. We hope to see you again at
           Table 05!
         </p>
@@ -34,7 +34,7 @@ const Feedback = () => {
         <button className="p-2 bg-gray-50 rounded-xl">
           <ArrowLeft size={20} className="text-gray-700" />
         </button>
-        <h1 className="ml-4 text-lg font-bold text-gray-800">
+        <h1 className="ml-4 text-lg font-semibold text-gray-800">
           Rate Your Experience
         </h1>
       </header>
@@ -44,7 +44,7 @@ const Feedback = () => {
           <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">
             How was the food?
           </p>
-          <h2 className="text-xl font-bold text-gray-800">
+          <h2 className="text-xl font-semibold text-gray-800">
             Your opinion matters to us!
           </h2>
         </div>
@@ -73,12 +73,13 @@ const Feedback = () => {
 
         {/* Comment Section */}
         <div className="space-y-2">
-          <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
+          <label htmlFor="customer-feedback-comment" className="text-xs font-semibold text-gray-400 uppercase tracking-wider ml-1">
             Care to share more?
           </label>
           <textarea
+            id="customer-feedback-comment"
             rows="5"
-            placeholder="Tell us what you loved or what we can improve..."
+            placeholder="Tell us what you loved or what we can improve…"
             className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-100 focus:bg-white transition-all resize-none"
           ></textarea>
         </div>

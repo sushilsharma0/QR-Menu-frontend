@@ -27,12 +27,11 @@ function writeCache(key, data) {
 
 function toSelectOptions(items) {
   return (items || [])
-    .map((row) => {
+    .flatMap((row) => {
       const name = String(row?.name || '').trim()
-      if (!name) return null
-      return { value: name, label: name, id: row?.id }
+      if (!name) return []
+      return [{ value: name, label: name, id: row?.id }]
     })
-    .filter(Boolean)
     .sort((a, b) => a.label.localeCompare(b.label))
 }
 

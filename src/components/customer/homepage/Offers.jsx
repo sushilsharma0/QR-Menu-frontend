@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import { X, Tag, Clock, DollarSign, Copy, Check, AlertCircle } from "lucide-react";
 import api from "../../../services/api";
 
@@ -85,8 +85,7 @@ function OfferCard({ offer, index }) {
       } else {
         const el = document.createElement("textarea");
         el.value = offer.code;
-        el.style.position = "fixed";
-        el.style.left = "-9999px";
+        el.style.cssText = "position: fixed; left: -9999px;";
         document.body.appendChild(el);
         el.focus();
         el.select();
@@ -107,7 +106,7 @@ function OfferCard({ offer, index }) {
   };
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
@@ -131,7 +130,7 @@ function OfferCard({ offer, index }) {
 
       {/* Centre — info */}
       <div className="flex-1 min-w-0">
-        <h3 className="text-sm font-bold text-gray-800 truncate">{offer.name}</h3>
+        <h3 className="text-sm font-semibold text-gray-800 truncate">{offer.name}</h3>
 
         {/* Dashed code box */}
         <div className={`inline-flex items-center mt-1.5 px-2 py-0.5 rounded-lg border border-dashed border-gray-300 ${color.light}`}>
@@ -161,7 +160,7 @@ function OfferCard({ offer, index }) {
       >
         {copied ? <Check size={15} /> : <Copy size={15} />}
       </button>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -204,18 +203,19 @@ export default function Offers({ isOpen, onClose, slug }) {
     return () => { document.body.style.overflow = "unset"; };
   }, [isOpen]);
 
-  const sorted = [...offersData].sort(
+  const sorted = offersData.toSorted(
     (a, b) => getDaysLeft(b.endAt) - getDaysLeft(a.endAt)
   );
 
   const activeCount = offersData.filter(o => getDaysLeft(o.endAt) > 0).length;
 
   return (
-    <AnimatePresence>
+    <LazyMotion features={domAnimation}>
+      <AnimatePresence>
       {isOpen && (
         <>
           {/* Backdrop */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -224,7 +224,7 @@ export default function Offers({ isOpen, onClose, slug }) {
           />
 
           {/* Sheet */}
-          <motion.div
+          <m.div
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
@@ -243,7 +243,7 @@ export default function Offers({ isOpen, onClose, slug }) {
                   <Tag size={18} className="text-orange-500" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-gray-800 leading-none">
+                  <h2 className="text-base font-semibold text-gray-800 leading-none">
                     Special Offers
                   </h2>
                   <p className="text-[11px] text-gray-400 mt-0.5">
@@ -274,9 +274,10 @@ export default function Offers({ isOpen, onClose, slug }) {
                 ))
               )}
             </div>
-          </motion.div>
+          </m.div>
         </>
       )}
-    </AnimatePresence>
+      </AnimatePresence>
+    </LazyMotion>
   );
 }

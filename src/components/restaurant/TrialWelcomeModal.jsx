@@ -22,9 +22,10 @@ export default function TrialWelcomeModal() {
 
   const enabledFeatures = useMemo(() => {
     const flags = user?.planFeatureFlags || {}
-    return Object.entries(flags)
-      .filter(([, enabled]) => enabled !== false)
-      .map(([key]) => PLAN_FEATURE_LABELS[key] || key)
+    return Object.entries(flags).reduce((features, [key, enabled]) => {
+      if (enabled !== false) features.push(PLAN_FEATURE_LABELS[key] || key)
+      return features
+    }, [])
   }, [user?.planFeatureFlags])
 
   const dismiss = async () => {
@@ -57,7 +58,7 @@ export default function TrialWelcomeModal() {
           </button>
         </div>
 
-        <h2 className="mt-4 text-xl font-black text-gray-950 dark:text-gray-100">Welcome — your trial is active</h2>
+        <h2 className="mt-4 text-xl font-semibold text-gray-950 dark:text-gray-100">Welcome, your trial is active</h2>
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
           You have <strong>{days}</strong> day{days === 1 ? '' : 's'} to explore the features enabled for your
           restaurant by the platform admin. Subscribe before the trial ends to keep access.
@@ -65,13 +66,13 @@ export default function TrialWelcomeModal() {
 
         <div className="mt-4 flex items-center gap-2 rounded-lg bg-primary-50 px-3 py-2 text-sm font-semibold text-primary-800 dark:bg-gray-800 dark:text-primary-200">
           <FiClock className="h-4 w-4 flex-shrink-0" />
-          Trial ends {user?.trialEndsAt ? new Date(user.trialEndsAt).toLocaleDateString() : 'soon'}
+          Trial ends {user?.trialEndsAt ? new Intl.DateTimeFormat().format(new Date(user.trialEndsAt)) : 'soon'}
         </div>
 
         <p className="mt-5 text-xs font-black uppercase tracking-[0.16em] text-gray-400">Included in your trial</p>
         <ul className="mt-2 max-h-48 space-y-1.5 overflow-y-auto">
           {enabledFeatures.length === 0 ? (
-            <li className="text-sm text-gray-500">No features configured — contact support.</li>
+            <li className="text-sm text-gray-500">No features configured, contact support.</li>
           ) : (
             enabledFeatures.map((label) => (
               <li

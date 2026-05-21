@@ -214,7 +214,7 @@ const MyOrders = () => {
         >
           <Link
             to={trackFabHref}
-            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 px-4 py-3 text-sm font-black text-white shadow-[0_16px_40px_-12px_rgba(122,34,0,0.5)] ring-1 ring-white/20 transition active:scale-95"
+            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 px-4 py-3 text-sm font-semibold text-white shadow-[0_16px_40px_-12px_rgba(122,34,0,0.5)] ring-1 ring-white/20 transition active:scale-95"
           >
             <span className="relative flex h-5 w-5 items-center justify-center">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-attention-300/70" />
@@ -247,10 +247,10 @@ function Header({ onBack }) {
           <ArrowLeft size={20} />
         </motion.button>
         <div className="text-center">
-          <h1 className="text-base font-black tracking-tight text-gray-900">
+          <h1 className="text-base font-semibold tracking-tight text-gray-900">
             My Orders
           </h1>
-          <p className="flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-600">
+          <p className="flex items-center justify-center gap-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-600">
             <span className="relative flex h-1.5 w-1.5">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -305,10 +305,10 @@ function SummaryBanner({ summary, loading }) {
             <ChefHat size={22} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-700">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary-700">
               Kitchen status
             </p>
-            <p className="mt-0.5 line-clamp-2 text-sm font-black leading-snug text-gray-900">
+            <p className="mt-0.5 line-clamp-2 text-sm font-semibold leading-snug text-gray-900">
               {loading && activeCount === 0
                 ? "Checking with the kitchen…"
                 : headline}
@@ -365,11 +365,11 @@ function StatPill({ label, value, tone = "primary", highlight, small }) {
       }`}
     >
       <span
-        className={`${small ? "text-sm" : "text-lg"} font-black tabular-nums ${tones.value}`}
+        className={`${small ? "text-sm" : "text-lg"} font-semibold tabular-nums ${tones.value}`}
       >
         {value}
       </span>
-      <span className={`mt-0.5 text-[9px] font-black uppercase tracking-wider ${tones.label}`}>
+      <span className={`mt-0.5 text-[9px] font-semibold uppercase tracking-wider ${tones.label}`}>
         {label}
       </span>
     </div>
@@ -395,7 +395,7 @@ function Tabs({ active, onChange, currentCount, pastCount }) {
             type="button"
             whileTap={{ scale: 0.97 }}
             onClick={() => onChange(tab.id)}
-            className={`relative flex-1 overflow-hidden rounded-2xl border px-3 py-2.5 text-sm font-black transition-all ${
+            className={`relative flex-1 overflow-hidden rounded-2xl border px-3 py-2.5 text-sm font-semibold transition-all ${
               isActive
                 ? "border-primary-200 bg-gradient-to-br from-primary-700 to-primary-600 text-white shadow-[0_10px_24px_-14px_rgba(122,34,0,0.6)]"
                 : "border-gray-100 bg-white text-gray-500 hover:bg-gray-50"
@@ -404,7 +404,7 @@ function Tabs({ active, onChange, currentCount, pastCount }) {
             <span className="relative z-10 flex items-center justify-center gap-2">
               {tab.label}
               <span
-                className={`inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[10px] font-black tabular-nums ${
+                className={`inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[10px] font-semibold tabular-nums ${
                   isActive
                     ? "bg-white/20 text-white"
                     : "bg-gray-100 text-gray-500"
@@ -522,10 +522,10 @@ const OrderCard = forwardRef(function OrderCard({ order, index, onTrack, onBill 
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">
               Order
             </p>
-            <h3 className="truncate text-base font-black text-gray-900">
+            <h3 className="truncate text-base font-semibold text-gray-900">
               #{order.orderNumber || "—"}
             </h3>
             <p className="mt-0.5 text-[11px] font-semibold text-gray-500">
@@ -536,14 +536,14 @@ const OrderCard = forwardRef(function OrderCard({ order, index, onTrack, onBill 
 
           <div className="flex flex-col items-end gap-1.5">
             <span
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ring-1 ${status.chipClass}`}
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ring-1 ${status.chipClass}`}
             >
               <StatusIcon size={11} strokeWidth={2.5} />
               {status.label}
             </span>
             {order.paymentStatus && (
               <span
-                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wide ring-1 ${payment.className}`}
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide ring-1 ${payment.className}`}
               >
                 <CreditCard size={10} strokeWidth={2.5} />
                 {payment.label}
@@ -563,7 +563,7 @@ const OrderCard = forwardRef(function OrderCard({ order, index, onTrack, onBill 
             <ShoppingBag size={13} />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
               {items.length} item{items.length === 1 ? "" : "s"}
             </p>
             <p className="truncate text-xs font-semibold text-gray-700">
@@ -576,10 +576,10 @@ const OrderCard = forwardRef(function OrderCard({ order, index, onTrack, onBill 
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
               Total
             </p>
-            <p className="text-sm font-black text-primary-700">
+            <p className="text-sm font-semibold text-primary-700">
               Rs. {Number(order.grandTotal || 0).toFixed(0)}
             </p>
           </div>
@@ -591,7 +591,7 @@ const OrderCard = forwardRef(function OrderCard({ order, index, onTrack, onBill 
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={onTrack}
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 px-3 py-3 text-xs font-black text-white shadow-md shadow-primary-900/20 transition active:shadow-sm"
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 px-3 py-3 text-xs font-semibold text-white shadow-md shadow-primary-900/20 transition active:shadow-sm"
             >
               <MapPin size={13} />
               Track live
@@ -602,14 +602,14 @@ const OrderCard = forwardRef(function OrderCard({ order, index, onTrack, onBill 
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={onBill}
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 py-3 text-xs font-black text-gray-800 transition active:bg-gray-50"
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 py-3 text-xs font-semibold text-gray-800 transition active:bg-gray-50"
               >
                 <Receipt size={13} />
                 View bill
               </motion.button>
             )}
           {order.status === "cancelled" && (
-            <div className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50/70 px-3 py-3 text-xs font-black text-red-700">
+            <div className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50/70 px-3 py-3 text-xs font-semibold text-red-700">
               <XCircle size={13} />
               Order cancelled
             </div>
@@ -663,7 +663,7 @@ function ProgressTimeline({ currentIndex, live }) {
                 <StepIcon size={11} strokeWidth={2.5} className="relative" />
               </span>
               <span
-                className={`mt-1 text-[8.5px] font-black uppercase tracking-wider ${
+                className={`mt-1 text-[8.5px] font-semibold uppercase tracking-wider ${
                   reached ? "text-primary-700" : "text-gray-300"
                 }`}
               >
@@ -727,7 +727,7 @@ function EmptyState({ tab, onBrowse }) {
       <div className="relative mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-primary-700 shadow-md ring-1 ring-primary-100">
         {isCurrent ? <ChefHat size={24} /> : <Receipt size={24} />}
       </div>
-      <p className="relative mt-4 text-sm font-black text-gray-900">
+      <p className="relative mt-4 text-sm font-semibold text-gray-900">
         {isCurrent ? "No active orders yet" : "No past orders"}
       </p>
       <p className="relative mx-auto mt-1 max-w-[18rem] text-xs font-semibold text-gray-500">
@@ -738,7 +738,7 @@ function EmptyState({ tab, onBrowse }) {
       <motion.button
         whileTap={{ scale: 0.96 }}
         onClick={onBrowse}
-        className="relative mx-auto mt-5 inline-flex items-center gap-1.5 rounded-2xl bg-primary-600 px-5 py-2.5 text-xs font-black text-white shadow-md shadow-primary-900/20 transition active:bg-primary-700"
+        className="relative mx-auto mt-5 inline-flex items-center gap-1.5 rounded-2xl bg-primary-600 px-5 py-2.5 text-xs font-semibold text-white shadow-md shadow-primary-900/20 transition active:bg-primary-700"
       >
         Browse menu
       </motion.button>

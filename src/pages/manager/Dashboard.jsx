@@ -12,7 +12,7 @@ import {
   FiUsers,
 } from 'react-icons/fi'
 import { TbCurrencyRupee } from 'react-icons/tb'
-import { motion } from 'framer-motion'
+import { LazyMotion, domAnimation, m } from 'framer-motion'
 import {
   Area,
   Bar,
@@ -54,7 +54,7 @@ const formatPctTrend = (pct) => {
 
 function MetricCard({ title, value, sub, icon: Icon, accent, trend }) {
   return (
-    <motion.div
+    <m.div
       variants={cardVariants}
       whileHover={{ y: -4 }}
       className="relative overflow-hidden rounded-3xl border border-surface-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900"
@@ -77,7 +77,7 @@ function MetricCard({ title, value, sub, icon: Icon, accent, trend }) {
           <span className="text-gray-500">{trend.label}</span>
         </div>
       )}
-    </motion.div>
+    </m.div>
   )
 }
 
@@ -199,8 +199,9 @@ const ManagerDashboard = () => {
   ]
 
   return (
+    <LazyMotion features={domAnimation}>
     <div className="mx-auto max-w-[1600px] space-y-6">
-      <motion.section
+      <m.section
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         className="relative overflow-hidden rounded-[2rem] border border-slate-800/20 bg-gradient-to-br from-slate-900 via-primary-900 to-slate-800 p-6 text-white shadow-xl md:p-8"
@@ -208,7 +209,7 @@ const ManagerDashboard = () => {
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/70">Manager command center</p>
-            <h1 className="mt-2 text-3xl font-black md:text-4xl">
+            <h1 className="mt-2 text-3xl font-semibold md:text-4xl">
               Hello, {user?.name?.split(' ')[0] || 'Manager'}
             </h1>
             <p className="mt-2 max-w-xl text-sm text-white/75">
@@ -235,9 +236,9 @@ const ManagerDashboard = () => {
             </Button>
           </div>
         </div>
-      </motion.section>
+      </m.section>
 
-      <motion.div
+      <m.div
         initial="hidden"
         animate="visible"
         variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
@@ -246,7 +247,7 @@ const ManagerDashboard = () => {
         {metrics.map((m) => (
           <MetricCard key={m.title} {...m} />
         ))}
-      </motion.div>
+      </m.div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {quickLinks.map((link) => (
@@ -266,7 +267,7 @@ const ManagerDashboard = () => {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <section className="rounded-3xl border border-surface-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 xl:col-span-2">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-gray-950 dark:text-gray-100">7-day sales</h2>
+            <h2 className="text-lg font-semibold text-gray-950 dark:text-gray-100">7-day sales</h2>
             <span className="text-sm font-semibold text-primary-700">
               {formatRestaurantCurrency(model.totalRev)}
             </span>
@@ -298,7 +299,7 @@ const ManagerDashboard = () => {
         </section>
 
         <section className="rounded-3xl border border-surface-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-          <h2 className="text-lg font-bold text-gray-950 dark:text-gray-100">Kitchen pulse</h2>
+          <h2 className="text-lg font-semibold text-gray-950 dark:text-gray-100">Kitchen pulse</h2>
           <div className="mt-4 space-y-3">
             {[
               ['Pending', model.active.pending, 'text-amber-700 bg-amber-50'],
@@ -326,7 +327,7 @@ const ManagerDashboard = () => {
 
       <section className="rounded-3xl border border-surface-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="flex items-center justify-between border-b border-surface-100 px-5 py-4 dark:border-gray-800">
-          <h2 className="text-lg font-bold text-gray-950 dark:text-gray-100">Recent orders</h2>
+          <h2 className="text-lg font-semibold text-gray-950 dark:text-gray-100">Recent orders</h2>
           <Link to={`${managerBase}/orders`} className="text-sm font-semibold text-primary-700 hover:underline">
             View all
           </Link>
@@ -357,6 +358,7 @@ const ManagerDashboard = () => {
         </div>
       </section>
     </div>
+    </LazyMotion>
   )
 }
 

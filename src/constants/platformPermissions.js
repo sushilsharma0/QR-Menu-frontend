@@ -167,9 +167,10 @@ export const PLATFORM_PERMISSION_DEFS = [
   },
 ]
 
-export const BILLING_GRANULAR_PERMISSION_KEYS = PLATFORM_PERMISSION_DEFS.filter((d) => d.domain === 'billing').map(
-  (d) => d.key,
-)
+export const BILLING_GRANULAR_PERMISSION_KEYS = PLATFORM_PERMISSION_DEFS.reduce((keys, def) => {
+  if (def.domain === 'billing') keys.push(def.key)
+  return keys
+}, [])
 
 export const PERMISSION_KEYS = PLATFORM_PERMISSION_DEFS.map((d) => d.key)
 
@@ -223,9 +224,10 @@ export function groupPermissionDefs(defs = PLATFORM_PERMISSION_DEFS) {
  * Builds nested [{ domainId, meta, sections: [{ sectionLabel, defs[]] }] }] for editors.
  */
 export function nestPermissionsForUi(defs = PLATFORM_PERMISSION_DEFS) {
-  return PLATFORM_PERMISSION_DOMAIN_ORDER.map((domainId) => {
+  return PLATFORM_PERMISSION_DOMAIN_ORDER.reduce((groups, domainId) => {
     const meta = PLATFORM_DOMAIN_META[domainId]
     const inDomain = defs.filter((d) => d.domain === domainId)
+    if (!inDomain.length) return groups
 
     const sectionOrder = []
     const sectionBuckets = {}
@@ -243,6 +245,7 @@ export function nestPermissionsForUi(defs = PLATFORM_PERMISSION_DEFS) {
       defs: sectionBuckets[sectionLabel],
     }))
 
-    return { domainId, meta: meta || { title: domainId, hint: '' }, sections }
-  }).filter(({ sections }) => sections.some((s) => s.defs.length > 0))
+    groups.push({ domainId, meta: meta || { title: domainId, hint: '' }, sections })
+    return groups
+  }, [])
 }

@@ -1,28 +1,31 @@
 import React from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion'
 import { FiMonitor } from 'react-icons/fi'
 import Card from '../../common/Card'
 import DeviceSessionCard from './DeviceSessionCard'
 import { sectionMotionDelayed, listContainerVariants } from './deviceAnimations'
+
+const EMPTY_SESSIONS = []
 export default function ActiveSessionsSection({
-  sessions = [],
+  sessions = EMPTY_SESSIONS,
   loading,
   revoking,
   onRevoke,
 }) {
   return (
-    <motion.section {...sectionMotionDelayed(0.14)}>
+    <LazyMotion features={domAnimation}>
+    <m.section {...sectionMotionDelayed(0.14)}>
       <Card title="Active sessions" icon={FiMonitor}>
         {loading ? (
           <div className="flex justify-center py-12">
-            <motion.div
+            <m.div
               animate={{ rotate: 360 }}
               transition={{ repeat: Infinity, duration: 0.9, ease: 'linear' }}
               className="h-8 w-8 rounded-full border-2 border-primary-600 border-t-transparent"
             />
           </div>
         ) : sessions.length ? (
-          <motion.div
+          <m.div
             variants={listContainerVariants}
             initial="hidden"
             animate="show"
@@ -39,17 +42,18 @@ export default function ActiveSessionsSection({
                 />
               ))}
             </AnimatePresence>
-          </motion.div>
+          </m.div>
         ) : (
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="py-10 text-center text-sm text-gray-500 dark:text-gray-400"
           >
             No active sessions found.
-          </motion.div>
+          </m.div>
         )}
       </Card>
-    </motion.section>
+    </m.section>
+    </LazyMotion>
   )
 }

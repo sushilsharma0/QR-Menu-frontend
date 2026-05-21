@@ -1,6 +1,6 @@
-import React from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { LazyMotion, domAnimation, m } from 'framer-motion'
 import { FiFacebook, FiInstagram, FiLinkedin, FiTwitter } from 'react-icons/fi'
 import { ArrowRight, BookOpenText, ChefHat, QrCode, TabletSmartphone } from 'lucide-react'
 import BrandLogo from './BrandLogo'
@@ -13,16 +13,21 @@ const socials = [
   { label: 'Twitter', icon: FiTwitter, href: 'https://twitter.com' },
   { label: 'LinkedIn', icon: FiLinkedin, href: 'https://linkedin.com' },
 ]
-
 const LandingFooter = () => {
   const { softwareName, publicSiteUrl, footer: footerCopy } = useLandingBranding()
+  const [copyrightYear, setCopyrightYear] = useState('')
   const displayName = softwareName || 'QR Restro Nepal'
   const siteUrl = (publicSiteUrl || '').trim()
+
+  useEffect(() => {
+    setCopyrightYear(new Date().getFullYear())
+  }, [])
 
   return (
     <footer className="border-t border-surface-200 bg-surface-50/60 py-10 sm:py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <motion.div
+        <LazyMotion features={domAnimation}>
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-60px' }}
@@ -33,7 +38,7 @@ const LandingFooter = () => {
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-primary-700 sm:text-xs sm:tracking-[0.24em]">
               Get started
             </p>
-            <h3 className="mt-2 text-xl font-black leading-tight tracking-tight text-slate-950 sm:text-2xl md:text-3xl">
+            <h3 className="mt-2 text-xl font-semibold leading-tight tracking-tight text-slate-950 sm:text-2xl md:text-3xl">
               {footerCopy?.ctaTitle || 'Ready to Modernize Your Restaurant?'}
             </h3>
             <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
@@ -56,10 +61,10 @@ const LandingFooter = () => {
               Restaurant Login
             </Link>
           </div>
-        </motion.div>
+        </m.div>
 
         <div className="grid gap-8 sm:gap-10 md:grid-cols-2 lg:grid-cols-[1.2fr_0.8fr_1fr]">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -101,15 +106,15 @@ const LandingFooter = () => {
                 Platform CMS
               </span>
             </div>
-          </motion.div>
+          </m.div>
 
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 sm:text-sm sm:tracking-[0.22em]">
+            <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500 sm:text-sm sm:tracking-[0.22em]">
               Quick Links
             </h3>
             <div className="mt-4 grid gap-2.5 sm:mt-5 sm:gap-3">
@@ -129,28 +134,28 @@ const LandingFooter = () => {
                 Vendor Login
               </Link>
             </div>
-          </motion.div>
+          </m.div>
 
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 sm:text-sm sm:tracking-[0.22em]">
+            <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500 sm:text-sm sm:tracking-[0.22em]">
               Platform Vision
             </h3>
             <p className="mt-3 text-sm leading-7 text-slate-600 sm:mt-4">
               Helping restaurants across Nepal deliver faster service, cleaner operations, and better guest experiences through smart digital ordering.
             </p>
-            <h4 className="mt-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 sm:mt-5 sm:text-xs sm:tracking-[0.2em]">
+            <h4 className="mt-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 sm:mt-5 sm:text-xs sm:tracking-[0.2em]">
               Social
             </h4>
             <div className="mt-3 flex flex-wrap gap-2.5 sm:mt-5 sm:gap-3">
               {socials.map((social, index) => {
                 const Icon = social.icon
                 return (
-                  <motion.a
+                  <m.a
                     key={social.label}
                     href={social.href}
                     target="_blank"
@@ -165,19 +170,20 @@ const LandingFooter = () => {
                     className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition-all hover:border-primary-200 hover:text-primary-700 sm:h-12 sm:w-12"
                   >
                     <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </motion.a>
+                  </m.a>
                 )
               })}
             </div>
             <p className="mt-5 text-[11px] font-semibold text-slate-500 sm:mt-6 sm:text-xs">
-              © {new Date().getFullYear()} {displayName}. Built for modern restaurants.
+              Â© {copyrightYear || '2026'} {displayName}. Built for modern restaurants.
             </p>
-          </motion.div>
+          </m.div>
         </div>
 
         <div className="mt-8 border-t border-surface-200 pt-4 text-center text-[11px] font-semibold text-slate-500 sm:mt-10 sm:pt-5 sm:text-xs">
-          <p>© {new Date().getFullYear()} {displayName}</p>
+          <p>Â© {copyrightYear || '2026'} {displayName}</p>
         </div>
+        </LazyMotion>
       </div>
     </footer>
   )

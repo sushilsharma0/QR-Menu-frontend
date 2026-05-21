@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FiPrinter } from "react-icons/fi";
 import api from "../../services/api";
 
@@ -35,7 +35,8 @@ const shortDisplayUrl = (value) => {
 };
 
 const PrintQRButton = ({ qrModal, qrUrl, restaurant }) => {
-  const [qrRestaurant, setQrRestaurant] = useState(null);
+  const qrRestaurantRef = useRef(null);
+  const [qrRestaurantLoadedAt, setQrRestaurantLoadedAt] = useState(0);
 
   useEffect(() => {
     if (qrModal.table?.qrToken) {
@@ -46,7 +47,8 @@ const PrintQRButton = ({ qrModal, qrUrl, restaurant }) => {
   const fetchRestaurantData = async () => {
     try {
       const res = await api.get(`/restaurant/tables/qr/${qrModal.table?.qrToken}`);
-      setQrRestaurant(res.data.data);
+      qrRestaurantRef.current = res.data.data;
+      setQrRestaurantLoadedAt(Date.now());
     } catch (error) {
       console.error("Failed to fetch restaurant data:", error);
     }
@@ -56,14 +58,14 @@ const PrintQRButton = ({ qrModal, qrUrl, restaurant }) => {
     const table = qrModal.table || {};
     return {
       restaurantName: cleanPrintableText(
-        restaurant?.name || qrRestaurant?.restaurantName || table.restaurantName,
+        restaurant?.name || qrRestaurantRef.current?.restaurantName || table.restaurantName,
         "Restaurant"
       ),
       restaurantLogo: cleanPrintableText(
-        restaurant?.logo || qrRestaurant?.restaurantLogo || table.restaurantLogo
+        restaurant?.logo || qrRestaurantRef.current?.restaurantLogo || table.restaurantLogo
       ),
       restaurantTagline: cleanPrintableText(
-        restaurant?.tagline || restaurant?.description || qrRestaurant?.restaurantTagline,
+        restaurant?.tagline || restaurant?.description || qrRestaurantRef.current?.restaurantTagline,
         "Scan, choose, and order from your table"
       ),
       tableNumber: cleanPrintableText(table.tableNumber, "N/A"),
@@ -71,16 +73,11 @@ const PrintQRButton = ({ qrModal, qrUrl, restaurant }) => {
       qrUrl: cleanPrintableText(qrUrl),
       qrUrlDisplay: shortDisplayUrl(qrUrl),
     };
-  }, [qrModal.table, qrRestaurant, qrUrl, restaurant]);
+  }, [qrModal.table, qrRestaurantLoadedAt, qrUrl, restaurant]);
 
   const handlePrint = () => {
     const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
-    iframe.style.border = "0";
+    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
     document.body.appendChild(iframe);
 
     const printContent = `

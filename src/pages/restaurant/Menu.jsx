@@ -116,7 +116,7 @@ function MenuMetricCard({ label, value, sub, icon: Icon, accent }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
-          <p className="mt-2 text-2xl font-bold text-gray-950">{value}</p>
+          <p className="mt-2 text-2xl font-semibold text-gray-950">{value}</p>
           {sub && <p className="mt-1 text-xs text-gray-500">{sub}</p>}
         </div>
         <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${accent} text-white shadow-md`}>
@@ -349,7 +349,7 @@ const Menu = () => {
                 <FiGrid className="h-4 w-4" />
                 Menu Studio
               </div>
-              <h1 className="mt-3 text-3xl font-bold tracking-tight text-gray-950">Menu Management</h1>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-gray-950">Menu Management</h1>
               <p className="mt-2 max-w-3xl text-sm text-gray-500">
                 Organize dishes, availability, prices, and categories with a cleaner card or list workflow.
               </p>
@@ -581,12 +581,12 @@ const Menu = () => {
                     <div className="p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="font-bold text-gray-950">{item.name}</p>
+                          <p className="font-semibold text-gray-950">{item.name}</p>
                           <p className="mt-1 text-sm text-gray-500">{categoryLabel}</p>
                         </div>
                         <div className="inline-flex items-center gap-1.5 rounded-xl bg-primary-50 px-3 py-1.5 text-primary-700">
                           <FiTag className="h-4 w-4" />
-                          <span className="text-lg font-bold">{formatRestaurantCurrency(item.price)}</span>
+                          <span className="text-lg font-semibold">{formatRestaurantCurrency(item.price)}</span>
                         </div>
                       </div>
                       {item.description && (
@@ -653,7 +653,7 @@ const Menu = () => {
                           </div>
                         </td>
                         <td className="px-5 py-4 text-sm text-gray-600">{categoryLabel}</td>
-                        <td className="px-5 py-4 font-bold text-primary-700">
+                        <td className="px-5 py-4 font-semibold text-primary-700">
                           {formatRestaurantCurrency(item.price)}
                         </td>
                         <td className="px-5 py-4 text-sm text-gray-600">

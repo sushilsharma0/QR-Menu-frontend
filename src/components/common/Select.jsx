@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useId, useLayoutEffect, useMemo, useReducer, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { FiChevronDown } from 'react-icons/fi'
 
@@ -23,6 +23,25 @@ function optionsEqual(a, b) {
   if (a === b) return true
   if (a == null || b == null) return String(a) === String(b)
   return String(a) === String(b)
+}
+
+function selectReducer(state, action) {
+  switch (action.type) {
+    case 'setOpen':
+      return { ...state, open: typeof action.value === 'function' ? action.value(state.open) : action.value }
+    case 'setEntered':
+      return { ...state, entered: action.value }
+    case 'setMenuPos':
+      return { ...state, menuPos: action.value }
+    case 'setOptionFilter':
+      return { ...state, optionFilter: action.value }
+    case 'setUncontrolledVal':
+      return { ...state, uncontrolledVal: action.value }
+    case 'resetOpenState':
+      return { ...state, entered: false, optionFilter: '' }
+    default:
+      return state
+  }
 }
 
 /**
@@ -56,13 +75,21 @@ export default function Select({
   const containerRef = useRef(null)
   /** Portal menu node — must be included in “inside” checks (not under containerRef). */
   const menuRef = useRef(null)
-  const [open, setOpen] = useState(false)
-  const [entered, setEntered] = useState(false)
-  const [menuPos, setMenuPos] = useState({ top: 0, left: 0, width: 0 })
-  const [optionFilter, setOptionFilter] = useState('')
   const searchInputRef = useRef(null)
   const uncontrolled = valueProp === undefined
-  const [uncontrolledVal, setUncontrolledVal] = useState(defaultValue ?? '')
+  const [selectState, dispatchSelect] = useReducer(selectReducer, {
+    open: false,
+    entered: false,
+    menuPos: { top: 0, left: 0, width: 0 },
+    optionFilter: '',
+    uncontrolledVal: defaultValue ?? '',
+  })
+  const { open, entered, menuPos, optionFilter, uncontrolledVal } = selectState
+  const setOpen = (value) => dispatchSelect({ type: 'setOpen', value })
+  const setEntered = (value) => dispatchSelect({ type: 'setEntered', value })
+  const setMenuPos = (value) => dispatchSelect({ type: 'setMenuPos', value })
+  const setOptionFilter = (value) => dispatchSelect({ type: 'setOptionFilter', value })
+  const setUncontrolledVal = (value) => dispatchSelect({ type: 'setUncontrolledVal', value })
   const value = uncontrolled ? uncontrolledVal : valueProp
 
   const opts = useMemo(() => {
@@ -110,8 +137,7 @@ export default function Select({
 
   useLayoutEffect(() => {
     if (!open) {
-      setEntered(false)
-      setOptionFilter('')
+      dispatchSelect({ type: 'resetOpenState' })
       return
     }
     updateMenuPosition()
@@ -177,7 +203,6 @@ export default function Select({
     title: titleAttr,
     'aria-label': ariaLabelProp,
     name: nameProp,
-    autoFocus,
     required: requiredProp,
   } = rest
 
@@ -234,7 +259,6 @@ export default function Select({
             {...(uncontrolled ? { defaultValue: defaultValue ?? '' } : { value: valueProp ?? '' })}
             title={titleAttr}
             name={nameProp}
-            autoFocus={autoFocus}
             required={requiredProp}
             aria-label={ariaLabelProp}
           >
@@ -389,7 +413,6 @@ export default function Select({
             ? { 'aria-labelledby': `${selectId}-label` }
             : { 'aria-label': ariaLabelProp || label || 'Select' })}
           title={titleAttr}
-          autoFocus={autoFocus}
           onClick={() => {
             if (disabled) return
             setOpen((o) => !o)

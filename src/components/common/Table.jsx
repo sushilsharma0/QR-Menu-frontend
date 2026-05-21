@@ -14,9 +14,9 @@ const Table = ({ columns, data, loading = false, onRowClick }) => {
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
         <thead className="bg-gray-50 dark:bg-gray-800">
           <tr>
-            {columns.map((column, index) => (
+            {columns.map((column) => (
               <th
-                key={index}
+                key={column.accessor || column.header}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                 style={{ width: column.width }}
               >
@@ -35,12 +35,12 @@ const Table = ({ columns, data, loading = false, onRowClick }) => {
           ) : (
             data.map((row, rowIndex) => (
               <tr
-                key={rowIndex}
+                key={row.id || row._id || row.key || row.slug || rowIndex}
                 onClick={() => onRowClick?.(row)}
                 className={onRowClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800' : ''}
               >
-                {columns.map((column, colIndex) => (
-                  <td key={colIndex} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                {columns.map((column) => (
+                  <td key={column.accessor || column.header} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     {column.render ? column.render(row) : row[column.accessor]}
                   </td>
                 ))}

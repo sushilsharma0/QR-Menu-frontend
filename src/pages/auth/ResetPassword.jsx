@@ -7,6 +7,8 @@ import api from '../../services/api'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 
+const RESET_CODE_DIGIT_IDS = ['reset-code-1', 'reset-code-2', 'reset-code-3', 'reset-code-4', 'reset-code-5', 'reset-code-6']
+
 const ResetPassword = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -14,8 +16,8 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState('code')
   const [verifiedEmail, setVerifiedEmail] = useState(initialEmail)
-  const [verifiedOtp, setVerifiedOtp] = useState('')
-  const [otpDigits, setOtpDigits] = useState(Array(6).fill(''))
+  const verifiedOtpRef = useRef('')
+  const [otpDigits, setOtpDigits] = useState(() => Array(6).fill(''))
   const otpRefs = useRef([])
   const {
     register,
@@ -78,7 +80,7 @@ const ResetPassword = () => {
         otp,
       })
       setVerifiedEmail(data.email)
-      setVerifiedOtp(otp)
+      verifiedOtpRef.current = otp
       setStep('password')
       toast.success('Code verified. Create your new password.')
     } catch (error) {
@@ -112,7 +114,7 @@ const ResetPassword = () => {
       setLoading(true)
       await api.post('/restaurant/auth/reset-password', {
         email: verifiedEmail,
-        otp: verifiedOtp,
+        otp: verifiedOtpRef.current,
         newPassword: data.newPassword,
       })
       toast.success('Password reset successful. Please sign in.')
@@ -129,7 +131,7 @@ const ResetPassword = () => {
     <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_left,#ecfeff,transparent_32%),linear-gradient(135deg,#f8fafc,#ffffff_44%,#f0fdf4)] p-4 text-gray-950 dark:bg-gray-950 dark:bg-none dark:text-gray-100">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-950 dark:text-white">
+          <h1 className="text-3xl font-semibold text-gray-950 dark:text-white">
             {step === 'code' ? 'Verify Reset Code' : 'Create New Password'}
           </h1>
           <p className="mt-2 text-gray-500 dark:text-gray-400">
@@ -152,26 +154,27 @@ const ResetPassword = () => {
               />
 
               <div>
-                <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label htmlFor="reset-code-1" className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                   <FiKey className="h-4 w-4 text-emerald-600" />
                   Reset Code
                 </label>
                 <div className="grid grid-cols-6 gap-2 sm:gap-3" onPaste={handleOtpPaste}>
-                  {otpDigits.map((digit, index) => (
+                  {RESET_CODE_DIGIT_IDS.map((inputId, index) => (
                     <input
-                      key={index}
+                      key={inputId}
                       ref={(node) => {
                         otpRefs.current[index] = node
                       }}
+                      id={inputId}
                       type="text"
                       inputMode="numeric"
                       autoComplete={index === 0 ? 'one-time-code' : 'off'}
                       maxLength={1}
-                      value={digit}
+                      value={otpDigits[index]}
                       onChange={(event) => updateOtpDigit(index, event.target.value)}
                       onKeyDown={(event) => handleOtpKeyDown(index, event)}
                       aria-label={`Reset code digit ${index + 1}`}
-                      className="aspect-square w-full rounded-lg border border-gray-300 bg-white text-center text-2xl font-bold text-gray-950 shadow-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                      className="aspect-square w-full rounded-lg border border-gray-300 bg-white text-center text-2xl font-semibold text-gray-950 shadow-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                     />
                   ))}
                 </div>

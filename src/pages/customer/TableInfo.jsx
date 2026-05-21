@@ -9,7 +9,7 @@ const TableInfo = () => {
         <button className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
           <ArrowLeft size={20} className="text-gray-700" />
         </button>
-        <h1 className="ml-4 text-lg font-bold text-gray-800">Table Information</h1>
+        <h1 className="ml-4 text-lg font-semibold text-gray-800">Table Information</h1>
       </header>
 
       <div className="flex flex-col items-center px-8 pt-12 text-center">
@@ -37,7 +37,7 @@ const TableInfo = () => {
         {/* Table Number Display */}
         <div className="mt-4">
           <p className="text-sm font-medium text-gray-400">You are sitting at</p>
-          <h2 className="text-7xl font-black text-orange-500 my-2">05</h2>
+          <h2 className="text-7xl font-semibold text-orange-500 my-2">05</h2>
           
           <button className="flex items-center gap-2 text-gray-400 text-[11px] font-bold hover:text-orange-500 transition-colors mx-auto uppercase tracking-wider">
             <RefreshCcw size={12} /> Scan another QR code
@@ -54,7 +54,7 @@ const TableInfo = () => {
           <div className="relative z-10 flex flex-col items-center">
             <div className="flex items-center gap-2 mb-2">
                <MapPin size={14} className="text-orange-500" />
-               <h3 className="font-bold text-gray-800">Need help?</h3>
+               <h3 className="font-semibold text-gray-800">Need help?</h3>
             </div>
             <p className="text-xs text-gray-500 mb-6 max-w-50">
               Our staff is here to assist you. Tap the button below to call a waiter to Table 05.

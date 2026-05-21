@@ -159,7 +159,7 @@ export default function InvoiceDocument({ invoice, onBack }) {
                 </tr>
               ) : (
                 lineItems.map((line, i) => (
-                  <tr key={i}>
+                  <tr key={line.id || line._id || line.description || `line-${i}`}>
                     <td className="col-sn">{i + 1}</td>
                     <td className="col-desc">{line.description}</td>
                     <td className="col-qty">{line.quantity ?? 1}</td>

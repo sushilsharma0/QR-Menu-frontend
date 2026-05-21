@@ -33,6 +33,11 @@ function formatStaff(tx) {
   return 'Owner / system'
 }
 
+const formatTransactionDate = (value) => new Intl.DateTimeFormat(undefined, {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+}).format(new Date(value))
+
 const CashierTransactions = () => {
   const navigate = useNavigate()
   const { cashierBase } = useTenantRoutes()
@@ -105,7 +110,7 @@ const CashierTransactions = () => {
     <div className="w-full space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50 sm:text-3xl">Transaction history</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-50 sm:text-3xl">Transaction history</h1>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
             Every successful payment appears here, including tickets closed by other cashiers.
           </p>
@@ -145,8 +150,9 @@ const CashierTransactions = () => {
           </div>
           <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6 lg:gap-4">
             <div className="lg:col-span-2">
-              <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-400">Search</label>
+              <label htmlFor="cashier-transactions-search" className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-400">Search</label>
               <Input
+                id="cashier-transactions-search"
                 icon={FiSearch}
                 placeholder="Receipt # or order #"
                 value={q}
@@ -155,8 +161,9 @@ const CashierTransactions = () => {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-400">Method</label>
+              <label htmlFor="cashier-transactions-method" className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-400">Method</label>
               <select
+                id="cashier-transactions-method"
                 value={method}
                 onChange={(e) => {
                   setMethod(e.target.value)
@@ -172,8 +179,9 @@ const CashierTransactions = () => {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-400">Status</label>
+              <label htmlFor="cashier-transactions-status" className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-400">Status</label>
               <select
+                id="cashier-transactions-status"
                 value={status}
                 onChange={(e) => {
                   setStatus(e.target.value)
@@ -189,11 +197,12 @@ const CashierTransactions = () => {
               </select>
             </div>
             <div>
-              <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-gray-600 dark:text-gray-400">
+              <label htmlFor="cashier-transactions-start" className="mb-1 flex items-center gap-1 text-xs font-semibold text-gray-600 dark:text-gray-400">
                 <FiCalendar className="h-3.5 w-3.5" />
                 From
               </label>
               <input
+                id="cashier-transactions-start"
                 type="date"
                 value={startDate}
                 onChange={(e) => {
@@ -204,8 +213,9 @@ const CashierTransactions = () => {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-400">To</label>
+              <label htmlFor="cashier-transactions-end" className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-400">To</label>
               <input
+                id="cashier-transactions-end"
                 type="date"
                 value={endDate}
                 onChange={(e) => {
@@ -251,7 +261,7 @@ const CashierTransactions = () => {
                   return (
                     <tr key={tx._id} className="bg-white dark:bg-gray-950/40">
                       <td className="whitespace-nowrap px-4 py-3 text-gray-600 dark:text-gray-400">
-                        {new Date(tx.createdAt).toLocaleString()}
+                        {formatTransactionDate(tx.createdAt)}
                       </td>
                       <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-900 dark:text-gray-100">
                         {tx.receiptNo}
@@ -283,7 +293,7 @@ const CashierTransactions = () => {
         </div>
 
         {pagination.pages > 1 && (
-          <div className="flex flex-col items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:flex-row dark:border-gray-800">
+          <div className="flex flex-col items-center justify-between gap-3 border-t border-gray-100 p-4 sm:flex-row dark:border-gray-800">
             <p className="text-xs text-gray-500">
               Page {pagination.page} of {pagination.pages} ({pagination.total} total)
             </p>
