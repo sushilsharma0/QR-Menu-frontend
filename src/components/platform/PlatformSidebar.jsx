@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { FiAward, FiChevronDown, FiChevronLeft, FiChevronRight, FiCoffee, FiMenu, FiX } from 'react-icons/fi'
 import { useAuth } from '../../hooks/useAuth'
@@ -437,14 +437,20 @@ const PlatformSidebar = () => {
     subscriptionRequests: 0,
     paymentReviews: 0,
   })
+  const badgeFetchStateRef = useRef({ inFlight: false, lastFetchAt: 0 })
 
   useEffect(() => {
     if (user?.role !== 'super_admin' && user?.role !== 'admin') return undefined
 
     let cancelled = false
-    const fetchCounts = async () => {
+    const fetchCounts = async ({ force = false } = {}) => {
       try {
         if (cancelled) return
+        const now = Date.now()
+        const state = badgeFetchStateRef.current
+        if (state.inFlight || (!force && now - state.lastFetchAt < 10000)) return
+        state.inFlight = true
+        state.lastFetchAt = now
         const [kycRes, requestsRes, paymentsRes] = await Promise.all([
           api.get('/platform/kyc/stats', { skipErrorToast: true }).catch(() => null),
           api.get('/platform/subscriptions/requests/pending', { skipErrorToast: true }).catch(() => null),
@@ -463,11 +469,13 @@ const PlatformSidebar = () => {
         })
       } catch {
         // Sidebar badges are best-effort.
+      } finally {
+        badgeFetchStateRef.current.inFlight = false
       }
     }
 
-    fetchCounts()
-    const intervalId = window.setInterval(fetchCounts, COUNT_REFRESH_MS)
+    fetchCounts({ force: true })
+    const intervalId = window.setInterval(() => fetchCounts({ force: true }), COUNT_REFRESH_MS)
     window.addEventListener('focus', fetchCounts)
     return () => {
       cancelled = true
