@@ -7,6 +7,7 @@ import {
   FiClock,
   FiCreditCard,
   FiFileText,
+  FiGift,
   FiRefreshCw,
   FiShield,
   FiStar,
@@ -475,6 +476,24 @@ const Subscription = () => {
             {currentPlan?.isTrialActive && !currentPlan?.hasPaidPlanActive && (
               <Notice tone="green" icon={FiZap} title="Free trial active">
                 <strong>{currentPlan.trialDaysLeft}</strong> day(s) remaining. Choose a paid plan before trial ends to keep full access.
+              </Notice>
+            )}
+
+            {currentPlan?.referralBenefit?.status === 'pending' && (
+              <Notice tone="green" icon={FiGift} title="Referral benefit pending">
+                {currentPlan.referralBenefit.message}
+                {currentPlan.referralBenefit.role === 'referrer' && currentPlan.referralBenefit.referredRestaurantName ? (
+                  <>
+                    <br />
+                    Referred restaurant: <strong>{currentPlan.referralBenefit.referredRestaurantName}</strong>
+                  </>
+                ) : null}
+                {currentPlan.referralBenefit.role === 'referred' && currentPlan.referralBenefit.referrerRestaurantName ? (
+                  <>
+                    <br />
+                    Referral from: <strong>{currentPlan.referralBenefit.referrerRestaurantName}</strong>
+                  </>
+                ) : null}
               </Notice>
             )}
 

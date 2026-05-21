@@ -9,6 +9,7 @@ import {
   FiClock,
   FiCreditCard,
   FiGrid,
+  FiGift,
   FiLock,
   FiRefreshCw,
   FiShoppingBag,
@@ -496,6 +497,25 @@ const RestaurantDetail = () => {
               {restaurant?.requestedPlan && (
                 <div className="rounded-2xl bg-yellow-50 p-4 text-sm text-yellow-800">
                   Requested plan: <strong>{restaurant.requestedPlan.name}</strong>
+                </div>
+              )}
+              {restaurant?.referralBenefit?.status === 'pending' && (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-100">
+                  <div className="flex gap-3">
+                    <FiGift className="mt-0.5 h-5 w-5 flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold">Referral benefit pending</p>
+                      <p className="mt-1">
+                        {restaurant.referralBenefit.message}
+                      </p>
+                      <p className="mt-2 text-xs">
+                        {restaurant.referralBenefit.role === 'referrer'
+                          ? `Referred restaurant: ${restaurant.referralBenefit.referredRestaurantName || 'N/A'}`
+                          : `Referral from: ${restaurant.referralBenefit.referrerRestaurantName || 'N/A'}`}
+                        {restaurant.referralBenefit.referralCode ? ` - Code: ${restaurant.referralBenefit.referralCode}` : ''}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
               {restaurant?.planFeatureFlags && Object.keys(restaurant.planFeatureFlags).length > 0 && (
