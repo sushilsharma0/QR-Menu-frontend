@@ -7,6 +7,7 @@ import {
   FiBriefcase,
   FiCheckCircle,
   FiCoffee,
+  FiGift,
   FiKey,
   FiLock,
   FiMail,
@@ -108,12 +109,15 @@ const Register = () => {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [resending, setResending] = useState(false)
+  const [checkingReferral, setCheckingReferral] = useState(false)
+  const [referralStatus, setReferralStatus] = useState(null)
   const [step, setStep] = useState('details')
   const [pendingEmail, setPendingEmail] = useState('')
   const [otpDigits, setOtpDigits] = useState(() => Array(6).fill(''))
   const otpRefs = useRef([])
   const { register, handleSubmit, watch, formState: { errors } } = useForm()
   const password = watch('password')
+  const referralCodeValue = watch('referralCode')
 
   const onSubmit = async (data) => {
     try {
@@ -124,6 +128,7 @@ const Register = () => {
         phone: data.phone,
         password: data.password,
         address: data.address,
+        referralCode: data.referralCode,
         previousEmail: pendingEmail || undefined,
       })
       setPendingEmail(response.data?.data?.email || data.email)
@@ -228,6 +233,36 @@ const Register = () => {
     }
   }
 
+  const checkReferralCode = async () => {
+    const code = String(referralCodeValue || '').trim()
+    if (!code) {
+      setReferralStatus(null)
+      toast.error('Enter referral code first')
+      return
+    }
+
+    try {
+      setCheckingReferral(true)
+      const response = await api.post('/restaurant/auth/check-referral-code', {
+        referralCode: code,
+      })
+      const restaurantName = response.data?.data?.restaurantName
+      setReferralStatus({
+        type: 'success',
+        message: restaurantName ? `Valid code from ${restaurantName}` : 'Referral code is valid',
+      })
+      toast.success('Referral code is valid')
+    } catch (error) {
+      setReferralStatus({
+        type: 'error',
+        message: error.response?.data?.message || 'Referral code is invalid',
+      })
+      toast.error(error.response?.data?.message || 'Referral code is invalid')
+    } finally {
+      setCheckingReferral(false)
+    }
+  }
+
 const leftFeatures = [
     { icon: FiCoffee, title: 'Menu Setup', desc: 'Create digital menus and ordering flows' },
     { icon: FiUsers, title: 'Team Ready', desc: 'Invite kitchen, cashier, and waiter staff' },
@@ -236,7 +271,7 @@ const leftFeatures = [
 
 const OTP_SLOT_KEYS = ['otp-1', 'otp-2', 'otp-3', 'otp-4', 'otp-5', 'otp-6']
 
-  const benefitCards = ['7-day trial', 'KYC ready', 'Staff tools']
+  const benefitCards = ['Free trial', 'KYC ready', 'Referral month']
 
   return (
     <div className="flex min-h-screen overflow-hidden bg-white font-sans">
@@ -352,10 +387,6 @@ const OTP_SLOT_KEYS = ['otp-1', 'otp-2', 'otp-3', 'otp-4', 'otp-5', 'otp-6']
 
       <div className="flex flex-1 items-start justify-center overflow-y-auto px-6 py-12 lg:pl-20 lg:pr-24 lg:pt-16">
         <section className="w-full max-w-[520px] space-y-6">
-          <Link to="/vendor/login" className="inline-flex items-center gap-2 text-sm font-semibold text-[#8f2a05] hover:text-[#5f1d08]">
-            <FiArrowLeft className="h-4 w-4" />
-            Back to vendor login
-          </Link>
 
           <div className="flex items-center gap-4">
             <span className="flex h-16 w-16 items-center justify-center rounded-xl border border-[#f1b089]/40 bg-[#fff7ed] text-[#a43a12] shadow-sm">
@@ -452,6 +483,43 @@ const OTP_SLOT_KEYS = ['otp-1', 'otp-2', 'otp-3', 'otp-4', 'otp-5', 'otp-6']
                 {...register('address', { required: 'Address is required' })}
                 error={errors.address?.message}
               />
+
+              <div className="max-w-md">
+                <label htmlFor="referral-code" className="mb-1 block text-sm font-medium text-gray-700">
+                  Referral Code
+                </label>
+                <div className="flex overflow-hidden rounded-lg border border-gray-300 bg-white shadow-sm focus-within:border-[#9a3412] focus-within:ring-2 focus-within:ring-[#9a3412]/25">
+                  <div className="flex items-center pl-3 text-gray-400">
+                    <FiGift className="h-4 w-4" />
+                  </div>
+                  <input
+                    id="referral-code"
+                    type="text"
+                    placeholder="Optional code"
+                    className="min-w-0 flex-1 border-0 px-3 py-2 text-sm font-semibold uppercase tracking-wide text-gray-900 outline-none placeholder:font-normal placeholder:normal-case placeholder:tracking-normal"
+                    {...register('referralCode', {
+                      onChange: () => setReferralStatus(null),
+                    })}
+                  />
+                  <button
+                    type="button"
+                    onClick={checkReferralCode}
+                    disabled={checkingReferral || !String(referralCodeValue || '').trim()}
+                    className="shrink-0 border-l border-gray-200 bg-[#fff7ed] px-3 text-xs font-bold text-[#8f2a05] transition hover:bg-[#fde6d3] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {checkingReferral ? 'Checking' : 'Check'}
+                  </button>
+                </div>
+                {(errors.referralCode?.message || referralStatus?.message) && (
+                  <p
+                    className={`mt-1 text-xs ${
+                      referralStatus?.type === 'success' ? 'text-green-700' : 'text-red-600'
+                    }`}
+                  >
+                    {errors.referralCode?.message || referralStatus?.message}
+                  </p>
+                )}
+              </div>
 
               <button
                 type="submit"
