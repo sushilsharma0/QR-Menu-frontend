@@ -8,6 +8,7 @@ import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import Card from '../../components/common/Card'
 import MenuImageSuggestions from '../../components/restaurant/MenuImageSuggestions'
+import DescriptionFieldWithSuggestion from '../../components/restaurant/DescriptionFieldWithSuggestion'
 import { useMenuImageSuggestions } from '../../hooks/useMenuImageSuggestions'
 
 const IMAGE_MAX_BYTES = 1 * 1024 * 1024
@@ -136,10 +137,14 @@ const CategoryForm = () => {
             onSelect={handleSuggestedImageSelect}
           />
 
-          <Input
+          <DescriptionFieldWithSuggestion
             label="Description"
+            kind="category"
+            name={watchedName}
+            register={register}
+            setValue={setValue}
+            watch={watch}
             placeholder="Enter description (optional)"
-            {...register('description')}
             error={errors.description?.message}
           />
 

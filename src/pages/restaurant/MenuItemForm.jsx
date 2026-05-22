@@ -7,8 +7,8 @@ import api from '../../services/api'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import Card from '../../components/common/Card'
-import Textarea from '../../components/common/Textarea'
 import MenuImageSuggestions from '../../components/restaurant/MenuImageSuggestions'
+import DescriptionFieldWithSuggestion from '../../components/restaurant/DescriptionFieldWithSuggestion'
 import { useMenuImageSuggestions } from '../../hooks/useMenuImageSuggestions'
 
 const IMAGE_MAX_BYTES = 1 * 1024 * 1024
@@ -231,6 +231,8 @@ const MenuItemForm = () => {
   const { loading, categories, imagePreview, dietaryTags, variationGroups, nutrition } = state
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm()
   const watchedName = watch('name', '')
+  const watchedCategoryId = watch('category', '')
+  const categoryName = categories.find((cat) => String(cat._id) === String(watchedCategoryId))?.name || ''
   const imageSuggestionQuery = String(watchedName || '').trim()
   const {
     suggestions: imageSuggestions,
@@ -430,7 +432,17 @@ const MenuItemForm = () => {
             </select>
             {errors.category && <p className="mt-1 text-sm text-red-600">{errors.category.message}</p>}
           </div>
-          <Textarea label="Description" rows={4} placeholder="Write something..." {...register('description')} error={errors.description?.message} />
+          <DescriptionFieldWithSuggestion
+            label="Description"
+            kind="menuItem"
+            name={watchedName}
+            categoryName={categoryName}
+            register={register}
+            setValue={setValue}
+            watch={watch}
+            placeholder="Write something..."
+            error={errors.description?.message}
+          />
           <div className="grid grid-cols-2 gap-4">
             <Input label="Price" type="number" step="0.01" placeholder="0.00" {...register('price', { required: 'Price is required', min: 0 })} error={errors.price?.message} />
             <Input label="Original Price (Optional)" type="number" step="0.01" placeholder="0.00" {...register('originalPrice')} />
