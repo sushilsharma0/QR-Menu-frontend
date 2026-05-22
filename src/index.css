@@ -410,6 +410,34 @@ a {
   touch-action: manipulation;
 }
 
+button[data-click-loading="true"]::before,
+button[data-loading="true"]::before,
+button[aria-busy="true"]::before {
+  content: "";
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.45em;
+  flex: 0 0 auto;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 9999px;
+  vertical-align: -0.15em;
+  animation: button-spinner 0.65s linear infinite;
+}
+
+button[data-click-loading="true"]:empty::before,
+button[data-loading="true"]:empty::before,
+button[aria-busy="true"]:empty::before {
+  margin-right: 0;
+}
+
+@keyframes button-spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .customer-panel-scroll {
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;

@@ -98,9 +98,19 @@ const EmployeeForm = () => {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">{id ? 'Edit' : 'Add'} Employee</h1>
-        <p className="mt-1 text-gray-500">Create a polished staff profile for the restaurant team.</p>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">{id ? 'Edit' : 'Add'} Employee</h1>
+          <p className="mt-1 text-gray-500">Create a polished staff profile for the restaurant team.</p>
+        </div>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => navigate(`${restaurantBase}/employees`)}
+          className="self-start"
+        >
+          Cancel
+        </Button>
       </div>
 
       <Card>

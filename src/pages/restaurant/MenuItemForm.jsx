@@ -374,9 +374,19 @@ const MenuItemForm = () => {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">{id ? 'Edit' : 'Add'} Menu Item</h1>
-        <p className="text-gray-500 mt-1">Create or update menu item details</p>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">{id ? 'Edit' : 'Add'} Menu Item</h1>
+          <p className="text-gray-500 mt-1">Create or update menu item details</p>
+        </div>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => navigate(`${restaurantBase}/menu`)}
+          className="self-start"
+        >
+          Cancel
+        </Button>
       </div>
 
       <Card>

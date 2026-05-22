@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import api from "./services/api";
 import { useTheme } from "./context/ThemeContext";
+import useGlobalButtonSpinner from "./hooks/useGlobalButtonSpinner";
 
 // Auth Pages
 import Login from "./pages/auth/Login";
@@ -130,6 +131,7 @@ import SubscriptionPaymentCallback from "./pages/restaurant/SubscriptionPaymentC
 function App() {
   const { user, isLoading, mergeUser } = useAuth();
   const { applyRemoteTheme } = useTheme();
+  useGlobalButtonSpinner();
   const themeProfileLoadedFor = useRef("");
   const isEmployeeUser =
     user?.scope === "employee" ||

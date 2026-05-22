@@ -88,9 +88,11 @@ const CategoryForm = () => {
 
   return (
     <div className="max-w-md mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">{id ? 'Edit' : 'Add'} Category</h1>
-        <p className="text-gray-500 mt-1">Create or update menu category</p>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">{id ? 'Edit' : 'Add'} Category</h1>
+          <p className="text-gray-500 mt-1">Create or update menu category</p>
+        </div>
       </div>
 
       <Card>
