@@ -7,6 +7,8 @@ import api from '../../services/api'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import Card from '../../components/common/Card'
+import MenuImageSuggestions from '../../components/restaurant/MenuImageSuggestions'
+import { useMenuImageSuggestions } from '../../hooks/useMenuImageSuggestions'
 
 const IMAGE_MAX_BYTES = 1 * 1024 * 1024
 
@@ -17,7 +19,16 @@ const CategoryForm = () => {
   const [loading, setLoading] = useState(false)
   const [imagePreview, setImagePreview] = useState(null)
   const selectedFileRef = useRef(null)
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm()
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm()
+  const watchedName = watch('name', '')
+  const imageSuggestionQuery = String(watchedName || '').trim()
+  const {
+    suggestions: imageSuggestions,
+    loading: imageSuggestionsLoading,
+    failedIds: failedSuggestionIds,
+    markImageFailed: handleSuggestionImageError,
+    query: imageSuggestionQueryLabel,
+  } = useMenuImageSuggestions(imageSuggestionQuery)
 
   useEffect(() => {
     if (id) fetchCategory()
@@ -90,6 +101,12 @@ const CategoryForm = () => {
     setImagePreview(null)
   }
 
+  const handleSuggestedImageSelect = (url) => {
+    selectedFileRef.current = null
+    setValue('imageUrl', url, { shouldDirty: true })
+    setImagePreview(url)
+  }
+
   const imageUrlField = register('imageUrl')
 
   return (
@@ -108,6 +125,15 @@ const CategoryForm = () => {
             placeholder="Enter category name"
             {...register('name', { required: 'Name is required' })}
             error={errors.name?.message}
+          />
+
+          <MenuImageSuggestions
+            suggestions={imageSuggestions}
+            loading={imageSuggestionsLoading}
+            query={imageSuggestionQueryLabel}
+            failedIds={failedSuggestionIds}
+            onImageError={handleSuggestionImageError}
+            onSelect={handleSuggestedImageSelect}
           />
 
           <Input

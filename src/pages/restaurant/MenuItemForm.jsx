@@ -8,19 +8,10 @@ import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import Card from '../../components/common/Card'
 import Textarea from '../../components/common/Textarea'
+import MenuImageSuggestions from '../../components/restaurant/MenuImageSuggestions'
+import { useMenuImageSuggestions } from '../../hooks/useMenuImageSuggestions'
 
 const IMAGE_MAX_BYTES = 1 * 1024 * 1024
-const IMAGE_SUGGESTION_LIMIT = 6
-
-const uniqueImages = (images) => {
-  const seen = new Set()
-  return images.filter((image) => {
-    const key = String(image.url || image.thumbnail || '').split('?')[0]
-    if (!key || seen.has(key)) return false
-    seen.add(key)
-    return true
-  })
-}
 
 const DIETARY_TAG_OPTIONS = [
   { value: 'veg', label: 'Veg', color: 'green' },
@@ -126,44 +117,6 @@ const NutritionFields = ({ nutrition, onChange }) => (
     </div>
   </div>
 )
-
-const ImageSuggestions = ({ suggestions, loading, query, failedIds, onImageError, onSelect }) => {
-  const cleanQuery = String(query || '').trim()
-  const visibleSuggestions = suggestions.filter((image) => !failedIds.includes(image.id))
-  if (cleanQuery.length < 3) return null
-  if (!loading && visibleSuggestions.length === 0) return null
-
-  return (
-    <div>
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium text-gray-700">Image suggestions</p>
-          <p className="text-xs text-gray-500">Matching &ldquo;{cleanQuery}&rdquo;</p>
-        </div>
-        {loading && <p className="text-xs text-gray-500">Searching...</p>}
-      </div>
-      <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
-        {visibleSuggestions.map((image) => (
-          <button
-            key={image.id}
-            type="button"
-            onClick={() => onSelect(image.url)}
-            className="group overflow-hidden rounded-lg border border-gray-200 bg-white text-left transition hover:border-primary-400 hover:ring-2 hover:ring-primary-100"
-            title={image.title}
-          >
-            <img
-              src={image.thumbnail}
-              alt={image.title || cleanQuery}
-              className="aspect-square w-full object-cover transition group-hover:scale-105"
-              loading="lazy"
-              onError={() => onImageError(image.id)}
-            />
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 const ImageField = ({ imagePreview, onChange, onRemove }) => (
   <div>
@@ -275,13 +228,17 @@ const MenuItemForm = () => {
   const { restaurantBase } = useTenantRoutes()
   const selectedFileRef = useRef(null)
   const [state, dispatch] = useReducer(reducer, initialState)
-  const [imageSuggestions, setImageSuggestions] = React.useState([])
-  const [imageSuggestionsLoading, setImageSuggestionsLoading] = React.useState(false)
-  const [failedSuggestionIds, setFailedSuggestionIds] = React.useState([])
   const { loading, categories, imagePreview, dietaryTags, variationGroups, nutrition } = state
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm()
   const watchedName = watch('name', '')
   const imageSuggestionQuery = String(watchedName || '').trim()
+  const {
+    suggestions: imageSuggestions,
+    loading: imageSuggestionsLoading,
+    failedIds: failedSuggestionIds,
+    markImageFailed: handleSuggestionImageError,
+    query: imageSuggestionQueryLabel,
+  } = useMenuImageSuggestions(imageSuggestionQuery)
 
   const setVariationGroups = (value) => dispatch({ type: 'setVariationGroups', value })
 
@@ -322,50 +279,6 @@ const MenuItemForm = () => {
     fetchCategories()
     if (id) fetchMenuItem()
   }, [id, setValue])
-
-  useEffect(() => {
-    const query = imageSuggestionQuery
-    if (query.length < 3) {
-      setImageSuggestions([])
-      setFailedSuggestionIds([])
-      setImageSuggestionsLoading(false)
-      return undefined
-    }
-
-    const controller = new AbortController()
-    const timer = setTimeout(async () => {
-      try {
-        setImageSuggestionsLoading(true)
-        const res = await api.get('/restaurant/menu/image-suggestions', {
-          params: { q: query },
-          signal: controller.signal,
-        })
-        const results = Array.isArray(res.data?.data) ? res.data.data : []
-        setFailedSuggestionIds([])
-        setImageSuggestions(uniqueImages(results
-          .map((image) => ({
-            id: image.id || image.url || image.thumbnail,
-            title: image.title || query,
-            thumbnail: image.thumbnail || image.url,
-            url: image.url || image.thumbnail,
-          }))
-          .filter((image) => image.id && image.thumbnail && image.url)
-          .slice(0, IMAGE_SUGGESTION_LIMIT)))
-      } catch (error) {
-        if (error.name !== 'AbortError') {
-          setImageSuggestions([])
-          setFailedSuggestionIds([])
-        }
-      } finally {
-        if (!controller.signal.aborted) setImageSuggestionsLoading(false)
-      }
-    }, 500)
-
-    return () => {
-      clearTimeout(timer)
-      controller.abort()
-    }
-  }, [imageSuggestionQuery])
 
   const toggleDietaryTag = (value) => {
     dispatch({ type: 'setDietaryTags', value: dietaryTags.includes(value) ? dietaryTags.filter((t) => t !== value) : [...dietaryTags, value] })
@@ -431,10 +344,6 @@ const MenuItemForm = () => {
     selectedFileRef.current = null
     setValue('imageUrl', url, { shouldDirty: true })
     dispatch({ type: 'setImagePreview', value: url })
-  }
-
-  const handleSuggestionImageError = (id) => {
-    setFailedSuggestionIds((current) => (current.includes(id) ? current : [...current, id]))
   }
 
   const actions = {
@@ -505,10 +414,10 @@ const MenuItemForm = () => {
       <Card>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <Input label="Item Name" placeholder="Enter item name" {...register('name', { required: 'Name is required' })} error={errors.name?.message} />
-          <ImageSuggestions
+          <MenuImageSuggestions
             suggestions={imageSuggestions}
             loading={imageSuggestionsLoading}
-            query={imageSuggestionQuery}
+            query={imageSuggestionQueryLabel}
             failedIds={failedSuggestionIds}
             onImageError={handleSuggestionImageError}
             onSelect={handleSuggestedImageSelect}
