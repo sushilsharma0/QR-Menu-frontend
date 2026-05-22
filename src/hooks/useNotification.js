@@ -7,20 +7,9 @@ import {
   markNotificationRead,
 } from '../services/api'
 import { useAuth } from './useAuth'
+import { setBrowserFavicon } from '../utils/browserFavicon'
 
 const NOTIFICATION_TITLE_PREFIX = /^\(\d+\)\s+/
-const DEFAULT_FAVICON = '/favicon.svg'
-
-function setBrowserFavicon(href) {
-  const nextHref = href || DEFAULT_FAVICON
-  let link = document.querySelector("link[rel='icon']")
-  if (!link) {
-    link = document.createElement('link')
-    link.rel = 'icon'
-    document.head.appendChild(link)
-  }
-  link.href = nextHref
-}
 
 const useNotification = () => {
   const [notifications, setNotifications] = useState([])
@@ -56,7 +45,7 @@ const useNotification = () => {
       user?.scope === 'employee' ||
       ['kitchen', 'cashier', 'manager', 'waiter', 'accountant'].includes(user?.role)
 
-    setBrowserFavicon(isRestaurantSide ? user?.favicon || user?.logo : null)
+    void setBrowserFavicon(isRestaurantSide ? user?.favicon || user?.logo : null)
   }, [user?.favicon, user?.logo, user?.role, user?.scope])
 
   useEffect(() => {

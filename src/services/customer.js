@@ -1,4 +1,5 @@
 import api from './api'
+import { setBrowserFavicon } from '../utils/browserFavicon'
 
 const GUEST_ID_STORAGE_KEY = 'customer_guest_id_v1'
 const CUSTOMER_ID_STORAGE_KEY = 'customer_identity_id_v1'
@@ -546,6 +547,7 @@ export const getRestaurantInfo = async (restaurantSlug, qrToken = null) => {
   const menuRestaurant = menuRes?.data?.restaurant || {}
   const about = profile?.about || {}
   broadcastThemeSettings(menuRestaurant.themeSettings || profile?.themeSettings)
+  void setBrowserFavicon(menuRestaurant.favicon || profile?.favicon || menuRestaurant.logo || profile?.logo)
   return {
     id: menuRestaurant.id || profile?.id,
     name: menuRestaurant.name || profile?.name,
