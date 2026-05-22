@@ -8,6 +8,7 @@ import {
   SlidersHorizontal,
   Sparkles,
   PackageOpen,
+  UtensilsCrossed,
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import * as FramerMotion from "framer-motion";
@@ -101,7 +102,9 @@ const MenuItems = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [foodItems, setFoodItems] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [activeFilters, setActiveFilters] = useState({
     sort: "popular",
     priceRange: "all",
@@ -122,6 +125,10 @@ const MenuItems = () => {
   useEffect(() => {
     if (slug && categoryName) fetchMenuItems();
   }, [slug, categoryName, token]);
+
+  useEffect(() => {
+    if (slug) fetchCategories();
+  }, [slug, token]);
 
   useEffect(() => {
     if (slug && token) {
@@ -147,6 +154,26 @@ const MenuItems = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      setCategoriesLoading(true);
+      const qs = token ? `?qrToken=${encodeURIComponent(token)}` : "";
+      const response = await api.get(`/restaurant/menu/public/${slug}${qs}`);
+      setCategories(Array.isArray(response.data?.data?.menu) ? response.data.data.menu : []);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+      setCategories([]);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
+
+  const handleCategorySelect = (name) => {
+    if (!name || name === decodedCategory) return;
+    setSearchQuery("");
+    navigate(`/item/${slug}/${token}/${encodeURIComponent(name)}`);
   };
 
   const filteredItems = useMemo(() => {
@@ -329,30 +356,38 @@ const MenuItems = () => {
         </div>
       </header>
 
-      {/* Dietary chips */}
-      <div className="px-4 pt-4">
-        <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {TYPE_CHIPS.map((chip) => {
-            const active = (activeFilters.type || "all") === chip.id;
-            return (
-              <button
-                key={chip.id}
-                type="button"
-                onClick={() => setTypeChip(chip.id)}
-                aria-pressed={active}
-                className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-all ${
-                  active
-                    ? `${chip.active} shadow-sm`
-                    : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-                }`}
-              >
-                {chip.id !== "all" && (
-                  <span className={`h-2 w-2 rounded-full ${active ? "bg-white/90" : chip.dot}`} />
-                )}
-                {chip.label}
-              </button>
-            );
-          })}
+      <div className="sticky top-[89px] z-10 border-b border-gray-100 bg-surface-50/95 pb-3 shadow-sm backdrop-blur-lg">
+        <CategoryCircleStrip
+          categories={categories}
+          activeCategory={decodedCategory}
+          loading={categoriesLoading}
+          onSelect={handleCategorySelect}
+        />
+
+        <div className="px-4 pt-3">
+          <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {TYPE_CHIPS.map((chip) => {
+              const active = (activeFilters.type || "all") === chip.id;
+              return (
+                <button
+                  key={chip.id}
+                  type="button"
+                  onClick={() => setTypeChip(chip.id)}
+                  aria-pressed={active}
+                  className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-all ${
+                    active
+                      ? `${chip.active} shadow-sm`
+                      : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {chip.id !== "all" && (
+                    <span className={`h-2 w-2 rounded-full ${active ? "bg-white/90" : chip.dot}`} />
+                  )}
+                  {chip.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -486,6 +521,74 @@ const cardVariants = {
   hidden: { opacity: 0, y: 12 },
   visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 320, damping: 28 } },
 };
+
+function CategoryCircleStrip({ categories, activeCategory, loading, onSelect }) {
+  if (loading) {
+    return (
+      <div className="bg-white px-4 py-3">
+        <div className="flex gap-4 overflow-hidden">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="flex w-16 shrink-0 flex-col items-center gap-2">
+              <div className="h-14 w-14 animate-pulse rounded-full bg-gray-100" />
+              <div className="h-2 w-12 animate-pulse rounded-full bg-gray-100" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!categories.length) return null;
+
+  return (
+    <div className="bg-white px-4 py-3">
+      <div className="flex gap-4 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {categories.map((category) => {
+          const isActive = category?.name === activeCategory;
+          const image = category?.image || category?.coverImage || category?.items?.find((item) => item?.image)?.image;
+          return (
+            <button
+              key={category._id || category.name}
+              type="button"
+              onClick={() => onSelect(category.name)}
+              aria-pressed={isActive}
+              className="group flex w-16 shrink-0 flex-col items-center gap-2"
+            >
+              <span
+                className={`relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border-2 transition-all ${
+                  isActive
+                    ? "border-primary-600 bg-primary-50 shadow-md shadow-primary-900/10"
+                    : "border-gray-100 bg-gray-50 group-active:scale-95"
+                }`}
+              >
+                {image ? (
+                  <img
+                    src={image}
+                    alt={category.name}
+                    loading="lazy"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <UtensilsCrossed
+                    size={22}
+                    className={isActive ? "text-primary-700" : "text-gray-400"}
+                  />
+                )}
+              </span>
+              <span
+                className={`line-clamp-2 min-h-[28px] text-center text-[10px] font-semibold leading-tight ${
+                  isActive ? "text-primary-700" : "text-gray-500"
+                }`}
+              >
+                {category.name}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function CardQuantityControl({
   quantity,
