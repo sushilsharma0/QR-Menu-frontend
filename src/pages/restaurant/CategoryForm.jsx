@@ -30,6 +30,7 @@ const CategoryForm = () => {
       setValue('name', category.name)
       setValue('description', category.description)
       setValue('sortOrder', category.sortOrder)
+      setValue('imageUrl', category.image || '')
       if (category.image) setImagePreview(category.image)
     } catch (error) {
       toast.error('Failed to fetch category')
@@ -46,6 +47,7 @@ const CategoryForm = () => {
       if (data.name) formData.append('name', data.name)
       if (data.description) formData.append('description', data.description)
       if (data.sortOrder) formData.append('sortOrder', data.sortOrder)
+      if (data.imageUrl !== undefined) formData.append('imageUrl', data.imageUrl)
 
       // Append image file if selected
       if (selectedFileRef.current) {
@@ -77,14 +79,18 @@ const CategoryForm = () => {
         return
       }
       selectedFileRef.current = file
+      setValue('imageUrl', '')
       setImagePreview(URL.createObjectURL(file))
     }
   }
 
   const handleRemoveImage = () => {
     selectedFileRef.current = null
+    setValue('imageUrl', '')
     setImagePreview(null)
   }
+
+  const imageUrlField = register('imageUrl')
 
   return (
     <div className="max-w-md mx-auto">
@@ -117,6 +123,17 @@ const CategoryForm = () => {
             placeholder="0"
             {...register('sortOrder')}
             error={errors.sortOrder?.message}
+          />
+
+          <Input
+            label="Image Link (Optional)"
+            type="url"
+            placeholder="https://example.com/category.jpg"
+            {...imageUrlField}
+            onChange={(event) => {
+              imageUrlField.onChange(event)
+              if (!selectedFileRef.current) setImagePreview(event.target.value.trim() || null)
+            }}
           />
 
           <div>

@@ -254,6 +254,7 @@ const MenuItemForm = () => {
         setValue('preparationTime', item.preparationTime)
         setValue('taxRate', item.taxRate)
         setValue('isAvailable', item.isAvailable)
+        setValue('imageUrl', item.image || '')
         dispatch({ type: 'setDietaryTags', value: Array.isArray(item.dietaryTags) ? item.dietaryTags : [] })
         setVariationGroups(Array.isArray(item.variationGroups) ? item.variationGroups : [])
         const n = item.nutrition || {}
@@ -287,6 +288,7 @@ const MenuItemForm = () => {
       formData.append('isSpicy', 'false')
       if (data.isAvailable) formData.append('isAvailable', data.isAvailable)
       formData.append('dietaryTags', JSON.stringify(dietaryTags))
+      if (data.imageUrl !== undefined) formData.append('imageUrl', data.imageUrl)
 
       const cleanNutrition = Object.entries(nutrition).reduce((acc, [key, value]) => {
         const numberValue = value === '' || value == null ? null : Number(value)
@@ -317,11 +319,13 @@ const MenuItemForm = () => {
       return
     }
     selectedFileRef.current = file
+    setValue('imageUrl', '')
     dispatch({ type: 'setImagePreview', value: URL.createObjectURL(file) })
   }
 
   const handleRemoveImage = () => {
     selectedFileRef.current = null
+    setValue('imageUrl', '')
     dispatch({ type: 'setImagePreview', value: null })
   }
 
@@ -371,6 +375,7 @@ const MenuItemForm = () => {
       return { ...group, options }
     })),
   }
+  const imageUrlField = register('imageUrl')
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -409,6 +414,16 @@ const MenuItemForm = () => {
             <Input label="Preparation Time (minutes)" type="number" placeholder="15" {...register('preparationTime')} />
             <Input label="Tax Rate (%)" type="number" step="0.01" placeholder="0" {...register('taxRate')} />
           </div>
+          <Input
+            label="Image Link (Optional)"
+            type="url"
+            placeholder="https://example.com/menu-item.jpg"
+            {...imageUrlField}
+            onChange={(event) => {
+              imageUrlField.onChange(event)
+              if (!selectedFileRef.current) dispatch({ type: 'setImagePreview', value: event.target.value.trim() || null })
+            }}
+          />
           <ImageField imagePreview={imagePreview} onChange={handleImageChange} onRemove={handleRemoveImage} />
           <DietaryTagsField dietaryTags={dietaryTags} onToggle={toggleDietaryTag} />
           <NutritionFields nutrition={nutrition} onChange={(field, value) => dispatch({ type: 'patchNutrition', field, value })} />
