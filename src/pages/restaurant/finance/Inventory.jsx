@@ -332,17 +332,22 @@ const Inventory = () => {
     () => findItemById(items, wasteForm.inventoryItemId),
     [items, wasteForm.inventoryItemId],
   )
+  const rawUseCurrentStock = Number(rawUseSelectedItem?.quantity || 0)
+  const rawUseEnteredQty = Number(rawUseForm.quantity || 0)
+  const rawUseRemoveQty = rawUseForm.action === 'left'
+    ? Math.max(0, rawUseCurrentStock - rawUseEnteredQty)
+    : rawUseEnteredQty
   const rawUseLineCost = useMemo(() => {
-    const qty = Number(rawUseForm.quantity || 0)
     const cpu = Number(rawUseSelectedItem?.costPerUnit || 0)
-    return qty * cpu
-  }, [rawUseForm.quantity, rawUseSelectedItem])
+    return rawUseRemoveQty * cpu
+  }, [rawUseRemoveQty, rawUseSelectedItem])
   const rawUseProjectedStock = useMemo(() => {
     if (!rawUseSelectedItem) return null
     const current = Number(rawUseSelectedItem.quantity || 0)
     const qty = Number(rawUseForm.quantity || 0)
-    return Math.max(0, current - qty)
+    return rawUseForm.action === 'left' ? Math.max(0, qty) : Math.max(0, current - qty)
   }, [rawUseForm.action, rawUseForm.quantity, rawUseSelectedItem])
+  const rawUseWillEmptyStock = Boolean(rawUseSelectedItem && rawUseRemoveQty > 0 && rawUseProjectedStock === 0)
   const stockUpdateTransactions = useMemo(
     () => transactions.filter((txn) => ['usage', 'stock_in'].includes(txn.type)),
     [transactions],
@@ -446,15 +451,25 @@ const Inventory = () => {
       toast.error('Please select an inventory item')
       return
     }
-    if (Number(rawUseForm.quantity || 0) <= 0) {
-      toast.error('Quantity must be greater than 0')
+    const isLeftStock = rawUseForm.action === 'left'
+    const enteredQty = Number(rawUseForm.quantity || 0)
+    const availableQty = Number(rawUseSelectedItem?.quantity || 0)
+    const quantityToRemove = isLeftStock ? Math.max(0, availableQty - enteredQty) : enteredQty
+    if (enteredQty < 0) {
+      toast.error('Quantity cannot be negative')
       return
     }
-    const isLeftStock = rawUseForm.action === 'left'
-    if (rawUseSelectedItem) {
-      const avail = Number(rawUseSelectedItem.quantity || 0)
-      if (Number(rawUseForm.quantity) > avail) {
-        toast.error(`Only ${avail} ${rawUseSelectedItem.unit} available`)
+    if (isLeftStock && rawUseSelectedItem && enteredQty > availableQty) {
+      toast.error(`Left quantity cannot be more than current stock (${availableQty} ${rawUseSelectedItem.unit})`)
+      return
+    }
+    if (quantityToRemove <= 0) {
+      toast.error(isLeftStock ? 'Stock is already at that left quantity' : 'Enter the quantity to remove')
+      return
+    }
+    if (!isLeftStock && rawUseSelectedItem) {
+      if (quantityToRemove > availableQty) {
+        toast.error(`Only ${availableQty} ${rawUseSelectedItem.unit} available`)
         return
       }
     }
@@ -462,16 +477,21 @@ const Inventory = () => {
       setSubmitting(true)
       const payload = {
         inventoryItemId: rawUseForm.inventoryItemId,
-        quantity: Number(rawUseForm.quantity),
+        quantity: quantityToRemove,
         type: 'usage',
+        stockUpdateAction: rawUseForm.action,
         reason: isLeftStock ? rawUseForm.reason || 'Left item used' : rawUseForm.reason,
         referenceNumber: rawUseForm.referenceNumber,
-        syncIngredientsExpense: !isLeftStock,
+        syncIngredientsExpense: true,
+        ingredientsPaidFrom: rawUseForm.ingredientsPaidFrom,
       }
-      if (!isLeftStock) payload.ingredientsPaidFrom = rawUseForm.ingredientsPaidFrom
       const res = await api.post('/restaurant/inventory/movements', payload)
       if (isLeftStock) {
-        toast.success('Left item saved — stock reduced')
+        toast.success(
+          res.data?.data?.expense
+            ? 'Left item saved — stock reduced and cost posted to Expenses'
+            : 'Left item saved — stock reduced (no cost recorded; set cost per unit on the item)',
+        )
         setRawUseForm(emptyRawUse)
         loadAll()
         return
@@ -1164,10 +1184,10 @@ const Inventory = () => {
         <div className="flex flex-col gap-6">
           <FinancePanel title="Stock update">
             <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
-              Record used kitchen stock or left items to decrease inventory.
+              Used item removes the quantity you enter. Left item sets the remaining stock after prep.
             </p>
             <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
-              Used stock goes down and posts ingredient expense. Left item goes down without posting another ingredient expense.
+              Both post ingredient expense for the quantity removed from inventory.
             </p>
             <form onSubmit={postRawUse} className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Select
@@ -1188,28 +1208,46 @@ const Inventory = () => {
                 onValueChange={(value) => setRawUseForm((s) => ({ ...s, action: value }))}
                 options={[
                   { value: 'used', label: 'Used item - decrease stock' },
-                  { value: 'left', label: 'Left item - decrease stock' },
+                  { value: 'left', label: 'Left item - set remaining stock' },
                 ]}
               />
-              <Input
-                label={rawUseForm.action === 'left' ? 'Left item quantity' : 'Used quantity'}
-                type="number"
-                min={0}
-                step="any"
-                value={rawUseForm.quantity || ''}
-                onChange={(e) => setRawUseForm((s) => ({ ...s, quantity: Number(e.target.value) }))}
-              />
-              {rawUseForm.action !== 'left' && (
-                <Select
-                  label="Ingredient cost paid from"
-                  value={rawUseForm.ingredientsPaidFrom || 'cash'}
-                  onValueChange={(value) => setRawUseForm((s) => ({ ...s, ingredientsPaidFrom: value }))}
-                  options={[
-                    { value: 'cash', label: 'Cash' },
-                    { value: 'bank', label: 'Bank' },
-                  ]}
+              <div className="space-y-2">
+                <Input
+                  label={rawUseForm.action === 'left' ? 'Quantity left in inventory' : 'Used quantity to remove'}
+                  type="number"
+                  min={0}
+                  step="any"
+                  value={rawUseForm.quantity || ''}
+                  onChange={(e) => setRawUseForm((s) => ({ ...s, quantity: Number(e.target.value) }))}
                 />
-              )}
+                {rawUseSelectedItem && (
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <span>
+                      {rawUseForm.action === 'left'
+                        ? `Enter 0 when nothing is left. This removes all ${rawUseCurrentStock} ${rawUseSelectedItem.unit}.`
+                        : `To make stock zero, remove all ${rawUseCurrentStock} ${rawUseSelectedItem.unit}.`}
+                    </span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      disabled={rawUseCurrentStock <= 0}
+                      onClick={() => setRawUseForm((s) => ({ ...s, quantity: rawUseForm.action === 'left' ? 0 : rawUseCurrentStock }))}
+                    >
+                      {rawUseForm.action === 'left' ? 'Set zero' : 'Use all'}
+                    </Button>
+                  </div>
+                )}
+              </div>
+              <Select
+                label="Ingredient cost paid from"
+                value={rawUseForm.ingredientsPaidFrom || 'cash'}
+                onValueChange={(value) => setRawUseForm((s) => ({ ...s, ingredientsPaidFrom: value }))}
+                options={[
+                  { value: 'cash', label: 'Cash' },
+                  { value: 'bank', label: 'Bank' },
+                ]}
+              />
               <Input label="Reference (optional)" value={rawUseForm.referenceNumber} onChange={(e) => setRawUseForm((s) => ({ ...s, referenceNumber: e.target.value }))} />
               <Input label="Note (optional)" value={rawUseForm.reason} onChange={(e) => setRawUseForm((s) => ({ ...s, reason: e.target.value }))} />
               <div className="md:col-span-2 lg:col-span-3">
@@ -1217,9 +1255,11 @@ const Inventory = () => {
                   <p className="font-semibold text-gray-900 dark:text-gray-100">Line cost (for expense)</p>
                   <p className="mt-1 text-gray-600 dark:text-gray-400">
                     {rawUseSelectedItem
-                      ? rawUseForm.action === 'left'
-                        ? 'No extra expense for left item.'
-                        : `${Number(rawUseForm.quantity || 0)} ${rawUseSelectedItem.unit} × ${money(rawUseSelectedItem.costPerUnit)} = ${money(rawUseLineCost)}`
+                      ? rawUseRemoveQty > 0
+                        ? `${rawUseRemoveQty} ${rawUseSelectedItem.unit} removed × ${money(rawUseSelectedItem.costPerUnit)} = ${money(rawUseLineCost)}`
+                        : rawUseForm.action === 'left'
+                          ? `Enter the quantity left in inventory. Enter 0 if nothing is left.`
+                          : `Enter a quantity greater than 0, or use all ${rawUseCurrentStock} ${rawUseSelectedItem.unit} to make stock zero.`
                       : 'Select an item to preview.'}
                   </p>
                 </div>
@@ -1228,6 +1268,7 @@ const Inventory = () => {
                 <div className="md:col-span-2 lg:col-span-3">
                   <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
                     Current stock: {rawUseSelectedItem.quantity} {rawUseSelectedItem.unit} | After update: {rawUseProjectedStock} {rawUseSelectedItem.unit}
+                    {rawUseWillEmptyStock ? ' | Stock will be zero' : ''}
                   </div>
                 </div>
               )}
