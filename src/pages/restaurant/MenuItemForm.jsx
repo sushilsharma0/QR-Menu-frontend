@@ -12,6 +12,7 @@ import DescriptionFieldWithSuggestion from '../../components/restaurant/Descript
 import { useMenuImageSuggestions } from '../../hooks/useMenuImageSuggestions'
 
 const IMAGE_MAX_BYTES = 1 * 1024 * 1024
+const createClientKey = () => `client-${Date.now()}-${Math.random().toString(36).slice(2)}`
 
 const DIETARY_TAG_OPTIONS = [
   { value: 'veg', label: 'Veg', color: 'green' },
@@ -181,7 +182,7 @@ const VariationGroupCard = ({ group, groupIndex, actions }) => (
         </thead>
         <tbody>
           {(group.options || []).map((option, optionIndex) => (
-            <tr key={option._id || `${group.name || 'group'}-${option.name || 'option'}-${optionIndex}`} className="border-b border-gray-100">
+            <tr key={option._id || option.clientKey || `option-${optionIndex}`} className="border-b border-gray-100">
               <td className="py-2 pr-2"><input value={option.name || ''} onChange={(e) => actions.updateOption(groupIndex, optionIndex, { name: e.target.value })} className="w-36 rounded border border-gray-200 px-2 py-1" /></td>
               <td className="py-2 pr-2"><input type="number" min="0" value={option.additionalPrice ?? 0} onChange={(e) => actions.updateOption(groupIndex, optionIndex, { additionalPrice: Number(e.target.value) })} className="w-24 rounded border border-gray-200 px-2 py-1" /></td>
               <td className="py-2 pr-2"><input type="number" min="0" value={option.discountedPrice ?? ''} onChange={(e) => actions.updateOption(groupIndex, optionIndex, { discountedPrice: e.target.value === '' ? null : Number(e.target.value) })} className="w-24 rounded border border-gray-200 px-2 py-1" /></td>
@@ -216,7 +217,7 @@ const VariationsEditor = ({ variationGroups, actions }) => (
       {variationGroups.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-300 bg-white p-4 text-sm text-gray-500">No variations. Customers will order this item at the base price.</div>
       ) : (
-        variationGroups.map((group, groupIndex) => <VariationGroupCard key={group._id || `${group.name || 'group'}-${groupIndex}`} group={group} groupIndex={groupIndex} actions={actions} />)
+        variationGroups.map((group, groupIndex) => <VariationGroupCard key={group._id || group.clientKey || `group-${groupIndex}`} group={group} groupIndex={groupIndex} actions={actions} />)
       )}
     </div>
   </div>
@@ -352,11 +353,12 @@ const MenuItemForm = () => {
     addGroup: () => setVariationGroups([
       ...variationGroups,
       {
+        clientKey: createClientKey(),
         name: 'Size', type: 'size', selectionType: 'single', isRequired: true,
         minSelection: 1, maxSelection: 1, displayType: 'chips', sortOrder: variationGroups.length, isActive: true,
         options: [
-          { name: 'Regular', additionalPrice: 0, isAvailable: true, isDefault: true },
-          { name: 'Large', additionalPrice: 100, isAvailable: true },
+          { clientKey: createClientKey(), name: 'Regular', additionalPrice: 0, isAvailable: true, isDefault: true },
+          { clientKey: createClientKey(), name: 'Large', additionalPrice: 100, isAvailable: true },
         ],
       },
     ]),
@@ -375,7 +377,7 @@ const MenuItemForm = () => {
       next.splice(target, 0, row)
       setVariationGroups(next.map((group, i) => ({ ...group, sortOrder: i })))
     },
-    addOption: (groupIndex) => setVariationGroups(variationGroups.map((group, i) => i === groupIndex ? { ...group, options: [...(group.options || []), { name: 'New option', additionalPrice: 0, isAvailable: true }] } : group)),
+    addOption: (groupIndex) => setVariationGroups(variationGroups.map((group, i) => i === groupIndex ? { ...group, options: [...(group.options || []), { clientKey: createClientKey(), name: 'New option', additionalPrice: 0, isAvailable: true }] } : group)),
     updateOption: (groupIndex, optionIndex, patch) => setVariationGroups(variationGroups.map((group, i) => {
       if (i !== groupIndex) return group
       const options = (group.options || []).reduce((rows, option, j) => {

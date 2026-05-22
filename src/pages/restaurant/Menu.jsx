@@ -397,7 +397,7 @@ const Menu = () => {
       </motion.section>
 
       <Card title="Categories">
-        <div className="flex gap-3 overflow-x-auto pb-1">
+        <div className="thin-horizontal-scrollbar flex gap-3 overflow-x-auto pb-1">
           <button
             type="button"
             onClick={() => setSelectedCategory("all")}

@@ -5,6 +5,7 @@ import {
   FiArchive,
   FiBarChart2,
   FiCalendar,
+  FiCheckCircle,
   FiChevronDown,
   FiCreditCard,
   FiDollarSign,
@@ -340,7 +341,7 @@ const Inventory = () => {
     if (!rawUseSelectedItem) return null
     const current = Number(rawUseSelectedItem.quantity || 0)
     const qty = Number(rawUseForm.quantity || 0)
-    return rawUseForm.action === 'left' ? current + qty : Math.max(0, current - qty)
+    return Math.max(0, current - qty)
   }, [rawUseForm.action, rawUseForm.quantity, rawUseSelectedItem])
   const stockUpdateTransactions = useMemo(
     () => transactions.filter((txn) => ['usage', 'stock_in'].includes(txn.type)),
@@ -450,7 +451,7 @@ const Inventory = () => {
       return
     }
     const isLeftStock = rawUseForm.action === 'left'
-    if (!isLeftStock && rawUseSelectedItem) {
+    if (rawUseSelectedItem) {
       const avail = Number(rawUseSelectedItem.quantity || 0)
       if (Number(rawUseForm.quantity) > avail) {
         toast.error(`Only ${avail} ${rawUseSelectedItem.unit} available`)
@@ -462,27 +463,15 @@ const Inventory = () => {
       const payload = {
         inventoryItemId: rawUseForm.inventoryItemId,
         quantity: Number(rawUseForm.quantity),
-        type: isLeftStock ? 'stock_in' : 'usage',
-        reason: rawUseForm.reason,
+        type: 'usage',
+        reason: isLeftStock ? rawUseForm.reason || 'Left item used' : rawUseForm.reason,
         referenceNumber: rawUseForm.referenceNumber,
-        leftStockReturn: isLeftStock,
-        offsetLatestUsage: isLeftStock,
         syncIngredientsExpense: !isLeftStock,
       }
       if (!isLeftStock) payload.ingredientsPaidFrom = rawUseForm.ingredientsPaidFrom
       const res = await api.post('/restaurant/inventory/movements', payload)
       if (isLeftStock) {
-        const correctedUsageQty = Number(res.data?.data?.correctedUsageQty || 0)
-        const stockInQty = Number(res.data?.data?.stockInQty || 0)
-        if (correctedUsageQty > 0) {
-          toast.success(
-            stockInQty > 0
-              ? 'Left stock added; past used quantity corrected where possible'
-              : 'Left stock added and past used quantity corrected',
-          )
-        } else {
-          toast.success('Left stock added back to inventory')
-        }
+        toast.success('Left item saved — stock reduced')
         setRawUseForm(emptyRawUse)
         loadAll()
         return
@@ -728,6 +717,19 @@ const Inventory = () => {
     }
   }
 
+  const verifySupplier = async (supplier) => {
+    try {
+      setSubmitting(true)
+      await api.patch(`/restaurant/inventory/suppliers/${supplier._id}/verify`, { status: 'verified' })
+      toast.success('Supplier verified')
+      loadAll()
+    } catch (e2) {
+      toast.error(e2.response?.data?.message || 'Failed to verify supplier')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const savePurchase = async (e) => {
     e.preventDefault()
     const item = findItemById(items, purchaseForm.inventoryItemId)
@@ -867,7 +869,7 @@ const Inventory = () => {
     <div className="space-y-6">
       <FinancePageHeader
         title="Inventory Control"
-        subtitle="Stock purchases, kitchen stock updates, waste, and valuation. Use Stock update to reduce inventory for items used in production or add leftover stock back after prep."
+        subtitle="Stock purchases, kitchen stock updates, waste, and valuation. Use Stock update to reduce inventory for used items or left items."
         actions={
           <>
             <Button type="button" variant="secondary" onClick={loadAll} loading={loading}><FiActivity className="mr-1" /> Refresh</Button>
@@ -1162,10 +1164,10 @@ const Inventory = () => {
         <div className="flex flex-col gap-6">
           <FinancePanel title="Stock update">
             <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
-              Record used kitchen stock to decrease inventory, or add left stock back when prep quantity remains.
+              Record used kitchen stock or left items to decrease inventory.
             </p>
             <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
-              Used stock goes down and posts ingredient expense. Left stock adds back to the selected item and corrects the latest used quantity where possible.
+              Used stock goes down and posts ingredient expense. Left item goes down without posting another ingredient expense.
             </p>
             <form onSubmit={postRawUse} className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Select
@@ -1186,11 +1188,11 @@ const Inventory = () => {
                 onValueChange={(value) => setRawUseForm((s) => ({ ...s, action: value }))}
                 options={[
                   { value: 'used', label: 'Used item - decrease stock' },
-                  { value: 'left', label: 'Left item - add back stock' },
+                  { value: 'left', label: 'Left item - decrease stock' },
                 ]}
               />
               <Input
-                label={rawUseForm.action === 'left' ? 'Left quantity to add' : 'Used quantity'}
+                label={rawUseForm.action === 'left' ? 'Left item quantity' : 'Used quantity'}
                 type="number"
                 min={0}
                 step="any"
@@ -1216,7 +1218,7 @@ const Inventory = () => {
                   <p className="mt-1 text-gray-600 dark:text-gray-400">
                     {rawUseSelectedItem
                       ? rawUseForm.action === 'left'
-                        ? 'No expense for left stock.'
+                        ? 'No extra expense for left item.'
                         : `${Number(rawUseForm.quantity || 0)} ${rawUseSelectedItem.unit} × ${money(rawUseSelectedItem.costPerUnit)} = ${money(rawUseLineCost)}`
                       : 'Select an item to preview.'}
                   </p>
@@ -1230,7 +1232,7 @@ const Inventory = () => {
                 </div>
               )}
               <div className="flex flex-wrap items-end gap-3 md:col-span-2 lg:col-span-3">
-                <Button type="submit" loading={submitting}>{rawUseForm.action === 'left' ? 'Add left stock' : 'Save used stock'}</Button>
+                <Button type="submit" loading={submitting}>{rawUseForm.action === 'left' ? 'Save left item' : 'Save used stock'}</Button>
               </div>
             </form>
           </FinancePanel>
@@ -1331,7 +1333,7 @@ const Inventory = () => {
             </form>
           </FinancePanel>
           <FinancePanel title="Supplier directory">
-            <SuppliersListTable suppliers={suppliers} onEdit={beginEditSupplier} onDelete={deleteSupplier} />
+            <SuppliersListTable suppliers={suppliers} onEdit={beginEditSupplier} onDelete={deleteSupplier} onVerify={verifySupplier} />
           </FinancePanel>
         </div>
       )}
@@ -1359,8 +1361,15 @@ const Inventory = () => {
                 onValueChange={(value) => setPurchaseForm((s) => ({ ...s, supplierId: value }))}
                 searchable
                 searchPlaceholder="Search supplier..."
-                options={suppliers.map((s) => ({ label: s.name, value: String(s._id) }))}
+                options={suppliers
+                  .filter((s) => s.verificationStatus === 'verified')
+                  .map((s) => ({ label: s.name, value: String(s._id) }))}
               />
+              {suppliers.some((s) => s.verificationStatus !== 'verified') && (
+                <div className="md:col-span-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                  Only verified suppliers can be used for purchase records. Verify pending suppliers from the Suppliers tab.
+                </div>
+              )}
               <Input label="Quantity" type="number" value={purchaseForm.quantity} onChange={(e) => setPurchaseForm((s) => ({ ...s, quantity: Number(e.target.value) }))} />
               <Input label="Unit cost" type="number" value={purchaseForm.unitCost} onChange={(e) => setPurchaseForm((s) => ({ ...s, unitCost: Number(e.target.value) }))} />
               <Input label="Supplier bill no." value={purchaseForm.supplierBillNumber} onChange={(e) => setPurchaseForm((s) => ({ ...s, supplierBillNumber: e.target.value }))} />
@@ -1747,7 +1756,7 @@ function InventoryItemsTable({ items, onEdit, onRemove }) {
   )
 }
 
-function SuppliersListTable({ suppliers, onEdit, onDelete }) {
+function SuppliersListTable({ suppliers, onEdit, onDelete, onVerify }) {
   if (!suppliers.length) {
     return <EmptyState>No suppliers saved yet.</EmptyState>
   }
@@ -1762,7 +1771,7 @@ function SuppliersListTable({ suppliers, onEdit, onDelete }) {
             <th className="px-4 py-3">Address</th>
             <th className="px-4 py-3 text-right">Due</th>
             <th className="px-4 py-3">Status</th>
-            {(onEdit || onDelete) && <th className="px-4 py-3 text-right">Actions</th>}
+            {(onEdit || onDelete || onVerify) && <th className="px-4 py-3 text-right">Actions</th>}
           </tr>
         </thead>
         <tbody>
@@ -1778,15 +1787,24 @@ function SuppliersListTable({ suppliers, onEdit, onDelete }) {
               <td className="px-4 py-3">
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                    Number(s.paymentDue || 0) > 0 ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-800'
+                    s.verificationStatus === 'verified'
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : s.verificationStatus === 'rejected'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-amber-100 text-amber-900'
                   }`}
                 >
-                  {Number(s.paymentDue || 0) > 0 ? 'Due' : 'Clear'}
+                  {s.verificationStatus === 'verified' ? 'Verified' : s.verificationStatus === 'rejected' ? 'Rejected' : 'Pending'}
                 </span>
               </td>
-              {(onEdit || onDelete) && (
+              {(onEdit || onDelete || onVerify) && (
                 <td className="px-4 py-3 text-right">
                   <div className="flex justify-end gap-2">
+                    {onVerify && s.verificationStatus !== 'verified' && (
+                      <Button type="button" size="sm" variant="secondary" onClick={() => onVerify(s)}>
+                        <FiCheckCircle className="mr-1" /> Verify
+                      </Button>
+                    )}
                     {onEdit && (
                       <Button type="button" size="sm" variant="secondary" onClick={() => onEdit(s)}>
                         <FiEdit2 className="mr-1" /> Edit

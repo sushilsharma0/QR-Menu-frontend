@@ -26,7 +26,7 @@ export function saveNotificationSettings(next) {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...getNotificationSettings(), ...next }))
 }
 
-function playFallbackBell(volume) {
+export function playFallbackBell(volume) {
   const AudioContext = window.AudioContext || window.webkitAudioContext
   if (!AudioContext) return
   const ctx = new AudioContext()
@@ -43,6 +43,12 @@ function playFallbackBell(volume) {
     osc.start(start)
     osc.stop(start + 0.14)
   })
+}
+
+export function playNotificationBell(volume = 0.75) {
+  const audio = new Audio('/sounds/order-bell.mp3')
+  audio.volume = Math.min(1, Math.max(0, volume))
+  audio.play().catch(() => playFallbackBell(audio.volume))
 }
 
 function formatTime(value) {
@@ -69,9 +75,7 @@ export function useOrderAlerts({ role = 'restaurant', onRefresh, fullscreenUrgen
     if (now - lastSoundAtRef.current < SOUND_DEBOUNCE_MS) return
     lastSoundAtRef.current = now
 
-    const audio = new Audio('/sounds/order-bell.mp3')
-    audio.volume = Math.min(1, Math.max(0, volumeForRole()))
-    audio.play().catch(() => playFallbackBell(audio.volume))
+    playNotificationBell(volumeForRole())
   }, [volumeForRole])
 
   const notifyBrowser = useCallback((payload) => {

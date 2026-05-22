@@ -8,6 +8,7 @@ import {
 } from '../services/api'
 import { useAuth } from './useAuth'
 import { setBrowserFavicon } from '../utils/browserFavicon'
+import { getNotificationSettings, playNotificationBell } from './useOrderAlerts'
 
 const NOTIFICATION_TITLE_PREFIX = /^\(\d+\)\s+/
 
@@ -71,6 +72,12 @@ const useNotification = () => {
 
       if (data?.type !== 'NEW_ORDER' && !isSecurityAlert) {
         toast(data?.message || data?.title || 'New notification')
+      }
+
+      if (data?.type === 'GUEST_TABLE_REQUEST') {
+        const settings = getNotificationSettings()
+        if (settings.soundEnabled) playNotificationBell(settings.restaurantVolume || 0.75)
+        if ('vibrate' in navigator) navigator.vibrate([180, 70, 180])
       }
     }
 

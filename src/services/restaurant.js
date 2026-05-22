@@ -226,11 +226,6 @@ export const requestNewPackage = async (packageId) => {
   return response.data
 }
 
-export const setAutoRenew = async (autoRenew) => {
-  const response = await api.patch('/restaurant/package/auto-renew', { autoRenew })
-  return response.data
-}
-
 export const getSubscriptionInvoices = async (params = {}) => {
   const response = await api.get('/restaurant/billing/invoices', { params })
   return response.data
@@ -374,7 +369,6 @@ export default {
   getCurrentPackage,
   getPackageHistory,
   requestNewPackage,
-  setAutoRenew,
   processPayment,
   getTransactions,
   getTransaction,

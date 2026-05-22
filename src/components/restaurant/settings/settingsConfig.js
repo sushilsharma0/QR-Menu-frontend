@@ -47,7 +47,7 @@ export const SETTINGS_SECTIONS = [
   {
     id: 'subscription',
     label: 'Subscription',
-    description: 'Auto-renew and plan billing preferences',
+    description: 'Referral code and plan billing preferences',
     icon: FiCreditCard,
     accent: 'from-rose-500 to-pink-600',
   },

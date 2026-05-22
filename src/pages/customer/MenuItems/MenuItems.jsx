@@ -262,7 +262,8 @@ const MenuItems = () => {
       <header className="sticky top-0 z-20 flex items-center justify-between gap-2 border-b border-gray-100 bg-white/95 px-4 pb-4 pt-12 backdrop-blur-lg">
         <FramerMotion.motion.button
           whileTap={{ scale: 0.85 }}
-          onClick={() => navigate(-1)}
+          data-no-spinner="true"
+          onClick={() => navigate(`/menu/${slug}/${token}`)}
           className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-700 transition active:bg-gray-200"
           aria-label="Back"
         >
@@ -550,6 +551,7 @@ function CategoryCircleStrip({ categories, activeCategory, loading, onSelect }) 
             <button
               key={category._id || category.name}
               type="button"
+              data-no-spinner="true"
               onClick={() => onSelect(category.name)}
               aria-pressed={isActive}
               className="group flex w-16 shrink-0 flex-col items-center gap-2"

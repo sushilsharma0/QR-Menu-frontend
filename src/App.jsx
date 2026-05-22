@@ -4,6 +4,8 @@ import { useAuth } from "./hooks/useAuth";
 import api from "./services/api";
 import { useTheme } from "./context/ThemeContext";
 import useGlobalButtonSpinner from "./hooks/useGlobalButtonSpinner";
+import useDisableNumberInputWheel from "./hooks/useDisableNumberInputWheel";
+import { Agentation } from "agentation";
 
 // Auth Pages
 import Login from "./pages/auth/Login";
@@ -109,7 +111,6 @@ import CustomerSettingsPage from "./pages/customer/Home/Settings";
 import CustomerPrivacyPage from "./pages/customer/Home/CustomerDataNotice";
 import CustomerCreditApply from "./pages/customer/CreditApply";
 
-
 // Layouts
 import PlatformLayout from "./components/platform/PlatformLayout";
 import RestaurantLayout from "./components/restaurant/RestaurantLayout";
@@ -121,7 +122,10 @@ import ManagerLayout from "./components/manager/ManagerLayout";
 import ManagerDashboard from "./pages/manager/Dashboard";
 import ManagerSalesActivity from "./pages/manager/SalesActivity";
 import ManagerTeam from "./pages/manager/Team";
-import { defaultPortalPathForUser, getTenantSegments } from "./utils/tenantPaths";
+import {
+  defaultPortalPathForUser,
+  getTenantSegments,
+} from "./utils/tenantPaths";
 import LandingPage from "./pages/LandingPage";
 import Blog from "./pages/Blog";
 import BlogDetail from "./pages/BlogDetail";
@@ -132,11 +136,15 @@ function App() {
   const { user, isLoading, mergeUser } = useAuth();
   const { applyRemoteTheme } = useTheme();
   useGlobalButtonSpinner();
+  useDisableNumberInputWheel();
   const themeProfileLoadedFor = useRef("");
   const isEmployeeUser =
     user?.scope === "employee" ||
-    ["kitchen", "cashier", "manager", "waiter", "admin", "accountant"].includes(user?.role);
-  const { slug: userSlug, restaurantId: userRestaurantId } = getTenantSegments(user);
+    ["kitchen", "cashier", "manager", "waiter", "admin", "accountant"].includes(
+      user?.role,
+    );
+  const { slug: userSlug, restaurantId: userRestaurantId } =
+    getTenantSegments(user);
 
   useEffect(() => {
     const key = user?.restaurantId || user?.id || "";
@@ -146,7 +154,9 @@ function App() {
       (user.role === "restaurant" ||
         user.scope === "branch_user" ||
         user.scope === "employee" ||
-        ["kitchen", "cashier", "manager", "waiter", "accountant"].includes(user.role))
+        ["kitchen", "cashier", "manager", "waiter", "accountant"].includes(
+          user.role,
+        ));
 
     if (!shouldLoad || themeProfileLoadedFor.current === key) return;
     themeProfileLoadedFor.current = key;
@@ -160,8 +170,8 @@ function App() {
         }
         if (restaurant?.logo || restaurant?.favicon) {
           mergeUser({
-            logo: restaurant.logo || user?.logo || '',
-            favicon: restaurant.favicon || user?.favicon || '',
+            logo: restaurant.logo || user?.logo || "",
+            favicon: restaurant.favicon || user?.favicon || "",
           });
         }
       })
@@ -179,280 +189,580 @@ function App() {
   }
 
   return (
-    <Routes>
-      {/* Landing Page */}
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/blog" element={<Blog />} />
-      <Route path="/blog/:key" element={<BlogDetail />} />
-      {/* Auth Routes */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/vendor/login" element={<Login />} />
-      <Route path="/platform/login" element={<Login />} />
-      <Route path="/staff/login" element={<Login />} />
-      <Route path="/waiter/login" element={<WaiterLogin />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/vendor/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route
-        path="/branch/dashboard"
-        element={
-          user?.scope === 'branch_user' ? (
-            <Navigate to={defaultPortalPathForUser(user)} replace />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        }
-      />
-      <Route path="/branch/login" element={<BranchLogin />} />
-      <Route path="/branch/:restaurantId/:portalKey/:branchSlug/login" element={<BranchLogin />} />
+    <>
+      <Agentation />
+      <Routes>
+        {/* Landing Page */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:key" element={<BlogDetail />} />
+        {/* Auth Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/vendor/login" element={<Login />} />
+        <Route path="/platform/login" element={<Login />} />
+        <Route path="/staff/login" element={<Login />} />
+        <Route path="/waiter/login" element={<WaiterLogin />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/vendor/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route
+          path="/branch/dashboard"
+          element={
+            user?.scope === "branch_user" ? (
+              <Navigate to={defaultPortalPathForUser(user)} replace />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route path="/branch/login" element={<BranchLogin />} />
+        <Route
+          path="/branch/:restaurantId/:portalKey/:branchSlug/login"
+          element={<BranchLogin />}
+        />
 
-      {/* Platform Routes */}
-      <Route element={<PlatformLayout />}>
-        <Route path="/platform/dashboard" element={<PlatformPermissionGate permission="viewAnalytics"><PlatformDashboard /></PlatformPermissionGate>} />
-        <Route path="/platform/restaurants" element={<PlatformPermissionGate permission="manageRestaurants"><PlatformRestaurants /></PlatformPermissionGate>} />
-        <Route path="/platform/restaurants/:id" element={<PlatformPermissionGate permission="manageRestaurants"><PlatformRestaurantDetail /></PlatformPermissionGate>} />
-        <Route path="/platform/kyc" element={<PlatformPermissionGate permission="verifyKYC"><PlatformKYCPending /></PlatformPermissionGate>} />
-        <Route path="/platform/kyc/:id" element={<PlatformPermissionGate permission="verifyKYC"><PlatformKYCDetail /></PlatformPermissionGate>} />
-        <Route path="/platform/subscriptions" element={<PlatformPermissionGate permission="manageSubscriptionPlans"><PlatformSubscriptions /></PlatformPermissionGate>} />
-        <Route path="/platform/subscriptions/create" element={<PlatformPermissionGate permission="manageSubscriptionPlans"><PlatformCreatePlan /></PlatformPermissionGate>} />
-        <Route path="/platform/subscriptions/edit/:id" element={<PlatformPermissionGate permission="manageSubscriptionPlans"><PlatformCreatePlan /></PlatformPermissionGate>} />
-        <Route path="/platform/plan-access-settings" element={<PlatformPermissionGate permission="manageTrialAccess"><PlatformPlanAccessSettings /></PlatformPermissionGate>} />
-        <Route path="/platform/cms" element={<PlatformPermissionGate permission="manageCMS"><PlatformCMS /></PlatformPermissionGate>} />
-        <Route path="/platform/reviews" element={<PlatformPermissionGate permission="manageReviews"><PlatformReviews /></PlatformPermissionGate>} />
-        <Route path="/platform/admins" element={<PlatformAdmins />} />
-        <Route path="/platform/payroll" element={<PlatformPermissionGate permission="managePayroll"><PlatformPayroll /></PlatformPermissionGate>} />
-        <Route path="/platform/expenses" element={<PlatformExpenses />} />
-        <Route path="/platform/profit-loss" element={<PlatformProfitLoss />} />
-        <Route path="/platform/tickets" element={<PlatformPermissionGate permission="manageTickets"><PlatformTickets /></PlatformPermissionGate>} />
-        <Route path="/platform/tickets/:id" element={<PlatformPermissionGate permission="manageTickets"><PlatformTicketDetail /></PlatformPermissionGate>} />
-        <Route path="/platform/logs" element={<PlatformPermissionGate permission="manageLogs"><PlatformSystemLogs /></PlatformPermissionGate>} />
-        <Route path="/platform/security" element={<PlatformPermissionGate permission="manageSecurity"><PlatformSecurityOperations /></PlatformPermissionGate>} />
-        <Route path="/platform/settings" element={<PlatformPermissionGate staffOnly><PlatformSettings /></PlatformPermissionGate>} />
-        <Route path="/platform/finance/settings" element={<PlatformFinanceSettings />} />
-        <Route path="/platform/invoices" element={<PlatformPermissionGate permission="manageSubscriptionInvoices"><PlatformInvoices /></PlatformPermissionGate>} />
-        <Route path="/platform/invoices/:id" element={<PlatformPermissionGate permission="manageSubscriptionInvoices"><PlatformInvoiceDetail /></PlatformPermissionGate>} />
-        <Route path="/platform/subscription-activity" element={<PlatformPermissionGate permission="manageSubscriptionActivity"><PlatformSubscriptionActivity /></PlatformPermissionGate>} />
-        <Route path="/platform/subscription-payments" element={<PlatformPermissionGate permission="manageSubscriptionPayments"><PlatformSubscriptionPayments /></PlatformPermissionGate>} />
-        <Route path="/platform/notifications" element={<NotificationsPage />} />
-      </Route>
-
-      {/* Restaurant Routes: /restaurant/:slug/:restaurantId/... */}
-      <Route path="/restaurant/:slug/:restaurantId" element={<RestaurantLayout />}>
-        <Route index element={<RestaurantPortalIndex />} />
-        <Route element={<PlanProtectedOutlet />}>
-        <Route path="dashboard" element={<RestaurantDashboard />} />
-        <Route path="menu" element={<RestaurantMenu />} />
-        <Route path="menu/category/new" element={<RestaurantCategoryForm />} />
-        <Route path="menu/category/:id/edit" element={<RestaurantCategoryForm />} />
-        <Route path="menu/item/new" element={<RestaurantMenuItemForm />} />
-        <Route path="menu/item/:id/edit" element={<RestaurantMenuItemForm />} />
-        <Route path="orders" element={<RestaurantOrders />} />
-        <Route path="orders/activity" element={<RestaurantOrderActivityReport />} />
-        <Route path="orders/:id" element={<RestaurantOrderDetail />} />
-        <Route path="tables" element={<RestaurantTables />} />
-        <Route path="tables/new" element={<RestaurantTableForm />} />
-        <Route path="tables/:id/edit" element={<RestaurantTableForm />} />
-        <Route path="employees" element={<RestaurantEmployees />} />
-        <Route path="employees/new" element={<RestaurantEmployeeForm />} />
-        <Route path="employees/:id/edit" element={<RestaurantEmployeeForm />} />
-        <Route path="kyc" element={<RestaurantKYC />} />
-        <Route path="subscription" element={<RestaurantSubscription />} />
-        <Route path="subscription/checkout/:planId" element={<RestaurantSubscriptionCheckout />} />
-        <Route path="subscription/invoice/:invoiceId" element={<RestaurantSubscriptionInvoiceDetail />} />
-        <Route path="transactions" element={<Navigate to="../orders/activity" replace />} />
-        <Route path="promotions" element={<RestaurantPromotions />} />
-        <Route path="branches" element={<RestaurantBranches />} />
-        <Route path="credit-customers" element={<RestaurantCreditCustomers />} />
-        <Route path="tickets" element={<RestaurantTickets />} />
-        <Route path="tickets/create" element={<RestaurantTicketDetail />} />
-        <Route path="tickets/:id" element={<RestaurantTicketDetail />} />
-        <Route path="logs" element={<RestaurantSystemLogs />} />
-        <Route path="finance/dashboard" element={<FinanceDashboard />} />
-        <Route path="finance/expenses" element={<FinanceExpenses />} />
-        <Route path="finance/profit-loss" element={<FinanceProfitLoss />} />
-        <Route path="finance/payroll" element={<FinancePayroll />} />
-        <Route path="finance/invoices" element={<FinanceInvoices />} />
-        <Route path="finance/inventory" element={<FinanceInventory />} />
-        <Route path="finance/budget" element={<FinanceBudget />} />
-        <Route path="settings" element={<RestaurantSettings />} />
-        <Route path="backup-recovery" element={<BackupRecovery />} />
-        <Route path="public-profile" element={<RestaurantPublicProfile />} />
-        <Route path="profile" element={<RestaurantProfile />} />
-        <Route path="settings" element={<RestaurantSettings />} />
-        <Route path="security" element={<RestaurantActiveDevices />} />
-        <Route path="notifications" element={<NotificationsPage />} />
-        <Route path="pos" element={<PosLayout />}>
-          <Route index element={<PosMain />} />
-          <Route path="orders" element={<PosOrdersList />} />
-          <Route path="billing" element={<PosBilling />} />
-          <Route path="history" element={<PosHistory />} />
-          <Route path="returns" element={<PosReturns />} />
-          <Route path="shift" element={<PosShift />} />
-          <Route path="reports" element={<PosReports />} />
+        {/* Platform Routes */}
+        <Route element={<PlatformLayout />}>
+          <Route
+            path="/platform/dashboard"
+            element={
+              <PlatformPermissionGate permission="viewAnalytics">
+                <PlatformDashboard />
+              </PlatformPermissionGate>
+            }
+          />
+          <Route
+            path="/platform/restaurants"
+            element={
+              <PlatformPermissionGate permission="manageRestaurants">
+                <PlatformRestaurants />
+              </PlatformPermissionGate>
+            }
+          />
+          <Route
+            path="/platform/restaurants/:id"
+            element={
+              <PlatformPermissionGate permission="manageRestaurants">
+                <PlatformRestaurantDetail />
+              </PlatformPermissionGate>
+            }
+          />
+          <Route
+            path="/platform/kyc"
+            element={
+              <PlatformPermissionGate permission="verifyKYC">
+                <PlatformKYCPending />
+              </PlatformPermissionGate>
+            }
+          />
+          <Route
+            path="/platform/kyc/:id"
+            element={
+              <PlatformPermissionGate permission="verifyKYC">
+                <PlatformKYCDetail />
+              </PlatformPermissionGate>
+            }
+          />
+          <Route
+            path="/platform/subscriptions"
+            element={
+              <PlatformPermissionGate permission="manageSubscriptionPlans">
+                <PlatformSubscriptions />
+              </PlatformPermissionGate>
+            }
+          />
+          <Route
+            path="/platform/subscriptions/create"
+            element={
+              <PlatformPermissionGate permission="manageSubscriptionPlans">
+                <PlatformCreatePlan />
+              </PlatformPermissionGate>
+            }
+          />
+          <Route
+            path="/platform/subscriptions/edit/:id"
+            element={
+              <PlatformPermissionGate permission="manageSubscriptionPlans">
+                <PlatformCreatePlan />
+              </PlatformPermissionGate>
+            }
+          />
+          <Route
+            path="/platform/plan-access-settings"
+            element={
+              <PlatformPermissionGate permission="manageTrialAccess">
+                <PlatformPlanAccessSettings />
+              </PlatformPermissionGate>
+            }
+          />
+          <Route
+            path="/platform/cms"
+            element={
+              <PlatformPermissionGate permission="manageCMS">
+                <PlatformCMS />
+              </PlatformPermissionGate>
+            }
+          />
+          <Route
+            path="/platform/reviews"
+            element={
+              <PlatformPermissionGate permission="manageReviews">
+                <PlatformReviews />
+              </PlatformPermissionGate>
+            }
+          />
+          <Route path="/platform/admins" element={<PlatformAdmins />} />
+          <Route
+            path="/platform/payroll"
+            element={
+              <PlatformPermissionGate permission="managePayroll">
+                <PlatformPayroll />
+              </PlatformPermissionGate>
+            }
+          />
+          <Route path="/platform/expenses" element={<PlatformExpenses />} />
+          <Route
+            path="/platform/profit-loss"
+            element={<PlatformProfitLoss />}
+          />
+          <Route
+            path="/platform/tickets"
+            element={
+              <PlatformPermissionGate permission="manageTickets">
+                <PlatformTickets />
+              </PlatformPermissionGate>
+            }
+          />
+          <Route
+            path="/platform/tickets/:id"
+            element={
+              <PlatformPermissionGate permission="manageTickets">
+                <PlatformTicketDetail />
+              </PlatformPermissionGate>
+            }
+          />
+          <Route
+            path="/platform/logs"
+            element={
+              <PlatformPermissionGate permission="manageLogs">
+                <PlatformSystemLogs />
+              </PlatformPermissionGate>
+            }
+          />
+          <Route
+            path="/platform/security"
+            element={
+              <PlatformPermissionGate permission="manageSecurity">
+                <PlatformSecurityOperations />
+              </PlatformPermissionGate>
+            }
+          />
+          <Route
+            path="/platform/settings"
+            element={
+              <PlatformPermissionGate staffOnly>
+                <PlatformSettings />
+              </PlatformPermissionGate>
+            }
+          />
+          <Route
+            path="/platform/finance/settings"
+            element={<PlatformFinanceSettings />}
+          />
+          <Route
+            path="/platform/invoices"
+            element={
+              <PlatformPermissionGate permission="manageSubscriptionInvoices">
+                <PlatformInvoices />
+              </PlatformPermissionGate>
+            }
+          />
+          <Route
+            path="/platform/invoices/:id"
+            element={
+              <PlatformPermissionGate permission="manageSubscriptionInvoices">
+                <PlatformInvoiceDetail />
+              </PlatformPermissionGate>
+            }
+          />
+          <Route
+            path="/platform/subscription-activity"
+            element={
+              <PlatformPermissionGate permission="manageSubscriptionActivity">
+                <PlatformSubscriptionActivity />
+              </PlatformPermissionGate>
+            }
+          />
+          <Route
+            path="/platform/subscription-payments"
+            element={
+              <PlatformPermissionGate permission="manageSubscriptionPayments">
+                <PlatformSubscriptionPayments />
+              </PlatformPermissionGate>
+            }
+          />
+          <Route
+            path="/platform/notifications"
+            element={<NotificationsPage />}
+          />
         </Route>
+
+        {/* Restaurant Routes: /restaurant/:slug/:restaurantId/... */}
+        <Route
+          path="/restaurant/:slug/:restaurantId"
+          element={<RestaurantLayout />}
+        >
+          <Route index element={<RestaurantPortalIndex />} />
+          <Route element={<PlanProtectedOutlet />}>
+            <Route path="dashboard" element={<RestaurantDashboard />} />
+            <Route path="menu" element={<RestaurantMenu />} />
+            <Route
+              path="menu/category/new"
+              element={<RestaurantCategoryForm />}
+            />
+            <Route
+              path="menu/category/:id/edit"
+              element={<RestaurantCategoryForm />}
+            />
+            <Route path="menu/item/new" element={<RestaurantMenuItemForm />} />
+            <Route
+              path="menu/item/:id/edit"
+              element={<RestaurantMenuItemForm />}
+            />
+            <Route path="orders" element={<RestaurantOrders />} />
+            <Route
+              path="orders/activity"
+              element={<RestaurantOrderActivityReport />}
+            />
+            <Route path="orders/:id" element={<RestaurantOrderDetail />} />
+            <Route path="tables" element={<RestaurantTables />} />
+            <Route path="tables/new" element={<RestaurantTableForm />} />
+            <Route path="tables/:id/edit" element={<RestaurantTableForm />} />
+            <Route path="employees" element={<RestaurantEmployees />} />
+            <Route path="employees/new" element={<RestaurantEmployeeForm />} />
+            <Route
+              path="employees/:id/edit"
+              element={<RestaurantEmployeeForm />}
+            />
+            <Route path="kyc" element={<RestaurantKYC />} />
+            <Route path="subscription" element={<RestaurantSubscription />} />
+            <Route
+              path="subscription/checkout/:planId"
+              element={<RestaurantSubscriptionCheckout />}
+            />
+            <Route
+              path="subscription/invoice/:invoiceId"
+              element={<RestaurantSubscriptionInvoiceDetail />}
+            />
+            <Route
+              path="transactions"
+              element={<Navigate to="../orders/activity" replace />}
+            />
+            <Route path="promotions" element={<RestaurantPromotions />} />
+            <Route path="branches" element={<RestaurantBranches />} />
+            <Route
+              path="credit-customers"
+              element={<RestaurantCreditCustomers />}
+            />
+            <Route path="tickets" element={<RestaurantTickets />} />
+            <Route path="tickets/create" element={<RestaurantTicketDetail />} />
+            <Route path="tickets/:id" element={<RestaurantTicketDetail />} />
+            <Route path="logs" element={<RestaurantSystemLogs />} />
+            <Route path="finance/dashboard" element={<FinanceDashboard />} />
+            <Route path="finance/expenses" element={<FinanceExpenses />} />
+            <Route path="finance/profit-loss" element={<FinanceProfitLoss />} />
+            <Route path="finance/payroll" element={<FinancePayroll />} />
+            <Route path="finance/invoices" element={<FinanceInvoices />} />
+            <Route path="finance/inventory" element={<FinanceInventory />} />
+            <Route path="finance/budget" element={<FinanceBudget />} />
+            <Route path="settings" element={<RestaurantSettings />} />
+            <Route path="backup-recovery" element={<BackupRecovery />} />
+            <Route
+              path="public-profile"
+              element={<RestaurantPublicProfile />}
+            />
+            <Route path="profile" element={<RestaurantProfile />} />
+            <Route path="settings" element={<RestaurantSettings />} />
+            <Route path="security" element={<RestaurantActiveDevices />} />
+            <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="pos" element={<PosLayout />}>
+              <Route index element={<PosMain />} />
+              <Route path="orders" element={<PosOrdersList />} />
+              <Route path="billing" element={<PosBilling />} />
+              <Route path="history" element={<PosHistory />} />
+              <Route path="returns" element={<PosReturns />} />
+              <Route path="shift" element={<PosShift />} />
+              <Route path="reports" element={<PosReports />} />
+            </Route>
+          </Route>
         </Route>
-      </Route>
 
-      {/* Branch portal: /branch/:restaurantId/:portalKey/:branchSlug/... */}
-      <Route path="/branch/:restaurantId/:portalKey/:branchSlug" element={<BranchLayout />}>
-        <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<RestaurantDashboard />} />
-        <Route path="menu" element={<RestaurantMenu />} />
-        <Route path="menu/category/new" element={<RestaurantCategoryForm />} />
-        <Route path="menu/category/:id/edit" element={<RestaurantCategoryForm />} />
-        <Route path="menu/item/new" element={<RestaurantMenuItemForm />} />
-        <Route path="menu/item/:id/edit" element={<RestaurantMenuItemForm />} />
-        <Route path="orders" element={<RestaurantOrders />} />
-        <Route path="orders/activity" element={<RestaurantOrderActivityReport />} />
-        <Route path="orders/:id" element={<RestaurantOrderDetail />} />
-        <Route path="tables" element={<RestaurantTables />} />
-        <Route path="tables/new" element={<RestaurantTableForm />} />
-        <Route path="tables/:id/edit" element={<RestaurantTableForm />} />
-        <Route path="employees" element={<RestaurantEmployees />} />
-        <Route path="employees/new" element={<RestaurantEmployeeForm />} />
-        <Route path="employees/:id/edit" element={<RestaurantEmployeeForm />} />
-        <Route path="promotions" element={<RestaurantPromotions />} />
-        <Route path="credit-customers" element={<RestaurantCreditCustomers />} />
-        <Route path="finance/dashboard" element={<FinanceDashboard />} />
-        <Route path="finance/expenses" element={<FinanceExpenses />} />
-        <Route path="finance/profit-loss" element={<FinanceProfitLoss />} />
-        <Route path="finance/payroll" element={<FinancePayroll />} />
-        <Route path="finance/invoices" element={<FinanceInvoices />} />
-        <Route path="finance/inventory" element={<FinanceInventory />} />
-        <Route path="finance/budget" element={<FinanceBudget />} />
-        <Route path="profile" element={<RestaurantProfile />} />
-        <Route path="notifications" element={<NotificationsPage />} />
-        <Route path="tickets" element={<RestaurantTickets />} />
-        <Route path="tickets/create" element={<RestaurantTicketDetail />} />
-        <Route path="tickets/:id" element={<RestaurantTicketDetail />} />
-        <Route path="public-profile" element={<RestaurantPublicProfile />} />
-        <Route path="settings" element={<BranchSettings />} />
-        <Route path="pos" element={<PosLayout />}>
-          <Route index element={<PosMain />} />
-          <Route path="orders" element={<PosOrdersList />} />
-          <Route path="billing" element={<PosBilling />} />
-          <Route path="history" element={<PosHistory />} />
-          <Route path="returns" element={<PosReturns />} />
-          <Route path="shift" element={<PosShift />} />
-          <Route path="reports" element={<PosReports />} />
+        {/* Branch portal: /branch/:restaurantId/:portalKey/:branchSlug/... */}
+        <Route
+          path="/branch/:restaurantId/:portalKey/:branchSlug"
+          element={<BranchLayout />}
+        >
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<RestaurantDashboard />} />
+          <Route path="menu" element={<RestaurantMenu />} />
+          <Route
+            path="menu/category/new"
+            element={<RestaurantCategoryForm />}
+          />
+          <Route
+            path="menu/category/:id/edit"
+            element={<RestaurantCategoryForm />}
+          />
+          <Route path="menu/item/new" element={<RestaurantMenuItemForm />} />
+          <Route
+            path="menu/item/:id/edit"
+            element={<RestaurantMenuItemForm />}
+          />
+          <Route path="orders" element={<RestaurantOrders />} />
+          <Route
+            path="orders/activity"
+            element={<RestaurantOrderActivityReport />}
+          />
+          <Route path="orders/:id" element={<RestaurantOrderDetail />} />
+          <Route path="tables" element={<RestaurantTables />} />
+          <Route path="tables/new" element={<RestaurantTableForm />} />
+          <Route path="tables/:id/edit" element={<RestaurantTableForm />} />
+          <Route path="employees" element={<RestaurantEmployees />} />
+          <Route path="employees/new" element={<RestaurantEmployeeForm />} />
+          <Route
+            path="employees/:id/edit"
+            element={<RestaurantEmployeeForm />}
+          />
+          <Route path="promotions" element={<RestaurantPromotions />} />
+          <Route
+            path="credit-customers"
+            element={<RestaurantCreditCustomers />}
+          />
+          <Route path="finance/dashboard" element={<FinanceDashboard />} />
+          <Route path="finance/expenses" element={<FinanceExpenses />} />
+          <Route path="finance/profit-loss" element={<FinanceProfitLoss />} />
+          <Route path="finance/payroll" element={<FinancePayroll />} />
+          <Route path="finance/invoices" element={<FinanceInvoices />} />
+          <Route path="finance/inventory" element={<FinanceInventory />} />
+          <Route path="finance/budget" element={<FinanceBudget />} />
+          <Route path="profile" element={<RestaurantProfile />} />
+          <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="tickets" element={<RestaurantTickets />} />
+          <Route path="tickets/create" element={<RestaurantTicketDetail />} />
+          <Route path="tickets/:id" element={<RestaurantTicketDetail />} />
+          <Route path="public-profile" element={<RestaurantPublicProfile />} />
+          <Route path="settings" element={<BranchSettings />} />
+          <Route path="pos" element={<PosLayout />}>
+            <Route index element={<PosMain />} />
+            <Route path="orders" element={<PosOrdersList />} />
+            <Route path="billing" element={<PosBilling />} />
+            <Route path="history" element={<PosHistory />} />
+            <Route path="returns" element={<PosReturns />} />
+            <Route path="shift" element={<PosShift />} />
+            <Route path="reports" element={<PosReports />} />
+          </Route>
         </Route>
-      </Route>
 
-      {/* Employee: forced password change (no sidebar) */}
-      <Route path="/employee/change-password" element={<EmployeeChangePassword />} />
+        {/* Employee: forced password change (no sidebar) */}
+        <Route
+          path="/employee/change-password"
+          element={<EmployeeChangePassword />}
+        />
 
-      {/* Manager portal: operations, analytics, team */}
-      <Route path="/manager/:slug/:restaurantId" element={<ManagerLayout />}>
-        <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<ManagerDashboard />} />
-        <Route path="orders" element={<RestaurantOrders />} />
-        <Route path="orders/:id" element={<RestaurantOrderDetail />} />
-        <Route path="tables" element={<RestaurantTables />} />
-        <Route path="tables/new" element={<RestaurantTableForm />} />
-        <Route path="tables/:id/edit" element={<RestaurantTableForm />} />
-        <Route path="payments" element={<CashierDashboard />} />
-        <Route path="sales-activity" element={<ManagerSalesActivity />} />
-        <Route path="reports" element={<RestaurantOrderActivityReport />} />
-        <Route path="team" element={<ManagerTeam />} />
-        <Route path="notifications" element={<NotificationsPage />} />
-        <Route path="pos" element={<PosLayout />}>
-          <Route index element={<PosMain />} />
-          <Route path="orders" element={<PosOrdersList />} />
-          <Route path="billing" element={<PosBilling />} />
-          <Route path="history" element={<PosHistory />} />
-          <Route path="returns" element={<PosReturns />} />
-          <Route path="shift" element={<PosShift />} />
-          <Route path="reports" element={<PosReports />} />
+        {/* Manager portal: operations, analytics, team */}
+        <Route path="/manager/:slug/:restaurantId" element={<ManagerLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<ManagerDashboard />} />
+          <Route path="orders" element={<RestaurantOrders />} />
+          <Route path="orders/:id" element={<RestaurantOrderDetail />} />
+          <Route path="tables" element={<RestaurantTables />} />
+          <Route path="tables/new" element={<RestaurantTableForm />} />
+          <Route path="tables/:id/edit" element={<RestaurantTableForm />} />
+          <Route path="payments" element={<CashierDashboard />} />
+          <Route path="sales-activity" element={<ManagerSalesActivity />} />
+          <Route path="reports" element={<RestaurantOrderActivityReport />} />
+          <Route path="team" element={<ManagerTeam />} />
+          <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="pos" element={<PosLayout />}>
+            <Route index element={<PosMain />} />
+            <Route path="orders" element={<PosOrdersList />} />
+            <Route path="billing" element={<PosBilling />} />
+            <Route path="history" element={<PosHistory />} />
+            <Route path="returns" element={<PosReturns />} />
+            <Route path="shift" element={<PosShift />} />
+            <Route path="reports" element={<PosReports />} />
+          </Route>
         </Route>
-      </Route>
 
-      {/* Employee Routes: kitchen / cashier / generic employee — all include :slug :restaurantId */}
-      <Route element={<EmployeeLayout />}>
-        <Route path="/kitchen/:slug/:restaurantId/dashboard" element={<KitchenDashboard />} />
-        <Route path="/kitchen/:slug/:restaurantId/orders" element={<OrderList />} />
-        <Route path="/kitchen/:slug/:restaurantId/orders/:id" element={<RestaurantOrderDetail />} />
-        <Route path="/cashier/:slug/:restaurantId/dashboard" element={<CashierDashboard />} />
-        <Route path="/cashier/:slug/:restaurantId/transactions" element={<CashierTransactions />} />
-        <Route path="/cashier/:slug/:restaurantId/house-credit" element={<CashierHouseCredit />} />
-        <Route path="/cashier/:slug/:restaurantId/orders/:id" element={<RestaurantOrderDetail />} />
-        <Route path="/waiter/:slug/:restaurantId/dashboard" element={<WaiterDashboard />} />
-        <Route path="/waiter/:slug/:restaurantId/order" element={<WaiterTakeOrder />} />
-        <Route path="/waiter/:slug/:restaurantId/notifications" element={<NotificationsPage />} />
-        <Route path="/employee/:slug/:restaurantId/orders" element={<OrderList />} />
-        <Route path="/employee/:slug/:restaurantId/orders/:id" element={<RestaurantOrderDetail />} />
-        <Route path="/employee/:slug/:restaurantId/notifications" element={<NotificationsPage />} />
-        <Route path="/kitchen/:slug/:restaurantId/notifications" element={<NotificationsPage />} />
-        <Route path="/cashier/:slug/:restaurantId/notifications" element={<NotificationsPage />} />
-        <Route path="/waiter/:slug/:restaurantId/pos" element={<PosLayout />}>
-          <Route index element={<PosMain />} />
-          <Route path="orders" element={<PosOrdersList />} />
-          <Route path="billing" element={<PosBilling />} />
-          <Route path="history" element={<PosHistory />} />
-          <Route path="returns" element={<PosReturns />} />
-          <Route path="shift" element={<PosShift />} />
-          <Route path="reports" element={<PosReports />} />
+        {/* Employee Routes: kitchen / cashier / generic employee — all include :slug :restaurantId */}
+        <Route element={<EmployeeLayout />}>
+          <Route
+            path="/kitchen/:slug/:restaurantId/dashboard"
+            element={<KitchenDashboard />}
+          />
+          <Route
+            path="/kitchen/:slug/:restaurantId/orders"
+            element={<OrderList />}
+          />
+          <Route
+            path="/kitchen/:slug/:restaurantId/orders/:id"
+            element={<RestaurantOrderDetail />}
+          />
+          <Route
+            path="/cashier/:slug/:restaurantId/dashboard"
+            element={<CashierDashboard />}
+          />
+          <Route
+            path="/cashier/:slug/:restaurantId/transactions"
+            element={<CashierTransactions />}
+          />
+          <Route
+            path="/cashier/:slug/:restaurantId/house-credit"
+            element={<CashierHouseCredit />}
+          />
+          <Route
+            path="/cashier/:slug/:restaurantId/orders/:id"
+            element={<RestaurantOrderDetail />}
+          />
+          <Route
+            path="/waiter/:slug/:restaurantId/dashboard"
+            element={<WaiterDashboard />}
+          />
+          <Route
+            path="/waiter/:slug/:restaurantId/order"
+            element={<WaiterTakeOrder />}
+          />
+          <Route
+            path="/waiter/:slug/:restaurantId/notifications"
+            element={<NotificationsPage />}
+          />
+          <Route
+            path="/employee/:slug/:restaurantId/orders"
+            element={<OrderList />}
+          />
+          <Route
+            path="/employee/:slug/:restaurantId/orders/:id"
+            element={<RestaurantOrderDetail />}
+          />
+          <Route
+            path="/employee/:slug/:restaurantId/notifications"
+            element={<NotificationsPage />}
+          />
+          <Route
+            path="/kitchen/:slug/:restaurantId/notifications"
+            element={<NotificationsPage />}
+          />
+          <Route
+            path="/cashier/:slug/:restaurantId/notifications"
+            element={<NotificationsPage />}
+          />
+          <Route path="/waiter/:slug/:restaurantId/pos" element={<PosLayout />}>
+            <Route index element={<PosMain />} />
+            <Route path="orders" element={<PosOrdersList />} />
+            <Route path="billing" element={<PosBilling />} />
+            <Route path="history" element={<PosHistory />} />
+            <Route path="returns" element={<PosReturns />} />
+            <Route path="shift" element={<PosShift />} />
+            <Route path="reports" element={<PosReports />} />
+          </Route>
         </Route>
-      </Route>
 
-      {/* Customer Routes - Public */}
-      {/* IMPORTANT: Add the menu route with slug and token parameters */}
-      <Route path="/home/:slug/:token" element={<CustomerHome />} />
-      <Route path="/menu/:slug/:token" element={<CustomerMenu />} />
-      <Route path="/item/:slug/:token/:category" element={<CustomerMenuItem />} />
-      <Route path="/item-detail/:slug/:token/:id" element={<CustomerMenuItemDetail />} />
-      <Route path="/cart/:slug/:token" element={<CustomerCart />} />
-      <Route path="/orders/:slug/:token" element={<CustomerMyOrders />} />
-      <Route path="/order/track/:qrToken" element={<CustomerOrderTracking />} />
-      <Route path="/order/bill/:qrToken" element={<CustomerBill />} />
-      <Route path="/account/:slug/:token" element={<CustomerAccountPage />} />
-      <Route path="/about/:slug/:token" element={<CustomerAboutRestaurant />} />
-      <Route path="/settings/:slug/:token" element={<CustomerSettingsPage />} />
-      <Route path="/privacy/:slug/:token" element={<CustomerPrivacyPage />} />
-      <Route path="/credit-apply/:slug/:token" element={<CustomerCreditApply />} />
-      <Route path="/subscription/payment/esewa/success" element={<SubscriptionPaymentCallback gateway="esewa" />} />
-      <Route path="/subscription/payment/esewa/failure" element={<SubscriptionPaymentCallback gateway="esewa" failed />} />
-      <Route path="/subscription/payment/khalti/callback" element={<SubscriptionPaymentCallback gateway="khalti" />} />
-      {/* <Route
+        {/* Customer Routes - Public */}
+        {/* IMPORTANT: Add the menu route with slug and token parameters */}
+        <Route path="/home/:slug/:token" element={<CustomerHome />} />
+        <Route path="/menu/:slug/:token" element={<CustomerMenu />} />
+        <Route
+          path="/item/:slug/:token/:category"
+          element={<CustomerMenuItem />}
+        />
+        <Route
+          path="/item-detail/:slug/:token/:id"
+          element={<CustomerMenuItemDetail />}
+        />
+        <Route path="/cart/:slug/:token" element={<CustomerCart />} />
+        <Route path="/orders/:slug/:token" element={<CustomerMyOrders />} />
+        <Route
+          path="/order/track/:qrToken"
+          element={<CustomerOrderTracking />}
+        />
+        <Route path="/order/bill/:qrToken" element={<CustomerBill />} />
+        <Route path="/account/:slug/:token" element={<CustomerAccountPage />} />
+        <Route
+          path="/about/:slug/:token"
+          element={<CustomerAboutRestaurant />}
+        />
+        <Route
+          path="/settings/:slug/:token"
+          element={<CustomerSettingsPage />}
+        />
+        <Route path="/privacy/:slug/:token" element={<CustomerPrivacyPage />} />
+        <Route
+          path="/credit-apply/:slug/:token"
+          element={<CustomerCreditApply />}
+        />
+        <Route
+          path="/subscription/payment/esewa/success"
+          element={<SubscriptionPaymentCallback gateway="esewa" />}
+        />
+        <Route
+          path="/subscription/payment/esewa/failure"
+          element={<SubscriptionPaymentCallback gateway="esewa" failed />}
+        />
+        <Route
+          path="/subscription/payment/khalti/callback"
+          element={<SubscriptionPaymentCallback gateway="khalti" />}
+        />
+        {/* <Route
         path="/order/success/:orderId"
         element={<CustomerOrderSuccess />}
       /> */}
 
-      {/* Default Redirect */}
-      <Route
-        path="/"
-        element={
-          !user ? (
-            <Navigate to="/login" />
-          ) : isEmployeeUser && user.mustChangePassword ? (
-            <Navigate to="/employee/change-password" />
-          ) : user?.scope === "branch_user" && user?.branchSlug ? (
-            <Navigate to={defaultPortalPathForUser(user)} replace />
-          ) : isEmployeeUser && userSlug != null && userRestaurantId != null ? (
-            <Navigate to={defaultPortalPathForUser(user)} replace />
-          ) : (user.role === "super_admin" || user.role === "admin") && user.scope !== "employee" ? (
-            <Navigate to="/platform/dashboard" />
-          ) : user.role === "restaurant" && userSlug != null && userRestaurantId != null ? (
-            <Navigate to={defaultPortalPathForUser(user)} replace />
-          ) : (
-            <Navigate to="/login" />
-          )
-        }
-      />
+        {/* Default Redirect */}
+        <Route
+          path="/"
+          element={
+            !user ? (
+              <Navigate to="/login" />
+            ) : isEmployeeUser && user.mustChangePassword ? (
+              <Navigate to="/employee/change-password" />
+            ) : user?.scope === "branch_user" && user?.branchSlug ? (
+              <Navigate to={defaultPortalPathForUser(user)} replace />
+            ) : isEmployeeUser &&
+              userSlug != null &&
+              userRestaurantId != null ? (
+              <Navigate to={defaultPortalPathForUser(user)} replace />
+            ) : (user.role === "super_admin" || user.role === "admin") &&
+              user.scope !== "employee" ? (
+              <Navigate to="/platform/dashboard" />
+            ) : user.role === "restaurant" &&
+              userSlug != null &&
+              userRestaurantId != null ? (
+              <Navigate to={defaultPortalPathForUser(user)} replace />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
 
-      {/* Catch all - 404 */}
-      <Route
-        path="*"
-        element={
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="text-center">
-              <h1 className="text-4xl font-semibold text-gray-900 dark:text-gray-100">404</h1>
-              <p className="text-gray-500 dark:text-gray-400 mt-2">Page not found</p>
+        {/* Catch all - 404 */}
+        <Route
+          path="*"
+          element={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <h1 className="text-4xl font-semibold text-gray-900 dark:text-gray-100">
+                  404
+                </h1>
+                <p className="text-gray-500 dark:text-gray-400 mt-2">
+                  Page not found
+                </p>
+              </div>
             </div>
-          </div>
-        }
-      />
-    </Routes>
+          }
+        />
+      </Routes>
+    </>
   );
 }
 

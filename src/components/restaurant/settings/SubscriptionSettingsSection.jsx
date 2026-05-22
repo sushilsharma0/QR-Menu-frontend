@@ -3,7 +3,7 @@ import { FiCopy, FiCreditCard, FiGift } from 'react-icons/fi'
 import Card from '../../common/Card'
 import toast from '../../../utils/toast'
 
-export default function SubscriptionSettingsSection({ restaurant, onToggleAutoRenew }) {
+export default function SubscriptionSettingsSection({ restaurant }) {
   const referralCode = restaurant?.referralCode || ''
 
   const copyReferralCode = async () => {
@@ -18,30 +18,7 @@ export default function SubscriptionSettingsSection({ restaurant, onToggleAutoRe
 
   return (
     <Card title="Subscription Settings" icon={FiCreditCard}>
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="font-medium text-gray-900 dark:text-gray-100">Auto-renew Subscription</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Automatically renew your plan when it expires
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onToggleAutoRenew}
-          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-            restaurant?.autoRenew ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-700'
-          }`}
-          aria-pressed={Boolean(restaurant?.autoRenew)}
-        >
-          <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-              restaurant?.autoRenew ? 'translate-x-6' : 'translate-x-1'
-            }`}
-          />
-        </button>
-      </div>
-
-      <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/20">
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/20">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-amber-700 shadow-sm dark:bg-gray-900 dark:text-amber-300">

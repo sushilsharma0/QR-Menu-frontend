@@ -387,16 +387,6 @@ const Settings = () => {
     }
   }
 
-  const toggleAutoRenew = async () => {
-    try {
-      await api.patch('/restaurant/package/auto-renew', { autoRenew: !restaurant?.autoRenew })
-      toast.success(`Auto-renew ${!restaurant?.autoRenew ? 'enabled' : 'disabled'}`)
-      fetchRestaurant()
-    } catch (error) {
-      toast.error('Failed to update auto-renew')
-    }
-  }
-
   const fetchBackupHistory = async () => {
     try {
       const res = await api.get('/restaurant/backup/history')
@@ -641,7 +631,7 @@ const Settings = () => {
         )
       case 'subscription':
         return (
-          <SubscriptionSettingsSection restaurant={restaurant} onToggleAutoRenew={toggleAutoRenew} />
+          <SubscriptionSettingsSection restaurant={restaurant} />
         )
       default:
         return null

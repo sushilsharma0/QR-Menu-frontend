@@ -563,9 +563,6 @@ export const getPackageHistory = (params) =>
 export const requestPackage = (packageId) => 
   api.post('/restaurant/package/request', { packageId })
 
-export const toggleAutoRenew = (autoRenew) => 
-  api.patch('/restaurant/package/auto-renew', { autoRenew })
-
 export const initiateEsewaSubscriptionPayment = (planId) =>
   api.post('/restaurant/subscription/pay/esewa', { planId })
 

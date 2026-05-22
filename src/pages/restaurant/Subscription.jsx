@@ -323,16 +323,6 @@ const Subscription = () => {
     setProofFile(file)
   }
 
-  const toggleAutoRenew = async () => {
-    try {
-      await api.patch('/restaurant/package/auto-renew', { autoRenew: !currentPlan?.autoRenew })
-      toast.success(`Auto-renew ${!currentPlan?.autoRenew ? 'enabled' : 'disabled'}`)
-      fetchData(true)
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update auto-renew')
-    }
-  }
-
   const subscriptionState = statusLabel(currentPlan)
   const awaitingProof = currentPlan?.planRequestStatus === 'awaiting_proof'
   const pendingReview = currentPlan?.planRequestStatus === 'pending_review'
@@ -616,13 +606,6 @@ const Subscription = () => {
                         'manual custom': 'bg-amber-100 text-amber-800',
                       }} />
                     )}
-                    <RestaurantStatusPill value={currentPlan.autoRenew ? 'auto-renew on' : 'auto-renew off'} styles={{
-                      'auto-renew on': 'bg-green-100 text-green-800',
-                      'auto-renew off': 'bg-gray-100 text-gray-700',
-                    }} />
-                    <Button type="button" variant="secondary" onClick={toggleAutoRenew}>
-                      {currentPlan.autoRenew ? 'Disable auto-renew' : 'Enable auto-renew'}
-                    </Button>
                   </div>
                 </div>
               </m.section>

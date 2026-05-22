@@ -465,6 +465,16 @@ export default function Home() {
                 </button>
               </div>
 
+              <button
+                type="button"
+                disabled={assistSending || !guestIdLocal}
+                onClick={() => sendGuestRequest("call_waiter")}
+                className="relative z-10 mt-3 flex w-[92%] max-w-md items-center justify-center gap-2 rounded-2xl bg-primary-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-primary-900/15 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <BellRing size={18} />
+                {assistSending ? "Calling waiter..." : "Call waiter"}
+              </button>
+
               {promoBanners.length > 0 && (
                 <div className="mt-6 w-[90%] max-w-md space-y-3">
                   {promoBanners.slice(0, 2).map((promo) => (
