@@ -14,6 +14,22 @@ import {
   isOnline,
 } from '../../../lib/posOfflineQueue'
 
+const posFieldClass =
+  'w-full rounded-lg border px-2 py-1.5 text-xs dark:border-gray-600 dark:bg-gray-800'
+
+function PosLabeledField({ id, label, name, className = posFieldClass, ...inputProps }) {
+  const fieldId = id || name
+  const fieldName = name || id
+  return (
+    <label htmlFor={fieldId} className="block space-y-1">
+      <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+        {label}
+      </span>
+      <input id={fieldId} name={fieldName} className={className} {...inputProps} />
+    </label>
+  )
+}
+
 export default function PosMain() {
   const { canTakeOrder } = usePosAccess()
   const { socket } = useSocket()
@@ -209,7 +225,7 @@ export default function PosMain() {
   }, [])
 
   return (
-    <div className="flex min-h-full flex-col gap-3 p-3 md:p-4 xl:h-full xl:min-h-0 xl:flex-row">
+    <div className="flex min-h-full flex-col gap-3 p-3 md:p-4 xl:h-[calc(100dvh-11rem)] xl:min-h-0 xl:flex-row xl:overflow-hidden">
       {/* Categories / filters */}
       <aside className="flex shrink-0 flex-col gap-3 rounded-3xl border border-surface-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-900 xl:w-60 xl:overflow-y-auto">
         <div className="flex items-center gap-2 rounded-2xl bg-primary-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-primary-700">
@@ -357,13 +373,14 @@ export default function PosMain() {
         )}
       </section>
 
-      {/* Cart */}
-      <aside className="flex w-full shrink-0 flex-col overflow-hidden rounded-3xl border border-surface-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900 lg:max-h-[45rem] xl:h-full xl:w-80">
-        <div className="border-b border-surface-200 px-4 py-3 dark:border-gray-800">
+      {/* Cart — line items + fields scroll; totals + submit stay pinned at bottom */}
+      <aside className="flex w-full shrink-0 flex-col overflow-hidden rounded-3xl border border-surface-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900 lg:max-h-[min(45rem,calc(100dvh-11rem))] xl:h-[min(100%,calc(100dvh-11rem))] xl:max-h-[calc(100dvh-11rem)] xl:w-80">
+        <div className="shrink-0 border-b border-surface-200 px-4 py-3 dark:border-gray-800">
           <p className="text-xs font-semibold uppercase tracking-wide text-primary-700">Cart</p>
           <h2 className="mt-1 text-lg font-semibold text-gray-950 dark:text-gray-100">Current order</h2>
         </div>
-        <div className="max-h-72 flex-1 space-y-2 overflow-y-auto p-3 xl:max-h-none">
+        <div className="flex min-h-0 flex-1 flex-col">
+        <div className="min-h-[5rem] max-h-[28vh] shrink-0 space-y-2 overflow-y-auto p-3 sm:max-h-[32vh] xl:max-h-[min(240px,28vh)]">
           <AnimatePresence initial={false}>
             {lines.map((l) => (
               <motion.div
@@ -421,89 +438,146 @@ export default function PosMain() {
           </AnimatePresence>
         </div>
 
-        <div className="space-y-2 border-t border-surface-200 p-3 dark:border-gray-800">
+        <div
+          className="min-h-0 flex-1 space-y-2 overflow-y-auto border-t border-surface-200 p-3 dark:border-gray-800"
+          data-pos-section="customer-and-adjustments"
+        >
+          <div className="shrink-0">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary-700">
+              Customer &amp; adjustments
+            </p>
+            <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">
+              Scroll this section; order total and send stay fixed at the bottom.
+            </p>
+          </div>
+
           {mode !== 'dine_in' && (
-            <input
-              placeholder="Customer name"
+            <PosLabeledField
+              id="pos-customer-name"
+              name="customerName"
+              label="Customer name"
+              type="text"
+              autoComplete="name"
+              placeholder="Walk-in or guest name"
               value={customerName}
               onChange={(e) => setField('customerName', e.target.value)}
-              className="w-full rounded-lg border px-2 py-1.5 text-xs dark:border-gray-600 dark:bg-gray-800"
             />
           )}
-          <input
-            placeholder="Phone"
+          <PosLabeledField
+            id="pos-customer-phone"
+            name="customerPhone"
+            label="Phone"
+            type="tel"
+            autoComplete="tel"
+            placeholder="98XXXXXXXX"
             value={customerPhone}
             onChange={(e) => setField('customerPhone', e.target.value)}
-            className="w-full rounded-lg border px-2 py-1.5 text-xs dark:border-gray-600 dark:bg-gray-800"
           />
           {mode === 'dine_in' && (
-            <input
+            <PosLabeledField
+              id="pos-guests-count"
+              name="guestsCount"
+              label="Guest count"
               type="number"
               min={1}
-              placeholder="Guests"
+              placeholder="1"
               value={guestsCount}
               onChange={(e) => setField('guestsCount', Number(e.target.value) || 1)}
-              className="w-full rounded-lg border px-2 py-1.5 text-xs dark:border-gray-600 dark:bg-gray-800"
             />
           )}
           {mode === 'delivery' && (
-            <>
-              <input
-                placeholder="Address"
+            <div className="space-y-2 rounded-xl border border-dashed border-surface-200 p-2 dark:border-gray-700">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Delivery details
+              </p>
+              <PosLabeledField
+                id="pos-delivery-address"
+                name="deliveryAddress"
+                label="Delivery address"
+                type="text"
+                placeholder="Street, area, landmark"
                 value={deliveryAddress}
                 onChange={(e) => setField('deliveryAddress', e.target.value)}
-                className="w-full rounded-lg border px-2 py-1.5 text-xs dark:border-gray-600 dark:bg-gray-800"
               />
-              <input
-                placeholder="Rider"
+              <PosLabeledField
+                id="pos-rider-name"
+                name="riderName"
+                label="Rider name"
+                type="text"
+                placeholder="Assigned rider"
                 value={riderName}
                 onChange={(e) => setField('riderName', e.target.value)}
-                className="w-full rounded-lg border px-2 py-1.5 text-xs dark:border-gray-600 dark:bg-gray-800"
               />
-              <input
-                placeholder="Rider phone"
+              <PosLabeledField
+                id="pos-rider-phone"
+                name="riderPhone"
+                label="Rider phone"
+                type="tel"
+                placeholder="Rider contact"
                 value={riderPhone}
                 onChange={(e) => setField('riderPhone', e.target.value)}
-                className="w-full rounded-lg border px-2 py-1.5 text-xs dark:border-gray-600 dark:bg-gray-800"
               />
-              <input
+              <PosLabeledField
+                id="pos-delivery-charge"
+                name="deliveryCharge"
+                label="Delivery charge (Rs)"
                 type="number"
-                placeholder="Delivery charge"
+                min={0}
+                step="0.01"
+                placeholder="0"
                 value={deliveryCharge}
                 onChange={(e) => setField('deliveryCharge', e.target.value)}
-                className="w-full rounded-lg border px-2 py-1.5 text-xs dark:border-gray-600 dark:bg-gray-800"
               />
-            </>
+            </div>
           )}
           <div className="grid grid-cols-2 gap-2">
-            <input
+            <PosLabeledField
+              id="pos-discount-amount"
+              name="discountAmount"
+              label="Discount (Rs)"
               type="number"
-              placeholder="Disc Rs"
+              min={0}
+              step="0.01"
+              placeholder="0"
               value={discountAmount}
               onChange={(e) => setField('discountAmount', e.target.value)}
-              className="rounded-lg border px-2 py-1 text-xs dark:border-gray-600 dark:bg-gray-800"
             />
-            <input
+            <PosLabeledField
+              id="pos-discount-percent"
+              name="discountPercent"
+              label="Discount (%)"
               type="number"
-              placeholder="Disc %"
+              min={0}
+              max={100}
+              step="0.01"
+              placeholder="0"
               value={discountPercent}
               onChange={(e) => setField('discountPercent', e.target.value)}
-              className="rounded-lg border px-2 py-1 text-xs dark:border-gray-600 dark:bg-gray-800"
             />
           </div>
-          <input
-            placeholder="Service charge (Rs)"
+          <PosLabeledField
+            id="pos-service-charge"
+            name="serviceChargeAmount"
+            label="Service charge (Rs)"
+            type="number"
+            min={0}
+            step="0.01"
+            placeholder="0"
             value={serviceChargeAmount ?? ''}
             onChange={(e) => setField('serviceChargeAmount', e.target.value)}
-            className="w-full rounded-lg border px-2 py-1.5 text-xs dark:border-gray-600 dark:bg-gray-800"
           />
-          <input
-            placeholder="Promo code"
+          <PosLabeledField
+            id="pos-promo-code"
+            name="promoCode"
+            label="Promo code"
+            type="text"
+            placeholder="Optional code"
             value={promoCode}
             onChange={(e) => setField('promoCode', e.target.value)}
-            className="w-full rounded-lg border px-2 py-1.5 text-xs dark:border-gray-600 dark:bg-gray-800"
           />
+        </div>
 
+        <div className="sticky bottom-0 z-10 shrink-0 space-y-2 border-t border-surface-200 bg-white p-3 shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.15)] dark:border-gray-800 dark:bg-gray-900">
           <div className="space-y-1 rounded-2xl bg-primary-50 p-3 text-xs dark:bg-gray-800">
             <div className="flex justify-between">
               <span>Subtotal</span>
@@ -525,12 +599,18 @@ export default function PosMain() {
 
           <button
             type="button"
-            disabled={submitting || !canTakeOrder}
+            id="pos-send-to-kitchen"
+            name="sendToKitchen"
+            disabled={submitting || !canTakeOrder || lines.length === 0}
             onClick={submitOrder}
-            className="w-full rounded-xl bg-primary-600 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-primary-700 disabled:opacity-50"
+            className="w-full rounded-xl bg-primary-600 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? 'Sending...' : 'Send to kitchen'}
           </button>
+          {lines.length === 0 && (
+            <p className="text-center text-[11px] text-gray-500 dark:text-gray-400">Add menu items to enable send</p>
+          )}
+        </div>
         </div>
       </aside>
     </div>

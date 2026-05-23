@@ -36,6 +36,13 @@ const tableStatusStyles = {
   inactive: "bg-red-100 text-red-800",
 };
 
+/** POS takeaway/delivery channels — not physical dine-in tables with QR stands */
+function isPhysicalDiningTable(table) {
+  if (!table) return false;
+  if (table.allowsConcurrentOrders) return false;
+  return !/^POS-(TAKEAWAY|DELIVERY)$/i.test(String(table.tableNumber || "").trim());
+}
+
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 function PaginationBar({ page, pageSize, total, onPageChange, onPageSizeChange }) {
@@ -266,30 +273,32 @@ const Tables = () => {
 
   const logo = restaurant?.logo || "";
 
+  const diningTables = useMemo(() => tables.filter(isPhysicalDiningTable), [tables]);
+
   const metrics = useMemo(() => {
-    const active = tables.filter((table) => table.isActive).length;
-    const capacity = tables.reduce((sum, table) => sum + Number(table.capacity || 0), 0);
-    const floors = new Set(tables.map((table) => table.floor || "ground"));
+    const active = diningTables.filter((table) => table.isActive).length;
+    const capacity = diningTables.reduce((sum, table) => sum + Number(table.capacity || 0), 0);
+    const floors = new Set(diningTables.map((table) => table.floor || "ground"));
     return {
-      total: tables.length,
+      total: diningTables.length,
       active,
-      inactive: tables.length - active,
+      inactive: diningTables.length - active,
       capacity,
       floors: floors.size,
     };
-  }, [tables]);
+  }, [diningTables]);
 
   const floorOptions = useMemo(
     () =>
-      Array.from(new Set(tables.map((table) => table.floor || "ground")))
+      Array.from(new Set(diningTables.map((table) => table.floor || "ground")))
         .filter(Boolean)
         .sort(),
-    [tables],
+    [diningTables],
   );
 
   const filteredTables = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return tables.filter((table) => {
+    return diningTables.filter((table) => {
       const matchesSearch =
         !q ||
         String(table.tableNumber || "").toLowerCase().includes(q) ||
@@ -302,7 +311,7 @@ const Tables = () => {
       const matchesFloor = floorFilter === "all" || String(table.floor || "ground") === floorFilter;
       return matchesSearch && matchesStatus && matchesFloor;
     });
-  }, [floorFilter, search, statusFilter, tables]);
+  }, [diningTables, floorFilter, search, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredTables.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -334,7 +343,8 @@ const Tables = () => {
               </div>
               <h1 className="mt-3 text-3xl font-semibold tracking-tight text-gray-950">Tables & QR Codes</h1>
               <p className="mt-2 max-w-3xl text-sm text-gray-500">
-                Manage dining areas, table capacity, and branded QR stands with your restaurant logo in the center.
+                Manage dine-in tables, capacity, and branded QR stands. POS takeaway and delivery channels are created
+                automatically in the background and are not listed here.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">

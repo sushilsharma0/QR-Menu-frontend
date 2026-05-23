@@ -93,6 +93,8 @@ export default function PosLayout() {
 
   const shiftPath = `${posBase}/shift`
   const isShiftRoute = pathname === shiftPath
+  const isPosRegister =
+    pathname === posBase || pathname.replace(/\/$/, '') === posBase.replace(/\/$/, '')
   const metaLoaded = meta !== null
   const hasOpenShift = Boolean(meta?.shift)
   const posLocked = metaLoaded && !hasOpenShift && !isShiftRoute
@@ -324,7 +326,7 @@ export default function PosLayout() {
       </nav>
 
       <m.div
-        className="min-h-0 flex-1 overflow-y-auto bg-surface-50"
+        className={`min-h-0 flex-1 bg-surface-50 ${isPosRegister ? 'overflow-hidden' : 'overflow-y-auto'}`}
         initial={{ opacity: 0.96 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.2 }}
