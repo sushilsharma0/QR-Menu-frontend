@@ -39,7 +39,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                   <App />
                 <Toaster
                   position="top-right"
-                  containerClassName="!top-4 !right-4"
+                  containerStyle={{
+                    zIndex: 10100,
+                    top: 'max(1.25rem, env(safe-area-inset-top, 0px))',
+                    right: 'max(1rem, env(safe-area-inset-right, 0px))',
+                  }}
                   toastOptions={{
                     duration: 3800,
                     className: "",

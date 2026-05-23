@@ -23,26 +23,32 @@ import {
   FiX,
 } from 'react-icons/fi'
 import api from '../../services/api'
+import { isBranchModuleEnabled } from '../../config/branchModuleConfig'
 import { useAuth } from '../../hooks/useAuth'
 import { useSocket } from '../../hooks/useSocket'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 
 function segmentToModuleKey(segment) {
   const root = segment.split('/')[0]
-  if (root === 'pos') return 'pos'
+  if (root === 'pos') return 'customerOrders'
   if (root === 'menu') return 'menu'
-  if (root === 'orders') return segment === 'orders/activity' ? 'analytics' : 'orders'
+  if (root === 'orders') return segment === 'orders/activity' ? 'salesReports' : 'orders'
   if (root === 'tables') return 'tables'
   if (root === 'promotions') return 'promotions'
-  if (root === 'credit-customers') return 'orders'
+  if (root === 'credit-customers') return 'creditCustomers'
   if (root === 'employees') return 'employees'
   if (root === 'finance') {
     if (segment.includes('payroll')) return 'payroll'
     if (segment.includes('inventory')) return 'inventory'
+    if (segment.includes('expenses')) return 'expenses'
+    if (segment.includes('budget')) return 'budget'
+    if (segment.includes('profit-loss')) return 'profitLoss'
+    if (segment.includes('invoices')) return 'billing'
+    if (segment.includes('dashboard')) return 'financeOverview'
     return 'accounting'
   }
-  if (root === 'settings') return 'settings'
-  if (root === 'tickets' || root === 'public-profile') return null
+  if (root === 'settings' || root === 'public-profile') return 'accountSettings'
+  if (root === 'tickets') return 'supportTickets'
   return 'dashboard'
 }
 
@@ -199,7 +205,7 @@ function SidebarContent({ collapsed, setCollapsed, pendingCount, restaurantBase,
       if (group.ownerOnly && !canManageTheme) return groups
       const items = group.items.reduce((rows, item) => {
         const key = segmentToModuleKey(item.segment)
-        if (modules[key] !== false) rows.push(item)
+        if (key == null || isBranchModuleEnabled(modules, key)) rows.push(item)
         return rows
       }, [])
       if (items.length > 0) groups.push({ ...group, items })
@@ -245,7 +251,7 @@ function SidebarContent({ collapsed, setCollapsed, pendingCount, restaurantBase,
               <div className="space-y-1">
                 {group.items.map((item) => {
                   const key = segmentToModuleKey(item.segment)
-                  const locked = modules[key] === false
+                  const locked = key != null && !isBranchModuleEnabled(modules, key)
                   return (
                     <NavItem
                       key={item.segment}

@@ -24,22 +24,10 @@ import Input from '../../components/common/Input'
 import Modal from '../../components/common/Modal'
 import { useBranch } from '../../context/BranchContext'
 import { money } from './finance/FinanceUI'
+import BranchModulesField from '../../components/branch/BranchModulesField'
+import { buildEnabledModulesPayload, enabledModuleLabelsForBranch } from '../../config/branchModuleConfig'
 
 const OTP_RESEND_COOLDOWN_SEC = 60
-
-const MODULE_DEFS = [
-  { key: 'dashboard', label: 'Dashboard' },
-  { key: 'orders', label: 'Orders' },
-  { key: 'menu', label: 'Menu' },
-  { key: 'tables', label: 'Tables' },
-  { key: 'pos', label: 'POS' },
-  { key: 'analytics', label: 'Analytics' },
-  { key: 'inventory', label: 'Inventory' },
-  { key: 'accounting', label: 'Accounting' },
-  { key: 'payroll', label: 'Payroll' },
-  { key: 'promotions', label: 'Promotions' },
-  { key: 'employees', label: 'Staff' },
-]
 
 const CHART_COLORS = ['#8f2800', '#14b8a6', '#7c3aed', '#f97316', '#0f766e', '#dc2626', '#64748b', '#ca8a04']
 
@@ -421,18 +409,10 @@ function BranchEditForm({ initial, onSubmit, onClose, saving }) {
       </label>
       <div>
         <p className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">Enabled modules (branch portal)</p>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {MODULE_DEFS.map(({ key, label }) => (
-            <label key={key} className="flex cursor-pointer items-center gap-2 rounded-xl border border-surface-200 px-3 py-2 text-sm dark:border-gray-700">
-              <input
-                type="checkbox"
-                checked={form.enabledModules?.[key] !== false}
-                onChange={toggleModule(key)}
-              />
-              {label}
-            </label>
-          ))}
-        </div>
+        <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
+          Same sections as the restaurant sidebar. Uncheck items this branch should not access.
+        </p>
+        <BranchModulesField enabledModules={form.enabledModules} onToggle={toggleModule} />
       </div>
       <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
         Address
@@ -621,18 +601,10 @@ function CreateBranchWizard({
       </label>
       <div>
         <p className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">Enabled modules (branch portal)</p>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {MODULE_DEFS.map(({ key, label }) => (
-            <label key={key} className="flex cursor-pointer items-center gap-2 rounded-xl border border-surface-200 px-3 py-2 text-sm dark:border-gray-700">
-              <input
-                type="checkbox"
-                checked={form.enabledModules?.[key] !== false}
-                onChange={toggleModule(key)}
-              />
-              {label}
-            </label>
-          ))}
-        </div>
+        <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
+          Same sections as the restaurant sidebar. Uncheck items this branch should not access.
+        </p>
+        <BranchModulesField enabledModules={form.enabledModules} onToggle={toggleModule} />
       </div>
       <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
         Address
@@ -718,14 +690,9 @@ const Branches = () => {
     branches[0]
   const trendData = useMemo(() => analytics.trends || [], [analytics])
   const canManageBranches = !currentBranch || currentBranch.isDefault
-  const enabledModuleList = MODULE_DEFS
-    .filter(({ key }) => selectedBranch?.isDefault || selectedBranch?.enabledModules?.[key] !== false)
-    .map(({ label }) => label)
+  const enabledModuleList = enabledModuleLabelsForBranch(selectedBranch)
 
-  const getEnabledModulesForBranch = (branch) =>
-    MODULE_DEFS
-      .filter(({ key }) => branch?.isDefault || branch?.enabledModules?.[key] !== false)
-      .map(({ label }) => label)
+  const getEnabledModulesForBranch = (branch) => enabledModuleLabelsForBranch(branch)
 
   const loadAnalytics = async (branchId = selectedBranch?._id) => {
     if (!branchId) return
@@ -872,10 +839,7 @@ const Branches = () => {
         branchUsername: createForm.branchUsername,
         branchPassword: createForm.branchPassword,
         autoGeneratePassword: createForm.autoGeneratePassword,
-        enabledModules: MODULE_DEFS.reduce((acc, { key }) => {
-          acc[key] = createForm.enabledModules?.[key] !== false
-          return acc
-        }, {}),
+        enabledModules: buildEnabledModulesPayload(createForm.enabledModules),
       }
       const res = await api.post('/restaurant/branches', payload, { skipBranchHeader: true })
       const cred = res.data?.data?.credentials

@@ -712,19 +712,20 @@ const Dashboard = () => {
             {dashboardModel.statusDistributionData.length > 0 ? (
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
+                  <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
                     <Pie
                       data={dashboardModel.statusDistributionData}
                       dataKey="count"
                       nameKey="status"
                       cx="50%"
                       cy="50%"
-                      innerRadius={58}
-                      outerRadius={92}
-                      paddingAngle={3}
+                      innerRadius="56%"
+                      outerRadius="82%"
+                      paddingAngle={0}
+                      stroke="none"
                     >
                       {dashboardModel.statusDistributionData.map((entry, index) => (
-                        <Cell key={entry.status} fill={chartColors[index % chartColors.length]} />
+                        <Cell key={entry.status} fill={chartColors[index % chartColors.length]} stroke="none" />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value, name) => [value, name]} />
@@ -930,18 +931,20 @@ const Dashboard = () => {
             {dashboardModel.paymentStatusData.length > 0 ? (
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
+                  <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
                     <Pie
                       data={dashboardModel.paymentStatusData}
                       dataKey="amount"
                       nameKey="status"
                       cx="50%"
                       cy="50%"
-                      outerRadius={92}
+                      outerRadius="82%"
+                      paddingAngle={0}
+                      stroke="none"
                       label={({ status, percent }) => `${status} ${Math.round(percent * 100)}%`}
                     >
                       {dashboardModel.paymentStatusData.map((entry, index) => (
-                        <Cell key={entry.status} fill={chartColors[index % chartColors.length]} />
+                        <Cell key={entry.status} fill={chartColors[index % chartColors.length]} stroke="none" />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value, name) => [formatRestaurantCurrency(value), name]} />
@@ -987,19 +990,20 @@ const Dashboard = () => {
             {dashboardModel.channelData.length > 0 ? (
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
+                  <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
                     <Pie
                       data={dashboardModel.channelData}
                       dataKey="count"
                       nameKey="channel"
                       cx="50%"
                       cy="50%"
-                      innerRadius={56}
-                      outerRadius={92}
-                      paddingAngle={3}
+                      innerRadius="56%"
+                      outerRadius="82%"
+                      paddingAngle={0}
+                      stroke="none"
                     >
                       {dashboardModel.channelData.map((entry, index) => (
-                        <Cell key={entry.channel} fill={chartColors[index % chartColors.length]} />
+                        <Cell key={entry.channel} fill={chartColors[index % chartColors.length]} stroke="none" />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value, name) => [value, name]} />

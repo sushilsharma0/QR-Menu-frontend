@@ -685,3 +685,8 @@ button[aria-busy="true"]:empty::before {
 .thin-horizontal-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: #8f2800;
 }
+
+/* Above modals (z-[9999]) so validation toasts stay fully visible */
+[data-rht-toaster] {
+  z-index: 10100 !important;
+}
