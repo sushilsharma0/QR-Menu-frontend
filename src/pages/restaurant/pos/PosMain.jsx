@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from '@utils/toast'
 import { FiCoffee, FiMinus, FiPlus, FiSearch, FiShoppingBag, FiTrash2, FiUsers } from 'react-icons/fi'
@@ -16,6 +16,27 @@ import {
 
 const posFieldClass =
   'w-full rounded-lg border px-2 py-1.5 text-xs dark:border-gray-600 dark:bg-gray-800'
+
+const POS_CART_WIDTH_KEY = 'pos-cart-panel-width'
+const POS_CART_WIDTH_MIN = 280
+const POS_CART_WIDTH_MAX = 560
+const POS_CART_WIDTH_DEFAULT = 320
+
+function loadPosCartWidth() {
+  try {
+    const saved = Number(localStorage.getItem(POS_CART_WIDTH_KEY))
+    if (Number.isFinite(saved) && saved >= POS_CART_WIDTH_MIN && saved <= POS_CART_WIDTH_MAX) {
+      return saved
+    }
+  } catch {
+    /* ignore */
+  }
+  return POS_CART_WIDTH_DEFAULT
+}
+
+function clampCartWidth(value) {
+  return Math.min(POS_CART_WIDTH_MAX, Math.max(POS_CART_WIDTH_MIN, value))
+}
 
 function PosLabeledField({ id, label, name, className = posFieldClass, ...inputProps }) {
   const fieldId = id || name
@@ -41,6 +62,11 @@ export default function PosMain() {
   const [tableFilter, setTableFilter] = useState('')
   const [tables, setTables] = useState([])
   const [submitting, setSubmitting] = useState(false)
+  const [cartPanelWidth, setCartPanelWidth] = useState(loadPosCartWidth)
+  const [isResizingCart, setIsResizingCart] = useState(false)
+  const cartResizeRef = useRef({ active: false, startX: 0, startWidth: POS_CART_WIDTH_DEFAULT })
+  const cartPanelWidthRef = useRef(cartPanelWidth)
+  cartPanelWidthRef.current = cartPanelWidth
 
   const mode = usePosCartStore((s) => s.mode)
   const setMode = usePosCartStore((s) => s.setMode)
@@ -224,6 +250,57 @@ export default function PosMain() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  const endCartResize = useCallback(() => {
+    if (!cartResizeRef.current.active) return
+    cartResizeRef.current.active = false
+    setIsResizingCart(false)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+    try {
+      localStorage.setItem(POS_CART_WIDTH_KEY, String(cartPanelWidthRef.current))
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
+  const onCartResizePointerDown = useCallback(
+    (event) => {
+      if (event.button !== 0) return
+      event.preventDefault()
+      cartResizeRef.current = {
+        active: true,
+        startX: event.clientX,
+        startWidth: cartPanelWidthRef.current,
+      }
+      setIsResizingCart(true)
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
+
+      const onMove = (moveEvent) => {
+        if (!cartResizeRef.current.active) return
+        const delta = cartResizeRef.current.startX - moveEvent.clientX
+        setCartPanelWidth(clampCartWidth(cartResizeRef.current.startWidth + delta))
+      }
+      const onUp = () => {
+        document.removeEventListener('pointermove', onMove)
+        document.removeEventListener('pointerup', onUp)
+        endCartResize()
+      }
+      document.addEventListener('pointermove', onMove)
+      document.addEventListener('pointerup', onUp)
+    },
+    [endCartResize],
+  )
+
+  const resetCartPanelWidth = useCallback(() => {
+    setCartPanelWidth(POS_CART_WIDTH_DEFAULT)
+    try {
+      localStorage.setItem(POS_CART_WIDTH_KEY, String(POS_CART_WIDTH_DEFAULT))
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
   return (
     <div className="flex min-h-full flex-col gap-3 p-3 md:p-4 xl:h-[calc(100dvh-11rem)] xl:min-h-0 xl:flex-row xl:overflow-hidden">
       {/* Categories / filters */}
@@ -373,8 +450,32 @@ export default function PosMain() {
         )}
       </section>
 
-      {/* Cart — line items + fields scroll; totals + submit stay pinned at bottom */}
-      <aside className="flex w-full shrink-0 flex-col overflow-hidden rounded-3xl border border-surface-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900 lg:max-h-[min(45rem,calc(100dvh-11rem))] xl:h-[min(100%,calc(100dvh-11rem))] xl:max-h-[calc(100dvh-11rem)] xl:w-80">
+      {/* Cart — drag left edge on desktop to resize width (saved in localStorage) */}
+      <aside
+        className="relative flex w-full shrink-0 flex-col overflow-hidden rounded-3xl border border-surface-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900 lg:max-h-[min(45rem,calc(100dvh-11rem))] xl:h-[min(100%,calc(100dvh-11rem))] xl:max-h-[calc(100dvh-11rem)] xl:min-w-[280px] xl:max-w-[min(560px,45vw)] xl:shrink-0 xl:w-[var(--pos-cart-width)]"
+        style={{ '--pos-cart-width': `${cartPanelWidth}px` }}
+      >
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize cart panel"
+          aria-valuemin={POS_CART_WIDTH_MIN}
+          aria-valuemax={POS_CART_WIDTH_MAX}
+          aria-valuenow={cartPanelWidth}
+          title="Drag to resize cart · double-click to reset"
+          className={`group absolute -left-1.5 top-0 z-20 hidden h-full w-4 cursor-col-resize touch-none select-none xl:flex xl:items-center xl:justify-center ${
+            isResizingCart ? 'bg-primary-100/90' : 'hover:bg-primary-50/90'
+          }`}
+          onPointerDown={onCartResizePointerDown}
+          onDoubleClick={resetCartPanelWidth}
+        >
+          <span
+            className={`h-16 w-1 rounded-full transition-colors ${
+              isResizingCart ? 'bg-primary-600' : 'bg-gray-300 group-hover:bg-primary-500'
+            }`}
+          />
+        </div>
+        <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-px bg-surface-200 xl:block dark:bg-gray-700" />
         <div className="shrink-0 border-b border-surface-200 px-4 py-3 dark:border-gray-800">
           <p className="text-xs font-semibold uppercase tracking-wide text-primary-700">Cart</p>
           <h2 className="mt-1 text-lg font-semibold text-gray-950 dark:text-gray-100">Current order</h2>
