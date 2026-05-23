@@ -100,8 +100,10 @@ const SubscriptionCheckout = () => {
     [payments, planId],
   )
 
-  const isCurrent = status?.currentPlan?._id === planId
-  const isLocked = !user?.isKYCVerified || isCurrent || Boolean(relatedPayment)
+  const matchesCurrentPlan = status?.currentPlan?._id === planId
+  const isActiveCurrent = Boolean(status?.hasPaidPlanActive && matchesCurrentPlan)
+  const isRenewal = Boolean(!status?.hasPaidPlanActive && matchesCurrentPlan)
+  const isLocked = !user?.isKYCVerified || isActiveCurrent || Boolean(relatedPayment)
   const total = planTotal(plan)
   const symbol = planSymbol(plan)
   const manualPaymentDetails = status?.manualPaymentDetails || {}
@@ -252,9 +254,22 @@ const SubscriptionCheckout = () => {
               <DetailRow label="Expires" value={`${plan.duration || 0} days after activation`} />
             </div>
 
-            {isCurrent && (
+            {isActiveCurrent && (
               <div className="mt-4 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
                 This is already your active plan.
+              </div>
+            )}
+
+            {isRenewal && (
+              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <p className="font-semibold">Renew your subscription</p>
+                <p className="mt-1">
+                  Your <strong>{status?.currentPlan?.name || plan.name}</strong> plan has expired
+                  {status?.planEndDate ? (
+                    <> on <strong>{formatRestaurantDateTime(status.planEndDate)}</strong></>
+                  ) : null}
+                  . Complete payment below to restore access.
+                </p>
               </div>
             )}
 

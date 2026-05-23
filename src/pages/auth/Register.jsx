@@ -16,98 +16,15 @@ import {
   FiShield,
   FiShoppingBag,
   FiUsers,
-  FiZap,
 } from 'react-icons/fi'
-import { FcGoogle } from 'react-icons/fc'
 import toast from '@utils/toast'
 import api from '../../services/api'
-import { useAuth } from '../../hooks/useAuth'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
-
-const VendorGoogleButton = ({ onSuccess, disabled }) => {
-  const buttonRef = useRef(null)
-  const onSuccessRef = useRef(onSuccess)
-  onSuccessRef.current = onSuccess
-  const [ready, setReady] = useState(false)
-
-  useEffect(() => {
-    if (!GOOGLE_CLIENT_ID || disabled) return undefined
-
-    const renderButton = () => {
-      if (!window.google?.accounts?.id || !buttonRef.current) return
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: (response) => onSuccessRef.current?.(response.credential),
-      })
-      buttonRef.current.innerHTML = ''
-      window.google.accounts.id.renderButton(buttonRef.current, {
-        theme: 'outline',
-        size: 'large',
-        text: 'signup_with',
-        shape: 'pill',
-        logo_alignment: 'left',
-        width: buttonRef.current.offsetWidth || 360,
-      })
-      setReady(true)
-    }
-
-    if (window.google?.accounts?.id) {
-      renderButton()
-      return undefined
-    }
-
-    const script = document.createElement('script')
-    script.src = 'https://accounts.google.com/gsi/client'
-    script.async = true
-    script.defer = true
-    script.onload = renderButton
-    document.head.appendChild(script)
-
-    return () => {
-      script.onload = null
-    }
-  }, [disabled])
-
-  if (!GOOGLE_CLIENT_ID) return null
-
-  return (
-    <div className="rounded-xl border border-[#f1b089]/40 bg-gradient-to-br from-white to-[#fff7ed] p-4 shadow-sm">
-      <div className="mb-4 flex items-center gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
-          <FcGoogle className="h-5 w-5" />
-        </span>
-        <div>
-          <p className="text-sm font-bold text-gray-950 dark:text-white">Start with Google</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Create a vendor account faster</p>
-        </div>
-      </div>
-      <div ref={buttonRef} className="min-h-[44px] w-full [&>div]:!w-full [&_iframe]:!mx-auto" />
-      {!ready && (
-        <button
-          type="button"
-          disabled
-          className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-500 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400"
-        >
-          <FcGoogle className="h-5 w-5" />
-          Loading Google sign-up
-        </button>
-      )}
-      <div className="mt-4 flex items-center gap-2 rounded-lg bg-white/80 px-3 py-2 text-xs text-gray-500">
-        <FiZap className="h-4 w-4 text-[#a43a12]" />
-        <span>Google signup skips the email code because Google already verifies your email.</span>
-      </div>
-    </div>
-  )
-}
-
 const Register = () => {
   const navigate = useNavigate()
-  const { loginWithGoogle } = useAuth()
   const [loading, setLoading] = useState(false)
-  const [googleLoading, setGoogleLoading] = useState(false)
   const [resending, setResending] = useState(false)
   const [checkingReferral, setCheckingReferral] = useState(false)
   const [referralStatus, setReferralStatus] = useState(null)
@@ -221,15 +138,6 @@ const Register = () => {
       toast.error(error.response?.data?.message || 'Failed to resend code')
     } finally {
       setResending(false)
-    }
-  }
-
-  const handleGoogleSuccess = async (credential) => {
-    setGoogleLoading(true)
-    try {
-      await loginWithGoogle(credential)
-    } finally {
-      setGoogleLoading(false)
     }
   }
 
@@ -407,19 +315,6 @@ const OTP_SLOT_KEYS = ['otp-1', 'otp-2', 'otp-3', 'otp-4', 'otp-5', 'otp-6']
             ))}
           </div>
 
-          {step === 'details' && (
-            <div>
-              <VendorGoogleButton onSuccess={handleGoogleSuccess} disabled={googleLoading} />
-              {GOOGLE_CLIENT_ID && (
-                <div className="my-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
-                  <span className="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
-                  or register with email
-                  <span className="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
-                </div>
-              )}
-            </div>
-          )}
-
           {step === 'details' ? (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <Input
@@ -523,11 +418,11 @@ const OTP_SLOT_KEYS = ['otp-1', 'otp-2', 'otp-3', 'otp-4', 'otp-5', 'otp-6']
 
               <button
                 type="submit"
-                disabled={loading || googleLoading}
+                disabled={loading}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#8f2a05] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#8f2a05]/20 transition hover:bg-[#6f2106] disabled:opacity-60"
               >
                 Send Verification Code
-                {!loading && !googleLoading && <FiArrowRight className="h-4 w-4" />}
+                {!loading && <FiArrowRight className="h-4 w-4" />}
               </button>
             </form>
           ) : (

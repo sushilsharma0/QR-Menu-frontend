@@ -338,39 +338,6 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const loginWithGoogle = async (credential) => {
-    try {
-      const response = await api.post('/restaurant/auth/google', { credential })
-      const { token: newToken, user: userData, created } = response.data.data
-      const authUser = { ...userData, scope: 'restaurant' }
-
-      if (!newToken || !userData) {
-        throw new Error('Invalid response structure from server')
-      }
-
-      setAuthSession(newToken, JSON.stringify(authUser))
-      setRestaurantSessionSecrets({
-        refreshToken: response.data.data.refreshToken,
-        sessionId: response.data.data.session?.id,
-      })
-      captureRestaurantSessionLocation()
-      clearBranchSelection()
-      setToken(newToken)
-      setUser(authUser)
-
-      toast.success(response.data?.message || 'Google sign-in successful')
-      showRestaurantDailyReminder(authUser)
-      navigate(defaultPortalPathForUser(authUser))
-      return { success: true }
-    } catch (error) {
-      const errorMsg = error.response?.data?.message || error.message || 'Google sign-in failed'
-      if (!error.__toastShown) {
-        toast.error(errorMsg)
-      }
-      return { success: false, error: errorMsg }
-    }
-  }
-
   const mergeUser = useCallback((updates) => {
     setUser((prev) => {
       if (!prev) return prev
@@ -382,7 +349,7 @@ export const AuthProvider = ({ children }) => {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, loginBranch, loginBranchEmail, loginWithGoogle, logout, mergeUser }}>
+    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, loginBranch, loginBranchEmail, logout, mergeUser }}>
       {children}
     </AuthContext.Provider>
   )

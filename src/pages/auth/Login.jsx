@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { AnimatePresence, LazyMotion, domAnimation, m } from 'framer-motion'
@@ -15,7 +15,6 @@ import {
   FiUser,
   FiUsers,
 } from 'react-icons/fi'
-import { FcGoogle } from 'react-icons/fc'
 import { useAuth } from '../../hooks/useAuth'
 import api from '../../services/api'
 import Button from '../../components/common/Button'
@@ -41,52 +40,6 @@ function VendorLoginPolicyHint() {
 
 /* ─── Constants ──────────────────────────────────────────────────────────── */
 const VALID_ROLES = ['restaurant', 'employee', 'platform']
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
-
-/* ─── Google sign-in widget ──────────────────────────────────────────────── */
-const GoogleSignIn = ({ onSuccess, disabled }) => {
-  const buttonRef = useRef(null)
-  const onSuccessRef = useRef(onSuccess)
-  onSuccessRef.current = onSuccess
-
-  useEffect(() => {
-    if (!GOOGLE_CLIENT_ID || disabled) return
-    const render = () => {
-      if (!window.google?.accounts?.id || !buttonRef.current) return
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: (r) => onSuccessRef.current?.(r.credential),
-      })
-      buttonRef.current.innerHTML = ''
-      window.google.accounts.id.renderButton(buttonRef.current, {
-        theme: 'outline', size: 'large', text: 'continue_with',
-        shape: 'pill', logo_alignment: 'left',
-        width: buttonRef.current.offsetWidth || 360,
-      })
-    }
-    if (window.google?.accounts?.id) { render(); return }
-    const s = document.createElement('script')
-    s.src = 'https://accounts.google.com/gsi/client'
-    s.async = true; s.defer = true; s.onload = render
-    document.head.appendChild(s)
-    return () => { s.onload = null }
-  }, [disabled])
-
-  /* No client-id → amber notice (matches image) */
-  if (!GOOGLE_CLIENT_ID) {
-    return (
-      <div className="flex items-center gap-3 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
-        <FcGoogle className="h-5 w-5 shrink-0" />
-        <p>
-          Add <span className="font-mono font-semibold">VITE_GOOGLE_CLIENT_ID</span> and{' '}
-          <span className="font-mono font-semibold">GOOGLE_CLIENT_ID</span> to enable Google sign-in.
-        </p>
-      </div>
-    )
-  }
-
-  return <div ref={buttonRef} className="min-h-[44px] w-full" />
-}
 
 /* ─── Password input with show/hide toggle ───────────────────────────────── */
 const PasswordInput = React.forwardRef(({ label, error, ...props }, ref) => {
@@ -165,7 +118,7 @@ const features = [
 
 /* ─── Main Login component ────────────────────────────────────────────────── */
 const Login = () => {
-  const { login, loginWithGoogle, loginBranchEmail } = useAuth()
+  const { login, loginBranchEmail } = useAuth()
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const roleQuery = searchParams.get('role')
@@ -185,7 +138,6 @@ const Login = () => {
 
   const [role, setRole] = useState(initialRole)
   const [loading, setLoading] = useState(false)
-  const [googleLoading, setGoogleLoading] = useState(false)
 
   const {
     register,
@@ -236,15 +188,6 @@ const Login = () => {
       }
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleGoogleSuccess = async (credential) => {
-    setGoogleLoading(true)
-    try {
-      await loginWithGoogle(credential)
-    } finally {
-      setGoogleLoading(false)
     }
   }
 
@@ -452,31 +395,9 @@ const Login = () => {
             </div>
           )}
 
-          {/* Login mode panel — vendor keeps Google block height; branch uses shorter hint */}
-          <div
-            className={
-              role === 'restaurant' ? (isBranchLogin ? 'h-[72px] shrink-0' : 'min-h-[118px]') : ''
-            }
-          >
+          {/* Login mode panel — branch / staff / platform hints */}
+          <div className={role === 'restaurant' && isBranchLogin ? 'h-[72px] shrink-0' : ''}>
             <AnimatePresence mode="wait" initial={false}>
-              {role === 'restaurant' && !isBranchLogin && (
-                <m.div
-                  key="vendor-email-mode"
-                  initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
-                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                  exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }}
-                  transition={{ duration: 0.22, ease: 'easeOut' }}
-                  className="space-y-7"
-                >
-                  <GoogleSignIn onSuccess={handleGoogleSuccess} disabled={googleLoading} />
-                  <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-widest text-gray-400">
-                    <span className="h-px flex-1 bg-gray-200" />
-                    OR USE EMAIL
-                    <span className="h-px flex-1 bg-gray-200" />
-                  </div>
-                </m.div>
-              )}
-
               {role === 'restaurant' && isBranchLogin && (
                 <m.div
                   key="branch-mode"
@@ -623,16 +544,16 @@ const Login = () => {
             {/* Submit button */}
             <button
               type="submit"
-              disabled={loading || googleLoading}
+              disabled={loading}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#8f2a05] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#8f2a05]/20 transition hover:bg-[#6f2106] disabled:opacity-60"
             >
-              {loading || googleLoading ? (
+              {loading ? (
                 <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="30 60" />
                 </svg>
               ) : null}
               {panel.buttonLabel}
-              {!loading && !googleLoading && <FiArrowRight className="h-4 w-4" />}
+              {!loading && <FiArrowRight className="h-4 w-4" />}
             </button>
           </m.form>
 

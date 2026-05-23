@@ -33,6 +33,7 @@ const FILE_MAX_BYTES = 1 * 1024 * 1024
 const requestStatusStyles = {
   active: 'bg-green-100 text-green-800',
   trial: 'bg-blue-100 text-blue-800',
+  expired: 'bg-red-100 text-red-800',
   awaiting_proof: 'bg-yellow-100 text-yellow-800',
   pending_review: 'bg-amber-100 text-amber-800',
   inactive: 'bg-red-100 text-red-800',
@@ -52,7 +53,21 @@ function planSymbol(plan) {
   return plan?.pricing?.currencySymbol || 'Rs.'
 }
 
+function hadPaidSubscription(currentPlan) {
+  if (!currentPlan) return false
+  if (currentPlan.planAssignmentSource === 'custom') {
+    return Boolean(currentPlan.planEndDate)
+  }
+  return Boolean(currentPlan.currentPlan)
+}
+
+function subscriptionExpired(currentPlan) {
+  if (!currentPlan || currentPlan.hasPaidPlanActive || currentPlan.isTrialActive) return false
+  return hadPaidSubscription(currentPlan)
+}
+
 function statusLabel(currentPlan) {
+  if (subscriptionExpired(currentPlan)) return 'expired'
   if (currentPlan?.hasPaidPlanActive) return 'active'
   if (currentPlan?.isTrialActive) return 'trial'
   if (currentPlan?.planRequestStatus) return currentPlan.planRequestStatus
@@ -99,8 +114,8 @@ function Notice({ tone = 'amber', icon: Icon = FiAlertTriangle, title, children 
   )
 }
 
-function PlanCard({ plan, currentPlan, disabled, requesting, onSelect }) {
-  const isCurrent = currentPlan?.currentPlan?._id === plan._id
+function PlanCard({ plan, currentPlan, disabled, requesting, onSelect, isPreviousExpired }) {
+  const isCurrent = currentPlan?.hasPaidPlanActive && currentPlan?.currentPlan?._id === plan._id
   const isRequested =
     currentPlan?.requestedPlan?._id === plan._id &&
     ['awaiting_proof', 'pending_review'].includes(currentPlan?.planRequestStatus)
@@ -112,10 +127,19 @@ function PlanCard({ plan, currentPlan, disabled, requesting, onSelect }) {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -6 }}
       className={`relative overflow-hidden rounded-3xl border bg-white p-5 shadow-sm transition-shadow hover:shadow-xl ${
-        plan.isPopular ? 'border-primary-500 ring-4 ring-primary-50' : 'border-surface-200'
+        isPreviousExpired
+          ? 'border-red-300 ring-4 ring-red-50'
+          : plan.isPopular
+            ? 'border-primary-500 ring-4 ring-primary-50'
+            : 'border-surface-200'
       }`}
     >
-      {plan.isPopular && (
+      {isPreviousExpired && (
+        <div className="absolute left-4 top-4 inline-flex items-center gap-1 rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white">
+          <FiRefreshCw className="h-3.5 w-3.5" /> Your plan · Expired
+        </div>
+      )}
+      {plan.isPopular && !isPreviousExpired && (
         <div className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-primary-600 px-3 py-1 text-xs font-semibold text-white">
           <FiStar className="h-3.5 w-3.5" /> Popular
         </div>
@@ -156,7 +180,13 @@ function PlanCard({ plan, currentPlan, disabled, requesting, onSelect }) {
         disabled={disabled || isCurrent || isRequested || requesting}
         onClick={() => onSelect(plan._id)}
       >
-        {isCurrent ? 'Current Plan' : isRequested ? 'Payment Pending' : 'Choose Plan'}
+        {isCurrent
+          ? 'Current Plan'
+          : isRequested
+            ? 'Payment Pending'
+            : isPreviousExpired
+              ? 'Renew plan'
+              : 'Choose Plan'}
       </Button>
     </m.article>
   )
@@ -324,16 +354,34 @@ const Subscription = () => {
   }
 
   const subscriptionState = statusLabel(currentPlan)
+  const isExpiredSubscription = subscriptionExpired(currentPlan)
   const awaitingProof = currentPlan?.planRequestStatus === 'awaiting_proof'
   const pendingReview = currentPlan?.planRequestStatus === 'pending_review'
   const isKYCVerified = authUser?.isKYCVerified === true
   const daysLeft = currentPlan?.daysLeft ?? 0
   const currentTotal = currentPlan?.currentPlan ? planTotal(currentPlan.currentPlan) : 0
+  const previousPlanId = isExpiredSubscription ? currentPlan?.currentPlan?._id : null
+  const previousPlanName =
+    currentPlan?.planAssignmentSource === 'custom'
+      ? currentPlan?.customPlanLabel || 'Custom plan'
+      : currentPlan?.currentPlan?.name
 
-  const bestPlan = useMemo(
-    () => plans.find((plan) => plan.isPopular) || plans[0],
-    [plans],
-  )
+  const orderedPlans = useMemo(() => {
+    if (!previousPlanId) return plans
+    const previous = plans.find((plan) => plan._id === previousPlanId)
+    if (!previous) return plans
+    return [previous, ...plans.filter((plan) => plan._id !== previousPlanId)]
+  }, [plans, previousPlanId])
+
+  const bestPlan = useMemo(() => {
+    if (isExpiredSubscription && currentPlan?.currentPlan) {
+      return (
+        plans.find((plan) => plan._id === currentPlan.currentPlan._id) ||
+        currentPlan.currentPlan
+      )
+    }
+    return plans.find((plan) => plan.isPopular) || plans[0]
+  }, [plans, currentPlan, isExpiredSubscription])
 
   if (loading) return <RestaurantPageLoader />
 
@@ -372,28 +420,40 @@ const Subscription = () => {
             <MetricTile
               label="Current plan"
               value={
-                currentPlan?.planAssignmentSource === 'custom'
-                  ? currentPlan?.customPlanLabel || 'Custom plan'
-                  : currentPlan?.currentPlan?.name || (currentPlan?.isTrialActive ? 'Free trial' : 'No plan')
+                isExpiredSubscription
+                  ? previousPlanName || 'Expired plan'
+                  : currentPlan?.planAssignmentSource === 'custom'
+                    ? currentPlan?.customPlanLabel || 'Custom plan'
+                    : currentPlan?.currentPlan?.name || (currentPlan?.isTrialActive ? 'Free trial' : 'No plan')
               }
               sub={
-                currentPlan?.planAssignmentSource === 'custom'
-                  ? `Assigned manually by super admin • Ends ${
-                      currentPlan?.planEndDate ? formatRestaurantDateTime(currentPlan.planEndDate) : 'N/A'
-                    }`
-                  : currentPlan?.planEndDate
-                    ? `Ends ${formatRestaurantDateTime(currentPlan.planEndDate)}`
-                    : 'Select a plan to activate'
+                isExpiredSubscription
+                  ? `Expired ${
+                      currentPlan?.planEndDate ? formatRestaurantDateTime(currentPlan.planEndDate) : 'recently'
+                    } • Renew to restore access`
+                  : currentPlan?.planAssignmentSource === 'custom'
+                    ? `Assigned manually by super admin • Ends ${
+                        currentPlan?.planEndDate ? formatRestaurantDateTime(currentPlan.planEndDate) : 'N/A'
+                      }`
+                    : currentPlan?.planEndDate
+                      ? `Ends ${formatRestaurantDateTime(currentPlan.planEndDate)}`
+                      : 'Select a plan to activate'
               }
               icon={FiShield}
-              accent="from-primary-600 to-secondary-500"
+              accent={isExpiredSubscription ? 'from-red-500 to-rose-600' : 'from-primary-600 to-secondary-500'}
             />
             <MetricTile
               label="Days left"
               value={currentPlan?.isTrialActive && !currentPlan?.hasPaidPlanActive ? currentPlan?.trialDaysLeft || 0 : daysLeft}
-              sub={currentPlan?.isTrialActive && !currentPlan?.hasPaidPlanActive ? 'Trial remaining' : 'Subscription remaining'}
+              sub={
+                isExpiredSubscription
+                  ? 'Subscription expired'
+                  : currentPlan?.isTrialActive && !currentPlan?.hasPaidPlanActive
+                    ? 'Trial remaining'
+                    : 'Subscription remaining'
+              }
               icon={FiClock}
-              accent="from-emerald-500 to-teal-500"
+              accent={isExpiredSubscription ? 'from-red-500 to-orange-500' : 'from-emerald-500 to-teal-500'}
             />
             <MetricTile
               label="Billing total"
@@ -403,10 +463,16 @@ const Subscription = () => {
               accent="from-indigo-500 to-violet-500"
             />
             <MetricTile
-              label="Recommended"
+              label={isExpiredSubscription ? 'Renew plan' : 'Recommended'}
               value={bestPlan?.name || '-'}
-              sub={bestPlan ? formatRestaurantCurrency(planTotal(bestPlan), planSymbol(bestPlan)) : 'No active plans'}
-              icon={FiStar}
+              sub={
+                bestPlan
+                  ? isExpiredSubscription
+                    ? 'Your previous subscription'
+                    : formatRestaurantCurrency(planTotal(bestPlan), planSymbol(bestPlan))
+                  : 'No active plans'
+              }
+              icon={isExpiredSubscription ? FiRefreshCw : FiStar}
               accent="from-amber-500 to-orange-500"
             />
           </div>
@@ -487,7 +553,29 @@ const Subscription = () => {
               </Notice>
             )}
 
-            {!currentPlan?.canUseFeatures && (
+            {isExpiredSubscription && (
+              <Notice tone="red" icon={FiRefreshCw} title="Subscription expired">
+                {currentPlan?.planAssignmentSource === 'custom' ? (
+                  <>
+                    Your <strong>{previousPlanName}</strong> plan expired
+                    {currentPlan?.planEndDate ? (
+                      <> on <strong>{formatRestaurantDateTime(currentPlan.planEndDate)}</strong></>
+                    ) : null}
+                    . Contact platform support to renew a custom plan, or choose a catalog plan below.
+                  </>
+                ) : (
+                  <>
+                    Your <strong>{previousPlanName}</strong> plan expired
+                    {currentPlan?.planEndDate ? (
+                      <> on <strong>{formatRestaurantDateTime(currentPlan.planEndDate)}</strong></>
+                    ) : null}
+                    . Renew the same plan below to restore full access.
+                  </>
+                )}
+              </Notice>
+            )}
+
+            {!currentPlan?.canUseFeatures && !isExpiredSubscription && (
               <Notice tone="red" title="Access paused">
                 Select a plan, upload payment proof, and wait for platform approval to restore full access.
               </Notice>
@@ -586,25 +674,50 @@ const Subscription = () => {
               <m.section
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-3xl border border-surface-200 bg-white p-5 shadow-sm"
+                className={`rounded-3xl border p-5 shadow-sm ${
+                  isExpiredSubscription
+                    ? 'border-red-200 bg-gradient-to-br from-red-50 to-white'
+                    : 'border-surface-200 bg-white'
+                }`}
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Current plan</p>
-                    <h2 className="mt-1 text-2xl font-semibold text-primary-700">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      {isExpiredSubscription ? 'Previous plan' : 'Current plan'}
+                    </p>
+                    <h2 className={`mt-1 text-2xl font-semibold ${isExpiredSubscription ? 'text-red-700' : 'text-primary-700'}`}>
                       {currentPlan?.planAssignmentSource === 'custom'
                         ? currentPlan?.customPlanLabel || 'Custom plan'
                         : currentPlan?.currentPlan?.name}
                     </h2>
                     <p className="mt-2 text-sm text-gray-500">
-                      Expires {currentPlan.planEndDate ? formatRestaurantDateTime(currentPlan.planEndDate) : 'N/A'} - {daysLeft} days left
+                      {isExpiredSubscription ? (
+                        <>
+                          Expired{' '}
+                          {currentPlan.planEndDate ? formatRestaurantDateTime(currentPlan.planEndDate) : 'recently'}
+                          {' '}— renew to restore access
+                        </>
+                      ) : (
+                        <>
+                          Expires {currentPlan.planEndDate ? formatRestaurantDateTime(currentPlan.planEndDate) : 'N/A'} — {daysLeft} days left
+                        </>
+                      )}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
-                    {currentPlan?.planAssignmentSource === 'custom' && (
+                    {isExpiredSubscription && (
+                      <RestaurantStatusPill value="expired" styles={requestStatusStyles} />
+                    )}
+                    {currentPlan?.planAssignmentSource === 'custom' && !isExpiredSubscription && (
                       <RestaurantStatusPill value="manual custom" styles={{
                         'manual custom': 'bg-amber-100 text-amber-800',
                       }} />
+                    )}
+                    {isExpiredSubscription && previousPlanId && isKYCVerified && (
+                      <Button type="button" onClick={() => choosePlan(previousPlanId)}>
+                        <FiRefreshCw className="mr-2" />
+                        Renew plan
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -612,7 +725,7 @@ const Subscription = () => {
             )}
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-              {plans.map((plan) => (
+              {orderedPlans.map((plan) => (
                 <PlanCard
                   key={plan._id}
                   plan={plan}
@@ -620,6 +733,7 @@ const Subscription = () => {
                   disabled={!isKYCVerified}
                   requesting={requesting}
                   onSelect={choosePlan}
+                  isPreviousExpired={plan._id === previousPlanId}
                 />
               ))}
             </div>
