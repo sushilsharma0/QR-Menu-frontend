@@ -10,6 +10,7 @@ import Input from '../../components/common/Input'
 import { PlatformPageHeader } from '../../components/platform/PlatformUI'
 import { usePlatformAccess } from '../../hooks/usePlatformAccess'
 import { PlatformAccessDenied } from '../../components/platform/PlatformPermissionGate'
+import { usePlatformPageLoad } from '../../hooks/usePlatformPageLoad'
 
 const IMAGE_MAX_BYTES = 1 * 1024 * 1024
 

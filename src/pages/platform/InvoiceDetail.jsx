@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import toast from '@utils/toast'
 import api from '../../services/api'
 import InvoiceDocument from '../../components/billing/InvoiceDocument'
+import { usePlatformPageLoad } from '../../hooks/usePlatformPageLoad'
 
 export default function PlatformInvoiceDetail() {
   const { id } = useParams()
@@ -10,22 +11,22 @@ export default function PlatformInvoiceDetail() {
   const [invoice, setInvoice] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      try {
-        setLoading(true)
-        const res = await api.get(`/platform/billing/invoices/${id}`)
-        if (!cancelled) setInvoice(res.data?.data ?? res.data)
-      } catch (e) {
-        toast.error(e.response?.data?.message || 'Invoice not found')
-        if (!cancelled) navigate('/platform/invoices')
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
-    return () => { cancelled = true }
+  const loadInvoice = useCallback(async () => {
+    try {
+      setLoading(true)
+      const res = await api.get(`/platform/billing/invoices/${id}`)
+      setInvoice(res.data?.data ?? res.data)
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Invoice not found')
+      navigate('/platform/invoices')
+    } finally {
+      setLoading(false)
+    }
   }, [id, navigate])
+
+  usePlatformPageLoad(() => {
+    loadInvoice()
+  }, [loadInvoice])
 
   if (loading) {
     return (

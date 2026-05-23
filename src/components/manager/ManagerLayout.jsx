@@ -5,6 +5,7 @@ import { BranchProvider } from '../../context/BranchContext'
 import { isManagerEmployeeUser } from '../../utils/tenantPaths'
 import ManagerSidebar from './ManagerSidebar'
 import ManagerHeader from './ManagerHeader'
+import { RestaurantRealtimeProvider } from '../../context/RestaurantRealtimeContext'
 
 const ManagerLayout = () => {
   const { user } = useAuth()
@@ -21,15 +22,18 @@ const ManagerLayout = () => {
 
   if (isPosRoute) {
     return (
-      <BranchProvider>
-        <div className="manager-portal h-screen overflow-hidden bg-[#feefa5] text-gray-900 dark:bg-gray-950 dark:text-gray-100">
-          <Outlet />
-        </div>
-      </BranchProvider>
+      <RestaurantRealtimeProvider>
+        <BranchProvider>
+          <div className="manager-portal h-screen overflow-hidden bg-[#feefa5] text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+            <Outlet />
+          </div>
+        </BranchProvider>
+      </RestaurantRealtimeProvider>
     )
   }
 
   return (
+    <RestaurantRealtimeProvider>
     <BranchProvider>
       <div className="manager-portal flex h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
         <ManagerSidebar />
@@ -41,6 +45,7 @@ const ManagerLayout = () => {
         </div>
       </div>
     </BranchProvider>
+    </RestaurantRealtimeProvider>
   )
 }
 

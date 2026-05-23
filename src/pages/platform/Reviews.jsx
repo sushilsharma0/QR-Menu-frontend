@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import toast from '@utils/toast'
 import { FiRefreshCw, FiStar } from 'react-icons/fi'
 import api from '../../services/api'
+import { usePlatformPageLoad } from '../../hooks/usePlatformPageLoad'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import Table from '../../components/common/Table'
@@ -34,7 +35,7 @@ const PlatformReviews = () => {
     }
   }, [page, filters.isActive, filters.isPublic])
 
-  useEffect(() => {
+  usePlatformPageLoad(() => {
     fetchList()
   }, [fetchList])
 

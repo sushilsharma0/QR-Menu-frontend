@@ -2,9 +2,11 @@ import React from 'react'
 import { Outlet } from 'react-router-dom'
 import PlatformSidebar from './PlatformSidebar'
 import Header from '../common/Header'
+import { PlatformRealtimeProvider } from '../../context/PlatformRealtimeContext'
 
 const PlatformLayout = () => {
   return (
+    <PlatformRealtimeProvider>
     <div className="platform-console flex h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       <PlatformSidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -14,6 +16,7 @@ const PlatformLayout = () => {
         </main>
       </div>
     </div>
+    </PlatformRealtimeProvider>
   )
 }
 

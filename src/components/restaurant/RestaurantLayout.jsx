@@ -6,25 +6,27 @@ import RestaurantTrialKycBanner from './RestaurantTrialKycBanner'
 import PlanReadOnlyBanner from './PlanReadOnlyBanner'
 import TrialWelcomeModal from './TrialWelcomeModal'
 import { BranchProvider } from '../../context/BranchContext'
-import { useSubscriptionSync } from '../../hooks/useSubscriptionSync'
+import { RestaurantRealtimeProvider } from '../../context/RestaurantRealtimeContext'
 
 const RestaurantLayout = () => {
-  useSubscriptionSync()
   const location = useLocation()
   const path = location.pathname || ''
   const isPosRoute = /\/restaurant\/[^/]+\/[^/]+\/pos(\/|$)/.test(path)
 
   if (isPosRoute) {
     return (
-      <BranchProvider>
-        <div className="restaurant-portal h-screen overflow-hidden bg-[#feefa5] text-gray-900 dark:bg-gray-950 dark:text-gray-100">
-          <Outlet />
-        </div>
-      </BranchProvider>
+      <RestaurantRealtimeProvider>
+        <BranchProvider>
+          <div className="restaurant-portal h-screen overflow-hidden bg-[#feefa5] text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+            <Outlet />
+          </div>
+        </BranchProvider>
+      </RestaurantRealtimeProvider>
     )
   }
 
   return (
+    <RestaurantRealtimeProvider>
     <BranchProvider>
       <div className="restaurant-portal flex h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
         <RestaurantSidebar />
@@ -39,6 +41,7 @@ const RestaurantLayout = () => {
         </div>
       </div>
     </BranchProvider>
+    </RestaurantRealtimeProvider>
   )
 }
 

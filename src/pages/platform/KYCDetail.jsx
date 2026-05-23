@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { FiArrowLeft, FiCheckCircle, FiExternalLink, FiFileText, FiShield, FiXCircle } from 'react-icons/fi'
 import toast from '@utils/toast'
 import api from '../../services/api'
+import { usePlatformPageLoad } from '../../hooks/usePlatformPageLoad'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import Modal from '../../components/common/Modal'
@@ -17,7 +18,7 @@ const KYCDetail = () => {
   const [rejectModal, setRejectModal] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
 
-  useEffect(() => {
+  usePlatformPageLoad(() => {
     fetchKYC()
   }, [id])
 

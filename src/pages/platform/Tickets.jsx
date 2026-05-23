@@ -7,6 +7,7 @@ import Card from '../../components/common/Card'
 import Table from '../../components/common/Table'
 import Button from '../../components/common/Button'
 import { PlatformEmptyState, PlatformMetric, PlatformPageHeader, PlatformPill, platformStatusStyles } from '../../components/platform/PlatformUI'
+import { usePlatformPageLoad } from '../../hooks/usePlatformPageLoad'
 
 const PlatformTickets = () => {
   const navigate = useNavigate()
@@ -17,7 +18,7 @@ const PlatformTickets = () => {
   const [filters, setFilters] = useState({ status: '', priority: '', category: '' })
   const [page, setPage] = useState(1)
 
-  useEffect(() => {
+  usePlatformPageLoad(() => {
     fetchTickets()
     fetchStats()
   }, [filters, page])

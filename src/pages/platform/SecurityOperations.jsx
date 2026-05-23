@@ -14,6 +14,7 @@ import {
 } from 'react-icons/fi'
 import toast from '@utils/toast'
 import api from '../../services/api'
+import { usePlatformPageLoad } from '../../hooks/usePlatformPageLoad'
 import { useAuth } from '../../hooks/useAuth'
 import Button from '../../components/common/Button'
 import Card from '../../components/common/Card'
@@ -280,7 +281,7 @@ export default function SecurityOperations() {
     }
   }
 
-  useEffect(() => {
+  usePlatformPageLoad(() => {
     load()
   }, [hours])
 

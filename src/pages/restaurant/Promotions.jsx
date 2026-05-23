@@ -8,6 +8,7 @@ import Modal from '../../components/common/Modal'
 import api from '../../services/api'
 import { createPromotion, deletePromotion, getPromotions, updatePromotion } from '../../services/restaurant'
 import { RestaurantPageLoader, formatRestaurantCurrency } from '../../components/restaurant/RestaurantUI'
+import { useRestaurantAutoRefresh } from '../../context/RestaurantRealtimeContext'
 
 const initialForm = {
   name: '',
@@ -65,7 +66,7 @@ const Promotions = () => {
     }
   }
 
-  useEffect(() => {
+  useRestaurantAutoRefresh(() => {
     fetchData()
   }, [])
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FiFileText, FiClock, FiExternalLink } from 'react-icons/fi'
@@ -10,6 +10,8 @@ import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { formatters } from '../../utils/formatters'
 import { DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
 import { formatRestaurantCurrency } from '../../components/restaurant/RestaurantUI'
+import { REALTIME_TOPICS } from '../../config/realtimeTopics'
+import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
 
 function BillingSection({ title, subtitle, icon: Icon, children }) {
   return (
@@ -42,6 +44,39 @@ export default function SubscriptionBillingPanel() {
   const [histPagination, setHistPagination] = useState({ page: 1, pages: 1 })
   const [loadingInv, setLoadingInv] = useState(true)
   const [loadingHist, setLoadingHist] = useState(true)
+
+  const reloadInvoices = useCallback(async () => {
+    try {
+      setLoadingInv(true)
+      const res = await getSubscriptionInvoices({ page: invPage, limit: 10 })
+      const payload = res.data ?? res
+      setInvoices(payload.invoices || [])
+      setInvPagination(payload.pagination || { page: invPage, pages: 1 })
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Failed to load invoices')
+    } finally {
+      setLoadingInv(false)
+    }
+  }, [invPage])
+
+  const reloadHistory = useCallback(async () => {
+    try {
+      setLoadingHist(true)
+      const res = await getPackageHistory({ page: histPage, limit: 10 })
+      const payload = res.data ?? res
+      setHistory(payload.history || [])
+      setHistPagination(payload.pagination || { page: histPage, pages: 1 })
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Failed to load package history')
+    } finally {
+      setLoadingHist(false)
+    }
+  }, [histPage])
+
+  useRealtimeRefresh(() => {
+    reloadInvoices()
+    reloadHistory()
+  }, [REALTIME_TOPICS.SUBSCRIPTION, REALTIME_TOPICS.ALL])
 
   useEffect(() => {
     let cancelled = false

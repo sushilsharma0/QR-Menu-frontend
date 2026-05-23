@@ -6,6 +6,7 @@ import Button from '../../components/common/Button'
 import Card from '../../components/common/Card'
 import Modal from '../../components/common/Modal'
 import { PlatformEmptyState, PlatformMetric, PlatformPageHeader, PlatformPill } from '../../components/platform/PlatformUI'
+import { usePlatformPageLoad } from '../../hooks/usePlatformPageLoad'
 
 const statusStyles = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -46,7 +47,7 @@ const SubscriptionPayments = () => {
     }
   }
 
-  useEffect(() => {
+  usePlatformPageLoad(() => {
     fetchPayments()
   }, [status, method])
 

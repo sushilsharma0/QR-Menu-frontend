@@ -11,6 +11,7 @@ import api from '../../services/api'
 import { formatters } from '../../utils/formatters'
 import { DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
 import { PlatformMetric, PlatformPageHeader } from '../../components/platform/PlatformUI'
+import { usePlatformPageLoad } from '../../hooks/usePlatformPageLoad'
 
 export default function PlatformInvoices() {
   const [invoices, setInvoices] = useState([])
@@ -38,25 +39,22 @@ export default function PlatformInvoices() {
     }
   }, [page, appliedRestaurantId])
 
-  useEffect(() => {
-    loadInvoices()
-  }, [loadInvoices])
-
-  useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      try {
-        setStatsLoading(true)
-        const res = await api.get('/platform/billing/stats/by-restaurant')
-        if (!cancelled) setSummary(res.data.data?.summary || [])
-      } catch (e) {
-        toast.error(e.response?.data?.message || 'Failed to load billing stats')
-      } finally {
-        if (!cancelled) setStatsLoading(false)
-      }
-    })()
-    return () => { cancelled = true }
+  const loadBillingStats = useCallback(async () => {
+    try {
+      setStatsLoading(true)
+      const res = await api.get('/platform/billing/stats/by-restaurant')
+      setSummary(res.data.data?.summary || [])
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Failed to load billing stats')
+    } finally {
+      setStatsLoading(false)
+    }
   }, [])
+
+  usePlatformPageLoad(() => {
+    loadInvoices()
+    loadBillingStats()
+  }, [loadInvoices, loadBillingStats])
 
   const applyFilter = () => {
     setAppliedRestaurantId(restaurantFilter.trim())

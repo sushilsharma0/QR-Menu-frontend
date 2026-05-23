@@ -28,6 +28,7 @@ import {
   RestaurantPageLoader,
   RestaurantStatusPill,
 } from "../../components/restaurant/RestaurantUI";
+import { useRestaurantAutoRefresh } from "../../context/RestaurantRealtimeContext";
 import { useTenantRoutes } from "../../hooks/useTenantRoutes";
 
 const tableStatusStyles = {
@@ -210,10 +211,6 @@ const Tables = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  useEffect(() => {
-    fetchTables();
-  }, []);
-
   const fetchTables = async (quiet = false) => {
     try {
       if (quiet) setRefreshing(true);
@@ -233,6 +230,10 @@ const Tables = () => {
       setRefreshing(false);
     }
   };
+
+  useRestaurantAutoRefresh(() => {
+    fetchTables();
+  }, []);
 
   const handleDelete = async (id) => {
     try {

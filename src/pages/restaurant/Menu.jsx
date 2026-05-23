@@ -28,6 +28,7 @@ import {
   RestaurantStatusPill,
   formatRestaurantCurrency,
 } from "../../components/restaurant/RestaurantUI";
+import { useRestaurantAutoRefresh } from "../../context/RestaurantRealtimeContext";
 
 const PAGE_SIZE_OPTIONS = [8, 12, 24, 48];
 
@@ -231,10 +232,6 @@ const Menu = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
 
-  useEffect(() => {
-    fetchMenuData();
-  }, []);
-
   const fetchMenuData = async () => {
     try {
       setLoading(true);
@@ -250,6 +247,10 @@ const Menu = () => {
       setLoading(false);
     }
   };
+
+  useRestaurantAutoRefresh(() => {
+    fetchMenuData();
+  }, []);
 
   const handleDeleteCategory = async () => {
     try {

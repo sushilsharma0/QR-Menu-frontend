@@ -23,6 +23,7 @@ import NotificationsSettingsSection from '../../components/restaurant/settings/N
 import BackupSettingsSection from '../../components/restaurant/settings/BackupSettingsSection'
 import ThemeSettingsSection from '../../components/restaurant/settings/ThemeSettingsSection'
 import ProfileSettingsSection from '../../components/restaurant/settings/ProfileSettingsSection'
+import { useRestaurantAutoRefresh } from '../../context/RestaurantRealtimeContext'
 import BrandingSettingsSection from '../../components/restaurant/settings/BrandingSettingsSection'
 import SubscriptionSettingsSection from '../../components/restaurant/settings/SubscriptionSettingsSection'
 
@@ -133,11 +134,6 @@ const Settings = () => {
     }
     return base
   }, [timezoneOptionsFor, selectedCountry, selectedTimezone])
-
-  useEffect(() => {
-    fetchRestaurant()
-    fetchBackupHistory()
-  }, [])
 
   const fetchRestaurant = async () => {
     try {
@@ -396,6 +392,11 @@ const Settings = () => {
       // Settings page can still load if backup access is disabled for the role.
     }
   }
+
+  useRestaurantAutoRefresh(() => {
+    fetchRestaurant()
+    fetchBackupHistory()
+  }, [])
 
   const createBackup = async (type = 'full') => {
     try {

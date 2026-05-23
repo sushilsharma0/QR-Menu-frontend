@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { FiCheckCircle, FiCreditCard, FiExternalLink, FiPlus, FiRefreshCw, FiShield } from 'react-icons/fi'
 import toast from '@utils/toast'
 import api from '../../services/api'
+import { usePlatformPageLoad } from '../../hooks/usePlatformPageLoad'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import PlanCard from '../../components/platform/PlanCard'
@@ -24,7 +25,7 @@ const Subscriptions = () => {
   const [pendingLoading, setPendingLoading] = useState(true)
   const [deleteModal, setDeleteModal] = useState({ open: false, plan: null })
 
-  useEffect(() => {
+  usePlatformPageLoad(() => {
     fetchPlans()
     fetchPendingRequests()
   }, [])

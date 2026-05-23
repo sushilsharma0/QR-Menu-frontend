@@ -7,6 +7,7 @@ import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import { RestaurantPageLoader } from '../../components/restaurant/RestaurantUI'
 import { PlatformEmptyState, PlatformMetric, PlatformPageHeader, PlatformPill, platformStatusStyles } from '../../components/platform/PlatformUI'
+import { usePlatformPageLoad } from '../../hooks/usePlatformPageLoad'
 
 const PlatformTicketDetail = () => {
   const { id } = useParams()
@@ -18,7 +19,7 @@ const PlatformTicketDetail = () => {
   const [statusLoading, setStatusLoading] = useState(false)
   const [assignLoading, setAssignLoading] = useState(false)
 
-  useEffect(() => {
+  usePlatformPageLoad(() => {
     fetchTicket()
   }, [id])
 

@@ -18,6 +18,7 @@ import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import { RestaurantPageLoader } from '../../components/restaurant/RestaurantUI'
 import { DEFAULT_CURRENCY_SYMBOL } from '../../utils/currency'
+import { usePlatformPageLoad } from '../../hooks/usePlatformPageLoad'
 
 const Area = React.lazy(() => import('recharts').then((module) => ({ default: module.Area })))
 const Bar = React.lazy(() => import('recharts').then((module) => ({ default: module.Bar })))
@@ -91,10 +92,6 @@ const Dashboard = () => {
   const [subscriptionData, setSubscriptionData] = useState([])
   const [trend7d, setTrend7d] = useState([])
 
-  useEffect(() => {
-    fetchDashboardData(false)
-  }, [])
-
   const fetchDashboardData = async (quiet = true) => {
     try {
       if (quiet) setRefreshing(true)
@@ -134,6 +131,10 @@ const Dashboard = () => {
       setRefreshing(false)
     }
   }
+
+  usePlatformPageLoad(() => {
+    fetchDashboardData(false)
+  }, [])
 
   const overviewStats = [
     {

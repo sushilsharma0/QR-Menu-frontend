@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { FiActivity, FiAlertCircle, FiCheckCircle, FiRefreshCw, FiSlash } from 'react-icons/fi'
 import toast from '@utils/toast'
 import api from '../../services/api'
+import { usePlatformPageLoad } from '../../hooks/usePlatformPageLoad'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import { PlatformEmptyState, PlatformMetric, PlatformPageHeader } from '../../components/platform/PlatformUI'
@@ -57,7 +58,7 @@ const SystemLogs = () => {
     }
   }
 
-  useEffect(() => {
+  usePlatformPageLoad(() => {
     fetchLogs()
   }, [statusFilter])
 

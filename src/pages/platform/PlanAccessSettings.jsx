@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import toast from '@utils/toast'
 import { FiCheck, FiRefreshCw, FiSave, FiSliders, FiX } from 'react-icons/fi'
 import api from '../../services/api'
+import { usePlatformPageLoad } from '../../hooks/usePlatformPageLoad'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
@@ -100,7 +101,7 @@ export default function PlanAccessSettings() {
     }
   }
 
-  useEffect(() => {
+  usePlatformPageLoad(() => {
     load()
   }, [])
 

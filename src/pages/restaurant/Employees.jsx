@@ -25,6 +25,7 @@ import {
   RestaurantStatusPill,
   formatRestaurantDateTime,
 } from '../../components/restaurant/RestaurantUI'
+import { useRestaurantAutoRefresh } from '../../context/RestaurantRealtimeContext'
 import { useAuth } from '../../hooks/useAuth'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 
@@ -184,10 +185,6 @@ const Employees = () => {
   const [deleteLoading, setDeleteLoading] = useState(false)
   const restaurantId = user?.id || user?._id || 'N/A'
 
-  useEffect(() => {
-    fetchEmployees()
-  }, [])
-
   const fetchEmployees = async () => {
     try {
       setLoading(true)
@@ -199,6 +196,10 @@ const Employees = () => {
       setLoading(false)
     }
   }
+
+  useRestaurantAutoRefresh(() => {
+    fetchEmployees()
+  }, [])
 
   const handleDelete = async () => {
     if (!deleteTarget?._id) return

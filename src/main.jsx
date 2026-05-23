@@ -8,6 +8,7 @@ import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import { CustomerCartProvider } from './context/CustomerCartContext'
 import { SocketProvider } from './context/SocketContext'
+import { RealtimeSyncProvider } from './context/RealtimeSyncProvider'
 import { ThemeProvider } from './context/ThemeContext'
 import './index.css'
 
@@ -32,6 +33,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <ThemeProvider>
           <AuthProvider>
             <SocketProvider>
+              <RealtimeSyncProvider>
               <CartProvider>
                 <CustomerCartProvider>
                   <App />
@@ -71,6 +73,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                 />
                 </CustomerCartProvider>
               </CartProvider>
+              </RealtimeSyncProvider>
             </SocketProvider>
           </AuthProvider>
         </ThemeProvider>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import toast from '@utils/toast'
 import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiShield, FiXCircle } from 'react-icons/fi'
 import api from '../../services/api'
+import { usePlatformPageLoad } from '../../hooks/usePlatformPageLoad'
 import Card from '../../components/common/Card'
 import KYCTable from '../../components/platform/KYCTable'
 import Button from '../../components/common/Button'
@@ -13,7 +14,7 @@ const KYCPending = () => {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
-  useEffect(() => {
+  usePlatformPageLoad(() => {
     fetchApplications()
   }, [])
 

@@ -6,6 +6,7 @@ import RestaurantTrialKycBanner from '../restaurant/RestaurantTrialKycBanner'
 import { useAuth } from '../../hooks/useAuth'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
 import { BranchProvider } from '../../context/BranchContext'
+import { RestaurantRealtimeProvider } from '../../context/RestaurantRealtimeContext'
 import { branchPortalBase } from '../../utils/tenantPaths'
 
 const BRANCH_OUTLET = <Outlet />
@@ -44,15 +45,18 @@ const BranchLayout = () => {
 
   if (isPosRoute) {
     return (
-      <BranchProvider>
-        <div className="restaurant-portal h-screen overflow-hidden bg-[#feefa5] text-gray-900 dark:bg-gray-950 dark:text-gray-100">
-          <Outlet />
-        </div>
-      </BranchProvider>
+      <RestaurantRealtimeProvider>
+        <BranchProvider>
+          <div className="restaurant-portal h-screen overflow-hidden bg-[#feefa5] text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+            <Outlet />
+          </div>
+        </BranchProvider>
+      </RestaurantRealtimeProvider>
     )
   }
 
   return (
+    <RestaurantRealtimeProvider>
     <BranchProvider>
       <div className="restaurant-portal flex h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
         <BranchSidebar />
@@ -65,6 +69,7 @@ const BranchLayout = () => {
         </div>
       </div>
     </BranchProvider>
+    </RestaurantRealtimeProvider>
   )
 }
 

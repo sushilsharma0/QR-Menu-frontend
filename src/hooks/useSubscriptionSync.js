@@ -12,9 +12,11 @@ export function useSubscriptionSync() {
   const { socket, isConnected } = useSocket()
 
   useEffect(() => {
-    if (!socket || !isConnected || user?.role !== 'restaurant' || user?.scope === 'employee') {
-      return undefined
-    }
+    if (!socket || !isConnected) return undefined
+    if (user?.scope === 'employee') return undefined
+    const isRestaurantOwner =
+      user?.role === 'restaurant' || user?.scope === 'restaurant' || user?.scope === 'branch_user'
+    if (!isRestaurantOwner) return undefined
 
     const applyAccessPayload = (payload, { notify = true } = {}) => {
       if (!payload || typeof payload !== 'object') return

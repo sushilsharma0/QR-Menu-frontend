@@ -18,6 +18,7 @@ import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import { RestaurantPageLoader, RestaurantStatusPill } from '../../components/restaurant/RestaurantUI'
+import { usePlatformPageLoad } from '../../hooks/usePlatformPageLoad'
 
 const statusStyles = {
   active: 'bg-green-100 text-green-800',
@@ -90,7 +91,7 @@ const Restaurants = () => {
   const [kycStatus, setKycStatus] = useState('all')
   const [page, setPage] = useState(1)
 
-  useEffect(() => {
+  usePlatformPageLoad(() => {
     fetchRestaurants(false)
   }, [search, status, kycStatus, page])
 

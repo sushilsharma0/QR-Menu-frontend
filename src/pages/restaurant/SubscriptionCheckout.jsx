@@ -22,6 +22,8 @@ import {
   formatRestaurantCurrency,
   formatRestaurantDateTime,
 } from '../../components/restaurant/RestaurantUI'
+import { REALTIME_TOPICS } from '../../config/realtimeTopics'
+import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
 
 const FILE_MAX_BYTES = 1 * 1024 * 1024
 
@@ -67,28 +69,30 @@ const SubscriptionCheckout = () => {
   const { slug, restaurantId } = getTenantSegments(user)
   const subscriptionPath = `${restaurantPortalBase(slug, restaurantId)}/subscription`
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        const [planRes, statusRes, paymentsRes] = await Promise.all([
-          api.get(`/platform/subscriptions/plans/${planId}`),
-          api.get('/restaurant/package/status'),
-          api.get('/restaurant/subscription/payments', { params: { limit: 20 } }),
-        ])
-        setPlan(planRes.data.data)
-        setStatus(statusRes.data.data)
-        setPayments(paymentsRes.data.data?.payments || [])
-      } catch (error) {
-        toast.error(error.response?.data?.message || 'Could not load checkout details')
-        navigate(subscriptionPath)
-      } finally {
-        setLoading(false)
-      }
+  const fetchData = React.useCallback(async () => {
+    try {
+      setLoading(true)
+      const [planRes, statusRes, paymentsRes] = await Promise.all([
+        api.get(`/platform/subscriptions/plans/${planId}`),
+        api.get('/restaurant/package/status'),
+        api.get('/restaurant/subscription/payments', { params: { limit: 20 } }),
+      ])
+      setPlan(planRes.data.data)
+      setStatus(statusRes.data.data)
+      setPayments(paymentsRes.data.data?.payments || [])
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not load checkout details')
+      navigate(subscriptionPath)
+    } finally {
+      setLoading(false)
     }
-
-    fetchData()
   }, [navigate, planId, subscriptionPath])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  useRealtimeRefresh(fetchData, [REALTIME_TOPICS.SUBSCRIPTION, REALTIME_TOPICS.ALL])
 
   const relatedPayment = useMemo(
     () =>

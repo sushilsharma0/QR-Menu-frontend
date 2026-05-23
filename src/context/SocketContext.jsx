@@ -122,8 +122,13 @@ export const SocketProvider = ({ children }) => {
             newSocket.emit('join:restaurant', resolvedRestaurantId)
           }
           newSocket.emit('join:employee', userId)
-        } else if (userRole === 'super_admin' || userRole === 'admin') {
-          newSocket.emit('join:platform', userId)
+        } else if (
+          userScope === 'platform' ||
+          userRole === 'super_admin' ||
+          userRole === 'admin' ||
+          userRole === 'support'
+        ) {
+          newSocket.emit('join:platform')
         }
       }
     })
@@ -194,8 +199,13 @@ export const SocketProvider = ({ children }) => {
             newSocket.emit('join:restaurant', resolvedRestaurantId)
           }
           newSocket.emit('join:employee', userId)
-        } else if (userRole === 'super_admin' || userRole === 'admin') {
-          newSocket.emit('join:platform', userId)
+        } else if (
+          userScope === 'platform' ||
+          userRole === 'super_admin' ||
+          userRole === 'admin' ||
+          userRole === 'support'
+        ) {
+          newSocket.emit('join:platform')
         }
       }
     })

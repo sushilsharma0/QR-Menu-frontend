@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { FiEdit2, FiFileText, FiGlobe, FiLayout, FiTrash2 } from 'react-icons/fi'
 import toast from '@utils/toast'
 import api from '../../services/api'
+import { usePlatformPageLoad } from '../../hooks/usePlatformPageLoad'
 import Card from '../../components/common/Card'
 import Tabs from '../../components/common/Tabs'
 import Table from '../../components/common/Table'
@@ -21,7 +22,7 @@ const CMS = () => {
   const tabFromUrl = searchParams.get('tab')
   const defaultTab = ['blocks', 'public', 'guide'].includes(tabFromUrl) ? tabFromUrl : 'blocks'
 
-  useEffect(() => {
+  usePlatformPageLoad(() => {
     fetchContents()
   }, [])
 

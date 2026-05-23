@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { FiCreditCard, FiPieChart, FiPlus, FiTrash2 } from 'react-icons/fi'
 import toast from '@utils/toast'
 import api from '../../../services/api'
+import { usePlatformPageLoad } from '../../../hooks/usePlatformPageLoad'
 import Button from '../../../components/common/Button'
 import Input from '../../../components/common/Input'
 import Select from '../../../components/common/Select'
@@ -49,7 +50,7 @@ export default function PlatformExpenses() {
     }
   }
 
-  useEffect(() => {
+  usePlatformPageLoad(() => {
     load()
   }, [])
 

@@ -26,6 +26,7 @@ import {
   YAxis,
 } from 'recharts'
 import api from '../../services/api'
+import { usePlatformPageLoad } from '../../hooks/usePlatformPageLoad'
 import { useAuth } from '../../hooks/useAuth'
 import Button from '../../components/common/Button'
 import Card from '../../components/common/Card'
@@ -152,7 +153,7 @@ const RestaurantDetail = () => {
     }
   }
 
-  useEffect(() => {
+  usePlatformPageLoad(() => {
     loadRestaurant(false)
   }, [id])
 

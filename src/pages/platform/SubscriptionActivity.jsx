@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { FiBarChart2, FiCalendar, FiCreditCard, FiRefreshCw, FiSearch } from 'react-icons/fi'
 import toast from '@utils/toast'
 import api from '../../services/api'
+import { usePlatformPageLoad } from '../../hooks/usePlatformPageLoad'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
@@ -51,7 +52,7 @@ export default function SubscriptionActivity() {
     }
   }, [page, from, to, appliedRestaurantId])
 
-  useEffect(() => {
+  usePlatformPageLoad(() => {
     load()
   }, [load])
 

@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { FiEdit2, FiKey, FiShield, FiUserCheck, FiUserPlus, FiUserX, FiUsers } from 'react-icons/fi'
 import toast from '@utils/toast'
 import api from '../../services/api'
+import { usePlatformPageLoad } from '../../hooks/usePlatformPageLoad'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
@@ -61,7 +62,7 @@ const Admins = () => {
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm()
 
-  useEffect(() => {
+  usePlatformPageLoad(() => {
     if (isSuperAdmin) fetchAdmins()
     else setLoading(false)
   }, [isSuperAdmin])

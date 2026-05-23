@@ -4,6 +4,7 @@ import api from '../../../services/api'
 import { AuthContext } from '../../../context/AuthContext'
 import { adPayrollMonthYearToBs } from '../../../utils/nepaliDateFormat'
 import { currentMonthDays } from '../../restaurant/finance/payroll/payrollUtils'
+import { usePlatformPageLoad } from '../../../hooks/usePlatformPageLoad'
 
 const API = '/platform/payroll'
 
@@ -123,14 +124,6 @@ export function usePlatformPayrollPage() {
     setDefaults((s) => ({ ...s, workingDays: days, presentDays: Math.min(Number(s.presentDays || days), days) }))
   }, [month, year])
 
-  useEffect(() => {
-    load()
-  }, [month, year])
-
-  useEffect(() => {
-    loadHistory()
-  }, [])
-
   const loadEmployeeSummary = useCallback(async () => {
     try {
       setSummaryLoading(true)
@@ -158,9 +151,11 @@ export function usePlatformPayrollPage() {
     }
   }
 
-  useEffect(() => {
+  usePlatformPageLoad(() => {
+    load()
+    loadHistory()
     loadStatutory()
-  }, [])
+  }, [month, year])
 
   useEffect(() => {
     let cancelled = false

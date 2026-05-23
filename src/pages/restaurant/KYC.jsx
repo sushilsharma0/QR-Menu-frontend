@@ -20,6 +20,7 @@ import { useAuth } from '../../hooks/useAuth'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import Card from '../../components/common/Card'
+import { useRestaurantAutoRefresh } from '../../context/RestaurantRealtimeContext'
 
 const FILE_MAX_BYTES = 1 * 1024 * 1024
 
@@ -167,10 +168,6 @@ const KYC = () => {
   })
   const { register, handleSubmit, setValue, formState: { errors } } = useForm()
 
-  useEffect(() => {
-    fetchKYCStatus()
-  }, [])
-
   const fetchKYCStatus = async () => {
     try {
       setStatusLoading(true)
@@ -194,6 +191,10 @@ const KYC = () => {
       setStatusLoading(false)
     }
   }
+
+  useRestaurantAutoRefresh(() => {
+    fetchKYCStatus()
+  }, [])
 
   const onSubmit = async (data) => {
     try {

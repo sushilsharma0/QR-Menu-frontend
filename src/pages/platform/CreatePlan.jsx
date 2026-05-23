@@ -11,6 +11,7 @@ import Input from '../../components/common/Input'
 import { PlatformMetric, PlatformPageHeader } from '../../components/platform/PlatformUI'
 import PlanFeatureSelector from '../../components/platform/PlanFeatureSelector'
 import { mergeMarketingBullets } from '../../utils/planMarketingBullets'
+import { usePlatformPageLoad } from '../../hooks/usePlatformPageLoad'
 
 const LIMIT_OPTIONS = [
   { value: '0', label: 'Unlimited' },
@@ -48,13 +49,10 @@ const CreatePlan = () => {
   const skipBulletsSyncRef = useRef(false)
   const planLoadedRef = useRef(false)
 
-  useEffect(() => {
+  const loadPlanFormMeta = useCallback(() => {
     api.get('/platform/billing/settings')
       .then((res) => setBilling(res.data.data))
       .catch(() => setBilling(null))
-  }, [])
-
-  useEffect(() => {
     api
       .get('/platform/subscriptions/plan-feature-options')
       .then((res) => {
@@ -75,6 +73,10 @@ const CreatePlan = () => {
         setFeatureOptions([])
       })
   }, [])
+
+  usePlatformPageLoad(() => {
+    loadPlanFormMeta()
+  }, [loadPlanFormMeta])
 
   const pricePreview = useMemo(() => {
     if (!billing) return null

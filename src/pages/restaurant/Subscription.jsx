@@ -27,6 +27,8 @@ import {
   formatRestaurantDateTime,
 } from '../../components/restaurant/RestaurantUI'
 import PlanFeaturesIncluded from '../../components/restaurant/PlanFeaturesIncluded'
+import { REALTIME_TOPICS } from '../../config/realtimeTopics'
+import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh'
 
 const FILE_MAX_BYTES = 1 * 1024 * 1024
 
@@ -264,11 +266,7 @@ const Subscription = () => {
     fetchData()
   }, [authUser?.id])
 
-  useEffect(() => {
-    const onAccessUpdated = () => fetchData(true)
-    window.addEventListener('restaurant:access_updated', onAccessUpdated)
-    return () => window.removeEventListener('restaurant:access_updated', onAccessUpdated)
-  }, [authUser?.id])
+  useRealtimeRefresh(() => fetchData(true), [REALTIME_TOPICS.SUBSCRIPTION, REALTIME_TOPICS.ALL])
 
   const fetchData = async (quiet = false) => {
     try {

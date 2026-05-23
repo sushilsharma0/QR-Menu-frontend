@@ -8,6 +8,7 @@ import api from '../../services/api'
 import { useSocket } from '../../hooks/useSocket'
 import { cashierPortalBase, kitchenPortalBase, waiterPortalBase } from '../../utils/tenantPaths'
 import { useTheme } from '../../context/ThemeContext'
+import { RestaurantRealtimeProvider } from '../../context/RestaurantRealtimeContext'
 
 const EmployeeLayout = () => {
   const { user, logout } = useAuth()
@@ -108,6 +109,7 @@ const EmployeeLayout = () => {
   }
 
   return (
+    <RestaurantRealtimeProvider>
     <div className={`employee-portal ${isPosRoute ? 'h-screen overflow-hidden' : 'min-h-screen'} flex flex-col bg-gray-50 dark:bg-gray-950`}>
       {/* Header */}
       {!isPosRoute && <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
@@ -234,6 +236,7 @@ const EmployeeLayout = () => {
         </footer>
       )}
     </div>
+    </RestaurantRealtimeProvider>
   )
 }
 
