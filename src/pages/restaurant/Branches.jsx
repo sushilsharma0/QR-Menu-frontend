@@ -25,6 +25,7 @@ import Modal from '../../components/common/Modal'
 import { useBranch } from '../../context/BranchContext'
 import { money } from './finance/FinanceUI'
 import BranchModulesField from '../../components/branch/BranchModulesField'
+import BranchComparisonPanel from '../../components/restaurant/BranchComparisonPanel'
 import { buildEnabledModulesPayload, enabledModuleLabelsForBranch } from '../../config/branchModuleConfig'
 
 const OTP_RESEND_COOLDOWN_SEC = 60
@@ -957,6 +958,10 @@ const Branches = () => {
         <Metric icon={FiUsers} label="Employees" value={summary.employees || 0} />
         <Metric icon={FiRefreshCw} label="Inventory value" value={money(summary.inventoryValue)} />
       </div>
+
+      {branches.length > 1 && (
+        <BranchComparisonPanel />
+      )}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1.2fr]">
         <section className="rounded-2xl border border-surface-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">

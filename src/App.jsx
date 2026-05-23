@@ -76,6 +76,11 @@ import FinancePayroll from "./pages/restaurant/finance/Payroll";
 import FinanceInvoices from "./pages/restaurant/finance/Invoices";
 import FinanceInventory from "./pages/restaurant/finance/Inventory";
 import FinanceBudget from "./pages/restaurant/finance/Budget";
+import FinanceAccounting from "./pages/restaurant/finance/Accounting";
+import FeedbackInbox from "./pages/restaurant/FeedbackInbox";
+import CustomerDirectory from "./pages/restaurant/CustomerDirectory";
+import DeliveryDispatch from "./pages/restaurant/DeliveryDispatch";
+import FoodCostReport from "./pages/restaurant/FoodCostReport";
 import PosLayout from "./pages/restaurant/pos/PosLayout";
 import PosMain from "./pages/restaurant/pos/PosMain";
 import PosOrdersList from "./pages/restaurant/pos/PosOrdersList";
@@ -435,6 +440,10 @@ function App() {
               path="orders/activity"
               element={<RestaurantOrderActivityReport />}
             />
+            <Route path="orders/dispatch" element={<DeliveryDispatch />} />
+            <Route path="reports/food-cost" element={<FoodCostReport />} />
+            <Route path="feedback" element={<FeedbackInbox />} />
+            <Route path="customers" element={<CustomerDirectory />} />
             <Route path="orders/:id" element={<RestaurantOrderDetail />} />
             <Route path="tables" element={<RestaurantTables />} />
             <Route path="tables/new" element={<RestaurantTableForm />} />
@@ -476,6 +485,7 @@ function App() {
             <Route path="finance/invoices" element={<FinanceInvoices />} />
             <Route path="finance/inventory" element={<FinanceInventory />} />
             <Route path="finance/budget" element={<FinanceBudget />} />
+            <Route path="finance/accounting" element={<FinanceAccounting />} />
             <Route path="settings" element={<RestaurantSettings />} />
             <Route path="backup-recovery" element={<BackupRecovery />} />
             <Route
@@ -524,6 +534,10 @@ function App() {
             path="orders/activity"
             element={<RestaurantOrderActivityReport />}
           />
+          <Route path="orders/dispatch" element={<DeliveryDispatch />} />
+          <Route path="reports/food-cost" element={<FoodCostReport />} />
+          <Route path="feedback" element={<FeedbackInbox />} />
+          <Route path="customers" element={<CustomerDirectory />} />
           <Route path="orders/:id" element={<RestaurantOrderDetail />} />
           <Route path="tables" element={<RestaurantTables />} />
           <Route path="tables/new" element={<RestaurantTableForm />} />
@@ -546,6 +560,7 @@ function App() {
           <Route path="finance/invoices" element={<FinanceInvoices />} />
           <Route path="finance/inventory" element={<FinanceInventory />} />
           <Route path="finance/budget" element={<FinanceBudget />} />
+          <Route path="finance/accounting" element={<FinanceAccounting />} />
           <Route path="profile" element={<RestaurantProfile />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="tickets" element={<RestaurantTickets />} />

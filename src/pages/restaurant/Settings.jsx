@@ -17,6 +17,7 @@ import {
 import { useCountriesCatalog } from '../../hooks/useCountriesCatalog'
 import { useLocationCascade } from '../../hooks/useLocationCascade'
 import { getSectionById } from '../../components/restaurant/settings/settingsConfig'
+import LoyaltySettingsSection from '../../components/restaurant/settings/LoyaltySettingsSection'
 import SettingsHub from '../../components/restaurant/settings/SettingsHub'
 import SettingsSectionShell from '../../components/restaurant/settings/SettingsSectionShell'
 import NotificationsSettingsSection from '../../components/restaurant/settings/NotificationsSettingsSection'
@@ -544,6 +545,8 @@ const Settings = () => {
     switch (activeSection) {
       case 'notifications':
         return <NotificationsSettingsSection />
+      case 'loyalty':
+        return <LoyaltySettingsSection />
       case 'backup':
         return (
           <BackupSettingsSection

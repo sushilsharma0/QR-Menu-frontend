@@ -4,9 +4,8 @@
  *
  * Local dev:
  * - Do NOT set VITE_API_URL: axios uses `/api` and Vite proxies to the API.
- * - Do NOT set VITE_SOCKET_URL: desktop localhost connects Socket.IO directly
- *   to port 5000 to avoid noisy Vite websocket proxy resets. LAN/mobile dev
- *   keeps same-origin `/socket.io` proxying.
+ * - Do NOT set VITE_SOCKET_URL: Socket.IO uses the Vite dev server origin and
+ *   `/socket.io` is proxied to the API (same as `/api`).
  * - Start the API on port 5000 or requests and realtime events cannot connect.
  *
  * Override VITE_API_URL / VITE_SOCKET_URL only when the API is on another host.
@@ -26,17 +25,12 @@ export function getApiBaseUrl() {
   return '/api'
 }
 
-const LOCAL_DEV_HOSTS = new Set(['localhost', '127.0.0.1'])
-
 export function getSocketOrigin() {
   const envRaw = import.meta.env.VITE_SOCKET_URL
   const envTrim = envRaw != null && String(envRaw).trim() !== '' ? String(envRaw).trim() : ''
 
   if (typeof window !== 'undefined' && window.location?.origin) {
     if (envTrim) return envTrim
-    if (import.meta.env.DEV && LOCAL_DEV_HOSTS.has(window.location.hostname)) {
-      return 'http://127.0.0.1:5000'
-    }
     return window.location.origin
   }
 

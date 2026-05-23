@@ -1,4 +1,5 @@
 import {
+  FiAward,
   FiBell,
   FiCreditCard,
   FiDatabase,
@@ -35,6 +36,13 @@ export const SETTINGS_SECTIONS = [
     description: 'POS, kitchen, and order alert preferences on this device',
     icon: FiBell,
     accent: 'from-amber-500 to-orange-500',
+  },
+  {
+    id: 'loyalty',
+    label: 'Loyalty & SMS',
+    description: 'Points rules and order-ready text messages',
+    icon: FiAward,
+    accent: 'from-primary-600 to-amber-500',
   },
   {
     id: 'backup',

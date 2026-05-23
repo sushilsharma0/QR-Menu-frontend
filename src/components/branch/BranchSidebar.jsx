@@ -14,11 +14,13 @@ import {
   FiLock,
   FiMapPin,
   FiMenu,
+  FiMessageSquare,
   FiPercent,
   FiPieChart,
   FiSettings,
   FiShield,
   FiShoppingBag,
+  FiTruck,
   FiUsers,
   FiX,
 } from 'react-icons/fi'
@@ -32,8 +34,13 @@ function segmentToModuleKey(segment) {
   const root = segment.split('/')[0]
   if (root === 'pos') return 'customerOrders'
   if (root === 'menu') return 'menu'
-  if (root === 'orders') return segment === 'orders/activity' ? 'salesReports' : 'orders'
+  if (root === 'orders') {
+    if (segment === 'orders/activity' || segment === 'reports/food-cost') return 'salesReports'
+    return 'orders'
+  }
+  if (root === 'reports') return 'salesReports'
   if (root === 'tables') return 'tables'
+  if (root === 'feedback' || root === 'customers') return 'orders'
   if (root === 'promotions') return 'promotions'
   if (root === 'credit-customers') return 'creditCustomers'
   if (root === 'employees') return 'employees'
@@ -44,8 +51,9 @@ function segmentToModuleKey(segment) {
     if (segment.includes('budget')) return 'budget'
     if (segment.includes('profit-loss')) return 'profitLoss'
     if (segment.includes('invoices')) return 'billing'
+    if (segment.includes('accounting')) return 'accounting'
     if (segment.includes('dashboard')) return 'financeOverview'
-    return 'accounting'
+    return 'financeOverview'
   }
   if (root === 'settings' || root === 'public-profile') return 'accountSettings'
   if (root === 'tickets') return 'supportTickets'
@@ -58,6 +66,7 @@ const NAV_GROUPS = [
     items: [
       { segment: 'dashboard', icon: FiHome, label: 'Dashboard' },
       { segment: 'orders/activity', icon: FiBarChart2, label: 'Sales activity' },
+      { segment: 'reports/food-cost', icon: FiPercent, label: 'Food cost' },
     ],
   },
   {
@@ -65,9 +74,12 @@ const NAV_GROUPS = [
     items: [
       { segment: 'pos', icon: FiCoffee, label: 'POS' },
       { segment: 'orders', icon: FiShoppingBag, label: 'Orders' },
+      { segment: 'orders/dispatch', icon: FiTruck, label: 'Delivery' },
       { segment: 'menu', icon: FiBookOpen, label: 'Menu' },
       { segment: 'tables', icon: FiMapPin, label: 'Tables & QR' },
       { segment: 'promotions', icon: FiPercent, label: 'Promotions' },
+      { segment: 'feedback', icon: FiMessageSquare, label: 'Feedback' },
+      { segment: 'customers', icon: FiUsers, label: 'Customers' },
       { segment: 'credit-customers', icon: FiDollarSign, label: 'Credit customers' },
     ],
   },
@@ -93,21 +105,30 @@ const NAV_GROUPS = [
       { segment: 'finance/inventory', icon: FiBookOpen, label: 'Inventory' },
       { segment: 'finance/payroll', icon: FiUsers, label: 'Payroll' },
       { segment: 'finance/invoices', icon: FiFileText, label: 'Invoices' },
+      { segment: 'finance/accounting', icon: FiBookOpen, label: 'Accounting' },
     ],
   },
 ]
 
-function NavItem({ item, restaurantBase, pendingCount, collapsed, onClick, onTooltip, onTooltipLeave, locked }) {
+function navBadgeCount(segment, pendingCount, deliveryDispatchCount) {
+  if (segment === 'orders') return pendingCount
+  if (segment === 'orders/dispatch') return deliveryDispatchCount
+  return 0
+}
+
+function NavItem({ item, restaurantBase, pendingCount, deliveryDispatchCount = 0, collapsed, onClick, onTooltip, onTooltipLeave, locked }) {
   const showTooltip = (event) => {
     if (!collapsed) return
     const rect = event.currentTarget.getBoundingClientRect()
     onTooltip?.({
       label: item.label,
-      count: item.segment === 'orders' ? pendingCount : 0,
+      count: navBadgeCount(item.segment, pendingCount, deliveryDispatchCount),
       top: rect.top + rect.height / 2,
       left: rect.right + 12,
     })
   }
+
+  const badgeCount = navBadgeCount(item.segment, pendingCount, deliveryDispatchCount)
 
   const inactiveRow =
     'text-gray-600 hover:bg-surface-50 hover:text-gray-950 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100'
@@ -166,13 +187,13 @@ function NavItem({ item, restaurantBase, pendingCount, collapsed, onClick, onToo
             <item.icon className="h-5 w-5" />
           </span>
           {!collapsed && <span className="truncate text-sm">{item.label}</span>}
-          {item.segment === 'orders' && pendingCount > 0 && (
+          {badgeCount > 0 && (
             <span
               className={`flex h-5 min-w-[20px] flex-shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white ${
                 collapsed ? 'absolute -right-1 -top-1' : 'ml-auto'
               }`}
             >
-              {pendingCount > 99 ? '99+' : pendingCount}
+              {badgeCount > 99 ? '99+' : badgeCount}
             </span>
           )}
         </>
@@ -197,7 +218,7 @@ function Brand({ collapsed, branchName }) {
   )
 }
 
-function SidebarContent({ collapsed, setCollapsed, pendingCount, restaurantBase, branchName, modules, onClose, isMobile, onTooltip, onTooltipLeave, canManageTheme }) {
+function SidebarContent({ collapsed, setCollapsed, pendingCount, deliveryDispatchCount = 0, restaurantBase, branchName, modules, onClose, isMobile, onTooltip, onTooltipLeave, canManageTheme }) {
   const hideLabels = collapsed && !isMobile
 
   const filteredGroups = useMemo(() => {
@@ -258,6 +279,7 @@ function SidebarContent({ collapsed, setCollapsed, pendingCount, restaurantBase,
                       item={item}
                       restaurantBase={restaurantBase}
                       pendingCount={pendingCount}
+                      deliveryDispatchCount={deliveryDispatchCount}
                       collapsed={hideLabels}
                       onClick={isMobile ? onClose : undefined}
                       onTooltip={onTooltip}
@@ -280,6 +302,7 @@ const BranchSidebar = () => {
   const { socket } = useSocket()
   const { restaurantBase, hasTenant } = useTenantRoutes()
   const [pendingCount, setPendingCount] = useState(0)
+  const [deliveryDispatchCount, setDeliveryDispatchCount] = useState(0)
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpenFor, setMobileOpenFor] = useState(null)
   const [tooltip, setTooltip] = useState(null)
@@ -300,17 +323,35 @@ const BranchSidebar = () => {
     }
   }
 
-  useEffect(() => {
+  const fetchDeliveryDispatchCount = async () => {
+    try {
+      const res = await api.get('/restaurant/insights/delivery-dispatch', {
+        params: { status: 'active' },
+        skipErrorToast: true,
+      })
+      const count = Number(res?.data?.data?.activeCount ?? res?.data?.data?.orders?.length ?? 0)
+      setDeliveryDispatchCount(Number.isFinite(count) ? count : 0)
+    } catch {
+      setDeliveryDispatchCount(0)
+    }
+  }
+
+  const refreshNavCounts = () => {
     fetchPendingCount()
+    fetchDeliveryDispatchCount()
+  }
+
+  useEffect(() => {
+    refreshNavCounts()
   }, [restaurantBase])
 
   useEffect(() => {
     if (!socket) return undefined
-    socket.on('new_order', fetchPendingCount)
-    socket.on('order_updated', fetchPendingCount)
+    socket.on('new_order', refreshNavCounts)
+    socket.on('order_updated', refreshNavCounts)
     return () => {
-      socket.off('new_order', fetchPendingCount)
-      socket.off('order_updated', fetchPendingCount)
+      socket.off('new_order', refreshNavCounts)
+      socket.off('order_updated', refreshNavCounts)
     }
   }, [socket])
 
@@ -344,6 +385,7 @@ const BranchSidebar = () => {
           collapsed={false}
           setCollapsed={setCollapsed}
           pendingCount={pendingCount}
+          deliveryDispatchCount={deliveryDispatchCount}
           restaurantBase={restaurantBase}
           branchName={branchName}
           modules={modules}
@@ -364,6 +406,7 @@ const BranchSidebar = () => {
           collapsed={collapsed}
           setCollapsed={setCollapsed}
           pendingCount={pendingCount}
+          deliveryDispatchCount={deliveryDispatchCount}
           restaurantBase={restaurantBase}
           branchName={branchName}
           modules={modules}

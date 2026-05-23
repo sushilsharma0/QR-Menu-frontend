@@ -11,10 +11,12 @@ import {
   FiGrid,
   FiList,
   FiPlus,
+  FiDownload,
   FiRefreshCw,
   FiSearch,
   FiTag,
   FiTrash2,
+  FiUpload,
 } from "react-icons/fi";
 import toast from "@utils/toast";
 import api from "../../services/api";
@@ -231,6 +233,9 @@ const Menu = () => {
   const [viewMode, setViewMode] = useState("list");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importCsv, setImportCsv] = useState("");
+  const [importing, setImporting] = useState(false);
 
   const fetchMenuData = async () => {
     try {
@@ -271,6 +276,41 @@ const Menu = () => {
       setDeleteModal({ open: false, type: "", id: "", name: "" });
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to delete menu item");
+    }
+  };
+
+  const handleExportCsv = async () => {
+    try {
+      const res = await api.get("/restaurant/menu/items/export/csv", { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: "text/csv" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `menu-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success("Menu exported");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Export failed");
+    }
+  };
+
+  const handleImportCsv = async () => {
+    if (!importCsv.trim()) {
+      toast.error("Paste CSV content first");
+      return;
+    }
+    setImporting(true);
+    try {
+      const res = await api.post("/restaurant/menu/items/import/csv", { csv: importCsv });
+      const result = res.data?.data || {};
+      toast.success(`Import done: ${result.created || 0} created, ${result.updated || 0} updated`);
+      setImportOpen(false);
+      setImportCsv("");
+      fetchMenuData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Import failed");
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -356,6 +396,12 @@ const Menu = () => {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="secondary" onClick={handleExportCsv}>
+                <FiDownload className="mr-1 inline h-4 w-4" /> Export CSV
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => setImportOpen(true)}>
+                <FiUpload className="mr-1 inline h-4 w-4" /> Import CSV
+              </Button>
               <Button type="button" variant="secondary" onClick={fetchMenuData}>
                 <FiRefreshCw className="mr-2" />
                 Refresh
@@ -688,6 +734,29 @@ const Menu = () => {
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
       />
+
+      <Modal
+        isOpen={importOpen}
+        onClose={() => setImportOpen(false)}
+        title="Import menu from CSV"
+      >
+        <div className="p-6 space-y-4">
+          <p className="text-sm text-gray-600">
+            Columns: categoryName, name, description, price, isAvailable, isVegetarian, dietaryTags (pipe-separated).
+            Export first to use as a template.
+          </p>
+          <textarea
+            className="h-48 w-full rounded-xl border border-surface-200 p-3 font-mono text-xs dark:border-gray-700 dark:bg-gray-900"
+            value={importCsv}
+            onChange={(e) => setImportCsv(e.target.value)}
+            placeholder="Paste CSV here…"
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setImportOpen(false)}>Cancel</Button>
+            <Button onClick={handleImportCsv} loading={importing}>Import</Button>
+          </div>
+        </div>
+      </Modal>
 
       <Modal
         isOpen={deleteModal.open}

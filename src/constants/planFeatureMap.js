@@ -42,11 +42,13 @@ export function featureKeyForSegment(segment) {
 
   if (PLAN_ALWAYS_OPEN_SEGMENTS.has(root)) return null
   if (seg === 'dashboard') return 'dashboard'
-  if (seg === 'orders/activity') return 'salesReports'
+  if (seg === 'orders/activity' || seg === 'reports/food-cost') return 'salesReports'
+  if (seg === 'orders/dispatch') return 'orders'
   if (root === 'pos') return 'customerOrders'
   if (root === 'menu') return 'menu'
   if (root === 'orders') return 'orders'
   if (root === 'tables') return 'tables'
+  if (root === 'feedback' || root === 'customers') return 'orders'
   if (root === 'promotions') return 'promotions'
   if (root === 'credit-customers') return 'creditCustomers'
   if (root === 'employees') return 'employees'
@@ -62,6 +64,7 @@ export function featureKeyForSegment(segment) {
   if (seg === 'finance/inventory') return 'inventory'
   if (seg === 'finance/payroll') return 'payroll'
   if (seg === 'finance/invoices') return 'billing'
+  if (seg === 'finance/accounting') return 'accounting'
   if (root === 'finance') return 'financeOverview'
   if (root === 'notifications') return null
   return null

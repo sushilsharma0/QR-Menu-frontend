@@ -9,12 +9,14 @@ import {
   FiHelpCircle,
   FiHome,
   FiMapPin,
+  FiMessageSquare,
   FiPercent,
   FiPieChart,
   FiSettings,
   FiShield,
   FiShoppingBag,
   FiTerminal,
+  FiTruck,
   FiUsers,
 } from 'react-icons/fi'
 
@@ -31,6 +33,7 @@ export const RESTAURANT_NAV_SECTIONS = [
     items: [
       { segment: 'dashboard', icon: FiHome, label: 'Dashboard', featureKey: 'dashboard' },
       { segment: 'orders/activity', icon: FiBarChart2, label: 'Sales reports', featureKey: 'salesReports' },
+      { segment: 'reports/food-cost', icon: FiPercent, label: 'Food cost', featureKey: 'salesReports' },
     ],
   },
   {
@@ -41,9 +44,12 @@ export const RESTAURANT_NAV_SECTIONS = [
     items: [
       { segment: 'pos', icon: FiCoffee, label: 'POS', featureKey: 'customerOrders' },
       { segment: 'orders', icon: FiShoppingBag, label: 'Orders', featureKey: 'orders' },
+      { segment: 'orders/dispatch', icon: FiTruck, label: 'Delivery dispatch', featureKey: 'orders' },
       { segment: 'menu', icon: FiBookOpen, label: 'Menu', featureKey: 'menu' },
       { segment: 'tables', icon: FiMapPin, label: 'Tables & QR', featureKey: 'tables' },
       { segment: 'promotions', icon: FiPercent, label: 'Promotions', featureKey: 'promotions' },
+      { segment: 'feedback', icon: FiMessageSquare, label: 'Feedback', featureKey: 'orders' },
+      { segment: 'customers', icon: FiUsers, label: 'Customers', featureKey: 'orders' },
     ],
   },
   {
@@ -59,6 +65,7 @@ export const RESTAURANT_NAV_SECTIONS = [
       { segment: 'finance/inventory', icon: FiBookOpen, label: 'Inventory', featureKey: 'inventory' },
       { segment: 'finance/payroll', icon: FiUsers, label: 'Payroll', featureKey: 'payroll' },
       { segment: 'finance/invoices', icon: FiFileText, label: 'Invoices', featureKey: 'billing' },
+      { segment: 'finance/accounting', icon: FiBookOpen, label: 'Accounting', featureKey: 'accounting' },
     ],
   },
   {

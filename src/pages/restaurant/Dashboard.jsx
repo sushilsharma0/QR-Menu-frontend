@@ -45,6 +45,7 @@ import {
   formatRestaurantShortDate,
   orderStatusStyles,
 } from "../../components/restaurant/RestaurantUI";
+import SetupChecklist from "../../components/restaurant/SetupChecklist";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 16 },
@@ -454,6 +455,7 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
+      <SetupChecklist />
       <motion.section
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}

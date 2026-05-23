@@ -57,10 +57,17 @@ const STAFF_LINKS = [
   { staff: 'waiter', label: 'Waiter Staff Login', icon: FiUserCheck },
 ]
 
+function navBadgeCount(segment, pendingCount, deliveryDispatchCount) {
+  if (segment === 'orders') return pendingCount
+  if (segment === 'orders/dispatch') return deliveryDispatchCount
+  return 0
+}
+
 function NavItem({
   item,
   restaurantBase,
   pendingCount,
+  deliveryDispatchCount = 0,
   collapsed,
   nested = false,
   onClick,
@@ -75,11 +82,13 @@ function NavItem({
     const rect = event.currentTarget.getBoundingClientRect()
     onTooltip?.({
       label: item.label,
-      count: item.segment === 'orders' ? pendingCount : 0,
+      count: navBadgeCount(item.segment, pendingCount, deliveryDispatchCount),
       top: rect.top + rect.height / 2,
       left: rect.right + 12,
     })
   }
+
+  const badgeCount = navBadgeCount(item.segment, pendingCount, deliveryDispatchCount)
 
   const inactiveRow =
     'text-gray-600 hover:bg-surface-50 hover:text-gray-950 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100'
@@ -148,13 +157,13 @@ function NavItem({
             <FiLock className="pointer-events-none absolute -right-0.5 -top-0.5 h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
           )}
 
-          {item.segment === 'orders' && pendingCount > 0 && !readOnly && (
+          {badgeCount > 0 && !readOnly && (
             <span
               className={`flex h-5 min-w-[20px] flex-shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white ${
                 collapsed ? 'absolute -right-1 -top-1' : 'ml-auto'
               }`}
             >
-              {pendingCount > 99 ? '99+' : pendingCount}
+              {badgeCount > 99 ? '99+' : badgeCount}
             </span>
           )}
         </>
@@ -172,6 +181,7 @@ function NavSection({
   isOpen,
   onToggle,
   pendingCount,
+  deliveryDispatchCount = 0,
   isMobile,
   onClose,
   onTooltip,
@@ -184,7 +194,9 @@ function NavSection({
   const firstItem = visibleItems[0]
   const anyLocked = visibleItems.some((item) => isNavLocked(item.segment))
   const sectionPending =
-    section.id === 'operations' && pendingCount > 0 ? pendingCount : 0
+    section.id === 'operations'
+      ? visibleItems.reduce((sum, item) => sum + navBadgeCount(item.segment, pendingCount, deliveryDispatchCount), 0)
+      : 0
 
   if (collapsed && hideLabels) {
     return (
@@ -262,6 +274,7 @@ function NavSection({
               item={item}
               restaurantBase={restaurantBase}
               pendingCount={pendingCount}
+              deliveryDispatchCount={deliveryDispatchCount}
               collapsed={false}
               nested
               onClick={isMobile ? onClose : undefined}
@@ -304,6 +317,7 @@ function SidebarContent({
   collapsed,
   setCollapsed,
   pendingCount,
+  deliveryDispatchCount = 0,
   restaurantBase,
   restaurantId,
   hasTenant,
@@ -409,6 +423,7 @@ function SidebarContent({
                 isOpen={Boolean(openSections[section.id])}
                 onToggle={() => toggleSection(section.id)}
                 pendingCount={pendingCount}
+                deliveryDispatchCount={deliveryDispatchCount}
                 isMobile={isMobile}
                 onClose={onClose}
                 onTooltip={onTooltip}
@@ -517,6 +532,7 @@ const RestaurantSidebar = () => {
   const { restaurantBase, restaurantId, hasTenant } = useTenantRoutes()
   const { selectedBranchId, loading: branchesLoading } = useBranch()
   const [pendingCount, setPendingCount] = useState(0)
+  const [deliveryDispatchCount, setDeliveryDispatchCount] = useState(0)
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [tooltip, setTooltip] = useState(null)
@@ -548,22 +564,45 @@ const RestaurantSidebar = () => {
     }
   }
 
+  const fetchDeliveryDispatchCount = async () => {
+    if (!isFeatureEnabled('orders')) {
+      setDeliveryDispatchCount(0)
+      return
+    }
+    try {
+      const res = await api.get('/restaurant/insights/delivery-dispatch', {
+        params: { status: 'active' },
+        skipErrorToast: true,
+      })
+      const count = Number(res?.data?.data?.activeCount ?? res?.data?.data?.orders?.length ?? 0)
+      setDeliveryDispatchCount(Number.isFinite(count) ? count : 0)
+    } catch {
+      setDeliveryDispatchCount(0)
+    }
+  }
+
+  const refreshNavCounts = () => {
+    fetchPendingCount()
+    fetchDeliveryDispatchCount()
+  }
+
   useEffect(() => {
     if (billingLocked) {
       setPendingCount(0)
+      setDeliveryDispatchCount(0)
       return
     }
     if (branchesLoading) return
-    fetchPendingCount()
+    refreshNavCounts()
   }, [billingLocked, branchesLoading, selectedBranchId, isFeatureEnabled])
 
   useEffect(() => {
     if (billingLocked || !socket) return undefined
-    socket.on('new_order', fetchPendingCount)
-    socket.on('order_updated', fetchPendingCount)
+    socket.on('new_order', refreshNavCounts)
+    socket.on('order_updated', refreshNavCounts)
     return () => {
-      socket.off('new_order', fetchPendingCount)
-      socket.off('order_updated', fetchPendingCount)
+      socket.off('new_order', refreshNavCounts)
+      socket.off('order_updated', refreshNavCounts)
     }
   }, [socket, billingLocked])
 
@@ -575,6 +614,7 @@ const RestaurantSidebar = () => {
 
   const sharedProps = {
     pendingCount,
+    deliveryDispatchCount,
     restaurantBase,
     restaurantId,
     hasTenant,
