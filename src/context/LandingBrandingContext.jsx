@@ -20,6 +20,7 @@ export function useLandingBranding() {
       themeTokens: getLandingTheme('default'),
       softwareName: defaultSiteName,
       brandSubtitle: 'Nepal',
+      landingLogo: '',
       publicSiteUrl: '',
       chat: { enabled: false },
       footer: {},

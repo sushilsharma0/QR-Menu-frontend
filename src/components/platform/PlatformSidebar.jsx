@@ -261,7 +261,7 @@ function NavSection({
   )
 }
 
-function Brand({ collapsed, isMobile, brandTitle = defaultSiteName }) {
+function Brand({ collapsed, isMobile, brandTitle = defaultSiteName, brandLogo = PLATFORM_LOGO_SRC }) {
   const logoBoxClass =
     collapsed && !isMobile ? 'h-11 w-11' : 'h-12 w-12 flex-shrink-0'
 
@@ -269,7 +269,7 @@ function Brand({ collapsed, isMobile, brandTitle = defaultSiteName }) {
     <span
       className={`inline-flex items-center justify-center overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 ${logoBoxClass}`}
     >
-      <img src={PLATFORM_LOGO_SRC} alt="" className="h-[94%] w-[94%] object-contain" />
+      <img src={brandLogo || PLATFORM_LOGO_SRC} alt="" className="h-[94%] w-[94%] object-contain" />
     </span>
   )
 
@@ -297,6 +297,7 @@ function SidebarContent({
   isMobile,
   badgeCounts,
   brandTitle,
+  brandLogo,
   onTooltip,
   onTooltipLeave,
 }) {
@@ -344,7 +345,7 @@ function SidebarContent({
           hideLabels ? 'justify-center px-3 py-5' : 'justify-between p-5'
         }`}
       >
-        <Brand collapsed={collapsed} isMobile={isMobile} brandTitle={brandTitle} />
+        <Brand collapsed={collapsed} isMobile={isMobile} brandTitle={brandTitle} brandLogo={brandLogo} />
 
         {!isMobile && (
           <button
@@ -446,6 +447,7 @@ const PlatformSidebar = () => {
     paymentReviews: 0,
   })
   const [brandTitle, setBrandTitle] = useState(defaultSiteName)
+  const [brandLogo, setBrandLogo] = useState(PLATFORM_LOGO_SRC)
   const badgeFetchStateRef = useRef({ inFlight: false, lastFetchAt: 0 })
 
   useEffect(() => {
@@ -455,6 +457,8 @@ const PlatformSidebar = () => {
       .then((res) => {
         const name = res.data?.data?.softwareName?.trim()
         if (!cancelled && name) setBrandTitle(name)
+        const logo = res.data?.data?.landingLogo?.trim()
+        if (!cancelled && logo) setBrandLogo(logo)
       })
       .catch(() => {})
     return () => {
@@ -523,6 +527,7 @@ const PlatformSidebar = () => {
     setCollapsed,
     badgeCounts,
     brandTitle,
+    brandLogo,
     onTooltip: setTooltip,
     onTooltipLeave: () => setTooltip(null),
   }
@@ -540,7 +545,7 @@ const PlatformSidebar = () => {
         </button>
         <div className="flex min-w-0 items-center gap-2">
           <span className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-white dark:border-gray-700">
-            <img src={PLATFORM_LOGO_SRC} alt="" className="h-[94%] w-[94%] object-contain" />
+            <img src={brandLogo || PLATFORM_LOGO_SRC} alt="" className="h-[94%] w-[94%] object-contain" />
           </span>
           <h1 className="truncate text-sm font-semibold text-gray-950 dark:text-gray-100">{brandTitle}</h1>
         </div>

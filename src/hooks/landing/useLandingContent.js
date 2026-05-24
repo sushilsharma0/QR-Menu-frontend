@@ -136,6 +136,7 @@ export const useLandingContent = () => {
     const branding = {
       softwareName,
       brandSubtitle: siteConfig?.brandSubtitle ?? 'Nepal',
+      landingLogo: siteConfig?.landingLogo || '',
       publicSiteUrl: siteConfig?.publicSiteUrl || '',
       supportEmail: siteConfig?.supportEmail || '',
       contactPhone: siteConfig?.contactPhone || '',

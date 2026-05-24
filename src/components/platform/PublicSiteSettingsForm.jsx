@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { FiGlobe } from 'react-icons/fi'
+import { FiGlobe, FiImage } from 'react-icons/fi'
 import toast from '@utils/toast'
 import api from '../../services/api'
 import Button from '../common/Button'
@@ -17,6 +17,8 @@ export default function PublicSiteSettingsForm() {
   const [feedbackEnabled, setFeedbackEnabled] = useState(true)
   const [showFeedbackOnLanding, setShowFeedbackOnLanding] = useState(true)
   const [feedbackSummary, setFeedbackSummary] = useState(null)
+  const [landingLogoPreview, setLandingLogoPreview] = useState('')
+  const [landingLogoFile, setLandingLogoFile] = useState(null)
   const { register, handleSubmit, reset } = useForm()
 
   useEffect(() => {
@@ -29,6 +31,8 @@ export default function PublicSiteSettingsForm() {
           setFeedbackEnabled(data.feedbackEnabled !== false)
           setShowFeedbackOnLanding(data.showFeedbackOnLanding !== false)
           setFeedbackSummary(data.feedbackSummary || null)
+          setLandingLogoPreview(data.landingLogo || '')
+          setLandingLogoFile(null)
           reset({
             softwareName: data.softwareName || '',
             brandSubtitle: data.brandSubtitle || '',
@@ -68,6 +72,13 @@ export default function PublicSiteSettingsForm() {
     }
   }, [reset])
 
+  const handleLandingLogoChange = (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setLandingLogoFile(file)
+    setLandingLogoPreview(URL.createObjectURL(file))
+  }
+
   const syncFeedback = (data) => {
     if (!data) return
     setFeedbackEnabled(data.feedbackEnabled !== false)
@@ -95,12 +106,21 @@ export default function PublicSiteSettingsForm() {
 
     try {
       setSaving(true)
-      const res = await api.patch('/platform/settings/site', {
-        ...form,
-        chatWidgetEnabled: form.chatWidgetEnabled === true || form.chatWidgetEnabled === 'true',
-        feedbackEnabled,
-        showFeedbackOnLanding,
+      const payload = new FormData()
+      Object.entries(form).forEach(([key, value]) => {
+        payload.append(key, value ?? '')
       })
+      payload.set('chatWidgetEnabled', form.chatWidgetEnabled === true || form.chatWidgetEnabled === 'true')
+      payload.set('feedbackEnabled', feedbackEnabled)
+      payload.set('showFeedbackOnLanding', showFeedbackOnLanding)
+      if (landingLogoFile) payload.append('landingLogo', landingLogoFile)
+
+      const res = await api.patch('/platform/settings/site', payload)
+      const savedLogo = res.data?.data?.landingLogo
+      if (savedLogo) {
+        setLandingLogoPreview(savedLogo)
+        setLandingLogoFile(null)
+      }
       syncFeedback(res.data?.data)
       toast.success('Public site settings saved')
     } catch (error) {
@@ -193,10 +213,36 @@ export default function PublicSiteSettingsForm() {
       </div>
 
       <div>
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Brand &amp; contact</h3>
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Brand, logo &amp; contact</h3>
         <div className="grid gap-4 md:grid-cols-2">
-          <Input label="Software / brand name" {...register('softwareName')} placeholder="QR Restro Nepal" />
+          <Input label="Superadmin title / brand name" {...register('softwareName')} placeholder="QR Restro Nepal" />
           <Input label="Subtitle (under logo)" {...register('brandSubtitle')} placeholder="Nepal" />
+          <div className="md:col-span-2">
+            <label htmlFor="landing-logo-upload" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Landing page logo
+            </label>
+            <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900 sm:flex-row sm:items-center">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
+                {landingLogoPreview ? (
+                  <img src={landingLogoPreview} alt="Landing logo preview" className="h-full w-full object-contain" />
+                ) : (
+                  <FiImage className="h-6 w-6 text-gray-400" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <input
+                  id="landing-logo-upload"
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                  onChange={handleLandingLogoChange}
+                  className="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-primary-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary-700 hover:file:bg-primary-100 dark:text-gray-300 dark:file:bg-gray-800 dark:file:text-gray-100"
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  Used in the landing page header/footer and platform sidebar. PNG, JPG, or WEBP works best.
+                </p>
+              </div>
+            </div>
+          </div>
           <Input label="Public website URL (display)" {...register('publicSiteUrl')} placeholder="www.yourdomain.com" icon={FiGlobe} />
           <Input label="Support email" type="email" {...register('supportEmail')} />
           <Input label="Contact phone on landing" {...register('contactPhone')} placeholder="+977 …" />

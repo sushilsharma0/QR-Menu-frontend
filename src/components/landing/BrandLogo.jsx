@@ -12,8 +12,9 @@ const LOGO_BOX = {
 }
 
 const BrandLogo = ({ compact = false, scrolled = false, onClick }) => {
-  const { softwareName } = useLandingBranding()
+  const { softwareName, landingLogo } = useLandingBranding()
   const title = (softwareName || fallbackSiteName).trim() || fallbackSiteName
+  const logoSrc = landingLogo || PLATFORM_LOGO_SRC
 
   const boxClass = compact ? LOGO_BOX.compact : scrolled ? LOGO_BOX.scrolled : LOGO_BOX.default
 
@@ -23,7 +24,7 @@ const BrandLogo = ({ compact = false, scrolled = false, onClick }) => {
         className={`inline-flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-primary-100 bg-white shadow-sm ${boxClass}`}
       >
         <img
-          src={PLATFORM_LOGO_SRC}
+          src={logoSrc}
           alt=""
           className="h-full w-full scale-[1.55] object-contain"
         />
