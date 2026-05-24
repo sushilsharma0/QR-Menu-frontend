@@ -11,7 +11,7 @@ const Button = ({
   type = 'button',
   ...props 
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900'
+  const baseStyles = 'relative inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900'
   
   const variants = {
     primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-sm hover:shadow',
@@ -34,10 +34,20 @@ const Button = ({
       onClick={onClick}
       disabled={disabled || loading}
       data-loading={loading ? 'true' : undefined}
+      data-spinner-handled={loading ? 'true' : undefined}
+      aria-busy={loading ? 'true' : undefined}
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${disabled || loading ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
       {...props}
     >
-      {children}
+      {loading && (
+        <span
+          className="absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 animate-spin rounded-full border-2 border-current border-r-transparent"
+          aria-hidden="true"
+        />
+      )}
+      <span className={`inline-flex items-center justify-center ${loading ? 'invisible' : ''}`}>
+        {children}
+      </span>
     </button>
   )
 }
