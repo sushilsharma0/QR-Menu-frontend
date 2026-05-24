@@ -363,7 +363,8 @@ const Cart = () => {
       className={`min-h-screen bg-surface-50/60 text-gray-950 transition-[padding-bottom] duration-300 ${bottomPaddingClass}`}
     >
       {/* Header */}
-      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-gray-100 bg-white px-5 pb-4 pt-12 shadow-[0_8px_24px_-22px_rgba(15,23,42,0.45)]">
+      <header className="sticky top-0 z-40 border-b border-gray-100 bg-white px-5 pb-4 pt-12 shadow-[0_8px_24px_-22px_rgba(15,23,42,0.45)]">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between">
         <button
           type="button"
           className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-700 transition active:bg-gray-200"
@@ -390,10 +391,11 @@ const Cart = () => {
         ) : (
           <span className="h-10 w-10" />
         )}
+        </div>
       </header>
 
       {/* Step indicator */}
-      <div className="mx-auto mt-5 max-w-md px-5">
+      <div className="mx-auto mt-5 w-full max-w-4xl px-5">
         <div className="flex items-center justify-between">
           {STEPS.map((s, idx) => {
             const completed = idx < stepIndex;
@@ -655,7 +657,7 @@ function ReviewStep({
   onBrowse,
 }) {
   return (
-    <div className="px-5 space-y-4">
+    <div className="mx-auto w-full max-w-6xl space-y-4 px-5">
       <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-primary-700 via-primary-600 to-secondary-500 p-5 text-white shadow-xl shadow-primary-900/20">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
@@ -707,7 +709,7 @@ function ReviewStep({
               <span className="font-black">{fulfillmentCounts.parcel} for parcel</span> in one order.
             </div>
           )}
-        <ul className="space-y-3">
+        <ul className="grid gap-3 lg:grid-cols-2">
           <AnimatePresence initial={false} mode="popLayout">
             {items.map((item) => {
               const lineKey = getItemFulfillmentKey(item);
@@ -873,7 +875,7 @@ function ReviewStep({
 function DetailsStep({ customerDetails, setCustomerDetails, fulfillmentCounts, subtotal, total, promoDiscount }) {
   const mixed = fulfillmentCounts.dine > 0 && fulfillmentCounts.parcel > 0;
   return (
-    <div className="px-5 space-y-4">
+    <div className="mx-auto grid w-full max-w-6xl gap-4 px-5 lg:grid-cols-[minmax(0,1fr)_24rem]">
       <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
         <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
           How you are ordering
@@ -1005,7 +1007,7 @@ function ConfirmStep({
   );
 
   return (
-    <div className="px-5 space-y-4">
+    <div className="mx-auto grid w-full max-w-6xl gap-4 px-5 lg:grid-cols-2">
       <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
         <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
           Order type

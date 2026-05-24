@@ -173,7 +173,7 @@ const CustomerBill = () => {
   const paid = order.paymentStatus === "paid";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-surface-50 via-white to-surface-50 pb-44 text-gray-950 print:bg-white print:pb-0">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-surface-50 via-white to-surface-50 pb-44 text-gray-950 print:bg-white print:pb-0">
       <header className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-gray-100 bg-white/95 px-4 pb-3 pt-12 backdrop-blur-xl print:hidden">
         <motion.button
           type="button"
@@ -212,7 +212,7 @@ const CustomerBill = () => {
         </div>
       </header>
 
-      <main className="mx-auto max-w-xl px-4 pt-4 print:max-w-none print:px-0 print:pt-0">
+      <main className="mx-auto w-full max-w-4xl px-4 pt-4 print:max-w-none print:px-0 print:pt-0">
         <div id="customer-bill-print-root" ref={printRootRef}>
           <motion.section
             initial={{ opacity: 0, y: 14 }}
@@ -444,7 +444,7 @@ const CustomerBill = () => {
 
       {/* Sticky total — mobile */}
       <div className="fixed inset-x-0 bottom-[5.25rem] z-[92] border-t border-gray-200 bg-white/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl print:hidden">
-        <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
+        <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-3">
           <div>
             <p className="text-[10px] font-semibold uppercase text-gray-400">Amount due</p>
             <p className="text-xl font-semibold text-primary-700">{formatMoney(totals.grandTotal)}</p>

@@ -90,7 +90,7 @@ export default function CustomerDataNotice() {
   );
 
   return (
-    <div className="min-h-screen bg-[#fafaf7] pb-28 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+    <div className="min-h-screen overflow-x-hidden bg-[#fafaf7] pb-28 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       <div className="relative bg-gradient-to-r from-primary-700 to-primary-900 p-6 text-white">
         <div className="flex items-center justify-center gap-3">
           <Shield size={32} />
@@ -109,7 +109,7 @@ export default function CustomerDataNotice() {
         </Link>
       </div>
 
-      <div className="space-y-4 p-4">
+      <div className="mx-auto grid w-full max-w-6xl gap-4 p-4 lg:grid-cols-2">
         {!enabled || sections.length === 0 ? (
           renderEmptyState()
         ) : (

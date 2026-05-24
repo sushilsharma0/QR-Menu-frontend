@@ -58,7 +58,7 @@ export default function CreditApply() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafaf7] pb-28 text-gray-950 dark:bg-gray-950 dark:text-gray-100">
+    <div className="min-h-screen overflow-x-hidden bg-[#fafaf7] pb-28 text-gray-950 dark:bg-gray-950 dark:text-gray-100">
       <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-gray-100 bg-white/95 px-4 py-4 pt-12 backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
         <button
           type="button"
@@ -74,7 +74,7 @@ export default function CreditApply() {
         </div>
       </header>
 
-      <div className="mx-5 mt-6 space-y-4 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <div className="mx-auto mt-6 grid w-[calc(100%-2.5rem)] max-w-3xl gap-4 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:grid-cols-2">
         <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400">
           Full name
           <div className="relative mt-1">
@@ -113,11 +113,11 @@ export default function CreditApply() {
           type="button"
           disabled={busy}
           onClick={submit}
-          className="w-full rounded-2xl bg-primary-600 py-3.5 text-sm font-semibold text-white disabled:opacity-50"
+          className="w-full rounded-2xl bg-primary-600 py-3.5 text-sm font-semibold text-white disabled:opacity-50 sm:col-span-2"
         >
           {busy ? "Submitting…" : "Submit application"}
         </button>
-        <p className="text-center text-[10px] font-semibold text-gray-400">
+        <p className="text-center text-[10px] font-semibold text-gray-400 sm:col-span-2">
           Guest checkout stays available without an account. This is optional for regulars.
         </p>
       </div>

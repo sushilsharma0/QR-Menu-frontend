@@ -257,9 +257,10 @@ const MenuItems = () => {
   };
 
   return (
-    <div className="min-h-screen bg-surface-50/60 pb-44">
+    <div className="min-h-screen overflow-x-hidden bg-surface-50/60 pb-44">
       {/* Header */}
       <header className="sticky top-0 z-20 flex items-center justify-between gap-2 border-b border-gray-100 bg-white/95 px-4 pb-4 pt-12 backdrop-blur-lg">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2">
         <FramerMotion.motion.button
           whileTap={{ scale: 0.85 }}
           data-no-spinner="true"
@@ -355,9 +356,11 @@ const MenuItems = () => {
             </FramerMotion.AnimatePresence>
           </FramerMotion.motion.button>
         </div>
+        </div>
       </header>
 
       <div className="sticky top-[89px] z-10 border-b border-gray-100 bg-surface-50/95 pb-3 shadow-sm backdrop-blur-lg">
+        <div className="mx-auto w-full max-w-6xl">
         <CategoryCircleStrip
           categories={categories}
           activeCategory={decodedCategory}
@@ -390,10 +393,11 @@ const MenuItems = () => {
             })}
           </div>
         </div>
+        </div>
       </div>
 
       {/* Items */}
-      <div className="px-4 pt-4 pb-40">
+      <div className="mx-auto w-full max-w-6xl px-4 pt-4 pb-40">
         {loading ? (
           <SkeletonList />
         ) : sortedItems.length === 0 ? (
@@ -409,7 +413,7 @@ const MenuItems = () => {
             variants={listVariants}
             initial="hidden"
             animate="visible"
-            className="space-y-3"
+            className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
           >
             {sortedItems.map((item) => {
               return (
@@ -417,7 +421,7 @@ const MenuItems = () => {
                   key={item._id}
                   variants={cardVariants}
                   layout
-                  className="group flex gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition-all hover:shadow-md"
+                  className="group flex min-w-0 gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition-all hover:shadow-md"
                 >
                   <Link
                     to={`/item-detail/${slug}/${token}/${item._id}`}

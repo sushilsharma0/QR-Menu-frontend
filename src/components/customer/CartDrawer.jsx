@@ -70,7 +70,7 @@ export default function CartDrawer() {
               visible: { y: 0, opacity: 1 },
             }}
             transition={{ type: "spring", stiffness: 320, damping: 32 }}
-            className="relative z-10 w-full max-w-md overflow-hidden rounded-t-[2rem] bg-white shadow-[0_-24px_60px_-20px_rgba(15,23,42,0.45)]"
+            className="relative z-10 w-full max-w-2xl overflow-hidden rounded-t-[2rem] bg-white shadow-[0_-24px_60px_-20px_rgba(15,23,42,0.45)]"
           >
             {/* Drag handle */}
             <div className="flex w-full justify-center pt-3">

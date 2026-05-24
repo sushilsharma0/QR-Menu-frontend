@@ -6,7 +6,7 @@ export function OrderTrackingSkeleton() {
   return (
     <div className="min-h-screen bg-surface-50/80 pb-32">
       <div className="sticky top-0 z-20 border-b border-gray-100 bg-white/90 px-4 pb-4 pt-12 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-lg items-center justify-between">
+        <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div className="h-10 w-10 animate-pulse rounded-xl bg-gray-100" />
           <div className="space-y-2 text-center">
             <div className="mx-auto h-4 w-36 animate-pulse rounded-md bg-gray-100" />
@@ -15,7 +15,7 @@ export function OrderTrackingSkeleton() {
           <div className="h-10 w-10 animate-pulse rounded-xl bg-gray-100" />
         </div>
       </div>
-      <div className="mx-auto max-w-lg space-y-4 px-4 pt-5">
+      <div className="mx-auto grid max-w-6xl gap-4 px-4 pt-5 lg:grid-cols-2">
         <LazyMotion features={domAnimation}>
           <m.div
           initial={{ opacity: 0.6 }}
@@ -56,13 +56,13 @@ export function BillPageSkeleton() {
   return (
     <div className="min-h-screen bg-surface-50/80 pb-32">
       <div className="sticky top-0 z-20 border-b border-gray-100 bg-white/90 px-4 pb-4 pt-12 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-lg items-center justify-between">
+        <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div className="h-10 w-10 animate-pulse rounded-xl bg-gray-100" />
           <div className="h-4 w-28 animate-pulse rounded bg-gray-100" />
           <div className="h-10 w-10 animate-pulse rounded-xl bg-gray-100" />
         </div>
       </div>
-      <div className="mx-auto max-w-lg px-4 pt-5">
+      <div className="mx-auto max-w-4xl px-4 pt-5">
         <div className="overflow-hidden rounded-[1.75rem] border border-gray-100 bg-white shadow-lg">
           <div className="h-40 animate-pulse bg-gradient-to-r from-gray-800 to-gray-700" />
           <div className="space-y-3 p-6">

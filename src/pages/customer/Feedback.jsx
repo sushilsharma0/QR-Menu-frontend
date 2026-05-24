@@ -8,7 +8,7 @@ const Feedback = () => {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-8 text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-white p-8 text-center">
         <div className="w-24 h-24 bg-orange-50 rounded-full flex items-center justify-center text-orange-500 mb-6 transition-transform duration-500 ease-out">
           <Heart size={48} fill="currentColor" />
         </div>
@@ -28,18 +28,20 @@ const Feedback = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-10">
+    <div className="min-h-screen overflow-x-hidden bg-white pb-10">
       {/* Header */}
-      <header className="px-6 pt-12 pb-6 flex items-center border-b border-gray-50">
+      <header className="border-b border-gray-50 px-6 pb-6 pt-12">
+        <div className="mx-auto flex w-full max-w-4xl items-center">
         <button className="p-2 bg-gray-50 rounded-xl">
           <ArrowLeft size={20} className="text-gray-700" />
         </button>
         <h1 className="ml-4 text-lg font-semibold text-gray-800">
           Rate Your Experience
         </h1>
+        </div>
       </header>
 
-      <div className="px-8 pt-10">
+      <div className="mx-auto w-full max-w-4xl px-8 pt-10">
         <div className="text-center mb-10">
           <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">
             How was the food?

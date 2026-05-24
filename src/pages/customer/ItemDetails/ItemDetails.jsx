@@ -76,7 +76,7 @@ const reducer = (state, action) => {
 const formatMoney = (value) => Number(value || 0).toFixed(Number(value || 0) % 1 === 0 ? 0 : 2);
 
 const ItemHero = ({ item, isFavorite, onBack, onFavoriteToggle, onShare }) => (
-  <header className="relative h-[45vh] w-full overflow-hidden">
+  <header className="relative h-[45vh] w-full overflow-hidden md:h-[28rem]">
     {resolveMediaUrl(item.image) ? (
       <img
         src={resolveMediaUrl(item.image)}
@@ -464,7 +464,7 @@ const StickyAddButton = ({ isAdding, quantity, total, setQuantity, onAddToCart }
     style={{ bottom: "calc(5rem + env(safe-area-inset-bottom, 0px))" }}
     className="fixed inset-x-0 z-[85] border-t border-[#e1bfb2]/50 bg-[#fcf9f6]/85 px-5 py-5 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] backdrop-blur-xl"
   >
-    <div className="mx-auto flex max-w-2xl items-center justify-between gap-4">
+    <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4">
       <div className="min-w-[86px]">
         <span className="block text-[11px] font-black uppercase tracking-wider text-[#594137]">Total Price</span>
         <span className="block text-2xl font-black text-[#1c1c1a]">Rs. {formatMoney(total)}</span>
@@ -785,7 +785,7 @@ const ItemDetails = () => {
         onShare={handleShare}
       />
 
-      <main className="relative z-30 -mt-12 px-5">
+      <main className="relative z-30 -mt-12 mx-auto w-full max-w-4xl px-5">
         <div className="rounded-xl bg-white p-6 shadow-[0_15px_30px_rgba(137,79,64,0.08)]">
           <ItemSummary item={item} dietaryBadges={dietaryBadges} liveUnitPrice={liveUnitPrice} />
           <DescriptionSection

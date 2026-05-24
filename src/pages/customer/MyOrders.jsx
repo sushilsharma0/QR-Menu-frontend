@@ -168,7 +168,7 @@ const MyOrders = () => {
   }, [partition]);
 
   return (
-    <div className="min-h-screen bg-surface-50/60 pb-44 text-gray-950">
+    <div className="min-h-screen overflow-x-hidden bg-surface-50/60 pb-44 text-gray-950">
       <Header onBack={() => navigate(`/menu/${slug}/${token}`)} />
 
       <SummaryBanner summary={summary} loading={loading} />
@@ -180,7 +180,7 @@ const MyOrders = () => {
         pastCount={summary.pastCount}
       />
 
-      <div className="px-4 mt-3 space-y-3 max-w-md mx-auto">
+      <div className="mx-auto mt-3 grid w-full max-w-6xl gap-3 px-4 sm:grid-cols-2 xl:grid-cols-3">
         {loading && orders.length === 0 ? (
           <SkeletonCardList />
         ) : filteredOrders.length === 0 ? (
@@ -237,7 +237,7 @@ const MyOrders = () => {
 function Header({ onBack }) {
   return (
     <header className="sticky top-0 z-20 border-b border-gray-100 bg-white/95 px-4 pt-12 pb-4 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-md items-center justify-between gap-2">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2">
         <motion.button
           whileTap={{ scale: 0.88 }}
           onClick={onBack}
@@ -289,7 +289,7 @@ function SummaryBanner({ summary, loading }) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.32 }}
-        className="relative mx-auto max-w-md overflow-hidden rounded-3xl border border-primary-100 bg-gradient-to-br from-surface-50 via-white to-primary-50/50 p-4 shadow-[0_12px_30px_-18px_rgba(122,34,0,0.25)]"
+        className="relative mx-auto w-full max-w-6xl overflow-hidden rounded-3xl border border-primary-100 bg-gradient-to-br from-surface-50 via-white to-primary-50/50 p-4 shadow-[0_12px_30px_-18px_rgba(122,34,0,0.25)]"
       >
         <div
           aria-hidden
@@ -316,7 +316,7 @@ function SummaryBanner({ summary, loading }) {
           </div>
         </div>
 
-        <div className="relative mt-4 grid grid-cols-3 gap-2">
+        <div className="relative mt-4 grid grid-cols-3 gap-2 md:max-w-xl">
           <StatPill
             label="Active"
             value={activeCount}
@@ -386,7 +386,7 @@ function Tabs({ active, onChange, currentCount, pastCount }) {
     { id: "past", label: "Past", count: pastCount },
   ];
   return (
-    <div className="mx-auto mt-4 flex max-w-md gap-2 px-4">
+    <div className="mx-auto mt-4 flex w-full max-w-6xl gap-2 px-4">
       {tabs.map((tab) => {
         const isActive = active === tab.id;
         return (

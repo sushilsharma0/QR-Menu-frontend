@@ -171,7 +171,7 @@ const MenuCategories = () => {
   return (
     <PageTransition>
       <LazyMotion features={domAnimation}>
-      <div className="min-h-screen bg-surface-50/60 pb-44 text-gray-950">
+      <div className="min-h-screen overflow-x-hidden bg-surface-50/60 pb-44 text-gray-950">
         <Header
           showSearch={showSearch}
           searchQuery={searchQuery}
@@ -304,7 +304,7 @@ function Header({
 }) {
   return (
     <header className="sticky top-0 z-20 border-b border-gray-100 bg-white/95 px-4 pt-12 pb-4 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-md items-center justify-between gap-2">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2">
         {!showSearch ? (
           <m.button
             type="button"
@@ -416,7 +416,7 @@ function RestaurantBanner({ info, totalDishes, categoryCount, loading }) {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.32 }}
-        className="relative mx-auto max-w-md overflow-hidden rounded-3xl border border-primary-100/80 bg-white shadow-[0_12px_30px_-18px_rgba(122,34,0,0.22)]"
+        className="relative mx-auto w-full max-w-6xl overflow-hidden rounded-3xl border border-primary-100/80 bg-white shadow-[0_12px_30px_-18px_rgba(122,34,0,0.22)]"
       >
         {/* Cover image / decorative gradient */}
         <div
@@ -584,8 +584,9 @@ function StatChip({ label, value, tone = "primary", small }) {
 function InsightStrip({ pairs }) {
   return (
     <section className="px-4 pt-4">
+      <div className="mx-auto w-full max-w-6xl">
       <SectionTitle icon={Sparkles} label="You may also like" />
-      <div className="mt-2 space-y-2 rounded-2xl border border-primary-100/60 bg-gradient-to-br from-white to-surface-50/70 p-3 shadow-sm">
+      <div className="mt-2 grid gap-2 rounded-2xl border border-primary-100/60 bg-gradient-to-br from-white to-surface-50/70 p-3 shadow-sm sm:grid-cols-2">
         {pairs.slice(0, 2).map((p, idx) => (
           <p
             key={`${p._id || p.id || p.name || p.title || p.label || p.caption || 'insight'}-${p.reason || p.description || idx}-${idx}`}
@@ -598,6 +599,7 @@ function InsightStrip({ pairs }) {
           </p>
         ))}
       </div>
+      </div>
     </section>
   );
 }
@@ -609,6 +611,7 @@ function InsightStrip({ pairs }) {
 function TrendingStrip({ items, daypart, slug, token }) {
   return (
     <section className="px-4 pt-5">
+      <div className="mx-auto w-full max-w-6xl">
       <div className="flex items-center justify-between">
         <SectionTitle icon={Flame} label="Trending now" tone="primary" />
         {daypart && (
@@ -619,7 +622,7 @@ function TrendingStrip({ items, daypart, slug, token }) {
         )}
       </div>
 
-      <div className="mt-2 flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="mt-2 grid grid-flow-col auto-cols-[8rem] gap-3 overflow-x-auto pb-2 sm:auto-cols-[9rem] lg:grid-flow-row lg:grid-cols-5 lg:overflow-visible xl:grid-cols-6 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {items.slice(0, 10).map((item, idx) => {
           const image = resolveMediaUrl(item.image) || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=200&q=60";
           return (
@@ -662,6 +665,7 @@ function TrendingStrip({ items, daypart, slug, token }) {
         );
         })}
       </div>
+      </div>
     </section>
   );
 }
@@ -696,7 +700,7 @@ function CategoriesSection({
 }) {
   return (
     <section className="px-4 pt-5">
-      <div className="mx-auto max-w-md">
+      <div className="mx-auto w-full max-w-6xl">
         <div className="flex items-center justify-between">
           <SectionTitle icon={UtensilsCrossed} label="Browse categories" />
           {!loading && allCategories.length > 0 && (
@@ -721,7 +725,7 @@ function CategoriesSection({
               variants={gridVariants}
               initial="hidden"
               animate="visible"
-              className="grid grid-cols-2 gap-3"
+              className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
             >
               {categories.map((cat, idx) => (
                 <CategoryCard

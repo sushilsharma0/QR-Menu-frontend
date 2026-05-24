@@ -3,16 +3,18 @@ import { ArrowLeft, PhoneCall, RefreshCcw, Info, MapPin } from 'lucide-react';
 
 const TableInfo = () => {
   return (
-    <div className="min-h-screen bg-white pb-10">
+    <div className="min-h-screen overflow-x-hidden bg-white pb-10">
       {/* Header */}
-      <header className="px-6 pt-12 pb-6 flex items-center border-b border-gray-50">
+      <header className="border-b border-gray-50 px-6 pb-6 pt-12">
+        <div className="mx-auto flex w-full max-w-4xl items-center">
         <button className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
           <ArrowLeft size={20} className="text-gray-700" />
         </button>
         <h1 className="ml-4 text-lg font-semibold text-gray-800">Table Information</h1>
+        </div>
       </header>
 
-      <div className="flex flex-col items-center px-8 pt-12 text-center">
+      <div className="mx-auto grid w-full max-w-4xl items-center gap-10 px-8 pt-12 text-center md:grid-cols-2">
         {/* Illustration Section */}
         <div className="relative mb-10">
           <div className="w-64 h-64 bg-orange-50 rounded-full flex items-center justify-center">
@@ -45,7 +47,7 @@ const TableInfo = () => {
         </div>
 
         {/* Assistance Card */}
-        <div className="w-full mt-12 bg-orange-50/50 p-6 rounded-4xl border border-orange-100 relative overflow-hidden">
+        <div className="relative mt-12 w-full overflow-hidden rounded-[2rem] border border-orange-100 bg-orange-50/50 p-6 md:col-span-2">
           {/* Subtle Background Pattern */}
           <div className="absolute -right-4 -top-4 text-orange-100 rotate-12">
             <Info size={120} strokeWidth={1} />
@@ -68,7 +70,7 @@ const TableInfo = () => {
         </div>
 
         {/* Footer info */}
-        <p className="mt-8 text-[10px] text-gray-300 font-medium">
+        <p className="mt-8 text-[10px] font-medium text-gray-300 md:col-span-2">
           Foodies Cafe • Restaurant ID: #FC-9921
         </p>
       </div>

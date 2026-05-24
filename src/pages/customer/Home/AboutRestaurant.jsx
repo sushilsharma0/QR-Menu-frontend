@@ -157,7 +157,7 @@ export default function AboutRestaurant() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafaf7] pb-28">
+    <div className="min-h-screen overflow-x-hidden bg-[#fafaf7] pb-28">
       <div
         className="relative h-48 bg-cover bg-center"
         style={{
@@ -189,7 +189,7 @@ export default function AboutRestaurant() {
         </div>
       </div>
 
-      <div className="space-y-4 p-4">
+      <div className="mx-auto grid w-full max-w-6xl gap-4 p-4 lg:grid-cols-2">
         {(about.rating != null || about.reviewCount != null || about.establishedYear) && (
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
@@ -340,7 +340,7 @@ export default function AboutRestaurant() {
 
         <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
           <h2 className="mb-4 font-semibold text-gray-800">Gallery</h2>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {gallery.map((image, index) => (
               <div
                 key={`${image}-${index}`}

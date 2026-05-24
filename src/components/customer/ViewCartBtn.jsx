@@ -47,7 +47,7 @@ export default function ViewCartBtn({ offset = "5.25rem", hidden = false }) {
             animate={pulse ? { scale: [1, 1.04, 1] } : { scale: 1 }}
             transition={{ duration: 0.45, ease: "easeInOut" }}
             whileTap={{ scale: 0.96 }}
-            className="pointer-events-auto relative flex w-full max-w-md items-center justify-between gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 px-5 py-3.5 text-left shadow-[0_18px_40px_-12px_rgba(122,34,0,0.55)] ring-1 ring-primary-900/10 transition-all"
+            className="pointer-events-auto relative flex w-full max-w-2xl items-center justify-between gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 px-5 py-3.5 text-left shadow-[0_18px_40px_-12px_rgba(122,34,0,0.55)] ring-1 ring-primary-900/10 transition-all"
             aria-label="View cart"
           >
             <m.span
