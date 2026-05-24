@@ -128,9 +128,9 @@ const RestaurantProofSection = () => {
               </div>
             </div>
             <div className="landing-logo-marquee flex items-center gap-3 px-3 py-3 sm:gap-6 sm:px-4 sm:py-4">
-              {marqueeItems.map((restaurant) => (
+              {marqueeItems.map((restaurant, index) => (
                 <div
-                  key={`${restaurant.name}-${restaurant.code || restaurant.logo || 'restaurant'}`}
+                  key={`${restaurant.name}-${restaurant.code || restaurant.logo || 'restaurant'}-${index}`}
                   className="inline-flex min-w-max items-center gap-2.5 rounded-xl border border-surface-200 bg-surface-50 px-3 py-2 transition-all duration-300 hover:border-primary-200 hover:bg-white hover:shadow-md sm:gap-3 sm:px-4 sm:py-2.5"
                 >
                   {restaurant.logo ? (
