@@ -346,6 +346,29 @@ export const getGuestOrders = async ({ guestId, qrToken }) => {
   return response?.data?.data?.orders || []
 }
 
+export const getItemReviews = async (menuItemId) => {
+  const response = await api.get(`/customer/items/${menuItemId}/reviews`)
+  return response?.data?.data || { average: 0, total: 0, reviews: [] }
+}
+
+export const submitItemReview = async ({
+  menuItemId,
+  qrToken,
+  guestId,
+  rating,
+  comment = '',
+  customerName = 'Guest customer',
+}) => {
+  const response = await api.post(`/customer/items/${menuItemId}/reviews`, withGuestSessionBody(qrToken, {
+    qrToken,
+    guestId,
+    rating,
+    comment,
+    customerName,
+  }))
+  return response?.data?.data || null
+}
+
 export const requestCustomerIdentityOtp = async ({ qrToken, guestId, email }) => {
   const response = await api.post('/customer/identity/request-otp', withGuestSessionBody(qrToken, {
     qrToken,
@@ -629,6 +652,8 @@ export default {
   removeGuestCartItem,
   clearGuestCart,
   getGuestOrders,
+  getItemReviews,
+  submitItemReview,
   getCartItemCount,
   setCartItemCount,
   getStoredOrderTokens,

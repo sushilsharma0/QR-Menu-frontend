@@ -21,6 +21,7 @@ import { ToastContainer } from "../../../components/common/ToastContainer";
 import Navigation from "../../../components/customer/Navigation";
 import CartDrawer from "../../../components/customer/CartDrawer";
 import { useCustomerCart } from "../../../context/CustomerCartContext";
+import { ensureGuestSession, getItemReviews, submitItemReview } from "../../../services/customer";
 import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
 import { resolveMediaUrl } from "../../../utils/mediaUrl";
 
@@ -137,7 +138,7 @@ const ItemHero = ({ item, isFavorite, onBack, onFavoriteToggle, onShare }) => (
   </header>
 );
 
-const ItemSummary = ({ item, dietaryBadges, liveUnitPrice }) => (
+const ItemSummary = ({ item, dietaryBadges, liveUnitPrice, reviewSummary }) => (
   <>
     <div className="flex items-start justify-between gap-4">
       <div className="min-w-0 flex-1">
@@ -174,8 +175,8 @@ const ItemSummary = ({ item, dietaryBadges, liveUnitPrice }) => (
     <div className="mt-4 grid grid-cols-3 items-center gap-2 border-y border-[#e1bfb2]/50 py-4 text-sm">
       <div className="flex items-center gap-1.5">
         <Star size={18} className="fill-[#a33e00] text-[#a33e00]" />
-        <span className="font-black text-[#1c1c1a]">{item.rating || 4.5}</span>
-        <span className="hidden text-[#594137] xs:inline">({item.reviews || 0})</span>
+        <span className="font-black text-[#1c1c1a]">{reviewSummary.average || item.rating || 4.5}</span>
+        <span className="hidden text-[#594137] xs:inline">({reviewSummary.total || item.reviews || 0})</span>
       </div>
 
       <div className="flex items-center justify-center gap-1.5 border-x border-[#e1bfb2]/50 px-2">
@@ -459,6 +460,102 @@ const CookingInstructionsField = ({ cookingInstructions, setCookingInstructions 
   </section>
 );
 
+const ItemReviewsSection = ({
+  reviewSummary,
+  reviewRating,
+  setReviewRating,
+  reviewComment,
+  setReviewComment,
+  isSubmitting,
+  onSubmit,
+}) => (
+  <section className="mt-8 rounded-xl border border-[#e1bfb2]/60 bg-white p-5 shadow-[0_10px_24px_rgba(137,79,64,0.06)]">
+    <div className="flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <h2 className="text-xl font-black text-[#1c1c1a]">Item Reviews</h2>
+        <p className="mt-1 text-sm font-bold text-[#594137]">
+          {reviewSummary.total > 0
+            ? `${reviewSummary.average} average from ${reviewSummary.total} review${reviewSummary.total === 1 ? "" : "s"}`
+            : "Be the first to review this item"}
+        </p>
+      </div>
+      <div className="flex items-center gap-1 rounded-full bg-[#ffdbcd] px-3 py-1.5 text-[#9f3d00]">
+        <Star size={16} className="fill-current" />
+        <span className="text-sm font-black">{reviewSummary.average || "New"}</span>
+      </div>
+    </div>
+
+    <div className="mt-5 rounded-xl bg-[#f6f3f0] p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span className="text-sm font-black text-[#1c1c1a]">Your rating</span>
+        <div className="flex items-center gap-1">
+          {[1, 2, 3, 4, 5].map((value) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setReviewRating(value)}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white transition active:scale-95"
+              aria-label={`Rate ${value} star${value === 1 ? "" : "s"}`}
+            >
+              <Star
+                size={21}
+                fill={value <= reviewRating ? "#1c1c1a" : "none"}
+                stroke={value <= reviewRating ? "#1c1c1a" : "#8d7165"}
+                strokeWidth={value <= reviewRating ? 2.6 : 2}
+              />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <textarea
+        value={reviewComment}
+        onChange={(e) => setReviewComment(e.target.value)}
+        placeholder="Share a short note about taste, portion, or spice level..."
+        className="mt-3 min-h-[88px] w-full rounded-xl border border-[#e1bfb2] bg-white p-3 text-sm text-[#1c1c1a] outline-none placeholder:text-[#8d7165] focus:ring-2 focus:ring-[#ffb596]"
+        maxLength={300}
+      />
+
+      <button
+        type="button"
+        onClick={onSubmit}
+        disabled={isSubmitting}
+        className="mt-3 flex min-h-[44px] w-full items-center justify-center rounded-full bg-[#9f3d00] px-5 py-3 text-sm font-black text-white transition active:scale-95 disabled:opacity-70 sm:w-auto"
+      >
+        {isSubmitting ? "Submitting..." : "Submit Review"}
+      </button>
+    </div>
+
+    {reviewSummary.loading ? (
+      <p className="mt-4 text-sm font-bold text-[#594137]">Loading reviews...</p>
+    ) : reviewSummary.reviews.length > 0 ? (
+      <div className="mt-5 space-y-3">
+        {reviewSummary.reviews.map((review) => (
+          <article key={review.id || review.createdAt} className="rounded-xl bg-[#fcf9f6] p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="break-all text-sm font-black text-[#1c1c1a]">
+                  {review.customerName || review.guestId || "Guest customer"}
+                </p>
+                {review.createdAt && (
+                  <p className="mt-0.5 text-xs font-bold text-[#8d7165]">
+                    {new Date(review.createdAt).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+              <div className="flex shrink-0 items-center gap-1 text-[#a33e00]">
+                <Star size={15} className="fill-current" />
+                <span className="text-sm font-black">{review.rating}</span>
+              </div>
+            </div>
+            {review.comment && <p className="mt-3 text-sm leading-relaxed text-[#594137]">{review.comment}</p>}
+          </article>
+        ))}
+      </div>
+    ) : null}
+  </section>
+);
+
 const StickyAddButton = ({ isAdding, quantity, total, setQuantity, onAddToCart }) => (
   <div
     style={{ bottom: "calc(5rem + env(safe-area-inset-bottom, 0px))" }}
@@ -534,6 +631,10 @@ const ItemDetails = () => {
 
   const { toasts, removeToast, success, error } = useToast();
   const { addItem, hydrate } = useCustomerCart();
+  const [reviewSummary, setReviewSummary] = React.useState({ loading: true, average: 0, total: 0, reviews: [] });
+  const [reviewRating, setReviewRating] = React.useState(0);
+  const [reviewComment, setReviewComment] = React.useState("");
+  const [isReviewSubmitting, setIsReviewSubmitting] = React.useState(false);
 
   const setItem = (item) => dispatch({ type: "setItem", item });
   const setQuantity = (value) => dispatch({ type: "setQuantity", value });
@@ -547,6 +648,27 @@ const ItemDetails = () => {
   useEffect(() => {
     if (token) hydrate(token);
   }, [token, hydrate]);
+
+  const loadReviews = React.useCallback(async () => {
+    if (!id) return;
+    try {
+      setReviewSummary((prev) => ({ ...prev, loading: true }));
+      const data = await getItemReviews(id);
+      setReviewSummary({
+        loading: false,
+        average: Number(data.average || 0),
+        total: Number(data.total || 0),
+        reviews: Array.isArray(data.reviews) ? data.reviews : [],
+      });
+    } catch (err) {
+      console.error(err);
+      setReviewSummary({ loading: false, average: 0, total: 0, reviews: [] });
+    }
+  }, [id]);
+
+  useEffect(() => {
+    loadReviews();
+  }, [loadReviews]);
 
   useEffect(() => {
     const fetchItemDetails = async () => {
@@ -736,6 +858,38 @@ const ItemDetails = () => {
     }
   };
 
+  const handleSubmitReview = async () => {
+    if (!reviewRating) {
+      error("Please choose a star rating");
+      return;
+    }
+    if (!token) {
+      error("Open this menu from a table QR to review items");
+      return;
+    }
+
+    try {
+      setIsReviewSubmitting(true);
+      const session = await ensureGuestSession(token);
+      await submitItemReview({
+        menuItemId: id,
+        qrToken: token,
+        guestId: session?.guestId,
+        rating: reviewRating,
+        comment: reviewComment,
+      });
+      success("Review submitted");
+      setReviewRating(0);
+      setReviewComment("");
+      await loadReviews();
+    } catch (err) {
+      console.error(err);
+      error(err?.response?.data?.message || "Failed to submit review");
+    } finally {
+      setIsReviewSubmitting(false);
+    }
+  };
+
   const handleAddToCart = async () => {
     if (!item?._id || isAdding) return;
     try {
@@ -787,7 +941,12 @@ const ItemDetails = () => {
 
       <main className="relative z-30 -mt-12 mx-auto w-full max-w-4xl px-5">
         <div className="rounded-xl bg-white p-6 shadow-[0_15px_30px_rgba(137,79,64,0.08)]">
-          <ItemSummary item={item} dietaryBadges={dietaryBadges} liveUnitPrice={liveUnitPrice} />
+          <ItemSummary
+            item={item}
+            dietaryBadges={dietaryBadges}
+            liveUnitPrice={liveUnitPrice}
+            reviewSummary={reviewSummary}
+          />
           <DescriptionSection
             visibleLines={visibleLines}
             descriptionLines={descriptionLines}
@@ -814,6 +973,15 @@ const ItemDetails = () => {
         <CookingInstructionsField
           cookingInstructions={cookingInstructions}
           setCookingInstructions={setCookingInstructions}
+        />
+        <ItemReviewsSection
+          reviewSummary={reviewSummary}
+          reviewRating={reviewRating}
+          setReviewRating={setReviewRating}
+          reviewComment={reviewComment}
+          setReviewComment={setReviewComment}
+          isSubmitting={isReviewSubmitting}
+          onSubmit={handleSubmitReview}
         />
       </main>
 
