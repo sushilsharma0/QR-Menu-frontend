@@ -774,7 +774,16 @@ const OrderDetail = () => {
                       {item.quantity}x
                     </div>
                     <div>
-                      <p className="font-bold text-gray-950">{item.name}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-bold text-gray-950">{item.name}</p>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          item.fulfillmentMode === 'parcel'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-primary-100 text-primary-800'
+                        }`}>
+                          {item.fulfillmentMode === 'parcel' ? 'Parcel' : 'Eat here'}
+                        </span>
+                      </div>
                       <p className="text-sm text-gray-500">{formatMoney(item.price)} each</p>
                       {(item.selectedVariations || []).length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1.5">

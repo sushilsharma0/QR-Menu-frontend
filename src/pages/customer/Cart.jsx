@@ -59,7 +59,7 @@ function partitionItemsByFulfillment(items, itemFulfillment) {
   return { dine, parcel };
 }
 
-function mapItemsToCheckoutPayload(groupItems) {
+function mapItemsToCheckoutPayload(groupItems, itemFulfillment = {}) {
   return groupItems.map((item) => ({
     menuItemId: item.menuItemId,
     quantity: item.quantity,
@@ -68,6 +68,7 @@ function mapItemsToCheckoutPayload(groupItems) {
     customizations: item.customizations || [],
     addOns: item.addOns || [],
     selectedVariations: item.selectedVariations || [],
+    fulfillmentMode: itemFulfillment[getItemFulfillmentKey(item)] || "dine_in",
   }));
 }
 
@@ -305,12 +306,8 @@ const Cart = () => {
         setIsPlacingOrder(false);
         return;
       }
-      const { dine: dineItems, parcel: parcelItems } = partitionItemsByFulfillment(
-        items,
-        itemFulfillment,
-      );
-      const hasDine = dineItems.length > 0;
-      const hasParcel = parcelItems.length > 0;
+      const hasDine = fulfillmentCounts.dine > 0;
+      const hasParcel = fulfillmentCounts.parcel > 0;
       const shared = {
         qrToken: token,
         guestId,
@@ -323,43 +320,22 @@ const Cart = () => {
         customerEmail: finalEmail,
       };
 
-      const checkoutGroups = [
-        hasDine && {
-          fulfillmentMode: "dine_in",
-          orderChannel: "qr_ordering",
-          specialRequests: "",
-          items: dineItems,
-          withPromo: true,
-        },
-        hasParcel && {
-          fulfillmentMode: "parcel",
-          orderChannel: "takeaway",
-          specialRequests: "Parcel order - pack for takeaway",
-          items: parcelItems,
-          withPromo: !hasDine,
-        },
-      ].filter(Boolean);
-
-      const placedOrders = [];
-      let primaryTrackToken = "";
-
-      for (const group of checkoutGroups) {
-        const res = await checkoutGuestOrder({
-          ...shared,
-          orderChannel: group.orderChannel,
-          fulfillmentMode: group.fulfillmentMode,
-          specialRequests: group.specialRequests,
-          promoCode: group.withPromo ? appliedPromo?.code || "" : "",
-          items: mapItemsToCheckoutPayload(group.items),
-        });
-        const order = res?.data;
-        if (order) {
-          placedOrders.push(order);
-          if (!primaryTrackToken && order.trackToken) {
-            primaryTrackToken = order.trackToken;
-          }
-        }
-      }
+      const mixedFulfillment = hasDine && hasParcel;
+      const res = await checkoutGuestOrder({
+        ...shared,
+        orderChannel: hasParcel && !hasDine ? "takeaway" : "qr_ordering",
+        fulfillmentMode: hasParcel && !hasDine ? "parcel" : "dine_in",
+        specialRequests: mixedFulfillment
+          ? "Mixed order - serve eat-here items at the table and pack parcel items."
+          : hasParcel
+            ? "Parcel order - pack for takeaway"
+            : "",
+        promoCode: appliedPromo?.code || "",
+        items: mapItemsToCheckoutPayload(items, itemFulfillment),
+      });
+      const order = res?.data;
+      const placedOrders = order ? [order] : [];
+      const primaryTrackToken = order?.trackToken || "";
 
       if (primaryTrackToken) rememberCustomerOrderToken(token, primaryTrackToken);
 
@@ -367,26 +343,22 @@ const Cart = () => {
       setAppliedPromo(null);
       setPromoDiscount(0);
       setPromoCode("");
-      const split = placedOrders.length > 1;
       setSuccessOrder({
-        split,
+        split: false,
         orders: placedOrders,
-        orderNumber: placedOrders[0]?.orderNumber,
+        orderNumber: order?.orderNumber,
         trackToken: primaryTrackToken,
-        smsSent: placedOrders.some((o) => o?.smsSent),
-        smsSkipped: placedOrders.every((o) => o?.smsSkipped !== false),
+        smsSent: Boolean(order?.smsSent),
+        smsSkipped: order?.smsSkipped !== false,
       });
 
-      const orderLabel = split
-        ? `#${placedOrders.map((o) => o.orderNumber).filter(Boolean).join(" & #")}`
-        : `#${placedOrders[0]?.orderNumber || "—"}`;
+      const orderLabel = order?.orderNumber ? `#${order.orderNumber}` : "#-";
       success(
-        split
-          ? `Orders ${orderLabel} sent — dine-in and parcel are separate in the kitchen.`
+        mixedFulfillment
+          ? `Order ${orderLabel} sent with eat-here and parcel items.`
           : "Order sent. Please check all items before the kitchen starts preparing.",
         7000,
       );
-
       setTimeout(() => {
         navigate(
           primaryTrackToken
@@ -754,10 +726,10 @@ function ReviewStep({
         <>
           {fulfillmentCounts.dine > 0 && fulfillmentCounts.parcel > 0 && (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold leading-relaxed text-amber-900">
-              Mixed order — we will send{" "}
+              Mixed order - we will send{" "}
               <span className="font-black">{fulfillmentCounts.dine} item{fulfillmentCounts.dine > 1 ? "s" : ""} to your table</span>{" "}
               and pack{" "}
-              <span className="font-black">{fulfillmentCounts.parcel} for parcel</span> as separate kitchen tickets.
+              <span className="font-black">{fulfillmentCounts.parcel} for parcel</span> in one order.
             </div>
           )}
         <ul className="space-y-3">
@@ -947,7 +919,7 @@ function DetailsStep({ customerDetails, setCustomerDetails, fulfillmentCounts, s
         </div>
         <p className="mt-3 text-xs font-semibold leading-relaxed text-gray-500">
           {mixed
-            ? "You chose both dine-in and parcel items. The kitchen receives two separate orders from your table."
+            ? "You chose both dine-in and parcel items. The kitchen receives one order with each item marked correctly."
             : fulfillmentCounts.parcel > 0
               ? "All items will be packed for takeaway."
               : "All items will be served at your table."}{" "}
@@ -1079,7 +1051,7 @@ function ConfirmStep({
               <div>
                 <p className="text-sm font-black">Parcel</p>
                 <p className="text-xs font-semibold text-amber-800/80">
-                  {fulfillmentCounts.parcel} item{fulfillmentCounts.parcel > 1 ? "s" : ""} packed to carry — separate ticket.
+                  {fulfillmentCounts.parcel} item{fulfillmentCounts.parcel > 1 ? "s" : ""} packed to carry in the same order.
                 </p>
               </div>
             </div>
@@ -1214,7 +1186,7 @@ function SuccessOverlay({ order }) {
         >
           {split ? (
             <>
-              Orders <span className="font-black text-primary-700">{displayNumber}</span> are on their way — dine-in and parcel are separate in the kitchen.
+              Order <span className="font-black text-primary-700">{displayNumber}</span> is on its way with eat-here and parcel items.
             </>
           ) : (
             <>

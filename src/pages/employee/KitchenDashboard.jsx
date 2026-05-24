@@ -258,6 +258,13 @@ const KitchenDashboard = () => {
                     {order.items.map((item, idx) => (
                       <div key={idx} className="text-sm text-gray-700 dark:text-gray-300">
                         <span className="font-semibold">{item.quantity}x</span> {item.name}
+                        <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          item.fulfillmentMode === 'parcel'
+                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
+                            : 'bg-primary-100 text-primary-800 dark:bg-primary-900/40 dark:text-primary-200'
+                        }`}>
+                          {item.fulfillmentMode === 'parcel' ? 'Parcel' : 'Eat here'}
+                        </span>
                         {(item.selectedVariations || []).length > 0 && (
                           <div className="ml-5 mt-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
                             {(item.selectedVariations || [])
