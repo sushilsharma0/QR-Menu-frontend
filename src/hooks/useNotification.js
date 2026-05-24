@@ -8,6 +8,7 @@ import {
 } from '../services/api'
 import { useAuth } from './useAuth'
 import { setBrowserFavicon } from '../utils/browserFavicon'
+import { PLATFORM_FAVICON_SRC } from '../constants/platformBrand'
 import { getNotificationSettings, playNotificationBell } from './useOrderAlerts'
 
 const NOTIFICATION_TITLE_PREFIX = /^\(\d+\)\s+/
@@ -46,7 +47,9 @@ const useNotification = () => {
       user?.scope === 'employee' ||
       ['kitchen', 'cashier', 'manager', 'waiter', 'accountant'].includes(user?.role)
 
-    void setBrowserFavicon(isRestaurantSide ? user?.favicon || user?.logo : null)
+    void setBrowserFavicon(
+      isRestaurantSide ? user?.favicon || user?.logo : PLATFORM_FAVICON_SRC,
+    )
   }, [user?.favicon, user?.logo, user?.role, user?.scope])
 
   useEffect(() => {

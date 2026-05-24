@@ -11,7 +11,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['vite.svg'],
+      includeAssets: ['logo.png', 'logo.svg', 'favicon.png'],
       manifest: {
         name: 'QR Menu — Customer',
         short_name: 'QR Menu',
@@ -23,9 +23,9 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: '/vite.svg',
+            src: '/logo.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'any maskable',
           },
         ],

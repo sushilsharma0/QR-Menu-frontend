@@ -1,29 +1,36 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { QrCode } from 'lucide-react'
 import { siteName as fallbackSiteName } from './landingDefaults'
 import { useLandingBranding } from '../../context/LandingBrandingContext'
+import { PLATFORM_LOGO_SRC } from '../../constants/platformBrand'
 
-const BrandLogo = ({ compact = false, onClick }) => {
-  const { softwareName, brandSubtitle } = useLandingBranding()
+/** Fits inside LandingNavbar bar (h-14–h-16 / sm:h-16–[4.5rem]) */
+const LOGO_BOX = {
+  compact: 'h-10 w-10',
+  scrolled: 'h-9 w-9 sm:h-10 sm:w-10',
+  default: 'h-10 w-10 sm:h-11 sm:w-11',
+}
+
+const BrandLogo = ({ compact = false, scrolled = false, onClick }) => {
+  const { softwareName } = useLandingBranding()
   const title = (softwareName || fallbackSiteName).trim() || fallbackSiteName
-  const sub = (brandSubtitle || '').trim()
+
+  const boxClass = compact ? LOGO_BOX.compact : scrolled ? LOGO_BOX.scrolled : LOGO_BOX.default
 
   return (
-    <Link to="/" onClick={onClick} className="group flex items-center gap-3" aria-label={`${title} home`}>
-      <span className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[14px] border border-primary-200 bg-white shadow-md shadow-primary-900/10">
-        <span className="absolute inset-0 bg-gradient-to-br from-primary-600 via-secondary-500 to-accent-500 opacity-95 transition duration-300 group-hover:scale-110" />
-        <span className="absolute -right-3 -top-3 h-5 w-5 rounded-full bg-attention-300 blur-sm" />
-        <QrCode className="relative h-5 w-5 text-white" />
+    <Link to="/" onClick={onClick} className="group flex items-center gap-2.5 sm:gap-3" aria-label={`${title} home`}>
+      <span
+        className={`inline-flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-primary-100 bg-white shadow-sm ${boxClass}`}
+      >
+        <img
+          src={PLATFORM_LOGO_SRC}
+          alt=""
+          className="h-full w-full scale-[1.55] object-contain"
+        />
       </span>
       {!compact && (
-        <span className="leading-none">
-          <span className="block text-[1.22rem] font-semibold tracking-tight text-primary-800">
-            {title}
-          </span>
-          {sub ? (
-            <span className="block text-[10px] font-black uppercase tracking-[0.38em] text-slate-500">{sub}</span>
-          ) : null}
+        <span className="text-[1.22rem] font-semibold leading-none tracking-tight text-primary-800">
+          {title}
         </span>
       )}
     </Link>

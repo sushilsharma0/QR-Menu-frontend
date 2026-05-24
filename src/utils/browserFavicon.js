@@ -1,4 +1,6 @@
-const DEFAULT_FAVICON = '/favicon.svg'
+import { PLATFORM_FAVICON_SRC } from '../constants/platformBrand'
+
+const DEFAULT_FAVICON = PLATFORM_FAVICON_SRC
 const FAVICON_SIZE = 64
 const FAVICON_RADIUS = 14
 
@@ -57,7 +59,7 @@ function makeRoundedFavicon(src) {
 
 export async function setBrowserFavicon(href) {
   if (!href) {
-    writeFavicon(DEFAULT_FAVICON, 'image/svg+xml')
+    writeFavicon(DEFAULT_FAVICON, 'image/png')
     return
   }
 

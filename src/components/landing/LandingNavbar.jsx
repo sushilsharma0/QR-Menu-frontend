@@ -121,13 +121,9 @@ const LandingNavbar = () => {
           />
 
           {/* Logo */}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-          >
-            <BrandLogo />
-          </motion.div>
+          <div className="flex min-h-0 items-center">
+            <BrandLogo scrolled={scrolled} />
+          </div>
 
           {/* Desktop Navigation */}
           <div className="hidden justify-center lg:flex">
@@ -260,7 +256,7 @@ const LandingNavbar = () => {
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.1 }}
                 >
-                  <BrandLogo onClick={close} />
+                  <BrandLogo compact onClick={close} />
                 </motion.div>
 
                 <motion.button

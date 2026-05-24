@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { FiAward, FiChevronDown, FiChevronLeft, FiChevronRight, FiCoffee, FiMenu, FiX } from 'react-icons/fi'
+import { FiChevronDown, FiChevronLeft, FiChevronRight, FiMenu, FiX } from 'react-icons/fi'
+import { PLATFORM_LOGO_SRC } from '../../constants/platformBrand'
+import { siteName as defaultSiteName } from '../landing/landingDefaults'
 import { useAuth } from '../../hooks/useAuth'
 import { usePlatformAccess } from '../../hooks/usePlatformAccess'
 import api from '../../services/api'
@@ -259,22 +261,27 @@ function NavSection({
   )
 }
 
-function Brand({ collapsed, isMobile }) {
+function Brand({ collapsed, isMobile, brandTitle = defaultSiteName }) {
+  const logoBoxClass =
+    collapsed && !isMobile ? 'h-11 w-11' : 'h-12 w-12 flex-shrink-0'
+
+  const logo = (
+    <span
+      className={`inline-flex items-center justify-center overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 ${logoBoxClass}`}
+    >
+      <img src={PLATFORM_LOGO_SRC} alt="" className="h-[94%] w-[94%] object-contain" />
+    </span>
+  )
+
   if (collapsed && !isMobile) {
-    return (
-      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-600 to-secondary-500 text-white shadow-md">
-        <FiAward className="h-5 w-5" />
-      </div>
-    )
+    return logo
   }
 
   return (
     <div className="flex min-w-0 items-center gap-3">
-      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-600 to-secondary-500 text-white shadow-md">
-      <FiCoffee className="h-5 w-5" />
-      </div>
+      {logo}
       <div className="min-w-0">
-        <h1 className="truncate text-base font-semibold leading-none text-gray-950 dark:text-gray-100">QR Restro Nepal</h1>
+        <h1 className="truncate text-base font-semibold leading-none text-gray-950 dark:text-gray-100">{brandTitle}</h1>
         <p className="mt-1 truncate text-xs font-medium text-gray-500 dark:text-gray-400">Platform Portal</p>
       </div>
     </div>
@@ -289,6 +296,7 @@ function SidebarContent({
   onClose,
   isMobile,
   badgeCounts,
+  brandTitle,
   onTooltip,
   onTooltipLeave,
 }) {
@@ -336,7 +344,7 @@ function SidebarContent({
           hideLabels ? 'justify-center px-3 py-5' : 'justify-between p-5'
         }`}
       >
-        <Brand collapsed={collapsed} isMobile={isMobile} />
+        <Brand collapsed={collapsed} isMobile={isMobile} brandTitle={brandTitle} />
 
         {!isMobile && (
           <button
@@ -437,7 +445,22 @@ const PlatformSidebar = () => {
     subscriptionRequests: 0,
     paymentReviews: 0,
   })
+  const [brandTitle, setBrandTitle] = useState(defaultSiteName)
   const badgeFetchStateRef = useRef({ inFlight: false, lastFetchAt: 0 })
+
+  useEffect(() => {
+    let cancelled = false
+    api
+      .get('/platform/settings/site', { skipErrorToast: true })
+      .then((res) => {
+        const name = res.data?.data?.softwareName?.trim()
+        if (!cancelled && name) setBrandTitle(name)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     if (user?.role !== 'super_admin' && user?.role !== 'admin') return undefined
@@ -499,6 +522,7 @@ const PlatformSidebar = () => {
     collapsed,
     setCollapsed,
     badgeCounts,
+    brandTitle,
     onTooltip: setTooltip,
     onTooltipLeave: () => setTooltip(null),
   }
@@ -515,10 +539,10 @@ const PlatformSidebar = () => {
           <FiMenu className="h-5 w-5 text-gray-700 dark:text-gray-200" />
         </button>
         <div className="flex min-w-0 items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary-600 to-secondary-500 text-white">
-            <FiAward className="h-4 w-4" />
-          </div>
-          <h1 className="truncate text-sm font-semibold text-gray-950 dark:text-gray-100">Platform Console</h1>
+          <span className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-white dark:border-gray-700">
+            <img src={PLATFORM_LOGO_SRC} alt="" className="h-[94%] w-[94%] object-contain" />
+          </span>
+          <h1 className="truncate text-sm font-semibold text-gray-950 dark:text-gray-100">{brandTitle}</h1>
         </div>
       </div>
 

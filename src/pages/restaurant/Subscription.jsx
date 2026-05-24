@@ -116,11 +116,74 @@ function Notice({ tone = 'amber', icon: Icon = FiAlertTriangle, title, children 
   )
 }
 
-function PlanCard({ plan, currentPlan, disabled, requesting, onSelect, isPreviousExpired }) {
-  const isCurrent = currentPlan?.hasPaidPlanActive && currentPlan?.currentPlan?._id === plan._id
+function PlanCard({ plan, currentPlan, disabled, requesting, onSelect, isPreviousExpired, planEndDate }) {
+  const isCurrent = currentPlan?.hasPaidPlanActive && String(currentPlan?.currentPlan?._id) === String(plan._id)
   const isRequested =
     currentPlan?.requestedPlan?._id === plan._id &&
     ['awaiting_proof', 'pending_review'].includes(currentPlan?.planRequestStatus)
+
+  if (isPreviousExpired) {
+    return (
+      <m.article
+        layout
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden rounded-3xl border-2 border-red-300 bg-gradient-to-br from-red-50 via-white to-amber-50 p-6 shadow-lg ring-4 ring-red-100"
+      >
+        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-red-500 via-rose-500 to-amber-500" />
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex-1">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white">
+              <FiRefreshCw className="h-3.5 w-3.5" />
+              Your previous plan · Expired
+            </div>
+            <h3 className="mt-3 text-2xl font-semibold text-gray-950">{plan.name}</h3>
+            <p className="mt-1 text-sm text-gray-600">{plan.durationLabel || 'Subscription plan'}</p>
+            {planEndDate && (
+              <p className="mt-2 text-sm text-red-700">
+                Expired on {formatRestaurantDateTime(planEndDate)} — renew to restore full access
+              </p>
+            )}
+            <div className="mt-4 rounded-2xl border border-red-100 bg-white/80 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Renewal total</p>
+              <p className="mt-1 text-3xl font-semibold text-primary-700">
+                {formatRestaurantCurrency(planTotal(plan), planSymbol(plan))}
+              </p>
+              {plan.pricing && (
+                <div className="mt-2 space-y-1 text-sm text-gray-600">
+                  <p>Subtotal: {formatRestaurantCurrency(plan.pricing.priceExclVat, plan.pricing.currencySymbol)}</p>
+                  <p>VAT: {formatRestaurantCurrency(plan.pricing.vatAmount, plan.pricing.currencySymbol)}</p>
+                </div>
+              )}
+            </div>
+            {(plan.features || []).length > 0 && (
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {(plan.features || []).slice(0, 4).map((feature) => (
+                  <div key={feature} className="flex items-center gap-2 text-sm text-gray-600">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-green-700">
+                      <FiCheck className="h-3.5 w-3.5" />
+                    </span>
+                    {feature}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="w-full lg:w-56">
+            <Button
+              className="w-full"
+              disabled={disabled || isRequested || requesting}
+              onClick={() => onSelect(plan._id)}
+            >
+              <FiRefreshCw className="mr-2" />
+              {isRequested ? 'Payment Pending' : 'Renew this plan'}
+            </Button>
+            <p className="mt-2 text-center text-xs text-gray-500">Same plan, same features — pick up where you left off</p>
+          </div>
+        </div>
+      </m.article>
+    )
+  }
 
   return (
     <m.article
@@ -129,19 +192,10 @@ function PlanCard({ plan, currentPlan, disabled, requesting, onSelect, isPreviou
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -6 }}
       className={`relative overflow-hidden rounded-3xl border bg-white p-5 shadow-sm transition-shadow hover:shadow-xl ${
-        isPreviousExpired
-          ? 'border-red-300 ring-4 ring-red-50'
-          : plan.isPopular
-            ? 'border-primary-500 ring-4 ring-primary-50'
-            : 'border-surface-200'
+        plan.isPopular ? 'border-primary-500 ring-4 ring-primary-50' : 'border-surface-200'
       }`}
     >
-      {isPreviousExpired && (
-        <div className="absolute left-4 top-4 inline-flex items-center gap-1 rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white">
-          <FiRefreshCw className="h-3.5 w-3.5" /> Your plan · Expired
-        </div>
-      )}
-      {plan.isPopular && !isPreviousExpired && (
+      {plan.isPopular && (
         <div className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-primary-600 px-3 py-1 text-xs font-semibold text-white">
           <FiStar className="h-3.5 w-3.5" /> Popular
         </div>
@@ -182,13 +236,7 @@ function PlanCard({ plan, currentPlan, disabled, requesting, onSelect, isPreviou
         disabled={disabled || isCurrent || isRequested || requesting}
         onClick={() => onSelect(plan._id)}
       >
-        {isCurrent
-          ? 'Current Plan'
-          : isRequested
-            ? 'Payment Pending'
-            : isPreviousExpired
-              ? 'Renew plan'
-              : 'Choose Plan'}
+        {isCurrent ? 'Current Plan' : isRequested ? 'Payment Pending' : 'Choose Plan'}
       </Button>
     </m.article>
   )
@@ -358,28 +406,47 @@ const Subscription = () => {
   const isKYCVerified = authUser?.isKYCVerified === true
   const daysLeft = currentPlan?.daysLeft ?? 0
   const currentTotal = currentPlan?.currentPlan ? planTotal(currentPlan.currentPlan) : 0
-  const previousPlanId = isExpiredSubscription ? currentPlan?.currentPlan?._id : null
+  const previousPlanId =
+    isExpiredSubscription && currentPlan?.planAssignmentSource !== 'custom'
+      ? currentPlan?.currentPlan?._id
+      : null
   const previousPlanName =
     currentPlan?.planAssignmentSource === 'custom'
       ? currentPlan?.customPlanLabel || 'Custom plan'
       : currentPlan?.currentPlan?.name
 
-  const orderedPlans = useMemo(() => {
+  const renewPlan = useMemo(() => {
+    if (!previousPlanId) return null
+    const fromCatalog = plans.find((plan) => String(plan._id) === String(previousPlanId))
+    if (fromCatalog) return fromCatalog
+    if (currentPlan?.currentPlan && String(currentPlan.currentPlan._id) === String(previousPlanId)) {
+      return currentPlan.currentPlan
+    }
+    return null
+  }, [plans, previousPlanId, currentPlan])
+
+  const otherPlans = useMemo(() => {
     if (!previousPlanId) return plans
-    const previous = plans.find((plan) => plan._id === previousPlanId)
-    if (!previous) return plans
-    return [previous, ...plans.filter((plan) => plan._id !== previousPlanId)]
+    return plans.filter((plan) => String(plan._id) !== String(previousPlanId))
   }, [plans, previousPlanId])
 
-  const bestPlan = useMemo(() => {
-    if (isExpiredSubscription && currentPlan?.currentPlan) {
+  const displayFeatureFlags = useMemo(() => {
+    if (isExpiredSubscription) {
       return (
-        plans.find((plan) => plan._id === currentPlan.currentPlan._id) ||
-        currentPlan.currentPlan
+        currentPlan?.includedPlanFeatureFlags ||
+        plans.find((plan) => String(plan._id) === String(currentPlan.currentPlan?._id))?.featureFlags ||
+        currentPlan?.currentPlan?.featureFlags ||
+        currentPlan?.planFeatureFlags ||
+        {}
       )
     }
+    return currentPlan?.planFeatureFlags || {}
+  }, [currentPlan, isExpiredSubscription, plans])
+
+  const bestPlan = useMemo(() => {
+    if (renewPlan) return renewPlan
     return plans.find((plan) => plan.isPopular) || plans[0]
-  }, [plans, currentPlan, isExpiredSubscription])
+  }, [plans, renewPlan])
 
   if (loading) return <RestaurantPageLoader />
 
@@ -504,14 +571,17 @@ const Subscription = () => {
           </m.div>
         ) : (
           <m.div key="plans" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="space-y-6">
-            {currentPlan?.planFeatureFlags && (
+            {Object.keys(displayFeatureFlags).length > 0 && (
               <PlanFeaturesIncluded
-                featureFlags={currentPlan.planFeatureFlags}
+                featureFlags={displayFeatureFlags}
                 planName={
-                  currentPlan?.planAssignmentSource === 'custom'
-                    ? currentPlan?.customPlanLabel || 'Custom plan'
-                    : currentPlan?.currentPlan?.name || 'Your plan'
+                  isExpiredSubscription
+                    ? previousPlanName || 'Your plan'
+                    : currentPlan?.planAssignmentSource === 'custom'
+                      ? currentPlan?.customPlanLabel || 'Custom plan'
+                      : currentPlan?.currentPlan?.name || 'Your plan'
                 }
+                expired={isExpiredSubscription}
               />
             )}
             {!isKYCVerified && (
@@ -722,19 +792,41 @@ const Subscription = () => {
               </m.section>
             )}
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-              {orderedPlans.map((plan) => (
+            {renewPlan && (
+              <section className="space-y-3">
+                <h2 className="text-lg font-semibold text-gray-950">Renew your subscription</h2>
                 <PlanCard
-                  key={plan._id}
-                  plan={plan}
+                  plan={renewPlan}
                   currentPlan={currentPlan}
                   disabled={!isKYCVerified}
                   requesting={requesting}
                   onSelect={choosePlan}
-                  isPreviousExpired={plan._id === previousPlanId}
+                  isPreviousExpired
+                  planEndDate={currentPlan?.planEndDate}
                 />
-              ))}
-            </div>
+              </section>
+            )}
+
+            {otherPlans.length > 0 && (
+              <section className="space-y-3">
+                {renewPlan && (
+                  <h2 className="text-lg font-semibold text-gray-950">Other plans</h2>
+                )}
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                  {otherPlans.map((plan) => (
+                    <PlanCard
+                      key={plan._id}
+                      plan={plan}
+                      currentPlan={currentPlan}
+                      disabled={!isKYCVerified}
+                      requesting={requesting}
+                      onSelect={choosePlan}
+                      isPreviousExpired={false}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
           </m.div>
         )}
       </AnimatePresence>
