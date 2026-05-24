@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Trash2,
@@ -73,33 +73,7 @@ function mapItemsToCheckoutPayload(groupItems, itemFulfillment = {}) {
 }
 
 function useBottomNavHidden() {
-  const [hidden, setHidden] = useState(false);
-  const lastScrollY = useRef(0);
-  const ticking = useRef(false);
-
-  useEffect(() => {
-    const onScroll = () => {
-      if (ticking.current) return;
-      ticking.current = true;
-      requestAnimationFrame(() => {
-        const y = window.scrollY || document.documentElement.scrollTop;
-        if (y < 48) {
-          setHidden(false);
-        } else if (y > lastScrollY.current + 12) {
-          setHidden(true);
-        } else if (y < lastScrollY.current - 12) {
-          setHidden(false);
-        }
-        lastScrollY.current = y;
-        ticking.current = false;
-      });
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  return hidden;
+  return false;
 }
 
 const Cart = () => {

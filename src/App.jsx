@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import api from "./services/api";
 import { useTheme } from "./context/ThemeContext";
@@ -137,6 +137,57 @@ import BlogDetail from "./pages/BlogDetail";
 import NotificationsPage from "./pages/Notifications";
 import SubscriptionPaymentCallback from "./pages/restaurant/SubscriptionPaymentCallback";
 
+const CUSTOMER_ROUTE_PREFIXES = [
+  "/home/",
+  "/menu/",
+  "/item/",
+  "/item-detail/",
+  "/cart/",
+  "/orders/",
+  "/order/track/",
+  "/order/bill/",
+  "/account/",
+  "/about/",
+  "/settings/",
+  "/privacy/",
+  "/credit-apply/",
+];
+
+function CustomerRouteScrollReset() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    const isCustomerRoute = CUSTOMER_ROUTE_PREFIXES.some((prefix) =>
+      pathname.startsWith(prefix),
+    );
+    if (!isCustomerRoute) return;
+
+    const previousScrollBehavior = document.documentElement.style.scrollBehavior;
+    document.documentElement.style.scrollBehavior = "auto";
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+
+    const frame = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      document.documentElement.style.scrollBehavior = previousScrollBehavior;
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.documentElement.style.scrollBehavior = previousScrollBehavior;
+    };
+  }, [pathname]);
+
+  useEffect(() => {
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+  }, []);
+
+  return null;
+}
+
 function App() {
   const { user, isLoading, mergeUser } = useAuth();
   const { applyRemoteTheme } = useTheme();
@@ -196,6 +247,7 @@ function App() {
   return (
     <>
       <Agentation />
+      <CustomerRouteScrollReset />
       <Routes>
         {/* Landing Page */}
         <Route path="/" element={<LandingPage />} />
