@@ -94,6 +94,7 @@ const Cart = () => {
     phone: "",
     email: "",
   });
+  const [fulfillmentMode, setFulfillmentMode] = useState("dine_in");
   const [successOrder, setSuccessOrder] = useState(null);
   const { toasts, removeToast, success, error, warning } = useToast();
   const bottomNavHidden = useBottomNavHidden();
@@ -248,6 +249,9 @@ const Cart = () => {
         customerName: finalName,
         customerPhone: finalPhone,
         customerEmail: finalEmail,
+        orderChannel: fulfillmentMode === "parcel" ? "takeaway" : "qr_ordering",
+        fulfillmentMode,
+        specialRequests: fulfillmentMode === "parcel" ? "Parcel order - pack for takeaway" : "",
         promoCode: appliedPromo?.code || "",
         items: items.map((item) => ({
           menuItemId: item.menuItemId,
@@ -408,6 +412,8 @@ const Cart = () => {
             <DetailsStep
               customerDetails={customerDetails}
               setCustomerDetails={setCustomerDetails}
+              fulfillmentMode={fulfillmentMode}
+              setFulfillmentMode={setFulfillmentMode}
               subtotal={subtotal}
               total={total}
               promoDiscount={promoDiscount}
@@ -418,6 +424,7 @@ const Cart = () => {
             <ConfirmStep
               items={items}
               customerDetails={customerDetails}
+              fulfillmentMode={fulfillmentMode}
               subtotal={subtotal}
               total={total}
               promoDiscount={promoDiscount}
@@ -734,9 +741,49 @@ function ReviewStep({
   );
 }
 
-function DetailsStep({ customerDetails, setCustomerDetails, subtotal, total, promoDiscount }) {
+function DetailsStep({ customerDetails, setCustomerDetails, fulfillmentMode, setFulfillmentMode, subtotal, total, promoDiscount }) {
   return (
     <div className="px-5 space-y-4">
+      <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+        <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
+          Order type
+        </h3>
+        <p className="mt-1 text-xs font-semibold text-gray-500">
+          Choose whether you will eat at the table or need the order packed.
+        </p>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          {[
+            { value: "dine_in", label: "Dining here", hint: "Serve at table", icon: ChefHat },
+            { value: "parcel", label: "Parcel", hint: "Pack to carry", icon: PackageOpen },
+          ].map((option) => {
+            const Icon = option.icon;
+            const active = fulfillmentMode === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setFulfillmentMode(option.value)}
+                className={`rounded-2xl border p-3 text-left transition active:scale-[0.98] ${
+                  active
+                    ? "border-primary-300 bg-primary-50 text-primary-900 ring-2 ring-primary-100"
+                    : "border-gray-200 bg-gray-50 text-gray-700"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${active ? "bg-primary-700 text-white" : "bg-white text-gray-500"}`}>
+                    <Icon size={17} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-black">{option.label}</span>
+                    <span className="block text-[10px] font-bold text-gray-500">{option.hint}</span>
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
         <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
           Customer Details
@@ -802,9 +849,24 @@ function DetailsStep({ customerDetails, setCustomerDetails, subtotal, total, pro
   );
 }
 
-function ConfirmStep({ items, customerDetails, subtotal, total, promoDiscount, appliedPromo }) {
+function ConfirmStep({ items, customerDetails, fulfillmentMode, subtotal, total, promoDiscount, appliedPromo }) {
   return (
     <div className="px-5 space-y-4">
+      <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+        <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
+          Order type
+        </h3>
+        <div className="mt-3 flex items-center gap-3 rounded-2xl bg-primary-50 px-4 py-3 text-primary-900">
+          {fulfillmentMode === "parcel" ? <PackageOpen size={20} /> : <ChefHat size={20} />}
+          <div>
+            <p className="text-sm font-black">{fulfillmentMode === "parcel" ? "Parcel order" : "Dining here"}</p>
+            <p className="text-xs font-semibold text-primary-800/80">
+              {fulfillmentMode === "parcel" ? "Restaurant will pack this order for takeaway." : "Restaurant will serve this at your table."}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
         <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
           Order summary

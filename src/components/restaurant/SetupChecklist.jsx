@@ -1,13 +1,32 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { FiCheckCircle, FiChevronRight, FiCircle } from 'react-icons/fi'
+import { FiCheckCircle, FiChevronRight, FiCircle, FiX } from 'react-icons/fi'
 import api from '../../services/api'
 import { useTenantRoutes } from '../../hooks/useTenantRoutes'
+import { useAuth } from '../../hooks/useAuth'
 
 export default function SetupChecklist() {
   const { restaurantBase } = useTenantRoutes()
+  const { user } = useAuth()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const dismissKey = `setup-checklist-dismissed:${user?.restaurantId || user?.id || restaurantBase}`
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return localStorage.getItem(dismissKey) === 'true'
+    } catch {
+      return false
+    }
+  })
+
+  const dismiss = () => {
+    setDismissed(true)
+    try {
+      localStorage.setItem(dismissKey, 'true')
+    } catch {
+      /* ignore */
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -24,10 +43,19 @@ export default function SetupChecklist() {
     return () => { cancelled = true }
   }, [])
 
-  if (loading || !data || data.progress >= 100) return null
+  if (dismissed || loading || !data || data.progress >= 100) return null
 
   return (
-    <section className="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-primary-50/30 p-5 shadow-sm dark:border-amber-900/40 dark:from-amber-950/20 dark:via-gray-900 dark:to-gray-950">
+    <section className="relative rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-primary-50/30 p-5 pr-12 shadow-sm dark:border-amber-900/40 dark:from-amber-950/20 dark:via-gray-900 dark:to-gray-950">
+      <button
+        type="button"
+        onClick={dismiss}
+        className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-xl bg-white/80 text-gray-500 shadow-sm ring-1 ring-amber-100 transition hover:bg-white hover:text-gray-900 dark:bg-gray-900/80 dark:text-gray-400 dark:ring-gray-800 dark:hover:text-gray-100"
+        aria-label="Dismiss setup checklist"
+        title="Dismiss"
+      >
+        <FiX className="h-4 w-4" />
+      </button>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-300">Getting started</p>

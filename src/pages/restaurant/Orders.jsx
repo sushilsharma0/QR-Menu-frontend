@@ -71,6 +71,35 @@ function getOrderCustomerLabel(order) {
   return name || order?.guestId || 'Guest'
 }
 
+const VIRTUAL_POS_TABLES = new Set(['POS-TAKEAWAY', 'POS-DELIVERY'])
+
+function formatTableCode(tableNumber) {
+  const raw = String(tableNumber || '').trim()
+  if (!raw) return ''
+  if (/^t/i.test(raw)) {
+    const rest = raw.slice(1).replace(/^[-\s]+/, '')
+    return rest ? `T${rest}` : raw
+  }
+  return `T${raw}`
+}
+
+function getOrderTableLabel(order) {
+  const tableNumber = order?.table?.tableNumber
+  const isParcel = order?.orderChannel === 'takeaway' || order?.posDetails?.mode === 'takeaway'
+  const isDelivery = order?.orderChannel === 'delivery' || order?.posDetails?.mode === 'delivery'
+  const isVirtualPos = VIRTUAL_POS_TABLES.has(tableNumber)
+
+  if (isParcel) {
+    if (tableNumber && !isVirtualPos) return `${formatTableCode(tableNumber)}-parcel`
+    return 'Parcel'
+  }
+  if (isDelivery) {
+    if (tableNumber && !isVirtualPos) return `${formatTableCode(tableNumber)}-delivery`
+    return 'Delivery'
+  }
+  return tableNumber || 'N/A'
+}
+
 function formatDateInputValue(date) {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -614,7 +643,7 @@ const Orders = () => {
                       <RestaurantStatusPill value={order.paymentStatus || 'pending'} styles={paymentStatusStyles} uppercase />
                     </div>
                     <p className="mt-2 text-sm text-gray-500">
-                      {getOrderCustomerLabel(order)} - Table {order.table?.tableNumber || 'N/A'}
+                      {getOrderCustomerLabel(order)} - Table {getOrderTableLabel(order)}
                     </p>
                     <p className="mt-1 text-xs text-gray-400">{formatRestaurantDateTime(order.createdAt)}</p>
                   </div>
@@ -678,7 +707,7 @@ const Orders = () => {
                   <tr key={order._id} className="transition hover:bg-surface-50">
                     <td className="px-5 py-4 font-bold text-gray-950">#{order.orderNumber}</td>
                     <td className="px-5 py-4 text-gray-600">{getOrderCustomerLabel(order)}</td>
-                    <td className="px-5 py-4 text-gray-600">{order.table?.tableNumber || 'N/A'}</td>
+                    <td className="px-5 py-4 text-gray-600">{getOrderTableLabel(order)}</td>
                     <td className="px-5 py-4"><OrderStatusBadge status={order.status} /></td>
                     <td className="px-5 py-4">
                       <RestaurantStatusPill value={order.paymentStatus || 'pending'} styles={paymentStatusStyles} uppercase />
