@@ -122,7 +122,7 @@ const LandingNavbar = () => {
 
           {/* Logo */}
           <div className="flex min-h-0 items-center">
-            <BrandLogo scrolled={scrolled} />
+            <BrandLogo scrolled={scrolled} showSlogan />
           </div>
 
           {/* Desktop Navigation */}
