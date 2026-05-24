@@ -52,6 +52,7 @@ import RestaurantTables from "./pages/restaurant/Tables";
 import RestaurantTableForm from "./pages/restaurant/TableForm";
 import RestaurantEmployees from "./pages/restaurant/Employees";
 import RestaurantEmployeeForm from "./pages/restaurant/EmployeeForm";
+import RestaurantAttendance from "./pages/restaurant/Attendance";
 import RestaurantKYC from "./pages/restaurant/KYC";
 import RestaurantSubscription from "./pages/restaurant/Subscription";
 import RestaurantSubscriptionCheckout from "./pages/restaurant/SubscriptionCheckout";
@@ -503,6 +504,7 @@ function App() {
             <Route path="tables/new" element={<RestaurantTableForm />} />
             <Route path="tables/:id/edit" element={<RestaurantTableForm />} />
             <Route path="employees" element={<RestaurantEmployees />} />
+            <Route path="attendance" element={<RestaurantAttendance />} />
             <Route path="employees/new" element={<RestaurantEmployeeForm />} />
             <Route
               path="employees/:id/edit"
@@ -598,6 +600,7 @@ function App() {
           <Route path="tables/new" element={<RestaurantTableForm />} />
           <Route path="tables/:id/edit" element={<RestaurantTableForm />} />
           <Route path="employees" element={<RestaurantEmployees />} />
+          <Route path="attendance" element={<RestaurantAttendance />} />
           <Route path="employees/new" element={<RestaurantEmployeeForm />} />
           <Route
             path="employees/:id/edit"

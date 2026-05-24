@@ -77,6 +77,7 @@ export const RESTAURANT_NAV_SECTIONS = [
     defaultOpen: false,
     items: [
       { segment: 'employees', icon: FiUsers, label: 'Staff', featureKey: 'employees' },
+      { segment: 'attendance', icon: FiCalendar, label: 'Attendance', featureKey: 'employees' },
       { segment: 'branches', icon: FiMapPin, label: 'Branches', featureKey: 'branches' },
       { segment: 'credit-customers', icon: FiDollarSign, label: 'Credit accounts', featureKey: 'creditCustomers' },
     ],

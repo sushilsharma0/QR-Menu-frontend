@@ -255,7 +255,7 @@ function MetricTile({ label, value, sub, icon: Icon, accent }) {
   );
 }
 
-function TableActions({ table, onQr, onRegenerate, onEdit, onDelete }) {
+function TableActions({ table, onQr, onRegenerate, onEdit, onDelete, onMove, onMerge }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Button type="button" size="sm" variant="secondary" onClick={() => onQr(table)}>
@@ -279,6 +279,22 @@ function TableActions({ table, onQr, onRegenerate, onEdit, onDelete }) {
       </button>
       <button
         type="button"
+        onClick={() => onMove(table)}
+        className="rounded-lg px-2 py-1 text-xs font-bold text-indigo-700 transition hover:bg-indigo-50"
+        title="Move active order to another table"
+      >
+        Move
+      </button>
+      <button
+        type="button"
+        onClick={() => onMerge(table)}
+        className="rounded-lg px-2 py-1 text-xs font-bold text-amber-700 transition hover:bg-amber-50"
+        title="Merge this table order into another table"
+      >
+        Merge
+      </button>
+      <button
+        type="button"
         onClick={() => onDelete(table._id)}
         className="rounded-lg p-2 text-red-700 transition hover:bg-red-50 hover:text-red-800"
         title="Delete Table"
@@ -298,6 +314,7 @@ const Tables = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [qrModal, setQrModal] = useState({ open: false, table: null });
+  const [transferModal, setTransferModal] = useState({ open: false, mode: "move", table: null, targetTableId: "" });
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [floorFilter, setFloorFilter] = useState("all");
@@ -383,6 +400,34 @@ const Tables = () => {
     } catch (error) {
       setTables(previousTables);
       toast.error(error.response?.data?.message || "Failed to update table status");
+    }
+  };
+
+  const openTransferModal = (mode, table) => {
+    const firstTarget = diningTables.find((row) => String(row._id) !== String(table._id));
+    setTransferModal({
+      open: true,
+      mode,
+      table,
+      targetTableId: firstTarget?._id || "",
+    });
+  };
+
+  const handleTransfer = async () => {
+    if (!transferModal.table?._id || !transferModal.targetTableId) {
+      toast.error("Choose a target table");
+      return;
+    }
+    try {
+      const endpoint = transferModal.mode === "merge" ? "merge" : "move-order";
+      await api.patch(`/restaurant/tables/${transferModal.table._id}/${endpoint}`, {
+        targetTableId: transferModal.targetTableId,
+      });
+      toast.success(transferModal.mode === "merge" ? "Tables merged" : "Order moved");
+      setTransferModal({ open: false, mode: "move", table: null, targetTableId: "" });
+      fetchTables(true);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Table transfer failed");
     }
   };
 
@@ -645,6 +690,8 @@ const Tables = () => {
                       onRegenerate={handleRegenerateQR}
                       onEdit={(selected) => navigate(`${portalBase}/tables/${selected._id}/edit`)}
                       onDelete={handleDelete}
+                      onMove={(selected) => openTransferModal("move", selected)}
+                      onMerge={(selected) => openTransferModal("merge", selected)}
                     />
                   </div>
                 </motion.article>
@@ -691,6 +738,8 @@ const Tables = () => {
                           onRegenerate={handleRegenerateQR}
                           onEdit={(selected) => navigate(`${portalBase}/tables/${selected._id}/edit`)}
                           onDelete={handleDelete}
+                          onMove={(selected) => openTransferModal("move", selected)}
+                          onMerge={(selected) => openTransferModal("merge", selected)}
                         />
                       </td>
                     </tr>
@@ -771,6 +820,55 @@ const Tables = () => {
               </div>
             </>
           )}
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={transferModal.open}
+        onClose={() => setTransferModal({ open: false, mode: "move", table: null, targetTableId: "" })}
+        title={`${transferModal.mode === "merge" ? "Merge" : "Move"} Table ${transferModal.table?.tableNumber || ""}`}
+      >
+        <div className="space-y-4 p-3">
+          <div className="rounded-2xl bg-surface-50 p-4">
+            <p className="text-sm font-semibold text-gray-950">
+              {transferModal.mode === "merge"
+                ? "Merge this table's active order into another table."
+                : "Move this table's active order to an empty target table."}
+            </p>
+            <p className="mt-1 text-xs text-gray-500">
+              Source: Table {transferModal.table?.tableNumber || "-"} - {transferModal.table?.posStatus || "available"}
+            </p>
+          </div>
+          <div>
+            <label htmlFor="target-table" className="mb-1 block text-sm font-medium text-gray-700">Target table</label>
+            <select
+              id="target-table"
+              value={transferModal.targetTableId}
+              onChange={(event) => setTransferModal((prev) => ({ ...prev, targetTableId: event.target.value }))}
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="">Choose table</option>
+              {diningTables
+                .filter((table) => String(table._id) !== String(transferModal.table?._id))
+                .map((table) => (
+                  <option key={table._id} value={table._id}>
+                    Table {table.tableNumber} - {table.posStatus || "available"}
+                  </option>
+                ))}
+            </select>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button type="button" onClick={handleTransfer}>
+              {transferModal.mode === "merge" ? "Merge Tables" : "Move Order"}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setTransferModal({ open: false, mode: "move", table: null, targetTableId: "" })}
+            >
+              Cancel
+            </Button>
+          </div>
         </div>
       </Modal>
     </div>
