@@ -63,6 +63,7 @@ import RestaurantCreditCustomers from "./pages/restaurant/CreditCustomers";
 import RestaurantProfile from "./pages/restaurant/Profile";
 import RestaurantPublicProfile from "./pages/restaurant/PublicProfile";
 import RestaurantPromotions from "./pages/restaurant/Promotions";
+import RestaurantReservations from "./pages/restaurant/Reservations";
 import RestaurantBranches from "./pages/restaurant/Branches";
 import BranchLogin from "./pages/branch/BranchLogin";
 import BranchSettings from "./pages/branch/BranchSettings";
@@ -498,6 +499,7 @@ function App() {
             <Route path="customers" element={<CustomerDirectory />} />
             <Route path="orders/:id" element={<RestaurantOrderDetail />} />
             <Route path="tables" element={<RestaurantTables />} />
+            <Route path="reservations" element={<RestaurantReservations />} />
             <Route path="tables/new" element={<RestaurantTableForm />} />
             <Route path="tables/:id/edit" element={<RestaurantTableForm />} />
             <Route path="employees" element={<RestaurantEmployees />} />
@@ -592,6 +594,7 @@ function App() {
           <Route path="customers" element={<CustomerDirectory />} />
           <Route path="orders/:id" element={<RestaurantOrderDetail />} />
           <Route path="tables" element={<RestaurantTables />} />
+          <Route path="reservations" element={<RestaurantReservations />} />
           <Route path="tables/new" element={<RestaurantTableForm />} />
           <Route path="tables/:id/edit" element={<RestaurantTableForm />} />
           <Route path="employees" element={<RestaurantEmployees />} />
@@ -644,6 +647,7 @@ function App() {
           <Route path="orders" element={<RestaurantOrders />} />
           <Route path="orders/:id" element={<RestaurantOrderDetail />} />
           <Route path="tables" element={<RestaurantTables />} />
+          <Route path="reservations" element={<RestaurantReservations />} />
           <Route path="tables/new" element={<RestaurantTableForm />} />
           <Route path="tables/:id/edit" element={<RestaurantTableForm />} />
           <Route path="payments" element={<CashierDashboard />} />

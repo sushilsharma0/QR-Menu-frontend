@@ -4,6 +4,7 @@ import toast from '@utils/toast'
 import {
   FiBarChart2,
   FiBookOpen,
+  FiCalendar,
   FiChevronLeft,
   FiChevronRight,
   FiCoffee,
@@ -40,6 +41,7 @@ function segmentToModuleKey(segment) {
   }
   if (root === 'reports') return 'salesReports'
   if (root === 'tables') return 'tables'
+  if (root === 'reservations') return 'tables'
   if (root === 'feedback' || root === 'customers') return 'orders'
   if (root === 'promotions') return 'promotions'
   if (root === 'credit-customers') return 'creditCustomers'
@@ -77,6 +79,7 @@ const NAV_GROUPS = [
       { segment: 'orders/dispatch', icon: FiTruck, label: 'Delivery' },
       { segment: 'menu', icon: FiBookOpen, label: 'Menu' },
       { segment: 'tables', icon: FiMapPin, label: 'Tables & QR' },
+      { segment: 'reservations', icon: FiCalendar, label: 'Reservations' },
       { segment: 'promotions', icon: FiPercent, label: 'Promotions' },
       { segment: 'feedback', icon: FiMessageSquare, label: 'Feedback' },
       { segment: 'customers', icon: FiUsers, label: 'Customers' },

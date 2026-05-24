@@ -1,6 +1,7 @@
 import {
   FiBarChart2,
   FiBookOpen,
+  FiCalendar,
   FiCoffee,
   FiCreditCard,
   FiDatabase,
@@ -47,6 +48,7 @@ export const RESTAURANT_NAV_SECTIONS = [
       { segment: 'orders/dispatch', icon: FiTruck, label: 'Delivery dispatch', featureKey: 'orders' },
       { segment: 'menu', icon: FiBookOpen, label: 'Menu', featureKey: 'menu' },
       { segment: 'tables', icon: FiMapPin, label: 'Tables & QR', featureKey: 'tables' },
+      { segment: 'reservations', icon: FiCalendar, label: 'Reservations', featureKey: 'tables' },
       { segment: 'promotions', icon: FiPercent, label: 'Promotions', featureKey: 'promotions' },
       { segment: 'feedback', icon: FiMessageSquare, label: 'Feedback', featureKey: 'orders' },
       { segment: 'customers', icon: FiUsers, label: 'Customers', featureKey: 'orders' },

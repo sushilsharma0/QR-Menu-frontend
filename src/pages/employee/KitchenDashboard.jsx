@@ -86,6 +86,16 @@ const KitchenDashboard = () => {
     }
   }
 
+  const updateItemKitchenStatus = async (orderId, itemId, kitchenStatus) => {
+    try {
+      await api.patch(`/restaurant/customer-orders/${orderId}/items/${itemId}/kitchen`, { kitchenStatus })
+      toast.success(`Item marked ${kitchenStatus}`)
+      fetchOrders()
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Failed to update item')
+    }
+  }
+
   const getStatusStyle = (status) => {
     const styles = {
       pending: {
@@ -153,6 +163,15 @@ const KitchenDashboard = () => {
   const pendingCount = orders.filter((o) => ['pending', 'confirmed'].includes(o.status)).length
   const preparingCount = orders.filter((o) => ['preparing', 'cooking'].includes(o.status)).length
   const readyCount = orders.filter((o) => o.status === 'ready').length
+  const itemStatusStyle = {
+    queued: 'bg-slate-100 text-slate-700',
+    preparing: 'bg-violet-100 text-violet-800',
+    cooking: 'bg-orange-100 text-orange-800',
+    ready: 'bg-emerald-100 text-emerald-800',
+    served: 'bg-gray-100 text-gray-700',
+    held: 'bg-amber-100 text-amber-800',
+    cancelled: 'bg-red-100 text-red-800',
+  }
 
   if (loading) {
     return (
@@ -174,21 +193,6 @@ const KitchenDashboard = () => {
           <Button variant="secondary" onClick={fetchOrders} title="Reload all kitchen orders">
             <FiRefreshCw className="mr-2" /> Refresh Queue
           </Button>
-        </div>
-      </div>
-
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-2 shadow-sm">
-        <div className="flex flex-wrap gap-2">
-          {sections.map((section) => (
-            <a
-              key={section.id}
-              href={`#${section.id}`}
-              title={`Jump to ${section.title}`}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
-              {section.title}
-            </a>
-          ))}
         </div>
       </div>
 
@@ -256,27 +260,47 @@ const KitchenDashboard = () => {
                   
                   <div className="mb-3 space-y-1">
                     {order.items.map((item, idx) => (
-                      <div key={idx} className="text-sm text-gray-700 dark:text-gray-300">
-                        <span className="font-semibold">{item.quantity}x</span> {item.name}
-                        <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                          item.fulfillmentMode === 'parcel'
-                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
-                            : 'bg-primary-100 text-primary-800 dark:bg-primary-900/40 dark:text-primary-200'
-                        }`}>
-                          {item.fulfillmentMode === 'parcel' ? 'Parcel' : 'Eat here'}
-                        </span>
+                      <div key={item._id || idx} className="rounded-xl border border-white/70 bg-white/70 p-2 text-sm text-gray-700 shadow-sm dark:border-gray-700 dark:bg-gray-900/70 dark:text-gray-300">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <span className="font-semibold">{item.quantity}x</span> {item.name}
+                            <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                              item.fulfillmentMode === 'parcel'
+                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
+                                : 'bg-primary-100 text-primary-800 dark:bg-primary-900/40 dark:text-primary-200'
+                            }`}>
+                              {item.fulfillmentMode === 'parcel' ? 'Parcel' : 'Eat here'}
+                            </span>
+                          </div>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${itemStatusStyle[item.kitchenStatus || 'queued'] || itemStatusStyle.queued}`}>
+                            {item.kitchenStatus || 'queued'}
+                          </span>
+                        </div>
                         {(item.selectedVariations || []).length > 0 && (
-                          <div className="ml-5 mt-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                          <div className="mt-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
                             {(item.selectedVariations || [])
                               .map((v) => `${v.groupName}: ${v.optionName}${Number(v.quantity || 1) > 1 ? ` x${v.quantity}` : ''}`)
                               .join(' | ')}
                           </div>
                         )}
                         {item.cookingInstructions ? (
-                          <div className="ml-5 mt-1 rounded bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
+                          <div className="mt-1 rounded bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
                             {item.cookingInstructions}
                           </div>
                         ) : null}
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {['preparing', 'cooking', 'ready', 'served'].map((nextStatus) => (
+                            <button
+                              key={nextStatus}
+                              type="button"
+                              disabled={!item._id || item.kitchenStatus === nextStatus}
+                              onClick={() => updateItemKitchenStatus(order._id, item._id, nextStatus)}
+                              className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] font-bold capitalize text-gray-700 transition hover:border-primary-300 hover:text-primary-700 disabled:cursor-not-allowed disabled:opacity-45"
+                            >
+                              {nextStatus}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     ))}
                   </div>

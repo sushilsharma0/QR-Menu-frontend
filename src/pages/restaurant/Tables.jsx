@@ -14,6 +14,7 @@ import {
   FiSearch,
   FiTrash2,
   FiUsers,
+  FiMapPin
 } from "react-icons/fi";
 import QRCode from "react-qr-code";
 import toast from "@utils/toast";
@@ -29,12 +30,97 @@ import {
   RestaurantStatusPill,
 } from "../../components/restaurant/RestaurantUI";
 import { useRestaurantAutoRefresh } from "../../context/RestaurantRealtimeContext";
+import { useSocket } from "../../hooks/useSocket";
 import { useTenantRoutes } from "../../hooks/useTenantRoutes";
 
 const tableStatusStyles = {
   active: "bg-green-100 text-green-800",
   inactive: "bg-red-100 text-red-800",
 };
+
+const floorStatusStyles = {
+  available: "border-emerald-200 bg-emerald-50 text-emerald-900",
+  occupied: "border-rose-200 bg-rose-50 text-rose-900",
+  reserved: "border-amber-200 bg-amber-50 text-amber-900",
+  billing: "border-sky-200 bg-sky-50 text-sky-900",
+  cleaning: "border-slate-200 bg-slate-50 text-slate-900",
+};
+
+const SEAT_STATUS_OPTIONS = ["available", "occupied", "reserved", "billing", "cleaning"];
+
+function SeatStatusSelect({ table, onStatusChange, compact = false }) {
+  const status = table.posStatus || "available";
+  return (
+    <select
+      value={status}
+      onChange={(event) => onStatusChange(table, event.target.value)}
+      className={`rounded-full border font-bold capitalize outline-none transition focus:ring-2 focus:ring-primary-300 ${
+        compact ? "px-2 py-1 text-xs" : "px-3 py-2 text-sm"
+      } ${floorStatusStyles[status] || floorStatusStyles.available}`}
+      title="Update seat status"
+    >
+      {SEAT_STATUS_OPTIONS.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function FloorPlanView({ tables, onStatusChange }) {
+  return (
+    <div className="rounded-3xl border border-surface-200 bg-gradient-to-br from-surface-50 to-white p-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-950">Floor Plan</h3>
+          <p className="text-sm text-gray-500">Track live seating status by table. Use this as a quick operations board.</p>
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs font-semibold">
+          {SEAT_STATUS_OPTIONS.map((status) => (
+            <span key={status} className={`rounded-full border px-2 py-1 capitalize ${floorStatusStyles[status]}`}>
+              {status}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {tables.map((table) => {
+          const status = table.posStatus || "available";
+          return (
+            <article key={table._id} className={`rounded-2xl border p-4 shadow-sm ${floorStatusStyles[status] || floorStatusStyles.available}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wide opacity-70">{table.floor || "ground"}</p>
+                  <h4 className="mt-1 text-xl font-black">Table {table.tableNumber}</h4>
+                  <p className="mt-1 text-xs font-semibold opacity-75">
+                    {table.capacity || 4} seats{table.area ? ` - ${table.area}` : ""}
+                  </p>
+                </div>
+                <span className="rounded-full bg-white/70 px-2 py-1 text-[10px] font-black uppercase tracking-wide">
+                  {status}
+                </span>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-1.5">
+                {SEAT_STATUS_OPTIONS.map((nextStatus) => (
+                  <button
+                    key={nextStatus}
+                    type="button"
+                    disabled={status === nextStatus}
+                    onClick={() => onStatusChange(table, nextStatus)}
+                    className="rounded-lg bg-white/80 px-2 py-1.5 text-[11px] font-bold capitalize text-gray-700 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    {nextStatus}
+                  </button>
+                ))}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 /** POS takeaway/delivery channels — not physical dine-in tables with QR stands */
 function isPhysicalDiningTable(table) {
@@ -206,6 +292,7 @@ function TableActions({ table, onQr, onRegenerate, onEdit, onDelete }) {
 const Tables = () => {
   const navigate = useNavigate();
   const { portalBase } = useTenantRoutes();
+  const { socket } = useSocket();
   const [tables, setTables] = useState([]);
   const [restaurant, setRestaurant] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -242,6 +329,23 @@ const Tables = () => {
     fetchTables();
   }, []);
 
+  useEffect(() => {
+    if (!socket) return undefined;
+    const handleTableUpdated = (updatedTable) => {
+      if (!updatedTable?._id) {
+        fetchTables(true);
+        return;
+      }
+      setTables((current) =>
+        current.map((table) => (String(table._id) === String(updatedTable._id) ? { ...table, ...updatedTable } : table)),
+      );
+    };
+    socket.on("pos:table_updated", handleTableUpdated);
+    return () => {
+      socket.off("pos:table_updated", handleTableUpdated);
+    };
+  }, [socket]);
+
   const handleDelete = async (id) => {
     try {
       await api.delete(`/restaurant/tables/${id}`);
@@ -259,6 +363,26 @@ const Tables = () => {
       fetchTables(true);
     } catch (error) {
       toast.error("Failed to regenerate QR code");
+    }
+  };
+
+  const handleStatusChange = async (table, posStatus) => {
+    const previousTables = tables;
+    setTables((current) =>
+      current.map((row) => (String(row._id) === String(table._id) ? { ...row, posStatus } : row)),
+    );
+    try {
+      const response = await api.put(`/restaurant/tables/${table._id}`, { posStatus });
+      const updatedTable = response?.data?.data;
+      if (updatedTable?._id) {
+        setTables((current) =>
+          current.map((row) => (String(row._id) === String(updatedTable._id) ? { ...row, ...updatedTable } : row)),
+        );
+      }
+      toast.success(`Table ${table.tableNumber} marked ${posStatus}`);
+    } catch (error) {
+      setTables(previousTables);
+      toast.error(error.response?.data?.message || "Failed to update table status");
     }
   };
 
@@ -374,6 +498,16 @@ const Tables = () => {
           <div className="flex overflow-hidden rounded-xl border border-surface-200 bg-white">
             <button
               type="button"
+              onClick={() => setViewMode("floor")}
+              className={`flex items-center gap-1 px-3 py-2 text-sm font-semibold transition ${
+                viewMode === "floor" ? "bg-primary-600 text-white" : "text-gray-600 hover:bg-surface-50"
+              }`}
+            >
+              <FiMapPin className="h-4 w-4" />
+              Floor
+            </button>
+            <button
+              type="button"
               onClick={() => setViewMode("card")}
               className={`flex items-center gap-1 px-3 py-2 text-sm font-semibold transition ${
                 viewMode === "card" ? "bg-primary-600 text-white" : "text-gray-600 hover:bg-surface-50"
@@ -454,6 +588,15 @@ const Tables = () => {
                 <FiPlus className="mr-2" /> Add Table
               </Button>
             </motion.div>
+          ) : viewMode === "floor" ? (
+            <motion.div
+              key="floor"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <FloorPlanView tables={filteredTables} onStatusChange={handleStatusChange} />
+            </motion.div>
           ) : viewMode === "card" ? (
             <motion.div
               key="cards"
@@ -475,11 +618,14 @@ const Tables = () => {
                     <div>
                       <h3 className="text-2xl font-semibold text-gray-950">Table {table.tableNumber}</h3>
                       <p className="mt-1 text-sm text-gray-500">
-                        {table.capacity || 4} seats - {table.tableType || "regular"}
+                        {table.capacity || 4} seats - {table.tableType || "regular"} - {table.posStatus || "available"}
                       </p>
                       <p className="mt-1 text-xs text-gray-400">
                         Floor {table.floor || "ground"}{table.area ? ` - ${table.area}` : ""}
                       </p>
+                      <div className="mt-3">
+                        <SeatStatusSelect table={table} onStatusChange={handleStatusChange} />
+                      </div>
                     </div>
                     <RestaurantStatusPill value={table.isActive ? "active" : "inactive"} styles={tableStatusStyles} />
                   </div>
@@ -515,7 +661,7 @@ const Tables = () => {
               <table className="min-w-full divide-y divide-surface-200 text-sm">
                 <thead className="bg-surface-50">
                   <tr>
-                    {["Table", "Capacity", "Floor", "Type", "Status", "QR", "Actions"].map((header) => (
+                    {["Table", "Capacity", "Floor", "Type", "Seat Status", "Active", "QR", "Actions"].map((header) => (
                       <th key={header} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                         {header}
                       </th>
@@ -529,6 +675,9 @@ const Tables = () => {
                       <td className="px-5 py-4 text-gray-600">{table.capacity || 4} seats</td>
                       <td className="px-5 py-4 text-gray-600">{table.floor || "ground"}</td>
                       <td className="px-5 py-4 capitalize text-gray-600">{table.tableType || "regular"}</td>
+                      <td className="px-5 py-4">
+                        <SeatStatusSelect table={table} onStatusChange={handleStatusChange} compact />
+                      </td>
                       <td className="px-5 py-4">
                         <RestaurantStatusPill value={table.isActive ? "active" : "inactive"} styles={tableStatusStyles} />
                       </td>
