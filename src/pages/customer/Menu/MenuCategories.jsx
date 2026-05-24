@@ -583,9 +583,9 @@ function InsightStrip({ pairs }) {
     <section className="px-4 pt-4">
       <SectionTitle icon={Sparkles} label="You may also like" />
       <div className="mt-2 space-y-2 rounded-2xl border border-primary-100/60 bg-gradient-to-br from-white to-surface-50/70 p-3 shadow-sm">
-        {pairs.slice(0, 2).map((p) => (
+        {pairs.slice(0, 2).map((p, idx) => (
           <p
-            key={`${p.name || p.title || p.label}-${p.reason || p.description || ''}`}
+            key={`${p._id || p.id || p.name || p.title || p.label || p.caption || 'insight'}-${p.reason || p.description || idx}-${idx}`}
             className="flex items-start gap-2 text-xs font-semibold leading-snug text-gray-700"
           >
             <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
