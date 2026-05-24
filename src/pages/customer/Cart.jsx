@@ -32,6 +32,7 @@ import {
 import Navigation from "../../components/customer/Navigation";
 import { rememberCustomerPortal } from "../../utils/customerPortalContext";
 import { useCustomerCart } from "../../context/CustomerCartContext";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 
 const STEPS = [
   { id: "review", label: "Review" },
@@ -725,9 +726,9 @@ function ReviewStep({
               >
                 <div className="flex items-center gap-3">
                 <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-gray-100">
-                  {item.image ? (
+                  {resolveMediaUrl(item.image) ? (
                     <img
-                      src={item.image}
+                      src={resolveMediaUrl(item.image)}
                       alt={item.name}
                       loading="lazy"
                       className="h-full w-full object-cover"

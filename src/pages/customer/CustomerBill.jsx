@@ -23,6 +23,7 @@ import Navigation from "../../components/customer/Navigation";
 import { BillPageSkeleton } from "../../components/customer/order/OrderTrackingSkeleton";
 import { rememberCustomerPortal } from "../../utils/customerPortalContext";
 import { rememberCustomerOrderToken } from "../../services/customer";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 
 const formatMoney = (value) => `Rs. ${Number(value || 0).toFixed(2)}`;
 
@@ -38,6 +39,7 @@ const CustomerBill = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showFeedback, setShowFeedback] = useState(false);
+  const restaurantLogo = resolveMediaUrl(order?.restaurant?.logo);
   const [itemsExpanded, setItemsExpanded] = useState(true);
   const [splitOpen, setSplitOpen] = useState(false);
   const printRootRef = useRef(null);
@@ -220,9 +222,9 @@ const CustomerBill = () => {
             <div className="relative bg-gradient-to-br from-gray-950 via-gray-900 to-primary-900 px-6 py-8 text-white print:bg-white print:text-gray-950">
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.12),transparent_55%)] print:hidden" />
               <div className="relative flex items-start gap-4">
-                {order.restaurant?.logo ? (
+                {restaurantLogo ? (
                   <img
-                    src={order.restaurant.logo}
+                    src={restaurantLogo}
                     alt=""
                     className="h-16 w-16 rounded-2xl object-cover ring-2 ring-white/20 print:border print:border-gray-200 print:ring-0"
                   />

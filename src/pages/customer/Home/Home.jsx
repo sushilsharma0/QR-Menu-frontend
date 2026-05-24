@@ -41,6 +41,7 @@ import {
 import toast from "@utils/toast";
 import Navigation from "../../../components/customer/Navigation";
 import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
+import { resolveMediaUrl } from "../../../utils/mediaUrl";
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -350,9 +351,9 @@ export default function Home() {
   const restaurantHeroFallback =
     "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1200&q=80";
   const heroImage =
-    restaurantInfo?.backgroundPhoto ||
-    restaurantInfo?.brandBackgroundImage ||
+    resolveMediaUrl(restaurantInfo?.backgroundPhoto || restaurantInfo?.brandBackgroundImage) ||
     restaurantHeroFallback;
+  const restaurantLogo = resolveMediaUrl(restaurantInfo?.logo);
   const hideBottomNav =
     showFeedback ||
     showOffers ||
@@ -413,8 +414,8 @@ export default function Home() {
 
                 <div className="relative z-10 flex flex-col items-center text-center">
                   <div className="mb-2 flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-white/25 bg-white/15 shadow-xl backdrop-blur">
-                    {restaurantInfo?.logo ? (
-                      <img src={restaurantInfo.logo} alt={restaurantInfo?.name || "Restaurant"} className="h-full w-full object-cover" />
+                    {restaurantLogo ? (
+                      <img src={restaurantLogo} alt={restaurantInfo?.name || "Restaurant"} className="h-full w-full object-cover" />
                     ) : (
                       <Utensils size={22} />
                     )}
@@ -880,9 +881,9 @@ function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
                   className="group flex items-center gap-3 rounded-3xl border border-gray-100 bg-white p-3 shadow-sm transition active:scale-[0.98] hover:border-primary-200"
                 >
                   <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-100">
-                    {cat.image ? (
+                    {resolveMediaUrl(cat.image) ? (
                       <img
-                        src={cat.image}
+                        src={resolveMediaUrl(cat.image)}
                         alt={cat.name}
                         loading="lazy"
                         className="h-full w-full object-cover"
@@ -951,7 +952,7 @@ function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
  * the item itself has no photo, so the grid never looks empty.
  */
 function FeaturedItemCard({ slug, token, item }) {
-  const image = item.image || item._categoryImage || "";
+  const image = resolveMediaUrl(item.image || item._categoryImage || "");
   const price = Number(item.price ?? item.basePrice ?? 0);
   const isPopular = Boolean(item.isPopular || item.popular || item.featured);
   return (

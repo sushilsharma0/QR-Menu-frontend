@@ -22,6 +22,7 @@ import { useToast } from "../../../hooks/useToast";
 import { ToastContainer } from "../../../components/common/ToastContainer";
 import { useCustomerCart } from "../../../context/CustomerCartContext";
 import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
+import { resolveMediaUrl } from "../../../utils/mediaUrl";
 
 const TYPE_CHIPS = [
   { id: "all",     label: "All",     dot: "bg-gray-700",   active: "bg-gray-900 text-white border-gray-900" },
@@ -422,9 +423,9 @@ const MenuItems = () => {
                     to={`/item-detail/${slug}/${token}/${item._id}`}
                     className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-gray-100"
                   >
-                    {item.image ? (
+                    {resolveMediaUrl(item.image) ? (
                       <img
-                        src={item.image}
+                        src={resolveMediaUrl(item.image)}
                         alt={item.name}
                         loading="lazy"
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
@@ -540,7 +541,7 @@ function CategoryCircleStrip({ categories, activeCategory, loading, onSelect }) 
       <div className="flex gap-4 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {categories.map((category) => {
           const isActive = category?.name === activeCategory;
-          const image = category?.image || category?.coverImage || category?.items?.find((item) => item?.image)?.image;
+          const image = resolveMediaUrl(category?.image || category?.coverImage || category?.items?.find((item) => item?.image)?.image);
           return (
             <button
               key={category._id || category.name}

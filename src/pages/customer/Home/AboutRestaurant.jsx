@@ -23,6 +23,7 @@ import { Link, useParams } from "react-router-dom";
 import Navigation from "../../../components/customer/Navigation";
 import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
 import { getRestaurantPublicProfile } from "../../../services/customer";
+import { resolveMediaUrl } from "../../../utils/mediaUrl";
 
 const FEATURE_ICONS = {
   Utensils,
@@ -93,8 +94,9 @@ export default function AboutRestaurant() {
   const socials = about.socials || {};
 
   const heroImage =
-    profile?.backgroundPhoto ||
+    resolveMediaUrl(profile?.backgroundPhoto || profile?.brandBackgroundImage) ||
     "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80";
+  const logo = resolveMediaUrl(profile?.logo);
 
   const gallery = useMemo(() => {
     const list = Array.isArray(about.gallery) ? about.gallery.filter(Boolean) : [];
@@ -171,9 +173,9 @@ export default function AboutRestaurant() {
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center text-white">
             <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-3xl border border-white/30 bg-white/15 backdrop-blur">
-              {profile.logo ? (
+              {logo ? (
                 <img
-                  src={profile.logo}
+                  src={logo}
                   alt={restaurantName}
                   className="h-full w-full object-cover"
                 />

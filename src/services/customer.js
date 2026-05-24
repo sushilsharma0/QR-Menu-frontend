@@ -1,5 +1,6 @@
 import api from './api'
 import { setBrowserFavicon } from '../utils/browserFavicon'
+import { resolveMediaUrl } from '../utils/mediaUrl'
 
 const GUEST_ID_STORAGE_KEY = 'customer_guest_id_v1'
 const CUSTOMER_ID_STORAGE_KEY = 'customer_identity_id_v1'
@@ -526,7 +527,15 @@ export const getGuestLoyalty = async ({ guestId, qrToken }) => {
  */
 export const getRestaurantPublicProfile = async (restaurantSlug) => {
   const response = await api.get(`/customer/restaurant/${restaurantSlug}/profile`)
-  return response?.data?.data || null
+  const profile = response?.data?.data || null
+  if (!profile) return null
+  return {
+    ...profile,
+    logo: resolveMediaUrl(profile.logo),
+    backgroundPhoto: resolveMediaUrl(profile.backgroundPhoto),
+    favicon: resolveMediaUrl(profile.favicon),
+    brandBackgroundImage: resolveMediaUrl(profile.brandBackgroundImage),
+  }
 }
 
 const cleanText = (value) => {
@@ -546,15 +555,19 @@ export const getRestaurantInfo = async (restaurantSlug, qrToken = null) => {
   ])
   const menuRestaurant = menuRes?.data?.restaurant || {}
   const about = profile?.about || {}
+  const logo = resolveMediaUrl(menuRestaurant.logo || profile?.logo)
+  const backgroundPhoto = resolveMediaUrl(menuRestaurant.backgroundPhoto || profile?.backgroundPhoto)
+  const favicon = resolveMediaUrl(menuRestaurant.favicon || profile?.favicon)
+  const brandBackgroundImage = resolveMediaUrl(menuRestaurant.brandBackgroundImage || profile?.brandBackgroundImage)
   broadcastThemeSettings(menuRestaurant.themeSettings || profile?.themeSettings)
-  void setBrowserFavicon(menuRestaurant.favicon || profile?.favicon || menuRestaurant.logo || profile?.logo)
+  void setBrowserFavicon(favicon || logo)
   return {
     id: menuRestaurant.id || profile?.id,
     name: menuRestaurant.name || profile?.name,
-    logo: menuRestaurant.logo || profile?.logo,
-    backgroundPhoto: menuRestaurant.backgroundPhoto || profile?.backgroundPhoto,
-    favicon: menuRestaurant.favicon || profile?.favicon,
-    brandBackgroundImage: menuRestaurant.brandBackgroundImage || profile?.brandBackgroundImage,
+    logo,
+    backgroundPhoto,
+    favicon,
+    brandBackgroundImage,
     themeSettings: menuRestaurant.themeSettings || profile?.themeSettings,
     description: cleanText(menuRestaurant.description) || cleanText(profile?.description),
     tagline: cleanText(about.tagline),

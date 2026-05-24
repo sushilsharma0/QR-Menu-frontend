@@ -10,6 +10,7 @@ import {
   Clock,
   Flame,
   ShoppingCart,
+  MessageSquare,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
@@ -21,6 +22,7 @@ import Navigation from "../../../components/customer/Navigation";
 import CartDrawer from "../../../components/customer/CartDrawer";
 import { useCustomerCart } from "../../../context/CustomerCartContext";
 import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
+import { resolveMediaUrl } from "../../../utils/mediaUrl";
 
 const initialItem = {
   price: 0,
@@ -71,169 +73,171 @@ const reducer = (state, action) => {
   }
 };
 
+const formatMoney = (value) => Number(value || 0).toFixed(Number(value || 0) % 1 === 0 ? 0 : 2);
+
 const ItemHero = ({ item, isFavorite, onBack, onFavoriteToggle, onShare }) => (
-  <div className="relative h-[45vh] w-full">
-    <img
-      src={item.image}
-      alt={item.name}
-      className="w-full h-full object-cover"
-    />
+  <header className="relative h-[45vh] w-full overflow-hidden">
+    {resolveMediaUrl(item.image) ? (
+      <img
+        src={resolveMediaUrl(item.image)}
+        alt={item.name || "Menu item"}
+        className="h-full w-full object-cover"
+      />
+    ) : (
+      <div className="h-full w-full bg-gradient-to-br from-[#f6f3f0] to-[#ffdbcd]" />
+    )}
 
-    <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60" />
+    <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent via-70% to-[#fcf9f6]" />
 
-    <div className="absolute top-12 left-4 right-4 flex justify-between">
+    <nav className="absolute left-5 right-5 top-[max(1.25rem,env(safe-area-inset-top))] z-20 flex items-center justify-between">
       <FramerMotion.motion.button
         whileTap={{ scale: 0.9 }}
         onClick={onBack}
-        className="p-3 bg-white/90 rounded-2xl shadow-lg"
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white shadow-lg backdrop-blur-md transition hover:bg-white/35"
+        aria-label="Go back"
       >
         <ArrowLeft size={22} />
       </FramerMotion.motion.button>
 
-      <div className="flex gap-2">
-        <FramerMotion.motion.button
-          type="button"
-          whileTap={{ scale: 0.9 }}
-          onClick={onFavoriteToggle}
-          className={`p-3 rounded-2xl shadow-lg ${
-            isFavorite ? "bg-red-500 text-white" : "bg-white/90 text-gray-800"
-          }`}
-        >
-          <Heart size={22} fill={isFavorite ? "white" : "none"} />
-        </FramerMotion.motion.button>
-
+      <div className="flex gap-3">
         <FramerMotion.motion.button
           type="button"
           whileTap={{ scale: 0.9 }}
           onClick={onShare}
-          className="p-3 bg-white/90 rounded-2xl shadow-lg"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white shadow-lg backdrop-blur-md transition hover:bg-white/35"
+          aria-label="Share item"
         >
-          <Share2 size={22} />
+          <Share2 size={20} />
+        </FramerMotion.motion.button>
+
+        <FramerMotion.motion.button
+          type="button"
+          whileTap={{ scale: 0.9 }}
+          onClick={onFavoriteToggle}
+          className={`flex h-10 w-10 items-center justify-center rounded-full shadow-lg backdrop-blur-md transition hover:bg-white/35 ${
+            isFavorite ? "bg-red-500 text-white" : "bg-white/20 text-white"
+          }`}
+          aria-label="Favorite item"
+        >
+          <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
         </FramerMotion.motion.button>
       </div>
-    </div>
+    </nav>
 
     {(item.isBestseller || item.highlightTag === "trending") && (
-      <div className="absolute bottom-12 left-6 bg-orange-500 text-white px-4 py-1.5 rounded-full text-xs font-semibold">
+      <div className="absolute bottom-16 left-6 rounded-full bg-[#894f40] px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white">
         {item.highlightTag === "trending" ? "Trending" : "Bestseller"}
       </div>
     )}
     {item.highlightTag === "chef_special" && (
-      <div className="absolute bottom-12 right-6 bg-emerald-600 text-white px-4 py-1.5 rounded-full text-xs font-semibold">
+      <div className="absolute bottom-16 right-6 rounded-full bg-[#2a674c] px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white">
         Chef special
       </div>
     )}
-  </div>
+  </header>
 );
 
 const ItemSummary = ({ item, dietaryBadges, liveUnitPrice }) => (
   <>
-    <div className="flex justify-between items-start">
-      <div className="flex-1">
-        <h1 className="text-2xl font-semibold text-gray-900">
-          {item.name}
-        </h1>
-
-        <div className="flex items-center gap-3 mt-2 flex-wrap">
+    <div className="flex items-start justify-between gap-4">
+      <div className="min-w-0 flex-1">
+        <div className="mb-1 flex flex-wrap items-center gap-2">
           {dietaryBadges.map((badge) => (
             <div key={badge.label} className="flex items-center gap-1">
-              <div className={`w-4 h-4 border-2 ${badge.border} rounded-sm flex items-center justify-center`}>
-                <div className={`w-2 h-2 ${badge.fill} rounded-sm`}></div>
+              <div className={`flex h-[14px] w-[14px] items-center justify-center border-2 ${badge.border}`}>
+                <div className={`h-1.5 w-1.5 rounded-full ${badge.fill}`} />
               </div>
-              <span className={`text-xs font-medium ${badge.text}`}>
+              <span className={`text-[11px] font-black uppercase tracking-wider ${badge.text}`}>
                 {badge.label}
               </span>
             </div>
           ))}
-
-          <div className="flex items-center gap-1 text-yellow-500">
-            <Star size={14} fill="currentColor" />
-            <span className="text-xs font-semibold text-gray-700">
-              {item.rating || 4.5}
-            </span>
-            <span className="text-xs text-gray-400">
-              ({item.reviews || 0})
-            </span>
-          </div>
         </div>
+        <h1 className="text-[28px] font-black leading-[34px] text-[#1c1c1a]">
+          {item.name || "Menu item"}
+        </h1>
       </div>
 
-      <div className="text-right">
-        <p className="text-3xl font-bold text-orange-600">
-          Rs. {liveUnitPrice}
+      <div className="shrink-0 text-right">
+        <p className="text-[22px] font-black leading-6 text-[#9f3d00]">
+          Rs. {formatMoney(liveUnitPrice)}
         </p>
 
         {item.originalPrice && (
-          <p className="text-sm text-gray-400 line-through">
+          <p className="text-xs font-bold text-[#594137] line-through">
             Rs. {item.originalPrice}
           </p>
         )}
       </div>
     </div>
 
-    <div className="flex gap-3 mt-4 flex-wrap">
-      {(item.preparationTime || item.prepTime) && (
-        <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-xl">
-          <Clock size={16} className="text-orange-500" />
-          <span className="text-xs font-medium text-gray-600">
-            {item.prepTime || `${item.preparationTime} min`}
-          </span>
-        </div>
-      )}
+    <div className="mt-4 grid grid-cols-3 items-center gap-2 border-y border-[#e1bfb2]/50 py-4 text-sm">
+      <div className="flex items-center gap-1.5">
+        <Star size={18} className="fill-[#a33e00] text-[#a33e00]" />
+        <span className="font-black text-[#1c1c1a]">{item.rating || 4.5}</span>
+        <span className="hidden text-[#594137] xs:inline">({item.reviews || 0})</span>
+      </div>
 
-      {Number.isFinite(Number(item?.nutrition?.calories)) && (
-        <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-xl">
-          <Flame size={16} className="text-orange-500" />
-          <span className="text-xs font-medium text-gray-600">
-            {Number(item.nutrition.calories)} kcal
-          </span>
-        </div>
-      )}
+      <div className="flex items-center justify-center gap-1.5 border-x border-[#e1bfb2]/50 px-2">
+        <Clock size={18} className="text-[#894f40]" />
+        <span className="truncate text-[#1c1c1a]">{item.prepTime || (item.preparationTime ? `${item.preparationTime} min` : "15-20 min")}</span>
+      </div>
+
+      <div className="flex items-center justify-end gap-1.5">
+        <Flame size={18} className="text-[#2a674c]" />
+        <span className="truncate text-[#1c1c1a]">
+          {Number.isFinite(Number(item?.nutrition?.calories)) ? `${Number(item.nutrition.calories)} kcal` : "Fresh"}
+        </span>
+      </div>
     </div>
   </>
 );
 
-const DescriptionSection = ({ visibleLines, descriptionLines, showMore, onToggle }) => (
-  <div className="mt-6">
-    <h3 className="font-semibold text-gray-800">
-      About this item
-    </h3>
+const DescriptionSection = ({ visibleLines, descriptionLines, showMore, onToggle }) => {
+  if (descriptionLines.length === 0) return null;
 
-    <div className="mt-2 space-y-2">
-      {visibleLines.map((line) => (
-        <p key={line} className="text-gray-500 text-sm leading-relaxed">
-          Ã¢â‚¬Â¢ {line}
-        </p>
-      ))}
-    </div>
+  return (
+    <section className="mt-6">
+      <h2 className="text-xl font-black text-[#1c1c1a]">
+        About this item
+      </h2>
 
-    {descriptionLines.length > 2 && (
-      <button
-        onClick={onToggle}
-        className="mt-3 flex items-center gap-1 text-orange-600 text-sm font-semibold"
-      >
-        {showMore ? (
-          <>
-            See Less <ChevronUp size={16} />
-          </>
-        ) : (
-          <>
-            See More <ChevronDown size={16} />
-          </>
-        )}
-      </button>
-    )}
-  </div>
-);
+      <div className="mt-2 space-y-2">
+        {visibleLines.map((line) => (
+          <p key={line} className="text-sm leading-relaxed text-[#594137]">
+            {line}
+          </p>
+        ))}
+      </div>
+
+      {descriptionLines.length > 2 && (
+        <button
+          onClick={onToggle}
+          className="mt-3 flex items-center gap-1 text-sm font-bold text-[#9f3d00]"
+        >
+          {showMore ? (
+            <>
+              See Less <ChevronUp size={16} />
+            </>
+          ) : (
+            <>
+              See More <ChevronDown size={16} />
+            </>
+          )}
+        </button>
+      )}
+    </section>
+  );
+};
 
 const NutritionSection = ({ nutritionalInfo }) => {
   if (nutritionalInfo.length === 0) return null;
 
   return (
-    <div className="mt-6">
-      <h3 className="font-semibold text-gray-800 mb-3">
+    <section className="mt-6">
+      <h2 className="mb-3 text-xl font-black text-[#1c1c1a]">
         Nutritional Facts
-      </h3>
+      </h2>
 
       <div
         className={`grid gap-2 ${
@@ -247,17 +251,17 @@ const NutritionSection = ({ nutritionalInfo }) => {
         }`}
       >
         {nutritionalInfo.map((nutrient) => (
-          <div key={nutrient.label} className="bg-gray-50 rounded-xl p-3 text-center">
-            <p className="text-xs font-bold text-gray-800">
+          <div key={nutrient.label} className="rounded-xl bg-[#f6f3f0] p-3 text-center">
+            <p className="text-xs font-black text-[#1c1c1a]">
               {nutrient.value}
             </p>
-            <p className="text-[10px] text-gray-400 mt-1">
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-[#594137]">
               {nutrient.label}
             </p>
           </div>
         ))}
       </div>
-    </div>
+    </section>
   );
 };
 
@@ -271,27 +275,32 @@ const VariationGroupsSection = ({
   if (activeVariationGroups.length === 0) return null;
 
   return (
-    <div className="mt-8 space-y-5">
+    <div className="mt-6 space-y-8">
       {activeVariationGroups.map((group) => {
         const selectedRows = variationSelections[group._id] || [];
         const display = group.displayType || (group.selectionType === "multiple" ? "checkbox" : "chips");
+        const isAddOnGroup = ["addon", "topping"].includes(group.type) || group.selectionType === "multiple";
         return (
-          <div key={group._id} className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4">
-            <div className="mb-3 flex items-center justify-between gap-3">
+          <section key={group._id}>
+            <div className="mb-4 flex items-end justify-between gap-3">
               <div>
-                <p className="text-sm font-black text-gray-900">{group.name}</p>
-                <p className="text-[11px] font-bold text-gray-400">
-                  {group.isRequired ? "Required" : "Optional"}
-                  {group.maxSelection > 1 ? ` | choose up to ${group.maxSelection}` : ""}
-                </p>
+                <h2 className="text-xl font-black text-[#1c1c1a]">{group.name}</h2>
+                {group.maxSelection > 1 && (
+                  <p className="mt-1 text-xs font-bold text-[#594137]">Choose up to {group.maxSelection}</p>
+                )}
               </div>
+              <span className={`rounded px-2 py-0.5 text-[11px] font-black uppercase tracking-wider ${
+                group.isRequired ? "bg-[#ffdbcd] text-[#9f3d00]" : "bg-[#e5e2df] text-[#594137]"
+              }`}>
+                {group.isRequired ? "Required" : "Optional"}
+              </span>
             </div>
 
             {display === "dropdown" ? (
               <select
                 value={selectedRows[0]?.optionId || ""}
                 onChange={(e) => setSingleVariation(group._id, e.target.value)}
-                className="w-full rounded-xl border border-gray-200 bg-white p-3 text-sm font-bold outline-none focus:ring-2 focus:ring-orange-300"
+                className="w-full rounded-xl border border-[#e1bfb2] bg-white p-3 text-sm font-bold text-[#1c1c1a] outline-none focus:ring-2 focus:ring-[#ffb596]"
               >
                 {!group.isRequired && <option value="">No selection</option>}
                 {(group.options || []).map((option) => (
@@ -301,7 +310,13 @@ const VariationGroupsSection = ({
                 ))}
               </select>
             ) : (
-              <div className={display === "cards" || display === "image" ? "grid grid-cols-2 gap-2" : "flex flex-wrap gap-2"}>
+              <div className={
+                display === "cards" || display === "image"
+                  ? "grid grid-cols-2 gap-3"
+                  : isAddOnGroup
+                    ? "space-y-3"
+                    : "flex flex-wrap gap-3"
+              }>
                 {(group.options || []).map((option) => {
                   const selected = selectedRows.some((row) => String(row.optionId) === String(option._id));
                   const row = selectedRows.find((r) => String(r.optionId) === String(option._id));
@@ -311,19 +326,51 @@ const VariationGroupsSection = ({
                   if (group.selectionType === "quantity" || display === "stepper") {
                     const qty = Number(row?.quantity || 0);
                     return (
-                      <div key={option._id} className={`flex items-center justify-between gap-3 rounded-xl border bg-white p-3 ${qty > 0 ? "border-orange-400" : "border-gray-200"} ${unavailable ? "opacity-50" : ""}`}>
+                      <div key={option._id} className={`flex items-center justify-between gap-3 rounded-xl border bg-[#f6f3f0] p-4 ${qty > 0 ? "border-[#9f3d00]" : "border-transparent"} ${unavailable ? "opacity-50" : ""}`}>
                         <div className="min-w-0">
-                          <p className="text-xs font-black text-gray-800">{option.name}</p>
-                          <p className="text-[10px] font-bold text-gray-400">
-                            {price > 0 ? `+Rs. ${price}` : "Included"}{outOfStock ? " | out of stock" : ""}
+                          <p className="text-sm font-black text-[#1c1c1a]">{option.name}</p>
+                          <p className="text-xs font-bold text-[#594137]">
+                            {price > 0 ? `+Rs. ${formatMoney(price)}` : "Included"}{outOfStock ? " | out of stock" : ""}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <button type="button" disabled={unavailable || qty <= 0} onClick={() => setVariationQuantity(group, option, qty - 1)} className="h-8 w-8 rounded-lg bg-gray-100 font-black">-</button>
+                          <button type="button" disabled={unavailable || qty <= 0} onClick={() => setVariationQuantity(group, option, qty - 1)} className="flex h-9 w-9 items-center justify-center rounded-full bg-white font-black text-[#1c1c1a] disabled:opacity-40"><Minus size={16} /></button>
                           <span className="w-5 text-center text-sm font-black">{qty}</span>
-                          <button type="button" disabled={unavailable} onClick={() => setVariationQuantity(group, option, qty + 1)} className="h-8 w-8 rounded-lg bg-orange-600 font-black text-white">+</button>
+                          <button type="button" disabled={unavailable} onClick={() => setVariationQuantity(group, option, qty + 1)} className="flex h-9 w-9 items-center justify-center rounded-full bg-[#9f3d00] font-black text-white disabled:opacity-40"><Plus size={16} /></button>
                         </div>
                       </div>
+                    );
+                  }
+                  if (isAddOnGroup) {
+                    return (
+                      <button
+                        type="button"
+                        key={option._id}
+                        disabled={unavailable}
+                        onClick={() =>
+                          group.selectionType === "multiple"
+                            ? toggleMultiVariation(group, option._id)
+                            : setSingleVariation(group._id, option._id)
+                        }
+                        className={`flex w-full items-center justify-between gap-4 rounded-xl p-4 text-left transition ${
+                          selected ? "bg-[#ffdbcd] ring-2 ring-[#9f3d00]" : "bg-[#f6f3f0]"
+                        } ${unavailable ? "cursor-not-allowed opacity-50" : ""}`}
+                      >
+                        <span className="flex min-w-0 items-center gap-3">
+                          <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
+                            selected ? "border-[#9f3d00] bg-[#9f3d00]" : "border-[#8d7165] bg-white"
+                          }`}>
+                            {selected && <span className="h-2 w-2 rounded-sm bg-white" />}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-black text-[#1c1c1a]">{option.name}</span>
+                            <span className="block text-xs font-bold text-[#594137]">{outOfStock ? "Out of stock" : "Extra option"}</span>
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-sm font-black text-[#894f40]">
+                          {price > 0 ? `+Rs. ${formatMoney(price)}` : "Included"}
+                        </span>
+                      </button>
                     );
                   }
                   return (
@@ -336,25 +383,25 @@ const VariationGroupsSection = ({
                           ? toggleMultiVariation(group, option._id)
                           : setSingleVariation(group._id, option._id)
                       }
-                      className={`${display === "cards" || display === "image" ? "min-h-[86px] text-left" : ""} rounded-xl border px-3 py-2 text-xs font-bold transition ${
+                      className={`${display === "cards" || display === "image" ? "min-h-[96px] text-left" : "rounded-full"} border px-5 py-3 text-sm font-bold transition active:scale-95 ${
                         selected
-                          ? "border-orange-500 bg-orange-50 text-orange-700"
-                          : "border-gray-200 bg-white text-gray-700"
+                          ? "border-[#894f40] bg-[#894f40] text-white"
+                          : "border-[#e1bfb2] bg-white text-[#1c1c1a] hover:border-[#9f3d00]"
                       } ${unavailable ? "cursor-not-allowed opacity-50" : ""}`}
                     >
                       {display === "image" && option.image ? (
-                        <img src={option.image} alt={option.name} className="mb-2 h-16 w-full rounded-lg object-cover" />
+                        <img src={resolveMediaUrl(option.image)} alt={option.name} className="mb-2 h-16 w-full rounded-lg object-cover" />
                       ) : null}
                       <span className="block">{option.name}</span>
-                      <span className="mt-0.5 block text-[10px] text-gray-400">
-                        {price > 0 ? `+Rs. ${price}` : "Included"}{outOfStock ? " | out of stock" : ""}
+                      <span className={`mt-0.5 block text-[11px] ${selected ? "text-white/80" : "text-[#594137]"}`}>
+                        {price > 0 ? `+Rs. ${formatMoney(price)}` : "Included"}{outOfStock ? " | out of stock" : ""}
                       </span>
                     </button>
                   );
                 })}
               </div>
             )}
-          </div>
+          </section>
         );
       })}
     </div>
@@ -365,114 +412,97 @@ const CustomizationsSection = ({ customizations, selections, setSelections }) =>
   if (customizations.length === 0) return null;
 
   return (
-    <div className="mt-8 space-y-5">
-      <h3 className="font-semibold text-gray-800">Customize</h3>
+    <div className="mt-8 space-y-8">
       {customizations.map((group) => (
-        <div key={group.name}>
-          <p className="text-sm font-semibold text-gray-700 mb-2">{group.name}</p>
-          <div className="flex flex-wrap gap-2">
+        <section key={group.name}>
+          <div className="mb-4 flex items-end justify-between gap-3">
+            <h2 className="text-xl font-black text-[#1c1c1a]">{group.name}</h2>
+            <span className="rounded bg-[#e5e2df] px-2 py-0.5 text-[11px] font-black uppercase tracking-wider text-[#594137]">
+              Optional
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-3">
             {(group.options || []).map((opt) => (
               <button
                 type="button"
                 key={`${group.name}-${opt}`}
                 onClick={() => setSelections((prev) => ({ ...prev, [group.name]: opt }))}
-                className={`rounded-xl border px-3 py-2 text-xs font-bold transition ${
+                className={`rounded-full border px-5 py-3 text-sm font-bold transition active:scale-95 ${
                   selections[group.name] === opt
-                    ? "border-orange-500 bg-orange-50 text-orange-700"
-                    : "border-gray-200 bg-white text-gray-700"
+                    ? "border-[#894f40] bg-[#894f40] text-white"
+                    : "border-[#e1bfb2] bg-white text-[#1c1c1a] hover:border-[#9f3d00]"
                 }`}
               >
                 {opt}
               </button>
             ))}
           </div>
-        </div>
+        </section>
       ))}
     </div>
   );
 };
 
 const CookingInstructionsField = ({ cookingInstructions, setCookingInstructions }) => (
-  <div className="mt-8">
-    <h3 className="font-semibold text-gray-800 mb-2">Cooking instructions</h3>
+  <section className="mt-8">
+    <h2 className="mb-3 flex items-center gap-2 text-xl font-black text-[#1c1c1a]">
+      <MessageSquare size={19} className="text-[#894f40]" />
+      Cooking instructions
+    </h2>
     <textarea
       value={cookingInstructions}
       onChange={(e) => setCookingInstructions(e.target.value)}
-      placeholder="e.g. No onion, less oil, allergy noteÃ¢â‚¬Â¦"
-      className="w-full rounded-2xl border border-gray-200 p-3 text-sm min-h-[88px] outline-none focus:ring-2 focus:ring-orange-400"
+      placeholder="e.g. No onion, less oil, allergy note..."
+      className="min-h-[88px] w-full rounded-xl border border-[#e1bfb2] bg-white p-4 text-sm text-[#1c1c1a] outline-none placeholder:text-[#8d7165] focus:ring-2 focus:ring-[#ffb596]"
       maxLength={500}
     />
-  </div>
+  </section>
 );
 
-const QuantitySelector = ({ quantity, setQuantity }) => (
-  <div className="mt-8 flex items-center justify-between">
-    <h3 className="font-semibold text-gray-800">
-      Quantity
-    </h3>
-
-    <div className="flex items-center gap-3 bg-gray-100 p-1.5 rounded-2xl">
-      <button
-        onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
-        className="p-2.5 bg-white rounded-xl"
-      >
-        <Minus size={18} />
-      </button>
-
-      <span className="font-bold w-8 text-center text-lg">
-        {quantity}
-      </span>
-
-      <button
-        onClick={() => setQuantity((prev) => prev + 1)}
-        className="p-2.5 bg-white rounded-xl"
-      >
-        <Plus size={18} />
-      </button>
-    </div>
-  </div>
-);
-
-const TotalPanel = ({ total }) => (
-  <div className="mt-6 p-4 bg-gray-50 rounded-2xl">
-    <div className="flex justify-between">
-      <span className="font-semibold text-gray-800">
-        Total
-      </span>
-
-      <span className="font-bold text-orange-600">
-        Rs. {total}
-      </span>
-    </div>
-  </div>
-);
-
-const StickyAddButton = ({ isAdding, quantity, total, onAddToCart }) => (
+const StickyAddButton = ({ isAdding, quantity, total, setQuantity, onAddToCart }) => (
   <div
     style={{ bottom: "calc(5rem + env(safe-area-inset-bottom, 0px))" }}
-    className="fixed inset-x-0 z-[85] border-t border-gray-100 bg-white/95 p-4 pb-3 pt-3 backdrop-blur-lg"
+    className="fixed inset-x-0 z-[85] border-t border-[#e1bfb2]/50 bg-[#fcf9f6]/85 px-5 py-5 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] backdrop-blur-xl"
   >
-    <FramerMotion.motion.button
-      onClick={onAddToCart}
-      disabled={isAdding}
-      whileTap={{ scale: 0.97 }}
-      className="flex w-full items-center justify-between rounded-2xl bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-4 shadow-lg shadow-primary-900/25 transition disabled:opacity-70"
-    >
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
-          <ShoppingCart size={20} className="text-white" />
-        </div>
-        <div className="text-left">
-          <span className="block font-black text-white">
-            {isAdding ? "Adding..." : "Add to Cart"}
-          </span>
-          <span className="text-xs text-white/80">
-            {quantity} item{quantity > 1 ? "s" : ""}
-          </span>
-        </div>
+    <div className="mx-auto flex max-w-2xl items-center justify-between gap-4">
+      <div className="min-w-[86px]">
+        <span className="block text-[11px] font-black uppercase tracking-wider text-[#594137]">Total Price</span>
+        <span className="block text-2xl font-black text-[#1c1c1a]">Rs. {formatMoney(total)}</span>
       </div>
-      <span className="text-lg font-black text-white">Rs. {total}</span>
-    </FramerMotion.motion.button>
+
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="flex shrink-0 items-center rounded-full border border-[#e1bfb2] bg-[#eae8e5] p-1">
+          <button
+            type="button"
+            onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-[#1c1c1a] transition hover:text-[#9f3d00]"
+            aria-label="Decrease quantity"
+          >
+            <Minus size={18} />
+          </button>
+          <span className="w-8 text-center text-lg font-black text-[#1c1c1a]">{quantity}</span>
+          <button
+            type="button"
+            onClick={() => setQuantity((prev) => prev + 1)}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-[#1c1c1a] transition hover:text-[#9f3d00]"
+            aria-label="Increase quantity"
+          >
+            <Plus size={18} />
+          </button>
+        </div>
+
+        <FramerMotion.motion.button
+          onClick={onAddToCart}
+          disabled={isAdding}
+          whileTap={{ scale: 0.95 }}
+          className="flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-[#9f3d00] px-5 py-3 text-sm font-black text-white shadow-lg shadow-[#9f3d00]/20 transition hover:opacity-90 disabled:opacity-70 sm:px-8"
+        >
+          <span className="hidden xs:inline">{isAdding ? "Adding..." : "Add to Cart"}</span>
+          <span className="xs:hidden">{isAdding ? "Adding" : "Add"}</span>
+          <ShoppingCart size={20} />
+        </FramerMotion.motion.button>
+      </div>
+    </div>
   </div>
 );
 
@@ -746,7 +776,7 @@ const ItemDetails = () => {
   const visibleLines = showMore ? descriptionLines : descriptionLines.slice(0, 2);
 
   return (
-    <div className="min-h-screen bg-[#fafaf7] pb-44">
+    <div className="min-h-screen bg-[#fcf9f6] pb-52 text-[#1c1c1a]">
       <ItemHero
         item={item}
         isFavorite={isFavorite}
@@ -755,15 +785,20 @@ const ItemDetails = () => {
         onShare={handleShare}
       />
 
-      <div className="px-5 -mt-8 relative bg-white rounded-t-3xl pt-6">
-        <ItemSummary item={item} dietaryBadges={dietaryBadges} liveUnitPrice={liveUnitPrice} />
-        <DescriptionSection
-          visibleLines={visibleLines}
-          descriptionLines={descriptionLines}
-          showMore={showMore}
-          onToggle={() => setShowMore(!showMore)}
-        />
-        <NutritionSection nutritionalInfo={nutritionalInfo} />
+      <main className="relative z-30 -mt-12 px-5">
+        <div className="rounded-xl bg-white p-6 shadow-[0_15px_30px_rgba(137,79,64,0.08)]">
+          <ItemSummary item={item} dietaryBadges={dietaryBadges} liveUnitPrice={liveUnitPrice} />
+          <DescriptionSection
+            visibleLines={visibleLines}
+            descriptionLines={descriptionLines}
+            showMore={showMore}
+            onToggle={() => setShowMore(!showMore)}
+          />
+        </div>
+
+        <div className="mt-6">
+          <NutritionSection nutritionalInfo={nutritionalInfo} />
+        </div>
         <VariationGroupsSection
           activeVariationGroups={activeVariationGroups}
           variationSelections={variationSelections}
@@ -780,14 +815,13 @@ const ItemDetails = () => {
           cookingInstructions={cookingInstructions}
           setCookingInstructions={setCookingInstructions}
         />
-        <QuantitySelector quantity={quantity} setQuantity={setQuantity} />
-        <TotalPanel total={lineTotal()} />
-      </div>
+      </main>
 
       <StickyAddButton
         isAdding={isAdding}
         quantity={quantity}
         total={lineTotal()}
+        setQuantity={setQuantity}
         onAddToCart={handleAddToCart}
       />
       <Navigation />

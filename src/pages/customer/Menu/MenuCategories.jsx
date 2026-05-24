@@ -29,6 +29,7 @@ import {
 } from "../../../services/customer";
 import VoiceSearchButton from "../../../components/customer/VoiceSearchButton";
 import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
+import { resolveMediaUrl } from "../../../utils/mediaUrl";
 import { useCustomerCart } from "../../../context/CustomerCartContext";
 
 const MenuCategories = () => {
@@ -405,7 +406,9 @@ function RestaurantBanner({ info, totalDishes, categoryCount, loading }) {
     info?.tagline ||
     info?.description ||
     "Curated dishes, sent straight to the kitchen.";
-  const hasCover = Boolean(info?.backgroundPhoto);
+  const coverImage = resolveMediaUrl(info?.backgroundPhoto || info?.brandBackgroundImage);
+  const logo = resolveMediaUrl(info?.logo);
+  const hasCover = Boolean(coverImage);
 
   return (
     <section className="px-4 pt-4">
@@ -421,7 +424,7 @@ function RestaurantBanner({ info, totalDishes, categoryCount, loading }) {
           style={
             hasCover
               ? {
-                  backgroundImage: `linear-gradient(135deg, rgba(57,16,0,0.55), rgba(143,40,0,0.35)), url('${info.backgroundPhoto}')`,
+                  backgroundImage: `linear-gradient(135deg, rgba(57,16,0,0.55), rgba(143,40,0,0.35)), url('${coverImage}')`,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
                 }
@@ -499,9 +502,9 @@ function RestaurantBanner({ info, totalDishes, categoryCount, loading }) {
           <div className="rounded-[1.35rem] border border-white/70 bg-white p-3 shadow-[0_14px_32px_-18px_rgba(15,23,42,0.32)] ring-1 ring-primary-100/50">
           <div className="flex items-center gap-3">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-2 ring-white">
-              {info?.logo ? (
+              {logo ? (
                 <img
-                  src={info.logo}
+                  src={logo}
                   alt={info?.name || "Restaurant"}
                   className="h-full w-full object-cover"
                 />
@@ -617,7 +620,9 @@ function TrendingStrip({ items, daypart, slug, token }) {
       </div>
 
       <div className="mt-2 flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {items.slice(0, 10).map((item, idx) => (
+        {items.slice(0, 10).map((item, idx) => {
+          const image = resolveMediaUrl(item.image) || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=200&q=60";
+          return (
           <Link
             key={item._id}
             to={`/item-detail/${slug}/${token}/${item._id}`}
@@ -625,10 +630,7 @@ function TrendingStrip({ items, daypart, slug, token }) {
           >
             <div className="relative h-20 w-full overflow-hidden bg-gray-100">
               <img
-                src={
-                  item.image ||
-                  "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=200&q=60"
-                }
+                src={image}
                 alt={item.name}
                 loading="lazy"
                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -657,7 +659,8 @@ function TrendingStrip({ items, daypart, slug, token }) {
               </p>
             </div>
           </Link>
-        ))}
+        );
+        })}
       </div>
     </section>
   );
@@ -757,6 +760,7 @@ const cardVariants = {
 
 function CategoryCard({ cat, slug, token, index }) {
   const itemCount = cat.itemCount ?? (cat.items?.length || 0);
+  const image = resolveMediaUrl(cat.image);
   return (
     <m.div variants={cardVariants}>
       <Link
@@ -764,9 +768,9 @@ function CategoryCard({ cat, slug, token, index }) {
         className="group relative block overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-[0_2px_12px_rgba(15,23,42,0.05)] transition-all active:scale-[0.97]"
       >
         <div className="relative aspect-[5/4] w-full overflow-hidden bg-gray-100">
-          {cat.image ? (
+          {image ? (
             <img
-              src={cat.image}
+              src={image}
               alt={cat.name}
               loading="lazy"
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"

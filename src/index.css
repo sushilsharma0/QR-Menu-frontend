@@ -437,7 +437,7 @@ button[aria-busy="true"]:not([data-spinner-handled="true"])::before {
   margin-top: -0.5rem;
   margin-right: 0;
   flex: 0 0 auto;
-  border: 2px solid var(--button-spinner-color, #7a2200);
+  border: 2px solid var(--button-spinner-color, #ffffff);
   border-right-color: transparent;
   border-radius: 9999px;
   animation: button-spinner 0.65s linear infinite;

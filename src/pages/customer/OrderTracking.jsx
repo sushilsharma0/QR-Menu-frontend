@@ -31,6 +31,7 @@ import { getSocketOrigin } from "../../utils/runtimeConfig";
 import { rememberCustomerPortal } from "../../utils/customerPortalContext";
 import { getStoredGuestId, rememberCustomerOrderToken } from "../../services/customer";
 import toast from "../../utils/toast";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 
 const formatMoney = (value) => `Rs. ${Number(value || 0).toFixed(2)}`;
 
@@ -127,6 +128,7 @@ const OrderTracking = () => {
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [isLive, setIsLive] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const restaurantLogo = resolveMediaUrl(order?.restaurant?.logo);
   const [showEditOrder, setShowEditOrder] = useState(false);
   const [editSecondsRemaining, setEditSecondsRemaining] = useState(0);
   const timelineRef = useRef(null);
@@ -383,9 +385,9 @@ const OrderTracking = () => {
             layout
             className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary-900 text-white shadow-md"
           >
-            {order.restaurant?.logo ? (
+            {restaurantLogo ? (
               <img
-                src={order.restaurant.logo}
+                src={restaurantLogo}
                 alt=""
                 className="h-full w-full object-cover"
               />

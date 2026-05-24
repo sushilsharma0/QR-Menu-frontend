@@ -16,6 +16,7 @@ import { Link, useParams } from 'react-router-dom';
 import Navigation from '../../components/customer/Navigation';
 import Feedback from '../../components/customer/homepage/Feedback';
 import { rememberCustomerPortal } from '../../utils/customerPortalContext';
+import { resolveMediaUrl } from '../../utils/mediaUrl';
 import toast from '@utils/toast';
 import {
   clearCustomerIdentitySession,
@@ -68,6 +69,9 @@ const AccountPage = () => {
   const creditApplyPath = slug && token ? `/credit-apply/${slug}/${token}` : '/';
   const restaurantName =
     restaurantInfo?.name || (slug ? decodeURIComponent(slug).replace(/-/g, ' ') : 'Restaurant');
+  const heroImage =
+    resolveMediaUrl(restaurantInfo?.backgroundPhoto || restaurantInfo?.brandBackgroundImage) ||
+    'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80';
 
   const menuItems = [
     { to: homePath, icon: User, label: 'Table home', color: 'text-primary-600', bg: 'bg-primary-50' },
@@ -102,7 +106,7 @@ const AccountPage = () => {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.72), rgba(57,16,0,0.7) 48%, rgba(250,250,247,1) 100%), url('${restaurantInfo?.backgroundPhoto || restaurantInfo?.brandBackgroundImage || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80"}')`,
+            backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.72), rgba(57,16,0,0.7) 48%, rgba(250,250,247,1) 100%), url('${heroImage}')`,
           }}
         />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(255,255,255,0.12),transparent_34%)]" />
