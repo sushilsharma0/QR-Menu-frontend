@@ -93,7 +93,7 @@ const HeroSection = ({ hero }) => {
   return (
     <LazyMotion features={domAnimation}>
     <section id="home" className="relative overflow-hidden px-4 pb-12 pt-16 sm:px-6 sm:pb-16 sm:pt-24 lg:px-8 lg:pt-28">
-      <div className="mx-auto grid max-w-7xl items-center gap-8 py-6 sm:gap-10 sm:py-8 lg:min-h-[calc(100vh-7rem)] lg:grid-cols-[1.1fr_0.9fr] lg:gap-12 lg:py-12">
+      <div className="mx-auto grid max-w-[92rem] items-center gap-8 py-6 sm:gap-10 sm:py-8 lg:min-h-[calc(100vh-7rem)] lg:grid-cols-[1.15fr_0.85fr] lg:gap-14 lg:py-12 xl:gap-16">
         {/* Left Column - Content */}
         <m.div
           variants={containerVariants}
@@ -121,7 +121,7 @@ const HeroSection = ({ hero }) => {
           {/* Main Description - Fixed responsive sizing */}
           <m.p
             variants={itemVariants}
-            className="mx-auto mt-3 max-w-2xl text-base leading-relaxed text-slate-600 sm:mt-4 sm:text-lg sm:leading-relaxed lg:mx-0 lg:text-xl"
+            className="mx-auto mt-3 max-w-3xl text-base leading-relaxed text-slate-600 sm:mt-4 sm:text-lg sm:leading-relaxed lg:mx-0 lg:text-xl"
           >
             {hero.description}
           </m.p>
@@ -129,7 +129,7 @@ const HeroSection = ({ hero }) => {
           {/* Sub Description - Consistent sizing */}
           <m.p
             variants={itemVariants}
-            className="mx-auto mt-2 max-w-2xl text-sm leading-relaxed text-slate-500 sm:text-base lg:mx-0"
+            className="mx-auto mt-2 max-w-3xl text-sm leading-relaxed text-slate-500 sm:text-base lg:mx-0"
           >
             {hero.subDescription}
           </m.p>
@@ -176,7 +176,7 @@ const HeroSection = ({ hero }) => {
         </m.div>
 
         {/* Right Column - Phone Mockup */}
-        <div className="relative mx-auto mt-8 h-[480px] w-full max-w-[380px] sm:h-[560px] sm:max-w-[460px] lg:mt-0 lg:h-[640px] lg:max-w-[540px]">
+        <div className="relative mx-auto mt-8 h-[480px] w-full max-w-[380px] sm:h-[560px] sm:max-w-[460px] lg:mt-0 lg:h-[640px] lg:max-w-[580px]">
           {/* Main Phone */}
           <m.div
             style={reduceMotion ? undefined : { scale: phoneScale, x: '-50%' }}

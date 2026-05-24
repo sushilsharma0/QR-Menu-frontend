@@ -107,7 +107,7 @@ const LandingNavbar = () => {
           transition={{ duration: 0.3, ease: 'easeOut' }}
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}
-          className={`mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 rounded-2xl border px-4 backdrop-blur-xl transition-all duration-500 sm:gap-6 sm:px-5 lg:gap-8 lg:px-6 ${
+          className={`mx-auto grid max-w-[92rem] grid-cols-[auto_1fr_auto] items-center gap-4 rounded-2xl border px-4 backdrop-blur-xl transition-all duration-500 sm:gap-6 sm:px-5 lg:gap-8 lg:px-6 ${
             scrolled
               ? 'h-14 border-slate-200/60 bg-white/80 shadow-2xl shadow-slate-900/[0.08] sm:h-16'
               : 'h-16 border-white/60 bg-white/70 shadow-xl shadow-slate-900/5 sm:h-[4.5rem]'

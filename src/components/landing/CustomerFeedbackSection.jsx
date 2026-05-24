@@ -50,7 +50,7 @@ const CustomerFeedbackSection = () => {
 
   return (
     <section id="feedback" className="py-14 sm:py-20 lg:py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[92rem] px-4 sm:px-6 lg:px-8">
         <SectionHeader
           eyebrow="Customer Reviews"
           title="Real Restaurant Feedback Builds Trust"

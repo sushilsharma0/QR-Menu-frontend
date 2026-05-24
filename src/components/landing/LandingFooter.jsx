@@ -25,7 +25,7 @@ const LandingFooter = () => {
 
   return (
     <footer className="border-t border-surface-200 bg-surface-50/60 py-10 sm:py-12">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[92rem] px-4 sm:px-6 lg:px-8">
         <LazyMotion features={domAnimation}>
         <m.div
           initial={{ opacity: 0, y: 20 }}

@@ -4,7 +4,7 @@ import SectionHeader from './SectionHeader'
 
 const BestThingsSection = ({ items }) => (
   <section id="best" className="py-14 sm:py-20 lg:py-24">
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-[92rem] px-4 sm:px-6 lg:px-8">
       <SectionHeader
         eyebrow="Benefits Section"
         title="Built for Faster Service and Better Restaurant Operations"

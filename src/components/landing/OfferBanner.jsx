@@ -24,7 +24,7 @@ const OfferBanner = ({ offer }) => {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-80px' }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="mx-auto grid max-w-7xl overflow-hidden rounded-3xl border border-primary-200/30 bg-gradient-to-br from-primary-900 via-secondary-700 to-slate-950 shadow-2xl shadow-primary-900/25 sm:rounded-[2rem] lg:grid-cols-[1.02fr_0.98fr]"
+        className="mx-auto grid max-w-[92rem] overflow-hidden rounded-3xl border border-primary-200/30 bg-gradient-to-br from-primary-900 via-secondary-700 to-slate-950 shadow-2xl shadow-primary-900/25 sm:rounded-[2rem] lg:grid-cols-[1.02fr_0.98fr]"
       >
         <div className="relative z-10 flex flex-col justify-center p-5 text-white sm:p-8 md:p-10 lg:p-12">
           <motion.div

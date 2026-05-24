@@ -14,7 +14,7 @@ const points = [
 const AboutSection = ({ about }) => (
   <section id="about" className="py-14 sm:py-20 lg:py-24">
     <LazyMotion features={domAnimation}>
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:gap-10 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
+      <div className="mx-auto grid max-w-[92rem] gap-8 px-4 sm:gap-10 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
       <m.div
         initial={{ opacity: 0, x: -24 }}
         whileInView={{ opacity: 1, x: 0 }}
