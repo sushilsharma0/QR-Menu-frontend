@@ -83,12 +83,33 @@ function formatTableCode(tableNumber) {
   return `T${raw}`
 }
 
+function getOrderFulfillmentSummary(order) {
+  const items = Array.isArray(order?.items) ? order.items : []
+  return items.reduce(
+    (acc, item) => {
+      const qty = Math.max(1, Number(item?.quantity || 1))
+      if (item?.fulfillmentMode === 'parcel') acc.parcel += qty
+      else acc.dine += qty
+      return acc
+    },
+    { dine: 0, parcel: 0 },
+  )
+}
+
 function getOrderTableLabel(order) {
   const tableNumber = order?.table?.tableNumber
-  const isParcel = order?.orderChannel === 'takeaway' || order?.posDetails?.mode === 'takeaway'
+  const fulfillment = getOrderFulfillmentSummary(order)
+  const isMixed = fulfillment.dine > 0 && fulfillment.parcel > 0
+  const isParcel =
+    !isMixed &&
+    (fulfillment.parcel > 0 || order?.orderChannel === 'takeaway' || order?.posDetails?.mode === 'takeaway')
   const isDelivery = order?.orderChannel === 'delivery' || order?.posDetails?.mode === 'delivery'
   const isVirtualPos = VIRTUAL_POS_TABLES.has(tableNumber)
 
+  if (isMixed) {
+    if (tableNumber && !isVirtualPos) return `${formatTableCode(tableNumber)} + Parcel`
+    return 'Eat here + Parcel'
+  }
   if (isParcel) {
     if (tableNumber && !isVirtualPos) return `${formatTableCode(tableNumber)}-parcel`
     return 'Parcel'
