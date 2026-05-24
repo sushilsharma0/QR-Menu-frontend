@@ -107,7 +107,7 @@ const LandingNavbar = () => {
           transition={{ duration: 0.3, ease: 'easeOut' }}
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}
-          className={`mx-auto grid max-w-[92rem] grid-cols-[auto_1fr_auto] items-center gap-4 rounded-2xl border px-4 backdrop-blur-xl transition-all duration-500 sm:gap-6 sm:px-5 lg:gap-8 lg:px-6 ${
+          className={`mx-auto grid max-w-[92rem] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border px-3 backdrop-blur-xl transition-all duration-500 sm:gap-6 sm:px-5 lg:grid-cols-[auto_1fr_auto] lg:gap-8 lg:px-6 ${
             scrolled
               ? 'h-14 border-slate-200/60 bg-white/80 shadow-2xl shadow-slate-900/[0.08] sm:h-16'
               : 'h-16 border-white/60 bg-white/70 shadow-xl shadow-slate-900/5 sm:h-[4.5rem]'
@@ -121,7 +121,7 @@ const LandingNavbar = () => {
           />
 
           {/* Logo */}
-          <div className="flex min-h-0 items-center">
+          <div className="flex min-h-0 min-w-0 items-center">
             <BrandLogo scrolled={scrolled} showSlogan />
           </div>
 
@@ -200,7 +200,7 @@ const LandingNavbar = () => {
             onClick={() => setOpen(true)}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            className="relative ml-auto flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/80 bg-white/90 text-slate-800 shadow-md transition-all duration-300 hover:border-primary-300 hover:text-primary-700 hover:shadow-lg active:shadow-sm sm:h-11 sm:w-11 lg:hidden"
+            className="relative ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200/80 bg-white/90 text-slate-800 shadow-md transition-all duration-300 hover:border-primary-300 hover:text-primary-700 hover:shadow-lg active:shadow-sm sm:h-11 sm:w-11 lg:hidden"
             aria-label="Open menu"
           >
             <motion.div

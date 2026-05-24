@@ -20,7 +20,7 @@ const BrandLogo = ({ compact = false, scrolled = false, showSlogan = false, onCl
   const boxClass = compact ? LOGO_BOX.compact : scrolled ? LOGO_BOX.scrolled : LOGO_BOX.default
 
   return (
-    <Link to="/" onClick={onClick} className="group flex items-center gap-2.5 sm:gap-3" aria-label={`${title} home`}>
+    <Link to="/" onClick={onClick} className="group flex min-w-0 max-w-full items-center gap-2.5 sm:gap-3" aria-label={`${title} home`}>
       <span
         className={`inline-flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-primary-100 bg-white shadow-sm ${boxClass}`}
       >
@@ -31,12 +31,12 @@ const BrandLogo = ({ compact = false, scrolled = false, showSlogan = false, onCl
         />
       </span>
       {!compact && (
-        <span className="min-w-0">
+        <span className="min-w-0 max-w-[calc(100vw-8.5rem)] sm:max-w-[20rem] lg:max-w-[24rem]">
           <span className="block truncate text-[1.05rem] font-semibold leading-none tracking-tight text-primary-800 sm:text-[1.22rem]">
             {title}
           </span>
           {showSlogan && slogan ? (
-            <span className="mt-1 block max-w-[11rem] truncate text-[10px] font-bold uppercase leading-none tracking-wide text-slate-500 sm:max-w-[14rem] sm:text-[11px]">
+            <span className="mt-1 block whitespace-normal break-words text-[10px] font-bold uppercase leading-tight tracking-wide text-slate-500 sm:text-[11px]">
               {slogan}
             </span>
           ) : null}

@@ -92,8 +92,8 @@ const HeroSection = ({ hero }) => {
 
   return (
     <LazyMotion features={domAnimation}>
-    <section id="home" className="relative overflow-hidden px-4 pb-12 pt-16 sm:px-6 sm:pb-16 sm:pt-24 lg:px-8 lg:pt-28">
-      <div className="mx-auto grid max-w-[92rem] items-center gap-8 py-6 sm:gap-10 sm:py-8 lg:min-h-[calc(100vh-7rem)] lg:grid-cols-[1.15fr_0.85fr] lg:gap-14 lg:py-12 xl:gap-16">
+    <section id="home" className="relative max-w-full overflow-hidden px-4 pb-12 pt-16 sm:px-6 sm:pb-16 sm:pt-24 lg:px-8 lg:pt-28">
+      <div className="mx-auto grid max-w-[92rem] min-w-0 items-center gap-8 py-6 sm:gap-10 sm:py-8 lg:min-h-[calc(100vh-7rem)] lg:grid-cols-[1.15fr_0.85fr] lg:gap-14 lg:py-12 xl:gap-16">
         {/* Left Column - Content */}
         <m.div
           variants={containerVariants}
@@ -104,16 +104,16 @@ const HeroSection = ({ hero }) => {
           {/* Eyebrow Badge */}
           <m.div
             variants={itemVariants}
-            className={`inline-flex items-center gap-2 rounded-full border border-primary-200 bg-white/90 px-3 py-1.5 text-xs font-black shadow-sm backdrop-blur sm:px-4 sm:py-2 sm:text-sm ${themeTokens.accentText}`}
+            className={`inline-flex max-w-full items-start gap-2 rounded-full border border-primary-200 bg-white/90 px-3 py-1.5 text-left text-xs font-black shadow-sm backdrop-blur sm:items-center sm:px-4 sm:py-2 sm:text-sm ${themeTokens.accentText}`}
           >
             <Sparkles className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
-            <span className="truncate">{hero.eyebrow}</span>
+            <span className="min-w-0 whitespace-normal break-words leading-snug sm:truncate">{hero.eyebrow}</span>
           </m.div>
 
           {/* Main Title - Fixed responsive sizing */}
           <m.h1
             variants={itemVariants}
-            className="mt-4 text-3xl font-semibold leading-[1.1] tracking-tight text-slate-950 sm:mt-6 sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl"
+            className="mt-4 max-w-full break-words text-3xl font-semibold leading-[1.1] tracking-tight text-slate-950 sm:mt-6 sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl"
           >
             {hero.title}
           </m.h1>
@@ -121,7 +121,7 @@ const HeroSection = ({ hero }) => {
           {/* Main Description - Fixed responsive sizing */}
           <m.p
             variants={itemVariants}
-            className="mx-auto mt-3 max-w-3xl text-base leading-relaxed text-slate-600 sm:mt-4 sm:text-lg sm:leading-relaxed lg:mx-0 lg:text-xl"
+            className="mx-auto mt-3 max-w-3xl break-words text-base leading-relaxed text-slate-600 sm:mt-4 sm:text-lg sm:leading-relaxed lg:mx-0 lg:text-xl"
           >
             {hero.description}
           </m.p>
@@ -129,7 +129,7 @@ const HeroSection = ({ hero }) => {
           {/* Sub Description - Consistent sizing */}
           <m.p
             variants={itemVariants}
-            className="mx-auto mt-2 max-w-3xl text-sm leading-relaxed text-slate-500 sm:text-base lg:mx-0"
+            className="mx-auto mt-2 max-w-3xl break-words text-sm leading-relaxed text-slate-500 sm:text-base lg:mx-0"
           >
             {hero.subDescription}
           </m.p>
@@ -137,18 +137,18 @@ const HeroSection = ({ hero }) => {
           {/* CTA Buttons */}
           <m.div
             variants={itemVariants}
-            className="mt-6 flex flex-col justify-center gap-3 sm:mt-8 sm:flex-row lg:justify-start"
+            className="mt-6 flex w-full min-w-0 flex-col justify-center gap-3 sm:mt-8 sm:flex-row lg:justify-start"
           >
             <HeroCta
               href={hero.primaryCta?.href}
-              className={`group inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-black text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl sm:rounded-2xl sm:px-7 sm:py-4 sm:text-base ${themeTokens.primaryButton}`}
+              className={`group inline-flex w-full max-w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-center text-sm font-black text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl sm:w-auto sm:rounded-2xl sm:px-7 sm:py-4 sm:text-base ${themeTokens.primaryButton}`}
             >
               {hero.primaryCta?.text}
               <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1 sm:h-5 sm:w-5" />
             </HeroCta>
             <HeroCta
               href={hero.secondaryCta?.href}
-              className="group inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3.5 text-sm font-black text-slate-800 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md sm:rounded-2xl sm:px-7 sm:py-4 sm:text-base"
+              className="group inline-flex w-full max-w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-center text-sm font-black text-slate-800 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md sm:w-auto sm:rounded-2xl sm:px-7 sm:py-4 sm:text-base"
             >
               {hero.secondaryCta?.text}
               <BookOpenText className="h-4 w-4 transition-transform duration-300 group-hover:rotate-6 sm:h-5 sm:w-5" />
