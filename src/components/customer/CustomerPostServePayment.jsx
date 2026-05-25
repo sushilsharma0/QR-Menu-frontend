@@ -1,13 +1,9 @@
-﻿import React, { useReducer } from "react";
+﻿import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { CreditCard, Landmark, ShieldCheck } from "lucide-react";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../common/ToastContainer";
 import { requestCreditCheckoutOtp, submitPostServeOrderPayment } from "../../services/customer";
-const paymentReducer = (state, action) => ({
-  ...state,
-  [action.field]: typeof action.value === "function" ? action.value(state[action.field]) : action.value,
-});
 
 export default function CustomerPostServePayment({
   restaurantSlug,

@@ -21,6 +21,7 @@ import Navigation from "../../../components/customer/Navigation";
 import CartDrawer from "../../../components/customer/CartDrawer";
 import { useCustomerCart } from "../../../context/CustomerCartContext";
 import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
+import { isTierPricingGroup } from "../../../utils/menuVariationSuggestions";
 
 const initialItem = {
   price: 0,
@@ -294,11 +295,14 @@ const VariationGroupsSection = ({
                 className="w-full rounded-xl border border-gray-200 bg-white p-3 text-sm font-bold outline-none focus:ring-2 focus:ring-orange-300"
               >
                 {!group.isRequired && <option value="">No selection</option>}
-                {(group.options || []).map((option) => (
+                {(group.options || []).map((option) => {
+                  const price = Number(option.discountedPrice ?? option.additionalPrice ?? 0);
+                  const tier = isTierPricingGroup(group);
+                  return (
                   <option key={option._id} value={option._id} disabled={option.isAvailable === false || (option.trackInventory && Number(option.stockQuantity || 0) <= 0)}>
-                    {option.name} {Number(option.additionalPrice || 0) > 0 ? `(+Rs. ${option.additionalPrice})` : ""}
+                    {option.name}{tier ? ` — Rs. ${price}` : Number(price) > 0 ? ` (+Rs. ${price})` : ""}
                   </option>
-                ))}
+                )})}
               </select>
             ) : (
               <div className={display === "cards" || display === "image" ? "grid grid-cols-2 gap-2" : "flex flex-wrap gap-2"}>
@@ -308,6 +312,12 @@ const VariationGroupsSection = ({
                   const outOfStock = option.trackInventory && Number(option.stockQuantity || 0) <= 0;
                   const unavailable = option.isAvailable === false || outOfStock;
                   const price = Number(option.discountedPrice ?? option.additionalPrice ?? 0);
+                  const tier = isTierPricingGroup(group);
+                  const priceLabel = tier
+                    ? `Rs. ${price}`
+                    : price > 0
+                      ? `+Rs. ${price}`
+                      : "Included";
                   if (group.selectionType === "quantity" || display === "stepper") {
                     const qty = Number(row?.quantity || 0);
                     return (
@@ -315,7 +325,7 @@ const VariationGroupsSection = ({
                         <div className="min-w-0">
                           <p className="text-xs font-black text-gray-800">{option.name}</p>
                           <p className="text-[10px] font-bold text-gray-400">
-                            {price > 0 ? `+Rs. ${price}` : "Included"}{outOfStock ? " | out of stock" : ""}
+                            {priceLabel}{outOfStock ? " | out of stock" : ""}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -347,7 +357,7 @@ const VariationGroupsSection = ({
                       ) : null}
                       <span className="block">{option.name}</span>
                       <span className="mt-0.5 block text-[10px] text-gray-400">
-                        {price > 0 ? `+Rs. ${price}` : "Included"}{outOfStock ? " | out of stock" : ""}
+                        {priceLabel}{outOfStock ? " | out of stock" : ""}
                       </span>
                     </button>
                   );
@@ -618,6 +628,10 @@ const ItemDetails = () => {
         if (!option) return;
         const unitPrice = Number(option.discountedPrice ?? option.additionalPrice ?? 0);
         const qty = Math.max(1, Number(row.quantity || 1));
+        const isAddOn =
+          ["addon", "topping"].includes(group.type) ||
+          group.selectionType === "multiple" ||
+          group.selectionType === "quantity";
         out.push({
           groupId: group._id,
           groupName: group.name,
@@ -630,7 +644,8 @@ const ItemDetails = () => {
           unitPrice,
           totalPrice: unitPrice * qty,
           image: option.image || "",
-          isAddOn: ["addon", "topping"].includes(group.type) || group.selectionType !== "single",
+          isAddOn,
+          isTier: isTierPricingGroup(group),
         });
       });
     });
@@ -659,10 +674,23 @@ const ItemDetails = () => {
     return errors;
   }, [activeVariationGroups, variationSelections]);
 
-  const liveUnitPrice = useMemo(
-    () => Number(item.price || 0) + selectedVariationSnapshots.reduce((sum, row) => sum + Number(row.totalPrice || 0), 0),
-    [item.price, selectedVariationSnapshots],
-  );
+  const liveUnitPrice = useMemo(() => {
+    const base = Number(item.price || 0);
+    let tierTotal = null;
+    let additive = 0;
+    let addons = 0;
+    selectedVariationSnapshots.forEach((row) => {
+      if (row.isTier) {
+        tierTotal = (tierTotal || 0) + Number(row.totalPrice || 0);
+      } else if (row.isAddOn) {
+        addons += Number(row.totalPrice || 0);
+      } else {
+        additive += Number(row.totalPrice || 0);
+      }
+    });
+    const core = tierTotal != null ? tierTotal : base;
+    return core + additive + addons;
+  }, [item.price, selectedVariationSnapshots]);
 
   const lineTotal = () => liveUnitPrice * quantity;
 

@@ -16,6 +16,8 @@ import {
   FiUser,
   FiX,
   FiExternalLink,
+  FiTruck,
+  FiInbox,
 } from 'react-icons/fi'
 import toast from '@utils/toast'
 import api from '../../services/api'
@@ -33,48 +35,115 @@ import {
   paymentStatusStyles,
 } from '../../components/restaurant/RestaurantUI'
 
-const SectionCard = ({ title, icon: Icon, children, actions, className = '' }) => (
-  <Card
-    className={`overflow-hidden rounded-2xl border-surface-200 shadow-sm hover:shadow-lg ${className}`}
+const VIRTUAL_POS_TABLES = new Set(['POS-TAKEAWAY', 'POS-DELIVERY'])
+
+const STATUS_TIMELINE_STYLES = {
+  pending: 'bg-amber-500 ring-amber-200',
+  confirmed: 'bg-sky-500 ring-sky-200',
+  preparing: 'bg-violet-500 ring-violet-200',
+  ready: 'bg-emerald-500 ring-emerald-200',
+  served: 'bg-primary-600 ring-primary-200',
+  completed: 'bg-gray-600 ring-gray-200',
+  cancelled: 'bg-red-500 ring-red-200',
+}
+
+const Panel = ({ title, icon: Icon, children, className = '', headerClassName = '' }) => (
+  <div
+    className={`overflow-hidden rounded-3xl border border-gray-100/80 bg-white shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)] ${className}`}
   >
-    <div className="-mx-6 -mt-6 mb-5 flex items-center justify-between border-b border-surface-200 bg-surface-50/70 px-6 py-4">
-      <div className="flex items-center gap-3">
-        {Icon && (
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-primary-700 shadow-sm">
-            <Icon className="h-5 w-5" />
-          </span>
-        )}
-        <h3 className="text-base font-bold text-gray-950">{title}</h3>
-      </div>
-      {actions}
+    <div className={`flex items-center gap-3 border-b border-gray-100 px-5 py-4 ${headerClassName}`}>
+      {Icon && (
+        <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-50 to-white text-primary-700 ring-1 ring-primary-100">
+          <Icon className="h-5 w-5" />
+        </span>
+      )}
+      <h3 className="text-sm font-black tracking-tight text-gray-950">{title}</h3>
     </div>
-    {children}
-  </Card>
+    <div className="p-5">{children}</div>
+  </div>
 )
 
-const InfoTile = ({ label, value, icon: Icon, accent = 'text-primary-700 bg-primary-50' }) => (
-  <div className="rounded-2xl border border-surface-200 bg-white p-4 shadow-sm">
-    <div className="flex items-start gap-3">
-      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${accent}`}>
-        <Icon className="h-5 w-5" />
-      </span>
+const MetaChip = ({ icon: Icon, label, value, tone = 'neutral' }) => {
+  const tones = {
+    neutral: 'border-gray-100 bg-white/90 text-gray-800',
+    parcel: 'border-amber-200/80 bg-amber-50 text-amber-950',
+    dine: 'border-emerald-200/80 bg-emerald-50 text-emerald-950',
+    delivery: 'border-sky-200/80 bg-sky-50 text-sky-950',
+  }
+  return (
+    <div className={`flex min-w-0 items-center gap-2.5 rounded-2xl border px-3 py-2.5 ${tones[tone] || tones.neutral}`}>
+      {Icon && (
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/80 shadow-sm">
+          <Icon className="h-4 w-4 opacity-80" />
+        </span>
+      )}
       <div className="min-w-0">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
-        <p className="mt-1 truncate text-lg font-bold text-gray-950">{value}</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-60">{label}</p>
+        <p className="truncate text-sm font-black">{value}</p>
       </div>
     </div>
-  </div>
-)
+  )
+}
 
-const DetailRow = ({ label, value, icon: Icon }) => (
-  <div className="flex items-start gap-3 rounded-xl bg-surface-50/70 px-3 py-3">
-    {Icon && <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary-600" />}
-    <div className="min-w-0">
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
-      <p className="mt-1 break-words text-sm font-semibold text-gray-900">{value || 'N/A'}</p>
-    </div>
-  </div>
-)
+function formatTableCode(tableNumber) {
+  const raw = String(tableNumber || '').trim()
+  if (!raw) return ''
+  if (/^t/i.test(raw)) {
+    const rest = raw.slice(1).replace(/^[-\s]+/, '')
+    return rest ? `T${rest}` : raw
+  }
+  return `T${raw}`
+}
+
+function getOrderFulfillment(order) {
+  const tableNumber = order?.table?.tableNumber
+  const isParcel = order?.orderChannel === 'takeaway' || order?.posDetails?.mode === 'takeaway'
+  const isDelivery = order?.orderChannel === 'delivery' || order?.posDetails?.mode === 'delivery'
+  const isVirtualPos = VIRTUAL_POS_TABLES.has(tableNumber)
+
+  if (isParcel) {
+    const tableLabel =
+      tableNumber && !isVirtualPos ? `${formatTableCode(tableNumber)}-parcel` : 'Parcel'
+    return {
+      type: 'parcel',
+      tableLabel,
+      channelLabel: 'Pack for takeaway',
+      tone: 'parcel',
+      Icon: FiInbox,
+    }
+  }
+  if (isDelivery) {
+    const tableLabel =
+      tableNumber && !isVirtualPos ? `${formatTableCode(tableNumber)}-delivery` : 'Delivery'
+    return {
+      type: 'delivery',
+      tableLabel,
+      channelLabel: 'Delivery',
+      tone: 'delivery',
+      Icon: FiTruck,
+    }
+  }
+  return {
+    type: 'dine_in',
+    tableLabel: tableNumber ? formatTableCode(tableNumber) : '—',
+    channelLabel: 'Dine in',
+    tone: 'dine',
+    Icon: FiMapPin,
+  }
+}
+
+function cleanSpecialRequests(text, fulfillmentType) {
+  const raw = String(text || '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+  const unique = [...new Set(raw)]
+  const filtered =
+    fulfillmentType === 'parcel'
+      ? unique.filter((line) => !/parcel order\s*-\s*pack for takeaway/i.test(line))
+      : unique
+  return filtered.join(' · ')
+}
 
 function getOrderCustomerLabel(order) {
   const name = String(order?.customerName || '').trim()
@@ -334,18 +403,18 @@ const OrderDetail = () => {
     if (!order) return null
     if (!canRecordAnyPayment) return null
     return (
-      <div className={compact ? 'space-y-3' : 'mt-4 space-y-3 border-t border-surface-200 pt-4'}>
+      <div className={compact ? 'space-y-3' : 'mt-5 space-y-4 border-t border-gray-100 pt-5'}>
         {houseCreditManageHref && (
           <Link
             to={houseCreditManageHref}
-            className="inline-flex items-center gap-2 text-xs font-bold text-primary-700 hover:text-primary-900 dark:text-primary-400"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary-50 px-3 py-2 text-xs font-bold text-primary-800 hover:bg-primary-100"
           >
             <FiExternalLink className="h-3.5 w-3.5" />
             {isCashierView ? 'House credit balances' : 'Open credit / house accounts'}
           </Link>
         )}
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Record payment</p>
+        <div className="rounded-2xl bg-gray-50 px-4 py-3">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-500">Record payment</p>
           {order.guestPaymentPreferenceAt ? (
             <p className="mt-1 rounded-lg bg-primary-50 px-2 py-1.5 text-xs font-semibold text-primary-900 dark:bg-primary-950/50 dark:text-primary-100">
               Guest indicated:{' '}
@@ -361,7 +430,7 @@ const OrderDetail = () => {
             )}
           </p>
         </div>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="mt-3 grid grid-cols-3 gap-2 rounded-2xl bg-white p-1 ring-1 ring-gray-100">
           {[
             { id: 'cash', label: 'Cash' },
             { id: 'online', label: 'Online' },
@@ -371,10 +440,10 @@ const OrderDetail = () => {
               key={opt.id}
               type="button"
               onClick={() => setPayMode(opt.id)}
-              className={`rounded-xl border-2 py-2.5 text-xs font-black transition-colors ${
+              className={`rounded-xl py-2.5 text-xs font-black transition-all ${
                 payMode === opt.id
-                  ? 'border-primary-600 bg-primary-50 text-primary-800 dark:border-primary-500 dark:bg-primary-950/50 dark:text-primary-200'
-                  : 'border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300'
+                  ? 'bg-primary-700 text-white shadow-md'
+                  : 'text-gray-600 hover:bg-gray-50'
               }`}
             >
               {opt.label}
@@ -596,6 +665,11 @@ const OrderDetail = () => {
 
   const statusActionContent = getStatusActions()
   const showPaymentTools = canRecordAnyPayment
+  const fulfillment = getOrderFulfillment(order)
+  const FulfillmentIcon = fulfillment.Icon
+  const specialNote = cleanSpecialRequests(order.specialRequests, fulfillment.type)
+  const discountAmount = Number(order.discountAmount || 0)
+  const serviceCharge = Number(order.posDetails?.serviceChargeAmount || 0)
 
   if (isCashierView) {
     return (
@@ -692,195 +766,324 @@ const OrderDetail = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-[1400px] space-y-6 pb-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <button onClick={() => navigate(backPath)} className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-950">
-          <FiArrowLeft /> Back to Orders
+        <button
+          type="button"
+          onClick={() => navigate(backPath)}
+          className="inline-flex w-fit items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-bold text-gray-700 shadow-sm transition hover:border-primary-200 hover:text-primary-800"
+        >
+          <FiArrowLeft className="h-4 w-4" />
+          Back to orders
         </button>
-        <Button variant="secondary" onClick={printReceipt}>
-          <FiPrinter className="mr-2" /> Print Receipt
+        <Button variant="secondary" onClick={printReceipt} className="rounded-2xl">
+          <FiPrinter className="mr-2" />
+          Print receipt
         </Button>
       </div>
 
       <motion.section
-        initial={{ opacity: 0, y: 18 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: 'easeOut' }}
-        className="relative overflow-hidden rounded-3xl border border-surface-200 bg-white shadow-sm"
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+        className="relative overflow-hidden rounded-[2rem] shadow-[0_20px_50px_-24px_rgba(69,26,3,0.45)]"
       >
-        <div className="absolute inset-x-0 top-0 h-44 bg-gradient-to-r from-primary-50 via-surface-50 to-emerald-50" />
-        <div className="relative p-5 md:p-7">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-700 shadow-sm">
-                <FiShoppingBag className="h-4 w-4" />
-                Order Details
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <h1 className="text-3xl font-bold tracking-tight text-gray-950">#{order.orderNumber}</h1>
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-primary-950 to-primary-800" />
+        <div
+          className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-3xl"
+          aria-hidden
+        />
+        <div
+          className="absolute -bottom-20 left-1/3 h-48 w-48 rounded-full bg-amber-400/20 blur-3xl"
+          aria-hidden
+        />
+
+        <div className="relative p-6 md:p-8">
+          <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/50">
+                Order details
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <h1 className="text-4xl font-black tracking-tight text-white md:text-5xl">
+                  #{order.orderNumber}
+                </h1>
                 <OrderStatusBadge status={order.status} />
                 {order.paymentStatus && (
-                  <RestaurantStatusPill value={order.paymentStatus} styles={paymentStatusStyles} uppercase />
+                  <RestaurantStatusPill
+                    value={order.paymentStatus}
+                    styles={paymentStatusStyles}
+                    uppercase
+                  />
                 )}
               </div>
-              <p className="mt-2 max-w-3xl text-sm text-gray-500">
-                {customerName} - Table {order.table?.tableNumber || 'N/A'} - {formatRestaurantDateTime(order.createdAt)}
-              </p>
+              <div className="mt-4 flex flex-wrap items-center gap-2 text-sm font-semibold text-white/75">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1">
+                  <FiUser className="h-3.5 w-3.5" />
+                  {customerName}
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1">
+                  <FiClock className="h-3.5 w-3.5" />
+                  {formatRestaurantDateTime(order.createdAt)}
+                </span>
+                {order.estimatedWaitTime ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1">
+                    ~{order.estimatedWaitTime} min wait
+                  </span>
+                ) : null}
+              </div>
             </div>
-            <div className="rounded-2xl border border-white/80 bg-white/90 px-5 py-4 shadow-sm xl:text-right">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Grand Total</p>
-              <p className="mt-1 text-3xl font-bold text-primary-700">{formatMoney(grandTotal)}</p>
+
+            <div className="flex shrink-0 flex-col items-start gap-3 sm:items-end">
+              <div
+                className={`inline-flex items-center gap-3 rounded-2xl border px-4 py-3 shadow-lg backdrop-blur-sm ${
+                  fulfillment.tone === 'parcel'
+                    ? 'border-amber-300/40 bg-amber-400/20 text-amber-50'
+                    : fulfillment.tone === 'delivery'
+                      ? 'border-sky-300/40 bg-sky-400/20 text-sky-50'
+                      : 'border-emerald-300/40 bg-emerald-400/20 text-emerald-50'
+                }`}
+              >
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20">
+                  <FulfillmentIcon className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] opacity-80">
+                    {fulfillment.channelLabel}
+                  </p>
+                  <p className="text-xl font-black">{fulfillment.tableLabel}</p>
+                </div>
+              </div>
+              <div className="rounded-2xl bg-white/95 px-5 py-3 text-right shadow-xl">
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-500">
+                  Grand total
+                </p>
+                <p className="text-3xl font-black text-primary-700">{formatMoney(grandTotal)}</p>
+              </div>
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <InfoTile label="Items ordered" value={itemCount} icon={FiShoppingBag} accent="bg-primary-50 text-primary-700" />
-            <InfoTile label="Estimated wait" value={order.estimatedWaitTime ? `${order.estimatedWaitTime} min` : 'Not set'} icon={FiClock} accent="bg-indigo-50 text-indigo-700" />
-            <InfoTile label="Table" value={order.table?.tableNumber || 'N/A'} icon={FiMapPin} accent="bg-emerald-50 text-emerald-700" />
-            <InfoTile label="Payment" value={order.paymentMethod || 'N/A'} icon={FiCreditCard} accent="bg-amber-50 text-amber-700" />
+          <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <MetaChip icon={FiShoppingBag} label="Items" value={String(itemCount)} tone="neutral" />
+            <MetaChip
+              icon={FiClock}
+              label="Wait"
+              value={order.estimatedWaitTime ? `${order.estimatedWaitTime} min` : '—'}
+              tone="neutral"
+            />
+            <MetaChip icon={FulfillmentIcon} label="Service" value={fulfillment.channelLabel} tone={fulfillment.tone} />
+            <MetaChip
+              icon={FiCreditCard}
+              label="Payment"
+              value={order.paymentMethod || 'Pending'}
+              tone="neutral"
+            />
           </div>
+
+          {specialNote ? (
+            <div className="mt-4 rounded-2xl border border-amber-300/30 bg-amber-500/15 px-4 py-3 backdrop-blur-sm">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-100/80">
+                Kitchen note
+              </p>
+              <p className="mt-1 text-sm font-semibold leading-relaxed text-amber-50">{specialNote}</p>
+            </div>
+          ) : null}
         </div>
       </motion.section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <SectionCard title="Order Information" icon={FiHash}>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              <DetailRow label="Order number" value={`#${order.orderNumber}`} icon={FiHash} />
-              <DetailRow label="Date and time" value={formatRestaurantDateTime(order.createdAt)} icon={FiClock} />
-              <DetailRow label="Estimated wait" value={order.estimatedWaitTime ? `${order.estimatedWaitTime} minutes` : 'Not set'} icon={FiClock} />
-              <div className="flex items-center gap-3 rounded-xl bg-surface-50/70 px-3 py-3">
-                <FiSliders className="h-4 w-4 text-primary-600" />
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Current status</p>
-                  <div className="mt-1"><OrderStatusBadge status={order.status} /></div>
-                </div>
-              </div>
-            </div>
-            {order.specialRequests && (
-              <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Special requests</p>
-                <p className="mt-1 text-sm font-medium text-amber-950">{order.specialRequests}</p>
-              </div>
-            )}
-          </SectionCard>
-
-          <SectionCard title="Order Items" icon={FiShoppingBag}>
-            <div className="overflow-hidden rounded-2xl border border-surface-200">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="space-y-6 lg:col-span-8">
+          <Panel title="Order items" icon={FiShoppingBag}>
+            <ul className="divide-y divide-gray-100">
               {order.items?.map((item, idx) => (
-                <div key={idx} className="flex flex-col gap-3 border-b border-surface-200 bg-white px-4 py-4 last:border-b-0 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-sm font-bold text-primary-700">
-                      {item.quantity}x
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-950">{item.name}</p>
-                      <p className="text-sm text-gray-500">{formatMoney(item.price)} each</p>
+                <li
+                  key={idx}
+                  className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between"
+                >
+                  <div className="flex gap-4">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-100 to-primary-50 text-sm font-black text-primary-800 ring-1 ring-primary-100">
+                      {item.quantity}×
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-base font-black text-gray-950">{item.name}</p>
+                      <p className="mt-0.5 text-sm font-semibold text-gray-500">
+                        {formatMoney(item.price)} each
+                      </p>
                       {(item.selectedVariations || []).length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {(item.selectedVariations || []).map((variation, vIdx) => (
-                            <span key={`${variation.optionId || variation.optionName}-${vIdx}`} className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-bold text-primary-700">
+                            <span
+                              key={`${variation.optionId || variation.optionName}-${vIdx}`}
+                              className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-bold text-gray-700"
+                            >
                               {variation.groupName}: {variation.optionName}
-                              {Number(variation.quantity || 1) > 1 ? ` x${variation.quantity}` : ''}
+                              {Number(variation.quantity || 1) > 1 ? ` ×${variation.quantity}` : ''}
                             </span>
                           ))}
                         </div>
                       )}
                       {item.specialInstructions && (
-                        <p className="mt-2 rounded-lg bg-surface-50 px-3 py-2 text-sm text-gray-600">Note: {item.specialInstructions}</p>
+                        <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900 ring-1 ring-amber-100">
+                          {item.specialInstructions}
+                        </p>
                       )}
                     </div>
                   </div>
-                  <p className="text-right font-bold text-gray-950">{formatMoney(item.price * item.quantity)}</p>
-                </div>
+                  <p className="text-lg font-black text-gray-950 sm:text-right">
+                    {formatMoney(item.price * item.quantity)}
+                  </p>
+                </li>
               ))}
-            </div>
+            </ul>
 
-            <div className="mt-5 rounded-2xl bg-gray-950 p-5 text-white">
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-white/60">Subtotal</span>
-                  <span className="font-semibold">{formatMoney(subtotal)}</span>
+            <div className="mt-5 overflow-hidden rounded-2xl border border-gray-100 bg-gradient-to-br from-gray-50 to-white">
+              <div className="space-y-2.5 px-5 py-4 text-sm">
+                <div className="flex justify-between text-gray-600">
+                  <span>Subtotal</span>
+                  <span className="font-bold text-gray-900">{formatMoney(subtotal)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-white/60">Tax</span>
-                  <span className="font-semibold">{formatMoney(taxAmount)}</span>
-                </div>
-                <div className="flex justify-between border-t border-white/15 pt-3 text-lg font-bold">
-                  <span>Total</span>
-                  <span className="text-surface-100">{formatMoney(grandTotal)}</span>
-                </div>
+                {taxAmount > 0 && (
+                  <div className="flex justify-between text-gray-600">
+                    <span>Tax</span>
+                    <span className="font-bold text-gray-900">{formatMoney(taxAmount)}</span>
+                  </div>
+                )}
+                {serviceCharge > 0 && (
+                  <div className="flex justify-between text-gray-600">
+                    <span>Service charge</span>
+                    <span className="font-bold text-gray-900">{formatMoney(serviceCharge)}</span>
+                  </div>
+                )}
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-emerald-700">
+                    <span>Discount</span>
+                    <span className="font-bold">−{formatMoney(discountAmount)}</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center justify-between border-t border-gray-200 bg-primary-950 px-5 py-4 text-white">
+                <span className="text-sm font-bold uppercase tracking-wider text-white/70">Total due</span>
+                <span className="text-2xl font-black">{formatMoney(grandTotal)}</span>
               </div>
             </div>
-          </SectionCard>
+          </Panel>
 
-          <SectionCard title="Order Timeline" icon={FiClock}>
+          <Panel title="Kitchen timeline" icon={FiClock}>
             {order.statusHistory?.length ? (
-              <div className="space-y-0">
-                {order.statusHistory.map((history, idx) => (
-                  <div key={idx} className="relative flex gap-4 pb-6 last:pb-0">
-                    <div className="flex flex-col items-center">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-600 text-white shadow-sm">
-                        <FiCheck className="h-4 w-4" />
-                      </span>
-                      {idx < order.statusHistory.length - 1 && <span className="mt-2 h-full w-px bg-surface-200" />}
-                    </div>
-                    <div className="min-w-0 flex-1 rounded-2xl bg-surface-50/70 px-4 py-3">
-                      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                        <span className="font-bold capitalize text-gray-950">{history.status}</span>
-                        <span className="text-xs font-medium text-gray-500">{formatRestaurantDateTime(history.timestamp)}</span>
-                      </div>
-                      {history.note && <p className="mt-1 text-sm text-gray-500">{history.note}</p>}
-                    </div>
-                  </div>
-                ))}
+              <div className="relative pl-1">
+                <span
+                  className="absolute bottom-4 left-[17px] top-4 w-0.5 bg-gradient-to-b from-primary-300 via-primary-200 to-transparent"
+                  aria-hidden
+                />
+                <ul className="space-y-4">
+                  {order.statusHistory.map((history, idx) => {
+                    const dotClass =
+                      STATUS_TIMELINE_STYLES[history.status] || STATUS_TIMELINE_STYLES.pending
+                    const isLast = idx === order.statusHistory.length - 1
+                    return (
+                      <li key={idx} className="relative flex gap-4">
+                        <span
+                          className={`relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white shadow-md ring-4 ${dotClass} ${isLast ? 'scale-110' : ''}`}
+                        >
+                          <FiCheck className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0 flex-1 rounded-2xl border border-gray-100 bg-gray-50/80 px-4 py-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="font-black capitalize text-gray-950">{history.status}</span>
+                            <span className="text-xs font-semibold text-gray-500">
+                              {formatRestaurantDateTime(history.timestamp)}
+                            </span>
+                          </div>
+                          {history.note && (
+                            <p className="mt-1.5 text-sm font-medium text-gray-600">{history.note}</p>
+                          )}
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-surface-200 bg-surface-50/60 px-4 py-8 text-center">
-                <p className="text-sm font-semibold text-gray-900">No timeline updates yet</p>
-                <p className="mt-1 text-sm text-gray-500">Status changes will appear here as the order moves through service.</p>
+              <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/80 px-4 py-10 text-center">
+                <FiClock className="mx-auto h-8 w-8 text-gray-300" />
+                <p className="mt-3 text-sm font-bold text-gray-800">No updates yet</p>
+                <p className="mt-1 text-xs text-gray-500">Status changes appear here as the order progresses.</p>
               </div>
             )}
-          </SectionCard>
+          </Panel>
         </div>
 
-        <div className="space-y-6">
-          <SectionCard title="Actions" icon={FiSliders} className="lg:sticky lg:top-6">
-            {statusActionContent}
-            {!statusActionContent && !showPaymentTools && (
-              <div className="rounded-2xl border border-surface-200 bg-surface-50/70 px-4 py-5 text-center">
-                <p className="text-sm font-semibold text-gray-900">No actions available</p>
-                <p className="mt-1 text-xs text-gray-500">This order is already in a final state.</p>
-              </div>
-            )}
-            {renderCreditSettlementNotice()}
-            {showPaymentTools && renderStaffPaymentForm(false)}
-          </SectionCard>
-
-          <SectionCard title="Customer Information" icon={FiUser}>
-            <div className="space-y-3">
-              <DetailRow label="Name" value={customerName} icon={FiUser} />
-              {order.guestId && <DetailRow label="Guest ID" value={order.guestId} icon={FiHash} />}
-              {order.customerPhone && <DetailRow label="Phone" value={order.customerPhone} icon={FiPhone} />}
-              {order.customerEmail && <DetailRow label="Email" value={order.customerEmail} icon={FiMail} />}
-              <DetailRow label="Table number" value={order.table?.tableNumber || 'N/A'} icon={FiMapPin} />
-            </div>
-          </SectionCard>
-
-          {order.paymentStatus && (
-            <SectionCard title="Payment Information" icon={FiCreditCard}>
-              <div className="space-y-3">
-                <div className="rounded-xl bg-surface-50/70 px-3 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Payment status</p>
-                  <div className="mt-2">
-                    <RestaurantStatusPill value={order.paymentStatus} styles={paymentStatusStyles} uppercase />
-                  </div>
+        <div className="space-y-6 lg:col-span-4">
+          <div className="lg:sticky lg:top-6 lg:space-y-6">
+            <Panel title="Actions" icon={FiSliders} className="ring-1 ring-primary-100/80">
+              {statusActionContent}
+              {!statusActionContent && !showPaymentTools && (
+                <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center">
+                  <p className="text-sm font-bold text-gray-800">No actions available</p>
+                  <p className="mt-1 text-xs text-gray-500">This order is in a final state.</p>
                 </div>
-                {order.paymentMethod && <DetailRow label="Payment method" value={order.paymentMethod} icon={FiCreditCard} />}
-                <DetailRow label="Amount due" value={formatMoney(grandTotal)} icon={FiCreditCard} />
+              )}
+              {renderCreditSettlementNotice()}
+              {showPaymentTools && renderStaffPaymentForm(false)}
+            </Panel>
+
+            <Panel title="Guest" icon={FiUser}>
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-600 to-primary-800 text-lg font-black text-white shadow-md">
+                  {customerName.charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-lg font-black text-gray-950">{customerName}</p>
+                  {order.guestId && (
+                    <p className="text-xs font-semibold text-gray-500">ID {order.guestId}</p>
+                  )}
+                </div>
               </div>
-            </SectionCard>
-          )}
+              <div className="mt-4 space-y-2">
+                {order.customerPhone && (
+                  <a
+                    href={`tel:${order.customerPhone}`}
+                    className="flex items-center gap-3 rounded-xl bg-gray-50 px-3 py-2.5 text-sm font-semibold text-gray-800 transition hover:bg-primary-50 hover:text-primary-900"
+                  >
+                    <FiPhone className="h-4 w-4 text-primary-600" />
+                    {order.customerPhone}
+                  </a>
+                )}
+                {order.customerEmail && (
+                  <a
+                    href={`mailto:${order.customerEmail}`}
+                    className="flex items-center gap-3 rounded-xl bg-gray-50 px-3 py-2.5 text-sm font-semibold text-gray-800 transition hover:bg-primary-50 hover:text-primary-900"
+                  >
+                    <FiMail className="h-4 w-4 text-primary-600" />
+                    <span className="truncate">{order.customerEmail}</span>
+                  </a>
+                )}
+              </div>
+            </Panel>
+
+            <Panel title="Payment" icon={FiCreditCard}>
+              <div className="flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Status</span>
+                {order.paymentStatus ? (
+                  <RestaurantStatusPill value={order.paymentStatus} styles={paymentStatusStyles} uppercase />
+                ) : (
+                  <span className="text-sm font-bold text-gray-600">—</span>
+                )}
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-center">
+                <div className="rounded-xl border border-gray-100 bg-white px-3 py-3">
+                  <p className="text-[10px] font-bold uppercase text-gray-400">Method</p>
+                  <p className="mt-1 text-sm font-black capitalize text-gray-900">
+                    {order.paymentMethod || '—'}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-gray-100 bg-white px-3 py-3">
+                  <p className="text-[10px] font-bold uppercase text-gray-400">Due</p>
+                  <p className="mt-1 text-sm font-black text-primary-700">{formatMoney(amountDue)}</p>
+                </div>
+              </div>
+            </Panel>
+          </div>
         </div>
       </div>
     </div>

@@ -9,7 +9,9 @@ import Input from '../../components/common/Input'
 import Card from '../../components/common/Card'
 import MenuImageSuggestions from '../../components/restaurant/MenuImageSuggestions'
 import DescriptionFieldWithSuggestion from '../../components/restaurant/DescriptionFieldWithSuggestion'
+import VariationSuggestionsPanel from '../../components/restaurant/VariationSuggestionsPanel'
 import { useMenuImageSuggestions } from '../../hooks/useMenuImageSuggestions'
+import { isTierPricingGroup } from '../../utils/menuVariationSuggestions'
 
 const IMAGE_MAX_BYTES = 1 * 1024 * 1024
 const createClientKey = () => `client-${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -136,9 +138,11 @@ const ImageField = ({ imagePreview, onChange, onRemove }) => (
   </div>
 )
 
-const VariationGroupCard = ({ group, groupIndex, actions }) => (
+const VariationGroupCard = ({ group, groupIndex, actions }) => {
+  const tierMode = isTierPricingGroup(group)
+  return (
   <div className="rounded-lg border border-gray-200 bg-white p-4">
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
       <Input label="Group name" value={group.name || ''} onChange={(e) => actions.updateGroup(groupIndex, { name: e.target.value })} />
       <div>
         <label htmlFor={`variation-group-${groupIndex}-type`} className="mb-1 block text-sm font-medium text-gray-700">Type</label>
@@ -160,7 +164,24 @@ const VariationGroupCard = ({ group, groupIndex, actions }) => (
           {['radio', 'dropdown', 'chips', 'cards', 'image', 'checkbox', 'toggle', 'stepper'].map((value) => <option key={value} value={value}>{value}</option>)}
         </select>
       </div>
+      <div>
+        <label htmlFor={`variation-group-${groupIndex}-pricing`} className="mb-1 block text-sm font-medium text-gray-700">Pricing</label>
+        <select
+          id={`variation-group-${groupIndex}-pricing`}
+          value={group.pricingMode || (tierMode ? 'tier' : 'additive')}
+          onChange={(e) => actions.updateGroup(groupIndex, { pricingMode: e.target.value })}
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500"
+        >
+          <option value="tier">Full price per option (half / full plate)</option>
+          <option value="additive">Add to base price (+ Rs.)</option>
+        </select>
+      </div>
     </div>
+    {tierMode && (
+      <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
+        Tier pricing: each option&apos;s price is what the customer pays (e.g. half plate Rs. 150, full plate Rs. 300). Base item price is ignored when they choose a portion.
+      </p>
+    )}
 
     <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-5">
       <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
@@ -177,7 +198,7 @@ const VariationGroupCard = ({ group, groupIndex, actions }) => (
       <table className="min-w-full text-sm">
         <thead>
           <tr className="border-b text-left text-xs uppercase text-gray-500">
-            {['Option', '+ Price', 'Discount', 'SKU', 'Stock', 'Default', 'Available', ''].map((heading) => <th key={heading} className="py-2 pr-2">{heading}</th>)}
+            {['Option', tierMode ? 'Price (Rs.)' : '+ Price', 'Discount', 'SKU', 'Stock', 'Default', 'Available', ''].map((heading) => <th key={heading} className="py-2 pr-2">{heading}</th>)}
           </tr>
         </thead>
         <tbody>
@@ -202,7 +223,8 @@ const VariationGroupCard = ({ group, groupIndex, actions }) => (
       <Button type="button" variant="danger" onClick={() => actions.removeGroup(groupIndex)}>Remove group</Button>
     </div>
   </div>
-)
+  )
+}
 
 const VariationsEditor = ({ variationGroups, actions }) => (
   <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
@@ -233,6 +255,7 @@ const MenuItemForm = () => {
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm()
   const watchedName = watch('name', '')
   const watchedCategoryId = watch('category', '')
+  const watchedPrice = watch('price', '')
   const categoryName = categories.find((cat) => String(cat._id) === String(watchedCategoryId))?.name || ''
   const imageSuggestionQuery = String(watchedName || '').trim()
   const {
@@ -350,12 +373,19 @@ const MenuItemForm = () => {
   }
 
   const actions = {
+    applySuggestion: (suggestion) => {
+      setVariationGroups(suggestion.groups || [])
+      if (suggestion.suggestedBasePrice === 0) {
+        setValue('price', '0', { shouldDirty: true })
+      }
+      toast.success(`Applied ${suggestion.label}`)
+    },
     addGroup: () => setVariationGroups([
       ...variationGroups,
       {
         clientKey: createClientKey(),
-        name: 'Size', type: 'size', selectionType: 'single', isRequired: true,
-        minSelection: 1, maxSelection: 1, displayType: 'chips', sortOrder: variationGroups.length, isActive: true,
+        name: 'Size', type: 'size', pricingMode: 'tier', selectionType: 'single', isRequired: true,
+        minSelection: 1, maxSelection: 1, displayType: 'dropdown', sortOrder: variationGroups.length, isActive: true,
         options: [
           { clientKey: createClientKey(), name: 'Regular', additionalPrice: 0, isAvailable: true, isDefault: true },
           { clientKey: createClientKey(), name: 'Large', additionalPrice: 100, isAvailable: true },
@@ -445,8 +475,20 @@ const MenuItemForm = () => {
             placeholder="Write something..."
             error={errors.description?.message}
           />
+          <VariationSuggestionsPanel
+            itemName={watchedName}
+            categoryName={categoryName}
+            basePrice={watchedPrice}
+            variationGroups={variationGroups}
+            onApply={actions.applySuggestion}
+          />
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Price" type="number" step="0.01" placeholder="0.00" {...register('price', { required: 'Price is required', min: 0 })} error={errors.price?.message} />
+            <div>
+              <Input label="Base price" type="number" step="0.01" placeholder="0.00" {...register('price', { required: 'Price is required', min: 0 })} error={errors.price?.message} />
+              <p className="mt-1 text-xs text-gray-500">
+                For half/full plate or pizza sizes, use 0 and set full prices in variations below.
+              </p>
+            </div>
             <Input label="Original Price (Optional)" type="number" step="0.01" placeholder="0.00" {...register('originalPrice')} />
           </div>
           <div className="grid grid-cols-2 gap-4">
