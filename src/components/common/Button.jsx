@@ -27,6 +27,16 @@ const Button = ({
     md: 'px-4 py-2 text-sm',
     lg: 'px-6 py-3 text-base',
   }
+
+  const spinnerColors = {
+    primary: 'var(--button-spinner-color, var(--color-primary-500, #8f2800))',
+    danger: 'var(--button-spinner-color, var(--color-primary-500, #8f2800))',
+    success: 'var(--button-spinner-color, var(--color-primary-500, #8f2800))',
+    secondary: 'var(--button-spinner-color, var(--color-primary-500, #8f2800))',
+    outline: 'var(--button-spinner-color, var(--color-primary-500, #8f2800))',
+    ghost: 'var(--button-spinner-color, var(--color-primary-500, #8f2800))',
+  }
+  const spinnerColor = spinnerColors[variant] || spinnerColors.primary
   
   return (
     <button
@@ -41,7 +51,8 @@ const Button = ({
     >
       {loading && (
         <span
-          className="absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 animate-spin rounded-full border-2 border-white border-r-transparent"
+          className="absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 animate-spin rounded-full border-2"
+          style={{ borderColor: spinnerColor, borderRightColor: 'transparent' }}
           aria-hidden="true"
         />
       )}

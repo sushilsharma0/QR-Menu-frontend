@@ -247,6 +247,9 @@ export const applyThemeToDocument = (settings) => {
   Object.entries(semantic).forEach(([key, value]) => {
     root.style.setProperty(`--color-${key}`, value)
   })
+  root.style.setProperty('--button-spinner-color', palette.primary || '#8f2800')
+  root.style.setProperty('--button-spinner-on-solid', palette.primary || '#8f2800')
+  root.style.setProperty('--button-spinner-on-light', palette.primary || '#8f2800')
   root.style.setProperty('--font-app', normalized.fontFamily)
   root.classList.toggle('dark', isDark)
   root.dataset.theme = normalized.activeTheme
