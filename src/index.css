@@ -64,6 +64,8 @@
   --color-card: #ffffff;
   --color-border: #efe2a6;
   --font-app: Inter, system-ui, sans-serif;
+  --scrollbar-thumb: var(--color-primary-500);
+  --scrollbar-thumb-hover: var(--color-primary-700);
 }
 
 @layer base {
@@ -74,6 +76,8 @@
   
   * {
     @apply border-app-border;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+    scrollbar-width: thin;
     transition-property: background-color, border-color, color, fill, stroke, box-shadow;
     transition-duration: 180ms;
     transition-timing-function: ease;
@@ -673,17 +677,17 @@ button[aria-busy="true"]:not([data-spinner-handled="true"]):empty::before {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #b64a26;
+  background-color: var(--scrollbar-thumb);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #8f2800;
+  background-color: var(--scrollbar-thumb-hover);
 }
 
 .thin-horizontal-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #b64a26 transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 .thin-horizontal-scrollbar::-webkit-scrollbar {
@@ -695,12 +699,12 @@ button[aria-busy="true"]:not([data-spinner-handled="true"]):empty::before {
 }
 
 .thin-horizontal-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #b64a26;
+  background-color: var(--scrollbar-thumb);
   border-radius: 999px;
 }
 
 .thin-horizontal-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: #8f2800;
+  background-color: var(--scrollbar-thumb-hover);
 }
 
 /* Above modals (z-[9999]) so validation toasts stay fully visible */

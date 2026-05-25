@@ -250,6 +250,8 @@ export const applyThemeToDocument = (settings) => {
   root.style.setProperty('--button-spinner-color', palette.primary || '#8f2800')
   root.style.setProperty('--button-spinner-on-solid', palette.primary || '#8f2800')
   root.style.setProperty('--button-spinner-on-light', palette.primary || '#8f2800')
+  root.style.setProperty('--scrollbar-thumb', palette.primary || '#8f2800')
+  root.style.setProperty('--scrollbar-thumb-hover', buildScale(palette.primary || '#8f2800')[700])
   root.style.setProperty('--font-app', normalized.fontFamily)
   root.classList.toggle('dark', isDark)
   root.dataset.theme = normalized.activeTheme
