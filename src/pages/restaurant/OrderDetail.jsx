@@ -694,108 +694,9 @@ const OrderDetail = () => {
 
   const statusActionContent = getStatusActions()
   const showPaymentTools = canRecordAnyPayment
-<<<<<<< HEAD
   const fulfillment = getOrderFulfillment(order)
   const FulfillmentIcon = fulfillment.Icon
   const specialNote = cleanSpecialRequests(order.specialRequests, fulfillment.type)
-  const discountAmount = Number(order.discountAmount || 0)
-  const serviceCharge = Number(order.posDetails?.serviceChargeAmount || 0)
-=======
-  const dineInItems = (order.items || []).filter((item) => item.fulfillmentMode !== 'parcel')
-  const parcelItems = (order.items || []).filter((item) => item.fulfillmentMode === 'parcel')
-  const fulfillmentSections = [
-    {
-      key: 'dine_in',
-      title: 'Eat here',
-      description: 'Items served at the table',
-      items: dineInItems,
-      accent: 'primary',
-      open: dineInItems.length > 0,
-    },
-    {
-      key: 'parcel',
-      title: 'Parcel',
-      description: 'Items to pack for takeaway',
-      items: parcelItems,
-      accent: 'amber',
-      open: parcelItems.length > 0,
-    },
-  ].filter((section) => section.items.length > 0)
-
-  const renderOrderItem = (item, idx) => (
-    <div key={`${item.menuItem || item.name}-${idx}`} className="border-b border-surface-200 px-4 py-4 last:border-b-0">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex gap-3">
-          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${
-            item.fulfillmentMode === 'parcel'
-              ? 'bg-amber-50 text-amber-700'
-              : 'bg-primary-50 text-primary-700'
-          }`}>
-            {item.quantity}x
-          </div>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="font-bold text-gray-950">{item.name}</p>
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                item.fulfillmentMode === 'parcel'
-                  ? 'bg-amber-100 text-amber-800'
-                  : 'bg-primary-100 text-primary-800'
-              }`}>
-                {formatFulfillment(item.fulfillmentMode)}
-              </span>
-            </div>
-            <p className="mt-1 text-sm text-gray-500">
-              {formatMoney(item.price)} each x {item.quantity} ={' '}
-              <span className="font-bold text-gray-900">{formatMoney(item.price * item.quantity)}</span>
-            </p>
-            {(item.selectedVariations || []).length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {(item.selectedVariations || []).map((variation, vIdx) => (
-                  <span key={`${variation.optionId || variation.optionName}-${vIdx}`} className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-bold text-primary-700">
-                    {variation.groupName}: {variation.optionName}
-                    {Number(variation.quantity || 1) > 1 ? ` x${variation.quantity}` : ''}
-                  </span>
-                ))}
-              </div>
-            )}
-            {(item.customizations || []).length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {(item.customizations || []).map((customization, cIdx) => (
-                  <span key={`${customization.name || customization.group}-${cIdx}`} className="rounded-full bg-surface-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
-                    {customization.name || customization.group}: {customization.value}
-                  </span>
-                ))}
-              </div>
-            )}
-            {(item.addOns || []).length > 0 && (
-              <p className="mt-2 text-xs font-semibold text-gray-500">
-                Add-ons: {(item.addOns || []).join(', ')}
-              </p>
-            )}
-            {item.cookingInstructions && (
-              <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">
-                Kitchen instruction: {item.cookingInstructions}
-              </p>
-            )}
-            {item.specialInstructions && (
-              <p className="mt-2 rounded-lg bg-surface-50 px-3 py-2 text-sm text-gray-600">Note: {item.specialInstructions}</p>
-            )}
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2 text-right text-xs sm:min-w-[190px]">
-          <div className="rounded-xl bg-surface-50 px-3 py-2">
-            <p className="font-semibold uppercase tracking-wide text-gray-400">Line subtotal</p>
-            <p className="mt-1 text-sm font-bold text-gray-950">{formatMoney(item.subtotal ?? item.price * item.quantity)}</p>
-          </div>
-          <div className="rounded-xl bg-surface-50 px-3 py-2">
-            <p className="font-semibold uppercase tracking-wide text-gray-400">Tax</p>
-            <p className="mt-1 text-sm font-bold text-gray-950">{formatMoney(item.taxAmount || item.priceSnapshot?.taxAmount || 0)}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
->>>>>>> ca8f1d4e38da7db28bc2f2b5d0925b1ce917de46
 
   if (isCashierView) {
     return (
@@ -989,7 +890,6 @@ const OrderDetail = () => {
             </div>
           </div>
 
-<<<<<<< HEAD
           <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
             <MetaChip icon={FiShoppingBag} label="Items" value={String(itemCount)} tone="neutral" />
             <MetaChip
@@ -1005,13 +905,6 @@ const OrderDetail = () => {
               value={order.paymentMethod || 'Pending'}
               tone="neutral"
             />
-=======
-          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <InfoTile label="Items ordered" value={itemCount} icon={FiShoppingBag} accent="bg-primary-50 text-primary-700" />
-            <InfoTile label="Estimated wait" value={order.estimatedWaitTime ? `${order.estimatedWaitTime} min` : 'Not set'} icon={FiClock} accent="bg-indigo-50 text-indigo-700" />
-            <InfoTile label="Fulfillment" value={getFulfillmentLabel(order)} icon={FiShoppingBag} accent="bg-emerald-50 text-emerald-700" />
-            <InfoTile label="Balance due" value={formatMoney(amountDue)} icon={FiCreditCard} accent="bg-amber-50 text-amber-700" />
->>>>>>> ca8f1d4e38da7db28bc2f2b5d0925b1ce917de46
           </div>
 
           {specialNote ? (
@@ -1025,7 +918,6 @@ const OrderDetail = () => {
         </div>
       </motion.section>
 
-<<<<<<< HEAD
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="space-y-6 lg:col-span-8">
           <Panel title="Order items" icon={FiShoppingBag}>
@@ -1070,82 +962,6 @@ const OrderDetail = () => {
                 </li>
               ))}
             </ul>
-=======
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <SectionCard title="Order Information" icon={FiHash}>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              <DetailRow label="Order number" value={`#${order.orderNumber}`} icon={FiHash} />
-              <DetailRow label="Date and time" value={formatRestaurantDateTime(order.createdAt)} icon={FiClock} />
-              <DetailRow label="Estimated wait" value={order.estimatedWaitTime ? `${order.estimatedWaitTime} minutes` : 'Not set'} icon={FiClock} />
-              <DetailRow label="Order channel" value={getChannelLabel(order.orderChannel)} icon={FiShoppingBag} />
-              <DetailRow label="Fulfillment" value={getFulfillmentLabel(order)} icon={FiShoppingBag} />
-              <DetailRow label="Table" value={order.table?.tableNumber || 'N/A'} icon={FiMapPin} />
-              <div className="flex items-center gap-3 rounded-xl bg-surface-50/70 px-3 py-3">
-                <FiSliders className="h-4 w-4 text-primary-600" />
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Current status</p>
-                  <div className="mt-1"><OrderStatusBadge status={order.status} /></div>
-                </div>
-              </div>
-            </div>
-            {order.specialRequests && (
-              <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Special requests</p>
-                <p className="mt-1 text-sm font-medium text-amber-950">{order.specialRequests}</p>
-              </div>
-            )}
-          </SectionCard>
-
-          <SectionCard title="Order Items" icon={FiShoppingBag}>
-            <div className="space-y-4">
-              {fulfillmentSections.map((section) => {
-                const sectionQuantity = section.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0)
-                const sectionTotal = section.items.reduce(
-                  (sum, item) => sum + Number(item.subtotal ?? Number(item.price || 0) * Number(item.quantity || 0)),
-                  0,
-                )
-                const isParcel = section.key === 'parcel'
-                return (
-                  <details
-                    key={section.key}
-                    open={section.open}
-                    className={`group overflow-hidden rounded-2xl border bg-white ${
-                      isParcel ? 'border-amber-200' : 'border-primary-100'
-                    }`}
-                  >
-                    <summary className={`flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4 ${
-                      isParcel ? 'bg-amber-50/70' : 'bg-primary-50/70'
-                    }`}>
-                      <div className="flex min-w-0 items-center gap-3">
-                        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                          isParcel ? 'bg-amber-100 text-amber-800' : 'bg-primary-100 text-primary-800'
-                        }`}>
-                          <FiShoppingBag className="h-5 w-5" />
-                        </span>
-                        <div className="min-w-0">
-                          <p className="font-bold text-gray-950">{section.title}</p>
-                          <p className="text-xs font-semibold text-gray-500">{section.description}</p>
-                        </div>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-3 text-right">
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            {sectionQuantity} item{sectionQuantity === 1 ? '' : 's'}
-                          </p>
-                          <p className="font-bold text-gray-950">{formatMoney(sectionTotal)}</p>
-                        </div>
-                        <FiChevronDown className="h-5 w-5 text-gray-500 transition-transform group-open:rotate-180" />
-                      </div>
-                    </summary>
-                    <div className="divide-y divide-surface-200">
-                      {section.items.map(renderOrderItem)}
-                    </div>
-                  </details>
-                )
-              })}
-            </div>
->>>>>>> ca8f1d4e38da7db28bc2f2b5d0925b1ce917de46
 
             <div className="mt-5 overflow-hidden rounded-2xl border border-gray-100 bg-gradient-to-br from-gray-50 to-white">
               <div className="space-y-2.5 px-5 py-4 text-sm">
@@ -1159,10 +975,10 @@ const OrderDetail = () => {
                     <span className="font-bold text-gray-900">{formatMoney(taxAmount)}</span>
                   </div>
                 )}
-                {serviceCharge > 0 && (
+                {serviceChargeAmount > 0 && (
                   <div className="flex justify-between text-gray-600">
                     <span>Service charge</span>
-                    <span className="font-bold text-gray-900">{formatMoney(serviceCharge)}</span>
+                    <span className="font-bold text-gray-900">{formatMoney(serviceChargeAmount)}</span>
                   </div>
                 )}
                 {discountAmount > 0 && (
@@ -1179,59 +995,7 @@ const OrderDetail = () => {
             </div>
           </Panel>
 
-<<<<<<< HEAD
           <Panel title="Kitchen timeline" icon={FiClock}>
-=======
-          {order.itemBatches?.length > 0 && (
-            <SectionCard title="Kitchen Batches" icon={FiSliders}>
-              <div className="space-y-4">
-                {order.itemBatches.map((batch, idx) => (
-                  <div key={idx} className="rounded-2xl border border-surface-200 bg-white p-4">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                          Batch #{batch.batchNumber || idx + 1}
-                        </p>
-                        <p className="mt-1 text-sm font-bold text-gray-950">
-                          {(batch.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)} items - {formatRestaurantDateTime(batch.createdAt)}
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 text-right text-xs">
-                        <div className="rounded-xl bg-surface-50 px-3 py-2">
-                          <p className="font-semibold uppercase tracking-wide text-gray-400">Subtotal</p>
-                          <p className="mt-1 font-bold text-gray-950">{formatMoney(batch.subtotal || 0)}</p>
-                        </div>
-                        <div className="rounded-xl bg-surface-50 px-3 py-2">
-                          <p className="font-semibold uppercase tracking-wide text-gray-400">Tax</p>
-                          <p className="mt-1 font-bold text-gray-950">{formatMoney(batch.taxAmount || 0)}</p>
-                        </div>
-                        <div className="rounded-xl bg-primary-50 px-3 py-2">
-                          <p className="font-semibold uppercase tracking-wide text-primary-500">Total</p>
-                          <p className="mt-1 font-bold text-primary-800">{formatMoney(batch.grandTotal || 0)}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-4 divide-y divide-surface-100 rounded-xl bg-surface-50/70 px-3">
-                      {(batch.items || []).map((item, itemIdx) => (
-                        <div key={`${item.menuItem || item.name}-${itemIdx}`} className="flex items-center justify-between gap-3 py-2 text-sm">
-                          <div className="min-w-0">
-                            <p className="truncate font-semibold text-gray-900">
-                              {item.quantity}x {item.name}
-                            </p>
-                            <p className="text-xs font-semibold text-gray-500">{formatFulfillment(item.fulfillmentMode)}</p>
-                          </div>
-                          <span className="shrink-0 font-bold text-gray-950">{formatMoney(item.subtotal ?? item.price * item.quantity)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
-          )}
-
-          <SectionCard title="Order Timeline" icon={FiClock}>
->>>>>>> ca8f1d4e38da7db28bc2f2b5d0925b1ce917de46
             {order.statusHistory?.length ? (
               <div className="relative pl-1">
                 <span
@@ -1301,28 +1065,6 @@ const OrderDetail = () => {
                     <p className="text-xs font-semibold text-gray-500">ID {order.guestId}</p>
                   )}
                 </div>
-<<<<<<< HEAD
-=======
-                {order.paymentMethod && <DetailRow label="Payment method" value={order.paymentMethod} icon={FiCreditCard} />}
-                <DetailRow label="Subtotal" value={formatMoney(subtotal)} icon={FiCreditCard} />
-                <DetailRow label="Tax" value={formatMoney(taxAmount)} icon={FiCreditCard} />
-                {serviceChargeAmount > 0 && <DetailRow label="Service charge" value={formatMoney(serviceChargeAmount)} icon={FiCreditCard} />}
-                {discountAmount > 0 && <DetailRow label="Discount" value={`- ${formatMoney(discountAmount)}`} icon={FiCreditCard} />}
-                <DetailRow label="Grand total" value={formatMoney(grandTotal)} icon={FiCreditCard} />
-                <DetailRow label="Paid total" value={formatMoney(amountPaid)} icon={FiCreditCard} />
-                <DetailRow label="Balance due" value={formatMoney(amountDue)} icon={FiCreditCard} />
-                {order.guestPaymentPreferenceAt && (
-                  <DetailRow
-                    label="Guest payment preference"
-                    value={
-                      order.paymentMethod === 'mixed'
-                        ? `Cash ${formatMoney(order.guestPaymentPreferenceCash)} + online ${formatMoney(order.guestPaymentPreferenceOnline)}`
-                        : order.paymentMethod
-                    }
-                    icon={FiCreditCard}
-                  />
-                )}
->>>>>>> ca8f1d4e38da7db28bc2f2b5d0925b1ce917de46
               </div>
               <div className="mt-4 space-y-2">
                 {order.customerPhone && (

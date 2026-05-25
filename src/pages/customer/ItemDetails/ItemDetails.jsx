@@ -23,11 +23,8 @@ import CartDrawer from "../../../components/customer/CartDrawer";
 import { useCustomerCart } from "../../../context/CustomerCartContext";
 import { ensureGuestSession, getItemReviews, submitItemReview } from "../../../services/customer";
 import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
-<<<<<<< HEAD
 import { isTierPricingGroup } from "../../../utils/menuVariationSuggestions";
-=======
 import { resolveMediaUrl } from "../../../utils/mediaUrl";
->>>>>>> ca8f1d4e38da7db28bc2f2b5d0925b1ce917de46
 
 const initialItem = {
   price: 0,
@@ -342,15 +339,9 @@ const VariationGroupsSection = ({
                     return (
                       <div key={option._id} className={`flex items-center justify-between gap-3 rounded-xl border bg-[#f6f3f0] p-4 ${qty > 0 ? "border-[#9f3d00]" : "border-transparent"} ${unavailable ? "opacity-50" : ""}`}>
                         <div className="min-w-0">
-<<<<<<< HEAD
-                          <p className="text-xs font-black text-gray-800">{option.name}</p>
-                          <p className="text-[10px] font-bold text-gray-400">
-                            {priceLabel}{outOfStock ? " | out of stock" : ""}
-=======
                           <p className="text-sm font-black text-[#1c1c1a]">{option.name}</p>
                           <p className="text-xs font-bold text-[#594137]">
-                            {price > 0 ? `+Rs. ${formatMoney(price)}` : "Included"}{outOfStock ? " | out of stock" : ""}
->>>>>>> ca8f1d4e38da7db28bc2f2b5d0925b1ce917de46
+                            {priceLabel}{outOfStock ? " | out of stock" : ""}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -413,13 +404,8 @@ const VariationGroupsSection = ({
                         <img src={resolveMediaUrl(option.image)} alt={option.name} className="mb-2 h-16 w-full rounded-lg object-cover" />
                       ) : null}
                       <span className="block">{option.name}</span>
-<<<<<<< HEAD
-                      <span className="mt-0.5 block text-[10px] text-gray-400">
-                        {priceLabel}{outOfStock ? " | out of stock" : ""}
-=======
                       <span className={`mt-0.5 block text-[11px] ${selected ? "text-white/80" : "text-[#594137]"}`}>
-                        {price > 0 ? `+Rs. ${formatMoney(price)}` : "Included"}{outOfStock ? " | out of stock" : ""}
->>>>>>> ca8f1d4e38da7db28bc2f2b5d0925b1ce917de46
+                        {priceLabel}{outOfStock ? " | out of stock" : ""}
                       </span>
                     </button>
                   );
