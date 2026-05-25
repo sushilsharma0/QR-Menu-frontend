@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, LazyMotion, domAnimation, m } from 'framer-motion'
 import {
   FiBell,
@@ -23,6 +24,8 @@ import useNotification from '../../hooks/useNotification'
 
 const NotificationMenu = () => {
   const [isOpen, setIsOpen] = useState(false)
+  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 16 })
+  const buttonRef = useRef(null)
   const routerLocation = useLocation()
   const { user } = useAuth()
   const {
@@ -54,6 +57,29 @@ const NotificationMenu = () => {
   useEffect(() => {
     setIsOpen(false)
   }, [routerLocation.pathname])
+
+  useEffect(() => {
+    if (!isOpen) return undefined
+
+    const updatePosition = () => {
+      const rect = buttonRef.current?.getBoundingClientRect()
+      if (!rect) return
+      const viewportPadding = 16
+      setMenuPosition({
+        top: Math.min(window.innerHeight - 24, rect.bottom + 10),
+        right: Math.max(viewportPadding, window.innerWidth - rect.right),
+      })
+    }
+
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [isOpen])
 
   const handleToggle = () => {
     setIsOpen((prev) => {
@@ -106,6 +132,7 @@ const NotificationMenu = () => {
   return (
     <div className="relative z-50">
       <button
+        ref={buttonRef}
         type="button"
         onClick={handleToggle}
         className="p-2.5 text-accent-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-gray-100 hover:bg-primary-50 dark:hover:bg-gray-800 rounded-xl transition-colors relative"
@@ -119,22 +146,26 @@ const NotificationMenu = () => {
         )}
       </button>
 
-      <AnimatePresence>
-        {isOpen && (
-    <LazyMotion features={domAnimation}>
-          <button
-            type="button"
-            className="fixed inset-0 z-[100] cursor-default bg-transparent"
-            onClick={() => setIsOpen(false)}
-            aria-label="Close notifications"
-          />
-          <m.div
-            initial={{ opacity: 0, y: -18, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -18, scale: 0.98 }}
-            transition={{ duration: 0.22, ease: 'easeOut' }}
-            className="absolute right-[-280%] md:right-0 mt-2 w-[430px] max-w-[95vw] bg-white dark:bg-gray-900 border border-surface-200 dark:border-gray-800 rounded-2xl shadow-[0_20px_50px_-12px_rgba(143,40,0,0.25)] z-[110] overflow-hidden"
-          >
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <LazyMotion features={domAnimation}>
+            <AnimatePresence>
+              {isOpen && (
+                <>
+                  <button
+                    type="button"
+                    className="fixed inset-0 z-[100] cursor-default bg-transparent"
+                    onClick={() => setIsOpen(false)}
+                    aria-label="Close notifications"
+                  />
+                  <m.div
+                    initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                    transition={{ duration: 0.18, ease: 'easeOut' }}
+                    className="fixed z-[110] w-[430px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-[0_20px_50px_-12px_rgba(143,40,0,0.25)] dark:border-gray-800 dark:bg-gray-900"
+                    style={{ top: menuPosition.top, right: menuPosition.right }}
+                  >
             <div className="p-4 border-b dark:border-gray-800 bg-gradient-to-br from-surface-50 via-secondary-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
               <div className="flex items-center justify-between">
                 <div>
@@ -249,10 +280,13 @@ const NotificationMenu = () => {
                 View all
               </Link>
             </div>
-          </m.div>
-    </LazyMotion>
+                  </m.div>
+                </>
+              )}
+            </AnimatePresence>
+          </LazyMotion>,
+          document.body,
         )}
-      </AnimatePresence>
     </div>
   )
 }
