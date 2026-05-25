@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -235,6 +235,8 @@ const Menu = () => {
   const [pageSize, setPageSize] = useState(12);
   const [importOpen, setImportOpen] = useState(false);
   const [importCsv, setImportCsv] = useState("");
+  const [importFileName, setImportFileName] = useState("");
+  const [importRowCount, setImportRowCount] = useState(0);
   const [importing, setImporting] = useState(false);
 
   const fetchMenuData = async () => {
@@ -296,7 +298,7 @@ const Menu = () => {
 
   const handleImportCsv = async () => {
     if (!importCsv.trim()) {
-      toast.error("Paste CSV content first");
+      toast.error("Choose a CSV file first");
       return;
     }
     setImporting(true);
@@ -306,12 +308,47 @@ const Menu = () => {
       toast.success(`Import done: ${result.created || 0} created, ${result.updated || 0} updated`);
       setImportOpen(false);
       setImportCsv("");
+      setImportFileName("");
+      setImportRowCount(0);
       fetchMenuData();
     } catch (error) {
       toast.error(error.response?.data?.message || "Import failed");
     } finally {
       setImporting(false);
     }
+  };
+
+  const closeImportModal = () => {
+    if (importing) return;
+    setImportOpen(false);
+    setImportCsv("");
+    setImportFileName("");
+    setImportRowCount(0);
+  };
+
+  const handleCsvFileChange = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    const isCsv = /\.csv$/i.test(file.name) || /csv|plain|excel/i.test(file.type || "");
+    if (!isCsv) {
+      toast.error("Please choose a .csv file");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result || "").replace(/^\uFEFF/, "");
+      const rows = text.split(/\r?\n/).filter((line) => line.trim()).length;
+      setImportCsv(text);
+      setImportFileName(file.name);
+      setImportRowCount(Math.max(0, rows - 1));
+      toast.success(`Loaded ${file.name}`);
+    };
+    reader.onerror = () => {
+      toast.error("Could not read CSV file");
+    };
+    reader.readAsText(file);
   };
 
   const handleToggleAvailability = async (item) => {
@@ -737,23 +774,50 @@ const Menu = () => {
 
       <Modal
         isOpen={importOpen}
-        onClose={() => setImportOpen(false)}
+        onClose={closeImportModal}
         title="Import menu from CSV"
       >
-        <div className="p-6 space-y-4">
-          <p className="text-sm text-gray-600">
-            Columns: categoryName, name, description, price, isAvailable, isVegetarian, dietaryTags (pipe-separated).
-            Export first to use as a template.
-          </p>
-          <textarea
-            className="h-48 w-full rounded-xl border border-surface-200 p-3 font-mono text-xs dark:border-gray-700 dark:bg-gray-900"
-            value={importCsv}
-            onChange={(e) => setImportCsv(e.target.value)}
-            placeholder="Paste CSV here…"
-          />
+        <div className="space-y-5 p-6">
+          <div className="rounded-2xl border border-surface-200 bg-surface-50 p-4">
+            <p className="text-sm font-semibold text-gray-950">Upload a full CSV file</p>
+            <p className="mt-1 text-xs leading-5 text-gray-600">
+              Required columns: <span className="font-semibold">name</span> and <span className="font-semibold">price</span>.
+              Optional columns: categoryName, description, imageUrl, isAvailable, isVegetarian, dietaryTags.
+              Image links must be public http or https URLs.
+            </p>
+          </div>
+
+          <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-primary-200 bg-white px-5 py-8 text-center transition hover:border-primary-400 hover:bg-primary-50/40">
+            <FiUpload className="h-8 w-8 text-primary-600" />
+            <span className="mt-3 text-sm font-black text-gray-950">
+              {importFileName || "Choose CSV file"}
+            </span>
+            <span className="mt-1 text-xs font-semibold text-gray-500">
+              {importFileName ? `${importRowCount} data row${importRowCount === 1 ? "" : "s"} loaded` : "The complete file will be read before import"}
+            </span>
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              onChange={handleCsvFileChange}
+              className="hidden"
+            />
+          </label>
+
+          {importCsv ? (
+            <div className="rounded-2xl border border-surface-200 bg-white">
+              <div className="flex items-center justify-between border-b border-surface-100 px-4 py-2">
+                <p className="text-xs font-black uppercase tracking-wide text-gray-500">CSV preview</p>
+                <p className="text-xs font-semibold text-gray-500">{importRowCount} rows</p>
+              </div>
+              <pre className="max-h-40 overflow-auto whitespace-pre-wrap p-4 font-mono text-xs text-gray-700">
+                {importCsv.split(/\r?\n/).slice(0, 8).join("\n")}
+                {importCsv.split(/\r?\n/).length > 8 ? "\n..." : ""}
+              </pre>
+            </div>
+          ) : null}
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setImportOpen(false)}>Cancel</Button>
-            <Button onClick={handleImportCsv} loading={importing}>Import</Button>
+            <Button variant="ghost" onClick={closeImportModal} disabled={importing}>Cancel</Button>
+            <Button onClick={handleImportCsv} loading={importing} disabled={!importCsv.trim()}>Import file</Button>
           </div>
         </div>
       </Modal>
