@@ -16,6 +16,7 @@ import { Link, useParams } from 'react-router-dom';
 import Navigation from '../../components/customer/Navigation';
 import Feedback from '../../components/customer/homepage/Feedback';
 import { rememberCustomerPortal } from '../../utils/customerPortalContext';
+import { resolveMediaUrl } from '../../utils/mediaUrl';
 import toast from '@utils/toast';
 import {
   clearCustomerIdentitySession,
@@ -68,6 +69,9 @@ const AccountPage = () => {
   const creditApplyPath = slug && token ? `/credit-apply/${slug}/${token}` : '/';
   const restaurantName =
     restaurantInfo?.name || (slug ? decodeURIComponent(slug).replace(/-/g, ' ') : 'Restaurant');
+  const heroImage =
+    resolveMediaUrl(restaurantInfo?.backgroundPhoto || restaurantInfo?.brandBackgroundImage) ||
+    'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80';
 
   const menuItems = [
     { to: homePath, icon: User, label: 'Table home', color: 'text-primary-600', bg: 'bg-primary-50' },
@@ -97,16 +101,16 @@ const AccountPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafaf7] pb-28 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
-      <section className="relative min-h-[15.5rem] overflow-hidden text-white">
+    <div className="min-h-screen overflow-x-hidden bg-[#fafaf7] pb-28 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+      <section className="relative min-h-[15.5rem] overflow-hidden text-white md:min-h-[20rem]">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.72), rgba(57,16,0,0.7) 48%, rgba(250,250,247,1) 100%), url('${restaurantInfo?.backgroundPhoto || restaurantInfo?.brandBackgroundImage || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80"}')`,
+            backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.72), rgba(57,16,0,0.7) 48%, rgba(250,250,247,1) 100%), url('${heroImage}')`,
           }}
         />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(255,255,255,0.12),transparent_34%)]" />
-        <div className="relative flex flex-col items-center px-6 pb-6 pt-8 text-center">
+        <div className="relative mx-auto flex w-full max-w-6xl flex-col items-center px-6 pb-6 pt-8 text-center">
           <div className="rounded-2xl bg-black/38 px-5 py-2 shadow-lg backdrop-blur-[2px] ring-1 ring-white/15">
             <h1 className="text-2xl font-semibold tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]">More</h1>
             <p className="mt-1 text-[11px] font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">Shortcuts & account</p>
@@ -129,7 +133,7 @@ const AccountPage = () => {
         </div>
       </section>
 
-      <div className="-mt-4 space-y-2 px-6">
+      <div className="-mt-4 mx-auto grid w-full max-w-6xl gap-3 px-6 sm:grid-cols-2 lg:grid-cols-3">
         {menuItems.map((item, index) => {
           const Inner = (
             <>

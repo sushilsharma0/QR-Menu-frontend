@@ -127,7 +127,7 @@ export default function Settings() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#fafaf7] pb-28 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+    <div className="min-h-screen overflow-x-hidden bg-[#fafaf7] pb-28 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       <div className="relative bg-gradient-to-br from-primary-600 to-primary-800 p-6 text-center text-white">
         <h1 className="text-2xl font-semibold">Settings</h1>
         <p className="mt-1 text-sm opacity-90">Customize your experience</p>
@@ -136,7 +136,7 @@ export default function Settings() {
         </Link>
       </div>
 
-      <div className="space-y-6 p-4">
+      <div className="mx-auto grid w-full max-w-6xl gap-6 p-4 md:grid-cols-2">
         {sections.map(({ section, items }) => (
           <div key={section}>
             <h2 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{section}</h2>
@@ -187,7 +187,7 @@ function SettingsPanel({ panel, setPanel, customerId, customer, profileForm, set
   const close = () => setPanel(null)
   return (
     <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/45 px-4 pb-6 pt-12">
-      <div className="max-h-[82vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl dark:bg-gray-900">
+      <div className="max-h-[82vh] w-full max-w-xl overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl dark:bg-gray-900">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold capitalize text-gray-950 dark:text-gray-100">{panel === 'password' ? 'Change password' : panel}</h3>
           <button onClick={close} className="rounded-xl bg-gray-100 p-2 dark:bg-gray-800"><X size={18} /></button>

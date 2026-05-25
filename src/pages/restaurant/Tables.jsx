@@ -14,6 +14,7 @@ import {
   FiSearch,
   FiTrash2,
   FiUsers,
+  FiMapPin
 } from "react-icons/fi";
 import QRCode from "react-qr-code";
 import toast from "@utils/toast";
@@ -29,12 +30,97 @@ import {
   RestaurantStatusPill,
 } from "../../components/restaurant/RestaurantUI";
 import { useRestaurantAutoRefresh } from "../../context/RestaurantRealtimeContext";
+import { useSocket } from "../../hooks/useSocket";
 import { useTenantRoutes } from "../../hooks/useTenantRoutes";
 
 const tableStatusStyles = {
   active: "bg-green-100 text-green-800",
   inactive: "bg-red-100 text-red-800",
 };
+
+const floorStatusStyles = {
+  available: "border-emerald-200 bg-emerald-50 text-emerald-900",
+  occupied: "border-rose-200 bg-rose-50 text-rose-900",
+  reserved: "border-amber-200 bg-amber-50 text-amber-900",
+  billing: "border-sky-200 bg-sky-50 text-sky-900",
+  cleaning: "border-slate-200 bg-slate-50 text-slate-900",
+};
+
+const SEAT_STATUS_OPTIONS = ["available", "occupied", "reserved", "billing", "cleaning"];
+
+function SeatStatusSelect({ table, onStatusChange, compact = false }) {
+  const status = table.posStatus || "available";
+  return (
+    <select
+      value={status}
+      onChange={(event) => onStatusChange(table, event.target.value)}
+      className={`rounded-full border font-bold capitalize outline-none transition focus:ring-2 focus:ring-primary-300 ${
+        compact ? "px-2 py-1 text-xs" : "px-3 py-2 text-sm"
+      } ${floorStatusStyles[status] || floorStatusStyles.available}`}
+      title="Update seat status"
+    >
+      {SEAT_STATUS_OPTIONS.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function FloorPlanView({ tables, onStatusChange }) {
+  return (
+    <div className="rounded-3xl border border-surface-200 bg-gradient-to-br from-surface-50 to-white p-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-950">Floor Plan</h3>
+          <p className="text-sm text-gray-500">Track live seating status by table. Use this as a quick operations board.</p>
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs font-semibold">
+          {SEAT_STATUS_OPTIONS.map((status) => (
+            <span key={status} className={`rounded-full border px-2 py-1 capitalize ${floorStatusStyles[status]}`}>
+              {status}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {tables.map((table) => {
+          const status = table.posStatus || "available";
+          return (
+            <article key={table._id} className={`rounded-2xl border p-4 shadow-sm ${floorStatusStyles[status] || floorStatusStyles.available}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wide opacity-70">{table.floor || "ground"}</p>
+                  <h4 className="mt-1 text-xl font-black">Table {table.tableNumber}</h4>
+                  <p className="mt-1 text-xs font-semibold opacity-75">
+                    {table.capacity || 4} seats{table.area ? ` - ${table.area}` : ""}
+                  </p>
+                </div>
+                <span className="rounded-full bg-white/70 px-2 py-1 text-[10px] font-black uppercase tracking-wide">
+                  {status}
+                </span>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-1.5">
+                {SEAT_STATUS_OPTIONS.map((nextStatus) => (
+                  <button
+                    key={nextStatus}
+                    type="button"
+                    disabled={status === nextStatus}
+                    onClick={() => onStatusChange(table, nextStatus)}
+                    className="rounded-lg bg-white/80 px-2 py-1.5 text-[11px] font-bold capitalize text-gray-700 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    {nextStatus}
+                  </button>
+                ))}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 /** POS takeaway/delivery channels — not physical dine-in tables with QR stands */
 function isPhysicalDiningTable(table) {
@@ -169,7 +255,7 @@ function MetricTile({ label, value, sub, icon: Icon, accent }) {
   );
 }
 
-function TableActions({ table, onQr, onRegenerate, onEdit, onDelete }) {
+function TableActions({ table, onQr, onRegenerate, onEdit, onDelete, onMove, onMerge }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Button type="button" size="sm" variant="secondary" onClick={() => onQr(table)}>
@@ -193,6 +279,22 @@ function TableActions({ table, onQr, onRegenerate, onEdit, onDelete }) {
       </button>
       <button
         type="button"
+        onClick={() => onMove(table)}
+        className="rounded-lg px-2 py-1 text-xs font-bold text-indigo-700 transition hover:bg-indigo-50"
+        title="Move active order to another table"
+      >
+        Move
+      </button>
+      <button
+        type="button"
+        onClick={() => onMerge(table)}
+        className="rounded-lg px-2 py-1 text-xs font-bold text-amber-700 transition hover:bg-amber-50"
+        title="Merge this table order into another table"
+      >
+        Merge
+      </button>
+      <button
+        type="button"
         onClick={() => onDelete(table._id)}
         className="rounded-lg p-2 text-red-700 transition hover:bg-red-50 hover:text-red-800"
         title="Delete Table"
@@ -206,11 +308,13 @@ function TableActions({ table, onQr, onRegenerate, onEdit, onDelete }) {
 const Tables = () => {
   const navigate = useNavigate();
   const { portalBase } = useTenantRoutes();
+  const { socket } = useSocket();
   const [tables, setTables] = useState([]);
   const [restaurant, setRestaurant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [qrModal, setQrModal] = useState({ open: false, table: null });
+  const [transferModal, setTransferModal] = useState({ open: false, mode: "move", table: null, targetTableId: "" });
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [floorFilter, setFloorFilter] = useState("all");
@@ -242,6 +346,23 @@ const Tables = () => {
     fetchTables();
   }, []);
 
+  useEffect(() => {
+    if (!socket) return undefined;
+    const handleTableUpdated = (updatedTable) => {
+      if (!updatedTable?._id) {
+        fetchTables(true);
+        return;
+      }
+      setTables((current) =>
+        current.map((table) => (String(table._id) === String(updatedTable._id) ? { ...table, ...updatedTable } : table)),
+      );
+    };
+    socket.on("pos:table_updated", handleTableUpdated);
+    return () => {
+      socket.off("pos:table_updated", handleTableUpdated);
+    };
+  }, [socket]);
+
   const handleDelete = async (id) => {
     try {
       await api.delete(`/restaurant/tables/${id}`);
@@ -259,6 +380,54 @@ const Tables = () => {
       fetchTables(true);
     } catch (error) {
       toast.error("Failed to regenerate QR code");
+    }
+  };
+
+  const handleStatusChange = async (table, posStatus) => {
+    const previousTables = tables;
+    setTables((current) =>
+      current.map((row) => (String(row._id) === String(table._id) ? { ...row, posStatus } : row)),
+    );
+    try {
+      const response = await api.put(`/restaurant/tables/${table._id}`, { posStatus });
+      const updatedTable = response?.data?.data;
+      if (updatedTable?._id) {
+        setTables((current) =>
+          current.map((row) => (String(row._id) === String(updatedTable._id) ? { ...row, ...updatedTable } : row)),
+        );
+      }
+      toast.success(`Table ${table.tableNumber} marked ${posStatus}`);
+    } catch (error) {
+      setTables(previousTables);
+      toast.error(error.response?.data?.message || "Failed to update table status");
+    }
+  };
+
+  const openTransferModal = (mode, table) => {
+    const firstTarget = diningTables.find((row) => String(row._id) !== String(table._id));
+    setTransferModal({
+      open: true,
+      mode,
+      table,
+      targetTableId: firstTarget?._id || "",
+    });
+  };
+
+  const handleTransfer = async () => {
+    if (!transferModal.table?._id || !transferModal.targetTableId) {
+      toast.error("Choose a target table");
+      return;
+    }
+    try {
+      const endpoint = transferModal.mode === "merge" ? "merge" : "move-order";
+      await api.patch(`/restaurant/tables/${transferModal.table._id}/${endpoint}`, {
+        targetTableId: transferModal.targetTableId,
+      });
+      toast.success(transferModal.mode === "merge" ? "Tables merged" : "Order moved");
+      setTransferModal({ open: false, mode: "move", table: null, targetTableId: "" });
+      fetchTables(true);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Table transfer failed");
     }
   };
 
@@ -374,6 +543,16 @@ const Tables = () => {
           <div className="flex overflow-hidden rounded-xl border border-surface-200 bg-white">
             <button
               type="button"
+              onClick={() => setViewMode("floor")}
+              className={`flex items-center gap-1 px-3 py-2 text-sm font-semibold transition ${
+                viewMode === "floor" ? "bg-primary-600 text-white" : "text-gray-600 hover:bg-surface-50"
+              }`}
+            >
+              <FiMapPin className="h-4 w-4" />
+              Floor
+            </button>
+            <button
+              type="button"
               onClick={() => setViewMode("card")}
               className={`flex items-center gap-1 px-3 py-2 text-sm font-semibold transition ${
                 viewMode === "card" ? "bg-primary-600 text-white" : "text-gray-600 hover:bg-surface-50"
@@ -454,6 +633,15 @@ const Tables = () => {
                 <FiPlus className="mr-2" /> Add Table
               </Button>
             </motion.div>
+          ) : viewMode === "floor" ? (
+            <motion.div
+              key="floor"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <FloorPlanView tables={filteredTables} onStatusChange={handleStatusChange} />
+            </motion.div>
           ) : viewMode === "card" ? (
             <motion.div
               key="cards"
@@ -475,11 +663,14 @@ const Tables = () => {
                     <div>
                       <h3 className="text-2xl font-semibold text-gray-950">Table {table.tableNumber}</h3>
                       <p className="mt-1 text-sm text-gray-500">
-                        {table.capacity || 4} seats - {table.tableType || "regular"}
+                        {table.capacity || 4} seats - {table.tableType || "regular"} - {table.posStatus || "available"}
                       </p>
                       <p className="mt-1 text-xs text-gray-400">
                         Floor {table.floor || "ground"}{table.area ? ` - ${table.area}` : ""}
                       </p>
+                      <div className="mt-3">
+                        <SeatStatusSelect table={table} onStatusChange={handleStatusChange} />
+                      </div>
                     </div>
                     <RestaurantStatusPill value={table.isActive ? "active" : "inactive"} styles={tableStatusStyles} />
                   </div>
@@ -499,6 +690,8 @@ const Tables = () => {
                       onRegenerate={handleRegenerateQR}
                       onEdit={(selected) => navigate(`${portalBase}/tables/${selected._id}/edit`)}
                       onDelete={handleDelete}
+                      onMove={(selected) => openTransferModal("move", selected)}
+                      onMerge={(selected) => openTransferModal("merge", selected)}
                     />
                   </div>
                 </motion.article>
@@ -515,7 +708,7 @@ const Tables = () => {
               <table className="min-w-full divide-y divide-surface-200 text-sm">
                 <thead className="bg-surface-50">
                   <tr>
-                    {["Table", "Capacity", "Floor", "Type", "Status", "QR", "Actions"].map((header) => (
+                    {["Table", "Capacity", "Floor", "Type", "Seat Status", "Active", "QR", "Actions"].map((header) => (
                       <th key={header} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                         {header}
                       </th>
@@ -530,6 +723,9 @@ const Tables = () => {
                       <td className="px-5 py-4 text-gray-600">{table.floor || "ground"}</td>
                       <td className="px-5 py-4 capitalize text-gray-600">{table.tableType || "regular"}</td>
                       <td className="px-5 py-4">
+                        <SeatStatusSelect table={table} onStatusChange={handleStatusChange} compact />
+                      </td>
+                      <td className="px-5 py-4">
                         <RestaurantStatusPill value={table.isActive ? "active" : "inactive"} styles={tableStatusStyles} />
                       </td>
                       <td className="px-5 py-4">
@@ -542,6 +738,8 @@ const Tables = () => {
                           onRegenerate={handleRegenerateQR}
                           onEdit={(selected) => navigate(`${portalBase}/tables/${selected._id}/edit`)}
                           onDelete={handleDelete}
+                          onMove={(selected) => openTransferModal("move", selected)}
+                          onMerge={(selected) => openTransferModal("merge", selected)}
                         />
                       </td>
                     </tr>
@@ -622,6 +820,55 @@ const Tables = () => {
               </div>
             </>
           )}
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={transferModal.open}
+        onClose={() => setTransferModal({ open: false, mode: "move", table: null, targetTableId: "" })}
+        title={`${transferModal.mode === "merge" ? "Merge" : "Move"} Table ${transferModal.table?.tableNumber || ""}`}
+      >
+        <div className="space-y-4 p-3">
+          <div className="rounded-2xl bg-surface-50 p-4">
+            <p className="text-sm font-semibold text-gray-950">
+              {transferModal.mode === "merge"
+                ? "Merge this table's active order into another table."
+                : "Move this table's active order to an empty target table."}
+            </p>
+            <p className="mt-1 text-xs text-gray-500">
+              Source: Table {transferModal.table?.tableNumber || "-"} - {transferModal.table?.posStatus || "available"}
+            </p>
+          </div>
+          <div>
+            <label htmlFor="target-table" className="mb-1 block text-sm font-medium text-gray-700">Target table</label>
+            <select
+              id="target-table"
+              value={transferModal.targetTableId}
+              onChange={(event) => setTransferModal((prev) => ({ ...prev, targetTableId: event.target.value }))}
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="">Choose table</option>
+              {diningTables
+                .filter((table) => String(table._id) !== String(transferModal.table?._id))
+                .map((table) => (
+                  <option key={table._id} value={table._id}>
+                    Table {table.tableNumber} - {table.posStatus || "available"}
+                  </option>
+                ))}
+            </select>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button type="button" onClick={handleTransfer}>
+              {transferModal.mode === "merge" ? "Merge Tables" : "Move Order"}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setTransferModal({ open: false, mode: "move", table: null, targetTableId: "" })}
+            >
+              Cancel
+            </Button>
+          </div>
         </div>
       </Modal>
     </div>

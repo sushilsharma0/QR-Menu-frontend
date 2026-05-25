@@ -41,6 +41,7 @@ import {
 import toast from "@utils/toast";
 import Navigation from "../../../components/customer/Navigation";
 import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
+import { resolveMediaUrl } from "../../../utils/mediaUrl";
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -350,9 +351,9 @@ export default function Home() {
   const restaurantHeroFallback =
     "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1200&q=80";
   const heroImage =
-    restaurantInfo?.backgroundPhoto ||
-    restaurantInfo?.brandBackgroundImage ||
+    resolveMediaUrl(restaurantInfo?.backgroundPhoto || restaurantInfo?.brandBackgroundImage) ||
     restaurantHeroFallback;
+  const restaurantLogo = resolveMediaUrl(restaurantInfo?.logo);
   const hideBottomNav =
     showFeedback ||
     showOffers ||
@@ -371,7 +372,7 @@ export default function Home() {
   return (
     <PageTransition>
       <LazyMotion features={domAnimation}>
-      <div className="min-h-screen bg-[#fafaf7] flex flex-col items-center pb-28 font-sans text-gray-950">
+      <div className="flex min-h-screen flex-col items-center overflow-x-hidden bg-[#fafaf7] pb-28 font-sans text-gray-950">
         {/* Top hero + table card. We collapse this whole block when the
             customer expands the inline menu â€” that's the "top section goes
             up and hides" animation the new design calls for. */}
@@ -387,14 +388,14 @@ export default function Home() {
             >
               {/* Compact hero â€” smaller min-h, tighter content, fade into bg. */}
               <div
-                className="relative flex min-h-[32vh] w-full flex-col items-center justify-center overflow-hidden bg-cover bg-center px-6 pb-10 pt-14 text-white"
+                className="relative flex min-h-[32vh] w-full flex-col items-center justify-center overflow-hidden bg-cover bg-center px-6 pb-10 pt-14 text-white md:min-h-[24rem]"
                 style={{
                   backgroundImage: `linear-gradient(180deg, rgba(15,23,42,0.32), rgba(15,23,42,0.88)), url('${heroImage}')`,
                 }}
               >
                 <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#fafaf7] to-transparent" />
 
-                <div className="absolute left-0 right-0 top-5 z-20 flex justify-between px-5">
+                <div className="absolute left-1/2 top-5 z-20 flex w-full max-w-6xl -translate-x-1/2 justify-between px-5">
                   <button
                     onClick={() => setIsSidebarOpen(true)}
                     className="rounded-xl border border-white/30 bg-white/20 p-2.5 text-white backdrop-blur-md transition-all active:scale-90"
@@ -411,10 +412,10 @@ export default function Home() {
                   </button>
                 </div>
 
-                <div className="relative z-10 flex flex-col items-center text-center">
+                <div className="relative z-10 flex w-full max-w-3xl flex-col items-center text-center">
                   <div className="mb-2 flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-white/25 bg-white/15 shadow-xl backdrop-blur">
-                    {restaurantInfo?.logo ? (
-                      <img src={restaurantInfo.logo} alt={restaurantInfo?.name || "Restaurant"} className="h-full w-full object-cover" />
+                    {restaurantLogo ? (
+                      <img src={restaurantLogo} alt={restaurantInfo?.name || "Restaurant"} className="h-full w-full object-cover" />
                     ) : (
                       <Utensils size={22} />
                     )}
@@ -442,7 +443,7 @@ export default function Home() {
 
               {/* Slim glass info chip â€” replaces the heavy white card. Three
                   segments: Table | Reward pts | Scan another. */}
-              <div className="relative -mt-6 z-10 flex w-[92%] max-w-md items-center gap-2 rounded-2xl border border-white/60 bg-white/95 p-2 shadow-[0_10px_30px_-12px_rgba(15,23,42,0.18)] backdrop-blur-xl">
+              <div className="relative -mt-6 z-10 flex w-[92%] max-w-2xl items-center gap-2 rounded-2xl border border-white/60 bg-white/95 p-2 shadow-[0_10px_30px_-12px_rgba(15,23,42,0.18)] backdrop-blur-xl">
                 <div className="flex flex-1 items-center gap-2 rounded-xl bg-gray-50/80 px-3 py-2">
                   <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Table</span>
                   <span className="ml-auto text-lg font-black leading-none text-gray-950">
@@ -469,14 +470,14 @@ export default function Home() {
                 type="button"
                 disabled={assistSending || !guestIdLocal}
                 onClick={() => sendGuestRequest("call_waiter")}
-                className="relative z-10 mt-3 flex w-[92%] max-w-md items-center justify-center gap-2 rounded-2xl bg-primary-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-primary-900/15 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                className="relative z-10 mt-3 flex w-[92%] max-w-2xl items-center justify-center gap-2 rounded-2xl bg-primary-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-primary-900/15 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <BellRing size={18} />
                 {assistSending ? "Calling waiter..." : "Call waiter"}
               </button>
 
               {promoBanners.length > 0 && (
-                <div className="mt-6 w-[90%] max-w-md space-y-3">
+                <div className="mt-6 w-[92%] max-w-6xl space-y-3">
                   {promoBanners.slice(0, 2).map((promo) => (
                     <div key={promo._id} className="overflow-hidden rounded-3xl border border-orange-100 bg-white p-4 shadow-sm">
                       <div className="flex items-center justify-between gap-4">
@@ -766,7 +767,7 @@ function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
   const moreCount = expanded ? 0 : categories.length;
 
   return (
-    <section className="mt-5 w-[92%] max-w-md">
+    <section className="mt-5 w-[92%] max-w-6xl">
       <div className="mb-3 flex items-end justify-between gap-3">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.22em] text-primary-700">
@@ -799,7 +800,7 @@ function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="grid grid-cols-2 gap-3"
+            className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
           >
             {Array.from({ length: 4 }).map((_, i) => (
               <li
@@ -823,7 +824,7 @@ function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.28 }}
-              className="grid grid-cols-2 gap-3"
+              className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
             >
               {featuredItems.map((item, idx) => (
                 <m.li
@@ -862,7 +863,7 @@ function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
-            className="space-y-3"
+            className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
           >
             {categories.map((cat, idx) => (
               <m.li
@@ -880,9 +881,9 @@ function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
                   className="group flex items-center gap-3 rounded-3xl border border-gray-100 bg-white p-3 shadow-sm transition active:scale-[0.98] hover:border-primary-200"
                 >
                   <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-100">
-                    {cat.image ? (
+                    {resolveMediaUrl(cat.image) ? (
                       <img
-                        src={cat.image}
+                        src={resolveMediaUrl(cat.image)}
                         alt={cat.name}
                         loading="lazy"
                         className="h-full w-full object-cover"
@@ -951,7 +952,7 @@ function MenuPreview({ slug, token, categories, loading, expanded, onToggle }) {
  * the item itself has no photo, so the grid never looks empty.
  */
 function FeaturedItemCard({ slug, token, item }) {
-  const image = item.image || item._categoryImage || "";
+  const image = resolveMediaUrl(item.image || item._categoryImage || "");
   const price = Number(item.price ?? item.basePrice ?? 0);
   const isPopular = Boolean(item.isPopular || item.popular || item.featured);
   return (

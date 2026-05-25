@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import api from "./services/api";
 import { useTheme } from "./context/ThemeContext";
@@ -52,6 +52,7 @@ import RestaurantTables from "./pages/restaurant/Tables";
 import RestaurantTableForm from "./pages/restaurant/TableForm";
 import RestaurantEmployees from "./pages/restaurant/Employees";
 import RestaurantEmployeeForm from "./pages/restaurant/EmployeeForm";
+import RestaurantAttendance from "./pages/restaurant/Attendance";
 import RestaurantKYC from "./pages/restaurant/KYC";
 import RestaurantSubscription from "./pages/restaurant/Subscription";
 import RestaurantSubscriptionCheckout from "./pages/restaurant/SubscriptionCheckout";
@@ -63,6 +64,7 @@ import RestaurantCreditCustomers from "./pages/restaurant/CreditCustomers";
 import RestaurantProfile from "./pages/restaurant/Profile";
 import RestaurantPublicProfile from "./pages/restaurant/PublicProfile";
 import RestaurantPromotions from "./pages/restaurant/Promotions";
+import RestaurantReservations from "./pages/restaurant/Reservations";
 import RestaurantBranches from "./pages/restaurant/Branches";
 import BranchLogin from "./pages/branch/BranchLogin";
 import BranchSettings from "./pages/branch/BranchSettings";
@@ -137,6 +139,57 @@ import BlogDetail from "./pages/BlogDetail";
 import NotificationsPage from "./pages/Notifications";
 import SubscriptionPaymentCallback from "./pages/restaurant/SubscriptionPaymentCallback";
 
+const CUSTOMER_ROUTE_PREFIXES = [
+  "/home/",
+  "/menu/",
+  "/item/",
+  "/item-detail/",
+  "/cart/",
+  "/orders/",
+  "/order/track/",
+  "/order/bill/",
+  "/account/",
+  "/about/",
+  "/settings/",
+  "/privacy/",
+  "/credit-apply/",
+];
+
+function CustomerRouteScrollReset() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    const isCustomerRoute = CUSTOMER_ROUTE_PREFIXES.some((prefix) =>
+      pathname.startsWith(prefix),
+    );
+    if (!isCustomerRoute) return;
+
+    const previousScrollBehavior = document.documentElement.style.scrollBehavior;
+    document.documentElement.style.scrollBehavior = "auto";
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+
+    const frame = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      document.documentElement.style.scrollBehavior = previousScrollBehavior;
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.documentElement.style.scrollBehavior = previousScrollBehavior;
+    };
+  }, [pathname]);
+
+  useEffect(() => {
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+  }, []);
+
+  return null;
+}
+
 function App() {
   const { user, isLoading, mergeUser } = useAuth();
   const { applyRemoteTheme } = useTheme();
@@ -196,6 +249,7 @@ function App() {
   return (
     <>
       <Agentation />
+      <CustomerRouteScrollReset />
       <Routes>
         {/* Landing Page */}
         <Route path="/" element={<LandingPage />} />
@@ -446,9 +500,11 @@ function App() {
             <Route path="customers" element={<CustomerDirectory />} />
             <Route path="orders/:id" element={<RestaurantOrderDetail />} />
             <Route path="tables" element={<RestaurantTables />} />
+            <Route path="reservations" element={<RestaurantReservations />} />
             <Route path="tables/new" element={<RestaurantTableForm />} />
             <Route path="tables/:id/edit" element={<RestaurantTableForm />} />
             <Route path="employees" element={<RestaurantEmployees />} />
+            <Route path="attendance" element={<RestaurantAttendance />} />
             <Route path="employees/new" element={<RestaurantEmployeeForm />} />
             <Route
               path="employees/:id/edit"
@@ -540,9 +596,11 @@ function App() {
           <Route path="customers" element={<CustomerDirectory />} />
           <Route path="orders/:id" element={<RestaurantOrderDetail />} />
           <Route path="tables" element={<RestaurantTables />} />
+          <Route path="reservations" element={<RestaurantReservations />} />
           <Route path="tables/new" element={<RestaurantTableForm />} />
           <Route path="tables/:id/edit" element={<RestaurantTableForm />} />
           <Route path="employees" element={<RestaurantEmployees />} />
+          <Route path="attendance" element={<RestaurantAttendance />} />
           <Route path="employees/new" element={<RestaurantEmployeeForm />} />
           <Route
             path="employees/:id/edit"
@@ -592,6 +650,7 @@ function App() {
           <Route path="orders" element={<RestaurantOrders />} />
           <Route path="orders/:id" element={<RestaurantOrderDetail />} />
           <Route path="tables" element={<RestaurantTables />} />
+          <Route path="reservations" element={<RestaurantReservations />} />
           <Route path="tables/new" element={<RestaurantTableForm />} />
           <Route path="tables/:id/edit" element={<RestaurantTableForm />} />
           <Route path="payments" element={<CashierDashboard />} />

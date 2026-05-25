@@ -410,25 +410,42 @@ a {
   touch-action: manipulation;
 }
 
-button[data-click-loading="true"]::before,
-button[data-loading="true"]::before,
-button[aria-busy="true"]::before {
+button[data-click-loading="true"]:not([data-spinner-handled="true"]),
+button[data-loading="true"]:not([data-spinner-handled="true"]),
+button[aria-busy="true"]:not([data-spinner-handled="true"]) {
+  font-size: 0;
+  position: relative;
+}
+
+button[data-click-loading="true"]:not([data-spinner-handled="true"]) > *,
+button[data-loading="true"]:not([data-spinner-handled="true"]) > *,
+button[aria-busy="true"]:not([data-spinner-handled="true"]) > * {
+  display: none;
+}
+
+button[data-click-loading="true"]:not([data-spinner-handled="true"])::before,
+button[data-loading="true"]:not([data-spinner-handled="true"])::before,
+button[aria-busy="true"]:not([data-spinner-handled="true"])::before {
   content: "";
-  display: inline-block;
-  width: 1em;
-  height: 1em;
-  margin-right: 0.45em;
+  display: block;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1rem;
+  height: 1rem;
+  margin-left: -0.5rem;
+  margin-top: -0.5rem;
+  margin-right: 0;
   flex: 0 0 auto;
-  border: 2px solid currentColor;
+  border: 2px solid var(--button-spinner-color, #ffffff);
   border-right-color: transparent;
   border-radius: 9999px;
-  vertical-align: -0.15em;
   animation: button-spinner 0.65s linear infinite;
 }
 
-button[data-click-loading="true"]:empty::before,
-button[data-loading="true"]:empty::before,
-button[aria-busy="true"]:empty::before {
+button[data-click-loading="true"]:not([data-spinner-handled="true"]):empty::before,
+button[data-loading="true"]:not([data-spinner-handled="true"]):empty::before,
+button[aria-busy="true"]:not([data-spinner-handled="true"]):empty::before {
   margin-right: 0;
 }
 

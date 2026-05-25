@@ -36,16 +36,18 @@ const OrderHistory = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen overflow-x-hidden bg-white">
       {/* Header */}
-      <header className="px-6 pt-12 pb-6 flex items-center border-b border-gray-50 sticky top-0 bg-white/80 backdrop-blur-md z-20">
+      <header className="sticky top-0 z-20 border-b border-gray-50 bg-white/80 px-6 pb-6 pt-12 backdrop-blur-md">
+        <div className="mx-auto flex w-full max-w-6xl items-center">
         <button className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors" onClick={() => window.history.back()}>
           <ArrowLeft size={20} className="text-gray-700" />
         </button>
         <h1 className="ml-4 text-xl font-semibold text-gray-800">Order History</h1>
+        </div>
       </header>
 
-      <div className="p-6 space-y-6">
+      <div className="mx-auto grid w-full max-w-6xl gap-6 p-6 md:grid-cols-2 xl:grid-cols-3">
         {orders.map((order) => (
           <div key={order.id} className="relative">
             {/* Recent Order Indicator */}
@@ -118,7 +120,7 @@ const OrderHistory = () => {
         ))}
 
         {/* Support Link */}
-        <div className="text-center py-6">
+        <div className="py-6 text-center md:col-span-2 xl:col-span-3">
           <p className="text-xs text-gray-400 font-medium">
             Having trouble with an order?{" "}
             <span className="text-orange-500 font-bold">Help Center</span>

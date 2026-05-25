@@ -12,6 +12,7 @@ import {
   PackageOpen,
 } from "lucide-react";
 import { useCustomerCart } from "../../context/CustomerCartContext";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 
 /**
  * Bottom-sheet cart drawer that opens *over* the menu so customers can review,
@@ -69,7 +70,7 @@ export default function CartDrawer() {
               visible: { y: 0, opacity: 1 },
             }}
             transition={{ type: "spring", stiffness: 320, damping: 32 }}
-            className="relative z-10 w-full max-w-md overflow-hidden rounded-t-[2rem] bg-white shadow-[0_-24px_60px_-20px_rgba(15,23,42,0.45)]"
+            className="relative z-10 w-full max-w-2xl overflow-hidden rounded-t-[2rem] bg-white shadow-[0_-24px_60px_-20px_rgba(15,23,42,0.45)]"
           >
             {/* Drag handle */}
             <div className="flex w-full justify-center pt-3">
@@ -119,9 +120,9 @@ export default function CartDrawer() {
                         className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-[0_2px_8px_rgba(15,23,42,0.04)]"
                       >
                         <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-gray-100">
-                          {item.image ? (
+                          {resolveMediaUrl(item.image) ? (
                             <img
-                              src={item.image}
+                              src={resolveMediaUrl(item.image)}
                               alt={item.name}
                               loading="lazy"
                               className="h-full w-full object-cover"

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import {
   Home,
   UtensilsCrossed,
@@ -61,36 +61,11 @@ export default function Navigation({
   const { totals } = useCustomerCart();
   const cartCount = totals?.count ?? 0;
 
-  const [navHidden, setNavHidden] = useState(false);
-  const lastScrollY = useRef(0);
-  const ticking = useRef(false);
-
   useEffect(() => {
     if (fromParamsSlug && fromParamsToken) {
       rememberCustomerPortal(fromParamsSlug, fromParamsToken);
     }
   }, [fromParamsSlug, fromParamsToken]);
-
-  useEffect(() => {
-    const onScroll = () => {
-      if (ticking.current) return;
-      ticking.current = true;
-      requestAnimationFrame(() => {
-        const y = window.scrollY || document.documentElement.scrollTop;
-        if (y < 48) {
-          setNavHidden(false);
-        } else if (y > lastScrollY.current + 12) {
-          setNavHidden(true);
-        } else if (y < lastScrollY.current - 12) {
-          setNavHidden(false);
-        }
-        lastScrollY.current = y;
-        ticking.current = false;
-      });
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   const tabs = useMemo(() => {
     if (!activeSlug || !activeToken) return [];
@@ -121,7 +96,7 @@ export default function Navigation({
       <m.nav
       aria-label="Customer navigation"
       initial={false}
-      animate={{ y: hidden || navHidden ? 110 : 0 }}
+      animate={{ y: hidden ? 110 : 0 }}
       transition={{ type: "spring", stiffness: 380, damping: 34 }}
       className="customer-bottom-nav pointer-events-none fixed bottom-0 left-0 right-0 z-[90] flex justify-center px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 md:px-4"
     >

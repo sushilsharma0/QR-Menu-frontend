@@ -31,6 +31,7 @@ import { getSocketOrigin } from "../../utils/runtimeConfig";
 import { rememberCustomerPortal } from "../../utils/customerPortalContext";
 import { getStoredGuestId, rememberCustomerOrderToken } from "../../services/customer";
 import toast from "../../utils/toast";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 
 const formatMoney = (value) => `Rs. ${Number(value || 0).toFixed(2)}`;
 
@@ -127,6 +128,7 @@ const OrderTracking = () => {
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [isLive, setIsLive] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const restaurantLogo = resolveMediaUrl(order?.restaurant?.logo);
   const [showEditOrder, setShowEditOrder] = useState(false);
   const [editSecondsRemaining, setEditSecondsRemaining] = useState(0);
   const timelineRef = useRef(null);
@@ -342,11 +344,11 @@ const OrderTracking = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-surface-50 via-white to-surface-50/90 pb-44 text-gray-950">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-surface-50 via-white to-surface-50/90 pb-44 text-gray-950">
       {/* Sticky tracking header */}
       <div className="sticky top-0 z-40 bg-white shadow-[0_8px_24px_-22px_rgba(15,23,42,0.45)]">
       <header className="border-b border-gray-100 bg-white px-4 pb-3 pt-12">
-        <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3">
           <motion.button
             type="button"
             whileTap={{ scale: 0.92 }}
@@ -378,14 +380,14 @@ const OrderTracking = () => {
       </header>
 
       <div className="border-b border-gray-100/80 bg-white/95 px-4 py-3 backdrop-blur-lg">
-        <div className="mx-auto flex max-w-lg items-center gap-3">
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-3">
           <motion.div
             layout
             className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary-900 text-white shadow-md"
           >
-            {order.restaurant?.logo ? (
+            {restaurantLogo ? (
               <img
-                src={order.restaurant.logo}
+                src={restaurantLogo}
                 alt=""
                 className="h-full w-full object-cover"
               />
@@ -406,7 +408,7 @@ const OrderTracking = () => {
             <p className="text-sm font-black text-gray-900">{formatMoney(grandTotal)}</p>
           </div>
         </div>
-        <div className="mx-auto mt-3 max-w-lg">
+        <div className="mx-auto mt-3 w-full max-w-6xl">
           <div className="mb-1 flex justify-between text-[10px] font-bold text-gray-500">
             <span>Progress</span>
             <span>{progressPct}%</span>
@@ -428,7 +430,7 @@ const OrderTracking = () => {
       </div>
       </div>
 
-      <main className="mx-auto max-w-lg space-y-4 px-4 pt-4">
+      <main className="mx-auto grid w-full max-w-6xl gap-4 px-4 pt-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)]">
         {/* Hero card */}
         <motion.section
           initial={{ opacity: 0, y: 16 }}

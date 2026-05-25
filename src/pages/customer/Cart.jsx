@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Trash2,
@@ -32,6 +32,7 @@ import {
 import Navigation from "../../components/customer/Navigation";
 import { rememberCustomerPortal } from "../../utils/customerPortalContext";
 import { useCustomerCart } from "../../context/CustomerCartContext";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 
 const STEPS = [
   { id: "review", label: "Review" },
@@ -59,7 +60,7 @@ function partitionItemsByFulfillment(items, itemFulfillment) {
   return { dine, parcel };
 }
 
-function mapItemsToCheckoutPayload(groupItems) {
+function mapItemsToCheckoutPayload(groupItems, itemFulfillment = {}) {
   return groupItems.map((item) => ({
     menuItemId: item.menuItemId,
     quantity: item.quantity,
@@ -68,37 +69,12 @@ function mapItemsToCheckoutPayload(groupItems) {
     customizations: item.customizations || [],
     addOns: item.addOns || [],
     selectedVariations: item.selectedVariations || [],
+    fulfillmentMode: itemFulfillment[getItemFulfillmentKey(item)] || "dine_in",
   }));
 }
 
 function useBottomNavHidden() {
-  const [hidden, setHidden] = useState(false);
-  const lastScrollY = useRef(0);
-  const ticking = useRef(false);
-
-  useEffect(() => {
-    const onScroll = () => {
-      if (ticking.current) return;
-      ticking.current = true;
-      requestAnimationFrame(() => {
-        const y = window.scrollY || document.documentElement.scrollTop;
-        if (y < 48) {
-          setHidden(false);
-        } else if (y > lastScrollY.current + 12) {
-          setHidden(true);
-        } else if (y < lastScrollY.current - 12) {
-          setHidden(false);
-        }
-        lastScrollY.current = y;
-        ticking.current = false;
-      });
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  return hidden;
+  return false;
 }
 
 const Cart = () => {
@@ -305,12 +281,8 @@ const Cart = () => {
         setIsPlacingOrder(false);
         return;
       }
-      const { dine: dineItems, parcel: parcelItems } = partitionItemsByFulfillment(
-        items,
-        itemFulfillment,
-      );
-      const hasDine = dineItems.length > 0;
-      const hasParcel = parcelItems.length > 0;
+      const hasDine = fulfillmentCounts.dine > 0;
+      const hasParcel = fulfillmentCounts.parcel > 0;
       const shared = {
         qrToken: token,
         guestId,
@@ -323,43 +295,22 @@ const Cart = () => {
         customerEmail: finalEmail,
       };
 
-      const checkoutGroups = [
-        hasDine && {
-          fulfillmentMode: "dine_in",
-          orderChannel: "qr_ordering",
-          specialRequests: "",
-          items: dineItems,
-          withPromo: true,
-        },
-        hasParcel && {
-          fulfillmentMode: "parcel",
-          orderChannel: "takeaway",
-          specialRequests: "Parcel order - pack for takeaway",
-          items: parcelItems,
-          withPromo: !hasDine,
-        },
-      ].filter(Boolean);
-
-      const placedOrders = [];
-      let primaryTrackToken = "";
-
-      for (const group of checkoutGroups) {
-        const res = await checkoutGuestOrder({
-          ...shared,
-          orderChannel: group.orderChannel,
-          fulfillmentMode: group.fulfillmentMode,
-          specialRequests: group.specialRequests,
-          promoCode: group.withPromo ? appliedPromo?.code || "" : "",
-          items: mapItemsToCheckoutPayload(group.items),
-        });
-        const order = res?.data;
-        if (order) {
-          placedOrders.push(order);
-          if (!primaryTrackToken && order.trackToken) {
-            primaryTrackToken = order.trackToken;
-          }
-        }
-      }
+      const mixedFulfillment = hasDine && hasParcel;
+      const res = await checkoutGuestOrder({
+        ...shared,
+        orderChannel: hasParcel && !hasDine ? "takeaway" : "qr_ordering",
+        fulfillmentMode: hasParcel && !hasDine ? "parcel" : "dine_in",
+        specialRequests: mixedFulfillment
+          ? "Mixed order - serve eat-here items at the table and pack parcel items."
+          : hasParcel
+            ? "Parcel order - pack for takeaway"
+            : "",
+        promoCode: appliedPromo?.code || "",
+        items: mapItemsToCheckoutPayload(items, itemFulfillment),
+      });
+      const order = res?.data;
+      const placedOrders = order ? [order] : [];
+      const primaryTrackToken = order?.trackToken || "";
 
       if (primaryTrackToken) rememberCustomerOrderToken(token, primaryTrackToken);
 
@@ -367,26 +318,22 @@ const Cart = () => {
       setAppliedPromo(null);
       setPromoDiscount(0);
       setPromoCode("");
-      const split = placedOrders.length > 1;
       setSuccessOrder({
-        split,
+        split: false,
         orders: placedOrders,
-        orderNumber: placedOrders[0]?.orderNumber,
+        orderNumber: order?.orderNumber,
         trackToken: primaryTrackToken,
-        smsSent: placedOrders.some((o) => o?.smsSent),
-        smsSkipped: placedOrders.every((o) => o?.smsSkipped !== false),
+        smsSent: Boolean(order?.smsSent),
+        smsSkipped: order?.smsSkipped !== false,
       });
 
-      const orderLabel = split
-        ? `#${placedOrders.map((o) => o.orderNumber).filter(Boolean).join(" & #")}`
-        : `#${placedOrders[0]?.orderNumber || "—"}`;
+      const orderLabel = order?.orderNumber ? `#${order.orderNumber}` : "#-";
       success(
-        split
-          ? `Orders ${orderLabel} sent — dine-in and parcel are separate in the kitchen.`
+        mixedFulfillment
+          ? `Order ${orderLabel} sent with eat-here and parcel items.`
           : "Order sent. Please check all items before the kitchen starts preparing.",
         7000,
       );
-
       setTimeout(() => {
         navigate(
           primaryTrackToken
@@ -416,7 +363,8 @@ const Cart = () => {
       className={`min-h-screen bg-surface-50/60 text-gray-950 transition-[padding-bottom] duration-300 ${bottomPaddingClass}`}
     >
       {/* Header */}
-      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-gray-100 bg-white px-5 pb-4 pt-12 shadow-[0_8px_24px_-22px_rgba(15,23,42,0.45)]">
+      <header className="sticky top-0 z-40 border-b border-gray-100 bg-white px-5 pb-4 pt-12 shadow-[0_8px_24px_-22px_rgba(15,23,42,0.45)]">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between">
         <button
           type="button"
           className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-700 transition active:bg-gray-200"
@@ -443,10 +391,11 @@ const Cart = () => {
         ) : (
           <span className="h-10 w-10" />
         )}
+        </div>
       </header>
 
       {/* Step indicator */}
-      <div className="mx-auto mt-5 max-w-md px-5">
+      <div className="mx-auto mt-5 w-full max-w-4xl px-5">
         <div className="flex items-center justify-between">
           {STEPS.map((s, idx) => {
             const completed = idx < stepIndex;
@@ -708,7 +657,7 @@ function ReviewStep({
   onBrowse,
 }) {
   return (
-    <div className="px-5 space-y-4">
+    <div className="mx-auto w-full max-w-6xl space-y-4 px-5">
       <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-primary-700 via-primary-600 to-secondary-500 p-5 text-white shadow-xl shadow-primary-900/20">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
@@ -754,13 +703,13 @@ function ReviewStep({
         <>
           {fulfillmentCounts.dine > 0 && fulfillmentCounts.parcel > 0 && (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold leading-relaxed text-amber-900">
-              Mixed order — we will send{" "}
+              Mixed order - we will send{" "}
               <span className="font-black">{fulfillmentCounts.dine} item{fulfillmentCounts.dine > 1 ? "s" : ""} to your table</span>{" "}
               and pack{" "}
-              <span className="font-black">{fulfillmentCounts.parcel} for parcel</span> as separate kitchen tickets.
+              <span className="font-black">{fulfillmentCounts.parcel} for parcel</span> in one order.
             </div>
           )}
-        <ul className="space-y-3">
+        <ul className="grid gap-3 lg:grid-cols-2">
           <AnimatePresence initial={false} mode="popLayout">
             {items.map((item) => {
               const lineKey = getItemFulfillmentKey(item);
@@ -779,9 +728,9 @@ function ReviewStep({
               >
                 <div className="flex items-center gap-3">
                 <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-gray-100">
-                  {item.image ? (
+                  {resolveMediaUrl(item.image) ? (
                     <img
-                      src={item.image}
+                      src={resolveMediaUrl(item.image)}
                       alt={item.name}
                       loading="lazy"
                       className="h-full w-full object-cover"
@@ -926,7 +875,7 @@ function ReviewStep({
 function DetailsStep({ customerDetails, setCustomerDetails, fulfillmentCounts, subtotal, total, promoDiscount }) {
   const mixed = fulfillmentCounts.dine > 0 && fulfillmentCounts.parcel > 0;
   return (
-    <div className="px-5 space-y-4">
+    <div className="mx-auto grid w-full max-w-6xl gap-4 px-5 lg:grid-cols-[minmax(0,1fr)_24rem]">
       <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
         <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
           How you are ordering
@@ -947,7 +896,7 @@ function DetailsStep({ customerDetails, setCustomerDetails, fulfillmentCounts, s
         </div>
         <p className="mt-3 text-xs font-semibold leading-relaxed text-gray-500">
           {mixed
-            ? "You chose both dine-in and parcel items. The kitchen receives two separate orders from your table."
+            ? "You chose both dine-in and parcel items. The kitchen receives one order with each item marked correctly."
             : fulfillmentCounts.parcel > 0
               ? "All items will be packed for takeaway."
               : "All items will be served at your table."}{" "}
@@ -1058,7 +1007,7 @@ function ConfirmStep({
   );
 
   return (
-    <div className="px-5 space-y-4">
+    <div className="mx-auto grid w-full max-w-6xl gap-4 px-5 lg:grid-cols-2">
       <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
         <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
           Order type
@@ -1079,7 +1028,7 @@ function ConfirmStep({
               <div>
                 <p className="text-sm font-black">Parcel</p>
                 <p className="text-xs font-semibold text-amber-800/80">
-                  {fulfillmentCounts.parcel} item{fulfillmentCounts.parcel > 1 ? "s" : ""} packed to carry — separate ticket.
+                  {fulfillmentCounts.parcel} item{fulfillmentCounts.parcel > 1 ? "s" : ""} packed to carry in the same order.
                 </p>
               </div>
             </div>
@@ -1214,7 +1163,7 @@ function SuccessOverlay({ order }) {
         >
           {split ? (
             <>
-              Orders <span className="font-black text-primary-700">{displayNumber}</span> are on their way — dine-in and parcel are separate in the kitchen.
+              Order <span className="font-black text-primary-700">{displayNumber}</span> is on its way with eat-here and parcel items.
             </>
           ) : (
             <>

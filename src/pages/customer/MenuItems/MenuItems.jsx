@@ -3,7 +3,6 @@ import {
   Search,
   ArrowLeft,
   Plus,
-  Minus,
   X,
   SlidersHorizontal,
   Sparkles,
@@ -23,6 +22,7 @@ import { useToast } from "../../../hooks/useToast";
 import { ToastContainer } from "../../../components/common/ToastContainer";
 import { useCustomerCart } from "../../../context/CustomerCartContext";
 import { rememberCustomerPortal } from "../../../utils/customerPortalContext";
+import { resolveMediaUrl } from "../../../utils/mediaUrl";
 
 const TYPE_CHIPS = [
   { id: "all",     label: "All",     dot: "bg-gray-700",   active: "bg-gray-900 text-white border-gray-900" },
@@ -115,7 +115,7 @@ const MenuItems = () => {
   const navigate = useNavigate();
   const { toasts, removeToast, success, error } = useToast();
   const { slug, token, category: categoryName } = useParams();
-  const { hydrate, addItem, increment, decrement, quantityFor } = useCustomerCart();
+  const { hydrate, addItem } = useCustomerCart();
 
   const decodedCategory = useMemo(
     () => (categoryName ? decodeURIComponent(categoryName) : ""),
@@ -257,9 +257,10 @@ const MenuItems = () => {
   };
 
   return (
-    <div className="min-h-screen bg-surface-50/60 pb-44">
+    <div className="min-h-screen overflow-x-hidden bg-surface-50/60 pb-44">
       {/* Header */}
       <header className="sticky top-0 z-20 flex items-center justify-between gap-2 border-b border-gray-100 bg-white/95 px-4 pb-4 pt-12 backdrop-blur-lg">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2">
         <FramerMotion.motion.button
           whileTap={{ scale: 0.85 }}
           data-no-spinner="true"
@@ -355,9 +356,11 @@ const MenuItems = () => {
             </FramerMotion.AnimatePresence>
           </FramerMotion.motion.button>
         </div>
+        </div>
       </header>
 
       <div className="sticky top-[89px] z-10 border-b border-gray-100 bg-surface-50/95 pb-3 shadow-sm backdrop-blur-lg">
+        <div className="mx-auto w-full max-w-6xl">
         <CategoryCircleStrip
           categories={categories}
           activeCategory={decodedCategory}
@@ -390,10 +393,11 @@ const MenuItems = () => {
             })}
           </div>
         </div>
+        </div>
       </div>
 
       {/* Items */}
-      <div className="px-4 pt-4 pb-40">
+      <div className="mx-auto w-full max-w-6xl px-4 pt-4 pb-40">
         {loading ? (
           <SkeletonList />
         ) : sortedItems.length === 0 ? (
@@ -409,24 +413,23 @@ const MenuItems = () => {
             variants={listVariants}
             initial="hidden"
             animate="visible"
-            className="space-y-3"
+            className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
           >
             {sortedItems.map((item) => {
-              const qty = quantityFor(item._id);
               return (
                 <FramerMotion.motion.li
                   key={item._id}
                   variants={cardVariants}
                   layout
-                  className="group flex gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition-all hover:shadow-md"
+                  className="group flex min-w-0 gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition-all hover:shadow-md"
                 >
                   <Link
                     to={`/item-detail/${slug}/${token}/${item._id}`}
                     className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-gray-100"
                   >
-                    {item.image ? (
+                    {resolveMediaUrl(item.image) ? (
                       <img
-                        src={item.image}
+                        src={resolveMediaUrl(item.image)}
                         alt={item.name}
                         loading="lazy"
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
@@ -480,11 +483,7 @@ const MenuItems = () => {
                       </div>
 
                       <CardQuantityControl
-                        quantity={qty}
                         onAdd={() => handleQuickAdd(item)}
-                        onPlus={() => increment(item._id)}
-                        onMinus={() => decrement(item._id)}
-                        hasCustomizations={needsOptionSelection(item)}
                       />
                     </div>
                   </div>
@@ -546,7 +545,7 @@ function CategoryCircleStrip({ categories, activeCategory, loading, onSelect }) 
       <div className="flex gap-4 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {categories.map((category) => {
           const isActive = category?.name === activeCategory;
-          const image = category?.image || category?.coverImage || category?.items?.find((item) => item?.image)?.image;
+          const image = resolveMediaUrl(category?.image || category?.coverImage || category?.items?.find((item) => item?.image)?.image);
           return (
             <button
               key={category._id || category.name}
@@ -593,82 +592,19 @@ function CategoryCircleStrip({ categories, activeCategory, loading, onSelect }) 
 }
 
 function CardQuantityControl({
-  quantity,
   onAdd,
-  onPlus,
-  onMinus,
-  hasCustomizations,
 }) {
-  if (hasCustomizations && quantity === 0) {
-    return (
-      <FramerMotion.motion.button
-        type="button"
-        whileTap={{ scale: 0.9 }}
-        onClick={onAdd}
-        className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md shadow-emerald-600/25 transition active:from-emerald-600"
-        aria-label="Add to cart"
-      >
-        <Plus size={14} strokeWidth={3} />
-        Add
-      </FramerMotion.motion.button>
-    );
-  }
-
   return (
-    <FramerMotion.AnimatePresence mode="wait" initial={false}>
-      {quantity === 0 ? (
-        <FramerMotion.motion.button
-          key="add"
-          type="button"
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.85 }}
-          whileTap={{ scale: 0.9 }}
-          transition={{ type: "spring", stiffness: 320, damping: 24 }}
-          onClick={onAdd}
-          className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md shadow-emerald-600/25 transition active:from-emerald-600"
-          aria-label="Add to cart"
-        >
-          <Plus size={14} strokeWidth={3} />
-          Add
-        </FramerMotion.motion.button>
-      ) : (
-        <FramerMotion.motion.div
-          key="stepper"
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.85 }}
-          transition={{ type: "spring", stiffness: 320, damping: 24 }}
-          className="flex items-center gap-1.5 rounded-xl border border-primary-100 bg-primary-50/80 px-1.5 py-1"
-        >
-          <button
-            type="button"
-            onClick={onMinus}
-            className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-primary-700 shadow-sm transition active:scale-90"
-            aria-label="Decrease"
-          >
-            <Minus size={13} strokeWidth={3} />
-          </button>
-          <FramerMotion.motion.span
-            key={quantity}
-            initial={{ scale: 0.85, opacity: 0.6 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 360, damping: 22 }}
-            className="w-5 text-center text-xs font-semibold tabular-nums text-primary-800"
-          >
-            {quantity}
-          </FramerMotion.motion.span>
-          <button
-            type="button"
-            onClick={onPlus}
-            className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary-600 text-white shadow-sm transition active:scale-90"
-            aria-label="Increase"
-          >
-            <Plus size={13} strokeWidth={3} />
-          </button>
-        </FramerMotion.motion.div>
-      )}
-    </FramerMotion.AnimatePresence>
+    <FramerMotion.motion.button
+      type="button"
+      whileTap={{ scale: 0.9 }}
+      onClick={onAdd}
+      className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md shadow-emerald-600/25 transition active:from-emerald-600"
+      aria-label="Add to cart"
+    >
+      <Plus size={14} strokeWidth={3} />
+      Add
+    </FramerMotion.motion.button>
   );
 }
 

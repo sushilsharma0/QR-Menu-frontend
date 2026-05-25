@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { FiCheck, FiClock, FiRefreshCw, FiUsers, FiZap } from 'react-icons/fi'
 import toast from '@utils/toast'
 import api from '../../services/api'
-import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import { useSocket } from '../../hooks/useSocket'
 import useOrderAlerts from '../../hooks/useOrderAlerts'
@@ -86,6 +85,16 @@ const KitchenDashboard = () => {
     }
   }
 
+  const updateItemKitchenStatus = async (orderId, itemId, kitchenStatus) => {
+    try {
+      await api.patch(`/restaurant/customer-orders/${orderId}/items/${itemId}/kitchen`, { kitchenStatus })
+      toast.success(`Item marked ${kitchenStatus}`)
+      fetchOrders()
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Failed to update item')
+    }
+  }
+
   const getStatusStyle = (status) => {
     const styles = {
       pending: {
@@ -153,6 +162,15 @@ const KitchenDashboard = () => {
   const pendingCount = orders.filter((o) => ['pending', 'confirmed'].includes(o.status)).length
   const preparingCount = orders.filter((o) => ['preparing', 'cooking'].includes(o.status)).length
   const readyCount = orders.filter((o) => o.status === 'ready').length
+  const itemStatusStyle = {
+    queued: 'bg-slate-100 text-slate-700',
+    preparing: 'bg-violet-100 text-violet-800',
+    cooking: 'bg-orange-100 text-orange-800',
+    ready: 'bg-emerald-100 text-emerald-800',
+    served: 'bg-gray-100 text-gray-700',
+    held: 'bg-amber-100 text-amber-800',
+    cancelled: 'bg-red-100 text-red-800',
+  }
 
   if (loading) {
     return (
@@ -164,74 +182,42 @@ const KitchenDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 text-white shadow-xl">
+      <div className="rounded-2xl bg-slate-950 p-5 text-white shadow-xl">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Kitchen Control Center</p>
             <h1 className="text-3xl font-semibold mt-2">Kitchen Dashboard</h1>
-            <p className="text-slate-300 mt-1">Manage incoming orders and cooking flow in real time.</p>
+            <p className="text-slate-300 mt-1">Accept, cook, and hand off orders without losing the flow.</p>
           </div>
-          <Button variant="secondary" onClick={fetchOrders} title="Reload all kitchen orders">
-            <FiRefreshCw className="mr-2" /> Refresh Queue
-          </Button>
-        </div>
-      </div>
-
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-2 shadow-sm">
-        <div className="flex flex-wrap gap-2">
-          {sections.map((section) => (
-            <a
-              key={section.id}
-              href={`#${section.id}`}
-              title={`Jump to ${section.title}`}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
-              {section.title}
-            </a>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-lg:grid-cols-2">
-        <div className="rounded-2xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm" title="Total orders currently active in kitchen workflow">
-          <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Total Active</p>
-          <div className="mt-2 flex items-center justify-between">
-            <p className="text-2xl font-semibold text-slate-900 dark:text-gray-100">{totalOrders}</p>
-            <FiUsers className="text-slate-500" />
-          </div>
-        </div>
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm" title="Orders waiting for acceptance or cooking start">
-          <p className="text-xs uppercase tracking-wide text-amber-700">Incoming</p>
-          <div className="mt-2 flex items-center justify-between">
-            <p className="text-2xl font-semibold text-amber-900">{pendingCount}</p>
-            <FiClock className="text-amber-600" />
-          </div>
-        </div>
-        <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4 shadow-sm" title="Orders in prep or on the line">
-          <p className="text-xs uppercase tracking-wide text-violet-700">Prep / cooking</p>
-          <div className="mt-2 flex items-center justify-between">
-            <p className="text-2xl font-semibold text-violet-900">{preparingCount}</p>
-            <FiZap className="text-violet-600" />
-          </div>
-        </div>
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm" title="Orders ready for serving handoff">
-          <p className="text-xs uppercase tracking-wide text-emerald-700">Ready</p>
-          <div className="mt-2 flex items-center justify-between">
-            <p className="text-2xl font-semibold text-emerald-900">{readyCount}</p>
-            <FiCheck className="text-emerald-600" />
+          <div className="flex flex-col gap-3 sm:items-end">
+            <Button variant="secondary" onClick={fetchOrders} title="Reload all kitchen orders">
+              <FiRefreshCw className="mr-2" /> Refresh
+            </Button>
+            <div className="flex flex-wrap gap-2 text-xs font-bold">
+              <span className="rounded-full bg-white/10 px-3 py-1.5 text-white"><FiUsers className="mr-1 inline" />{totalOrders} active</span>
+              <span className="rounded-full bg-amber-400/20 px-3 py-1.5 text-amber-100"><FiClock className="mr-1 inline" />{pendingCount} incoming</span>
+              <span className="rounded-full bg-violet-400/20 px-3 py-1.5 text-violet-100"><FiZap className="mr-1 inline" />{preparingCount} cooking</span>
+              <span className="rounded-full bg-emerald-400/20 px-3 py-1.5 text-emerald-100"><FiCheck className="mr-1 inline" />{readyCount} ready</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
         {sections.map((section) => (
-          <Card key={section.title}>
+          <section
+            key={section.title}
+            className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900/70"
+          >
             <div id={section.id} />
-            <div className={`mb-4 rounded-xl bg-gradient-to-r ${section.accent} p-[1px]`}>
-              <div className="rounded-[11px] bg-white dark:bg-gray-900 px-4 py-3">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
                 <h2 className="font-semibold text-gray-900 dark:text-gray-100">{section.title}</h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{section.subtitle}</p>
               </div>
+              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-700 shadow-sm dark:bg-gray-800 dark:text-gray-200">
+                {orders.filter(o => section.status.includes(o.status)).length}
+              </span>
             </div>
             <div className="space-y-4">
               {orders.filter(o => section.status.includes(o.status)).map((order) => (
@@ -256,20 +242,49 @@ const KitchenDashboard = () => {
                   
                   <div className="mb-3 space-y-1">
                     {order.items.map((item, idx) => (
-                      <div key={idx} className="text-sm text-gray-700 dark:text-gray-300">
-                        <span className="font-semibold">{item.quantity}x</span> {item.name}
+                      <div key={item._id || idx} className="rounded-xl border border-white/70 bg-white/70 p-2 text-sm text-gray-700 shadow-sm dark:border-gray-700 dark:bg-gray-900/70 dark:text-gray-300">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <span className="font-semibold">{item.quantity}x</span> {item.name}
+                            <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                              item.fulfillmentMode === 'parcel'
+                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
+                                : 'bg-primary-100 text-primary-800 dark:bg-primary-900/40 dark:text-primary-200'
+                            }`}>
+                              {item.fulfillmentMode === 'parcel' ? 'Parcel' : 'Eat here'}
+                            </span>
+                          </div>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${itemStatusStyle[item.kitchenStatus || 'queued'] || itemStatusStyle.queued}`}>
+                            {item.kitchenStatus || 'queued'}
+                          </span>
+                        </div>
                         {(item.selectedVariations || []).length > 0 && (
-                          <div className="ml-5 mt-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                          <div className="mt-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
                             {(item.selectedVariations || [])
                               .map((v) => `${v.groupName}: ${v.optionName}${Number(v.quantity || 1) > 1 ? ` x${v.quantity}` : ''}`)
                               .join(' | ')}
                           </div>
                         )}
                         {item.cookingInstructions ? (
-                          <div className="ml-5 mt-1 rounded bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
+                          <div className="mt-1 rounded bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
                             {item.cookingInstructions}
                           </div>
                         ) : null}
+                        <div className="mt-2">
+                          <select
+                            value={item.kitchenStatus || 'queued'}
+                            disabled={!item._id}
+                            onChange={(event) => updateItemKitchenStatus(order._id, item._id, event.target.value)}
+                            className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs font-bold capitalize text-gray-700 outline-none focus:ring-2 focus:ring-primary-300 disabled:opacity-45 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200"
+                            title="Update item kitchen status"
+                          >
+                            {['queued', 'preparing', 'cooking', 'ready', 'served'].map((nextStatus) => (
+                              <option key={nextStatus} value={nextStatus}>
+                                {nextStatus}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -360,7 +375,7 @@ const KitchenDashboard = () => {
                 </div>
               )}
             </div>
-          </Card>
+          </section>
         ))}
       </div>
     </div>

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿import React, { useState } from "react";
+=======
+﻿import React, {useState, useReducer } from "react";
+>>>>>>> ca8f1d4e38da7db28bc2f2b5d0925b1ce917de46
 import { Link } from "react-router-dom";
 import { CreditCard, Landmark, ShieldCheck } from "lucide-react";
 import { useToast } from "../../hooks/useToast";
