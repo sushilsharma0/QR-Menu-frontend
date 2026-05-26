@@ -5,6 +5,7 @@ import Header from '../common/Header'
 import RestaurantTrialKycBanner from './RestaurantTrialKycBanner'
 import PlanReadOnlyBanner from './PlanReadOnlyBanner'
 import TrialWelcomeModal from './TrialWelcomeModal'
+import PasswordChangeReminderModal from './PasswordChangeReminderModal'
 import { BranchProvider } from '../../context/BranchContext'
 import { RestaurantRealtimeProvider } from '../../context/RestaurantRealtimeContext'
 
@@ -36,6 +37,7 @@ const RestaurantLayout = () => {
             <RestaurantTrialKycBanner />
             <PlanReadOnlyBanner />
             <TrialWelcomeModal />
+            <PasswordChangeReminderModal />
             <Outlet />
           </main>
         </div>
