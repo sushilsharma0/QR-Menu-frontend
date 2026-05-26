@@ -105,6 +105,8 @@ const Header = () => {
             </div>
           )}
           <button
+            type="button"
+            data-no-spinner="true"
             onClick={toggleTheme}
             className="flex h-10 w-10 items-center justify-center rounded-xl border border-surface-200 bg-white text-primary-700 shadow-sm transition hover:bg-surface-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
             title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -116,6 +118,7 @@ const Header = () => {
           <div ref={profileRef} className="relative">
             <button
               type="button"
+              data-no-spinner="true"
               onClick={() => setProfileOpen((current) => !current)}
               className="flex items-center gap-3 rounded-2xl border border-surface-200 bg-white px-3 py-2 shadow-sm transition hover:-translate-y-0.5 hover:border-primary-100 hover:shadow-md dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
               aria-expanded={profileOpen}
@@ -203,6 +206,7 @@ const Header = () => {
                     )}
                     <button
                       type="button"
+                      data-no-spinner="true"
                       onClick={() => {
                         setProfileOpen(false)
                         setConfirmLogout(true)
@@ -251,6 +255,7 @@ const Header = () => {
                   <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <button
                       type="button"
+                      data-no-spinner="true"
                       onClick={() => setConfirmLogout(false)}
                       className="rounded-2xl border border-surface-200 bg-white px-5 py-3 text-sm font-black text-gray-700 transition hover:bg-surface-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
                     >
@@ -258,6 +263,7 @@ const Header = () => {
                     </button>
                     <button
                       type="button"
+                      data-no-spinner="true"
                       onClick={handleLogout}
                       className="rounded-2xl bg-red-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-red-900/20 transition hover:bg-red-700"
                     >
