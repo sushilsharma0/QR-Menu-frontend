@@ -166,6 +166,13 @@ api.interceptors.response.use(
       window.location.href = '/employee/change-password'
       return Promise.reject(error)
     }
+    if (status === 403 && errorCode === 'MUST_CHANGE_RESTAURANT_PASSWORD') {
+      if (!shouldSkipToast) {
+        toast.error(message || 'Please change your restaurant password to continue.', { duration: 8000 })
+        error.__toastShown = true
+      }
+      return Promise.reject(error)
+    }
     if (
       status === 403 &&
       (errorCode === 'TRIAL_OR_PLAN_EXPIRED' || errorCode === 'SUBSCRIPTION_EXPIRED')
