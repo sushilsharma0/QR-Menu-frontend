@@ -30,10 +30,10 @@ import { parseRestaurantPortalPath } from '../../utils/tenantPaths'
 import { resolveMediaUrl } from '../../utils/mediaUrl'
 
 const SIDEBAR_WIDTH_STORAGE_KEY = 'restaurant-sidebar-width'
-const SIDEBAR_DEFAULT_WIDTH = 280
-const SIDEBAR_MIN_WIDTH = 240
-const SIDEBAR_MAX_WIDTH = 420
-const SIDEBAR_COLLAPSED_WIDTH = 112
+const SIDEBAR_DEFAULT_WIDTH = 268
+const SIDEBAR_MIN_WIDTH = 236
+const SIDEBAR_MAX_WIDTH = 360
+const SIDEBAR_COLLAPSED_WIDTH = 76
 
 function clampSidebarWidth(value) {
   const width = Number(value)
@@ -106,7 +106,7 @@ function NavItem({
   const badgeCount = navBadgeCount(item.segment, pendingCount, deliveryDispatchCount)
 
   const inactiveRow =
-    'text-gray-600 hover:bg-white hover:text-gray-950 hover:shadow-sm dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100'
+    'text-gray-600 hover:bg-primary-50/70 hover:text-primary-800 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100'
 
   return (
     <NavLink
@@ -125,13 +125,13 @@ function NavItem({
       onFocus={showTooltip}
       onBlur={onTooltipLeave}
       className={({ isActive }) =>
-        `group relative flex items-center gap-3 rounded-xl transition-all duration-200 ${
-          nested && !collapsed ? 'ml-2 py-2 pl-2 pr-3' : 'px-3 py-2'
+        `group relative flex items-center gap-3 rounded-lg transition-colors duration-150 ${
+          nested && !collapsed ? 'py-2 pl-8 pr-3' : 'px-3 py-2.5'
         } ${
           isActive
             ? readOnly
               ? 'bg-amber-50 font-semibold text-amber-900 ring-1 ring-amber-100 dark:bg-amber-950/30 dark:text-amber-100 dark:ring-amber-900'
-              : `${accentStyles.itemActive} font-semibold shadow-sm ring-1 ring-white/70 dark:ring-gray-700`
+              : 'bg-primary-600 font-semibold text-white shadow-sm'
             : inactiveRow
         } ${collapsed ? 'justify-center' : ''} ${readOnly ? 'opacity-90' : ''}`
       }
@@ -139,27 +139,27 @@ function NavItem({
       {({ isActive }) => (
         <>
           {isActive && !collapsed && !readOnly && (
-            <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary-600 shadow-sm shadow-primary-600/40" />
+            <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-white/90" />
           )}
           {isActive && !collapsed && readOnly && (
             <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-amber-500" />
           )}
           <span
-            className={`flex flex-shrink-0 items-center justify-center rounded-xl transition ${
-              nested && !collapsed ? 'h-7 w-7' : 'h-8 w-8'
+            className={`flex flex-shrink-0 items-center justify-center rounded-lg transition ${
+              nested && !collapsed ? 'h-6 w-6' : 'h-8 w-8'
             } ${
               isActive
                 ? readOnly
                   ? 'bg-white text-amber-700 shadow-sm dark:bg-gray-900 dark:text-amber-300'
-                  : 'bg-white text-primary-700 shadow-sm dark:bg-gray-900 dark:text-gray-100'
-                : 'text-gray-500 group-hover:bg-white group-hover:text-primary-700 group-hover:shadow-sm dark:text-gray-400 dark:group-hover:bg-gray-900 dark:group-hover:text-gray-100'
+                  : 'bg-white/15 text-white'
+                : 'text-gray-500 group-hover:text-primary-700 dark:text-gray-400 dark:group-hover:text-gray-100'
             }`}
           >
             <item.icon className={nested && !collapsed ? 'h-4 w-4' : 'h-[18px] w-[18px]'} />
           </span>
 
           {!collapsed && (
-            <span className={`truncate ${nested ? 'text-xs' : 'text-sm'}`}>{item.label}</span>
+            <span className="truncate text-sm">{item.label}</span>
           )}
 
           {readOnly && !collapsed && (
@@ -240,10 +240,10 @@ function NavSection({
         }}
         onMouseLeave={onTooltipLeave}
         className={({ isActive }) =>
-          `group relative flex items-center justify-center rounded-xl px-3 py-2.5 transition ${
+          `group relative flex items-center justify-center rounded-lg px-3 py-2.5 transition ${
             isActive || hasActiveChild
               ? 'bg-primary-600 text-white shadow-md shadow-primary-900/20'
-              : 'text-gray-500 hover:bg-white hover:text-primary-700 hover:shadow-sm dark:text-gray-300 dark:hover:bg-gray-800'
+              : 'text-gray-500 hover:bg-primary-50 hover:text-primary-700 dark:text-gray-300 dark:hover:bg-gray-800'
           }`
         }
       >
@@ -270,16 +270,16 @@ function NavSection({
         type="button"
         data-no-spinner="true"
         onClick={onToggle}
-        className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition ${
+        className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left transition ${
           hasActiveChild
-            ? 'bg-white text-gray-950 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:text-gray-100 dark:ring-gray-800'
-            : 'text-gray-500 hover:bg-white hover:text-gray-950 hover:shadow-sm dark:text-gray-400 dark:hover:bg-gray-900 dark:hover:text-gray-100'
+            ? 'bg-primary-50 text-primary-800 dark:bg-gray-800 dark:text-gray-100'
+            : 'text-gray-500 hover:bg-primary-50/70 hover:text-gray-950 dark:text-gray-400 dark:hover:bg-gray-900 dark:hover:text-gray-100'
         }`}
       >
-        <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg ${hasActiveChild ? 'bg-primary-600 text-white' : 'bg-white text-gray-500 ring-1 ring-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700'}`}>
+        <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md ${hasActiveChild ? 'bg-primary-600 text-white' : 'text-gray-500 dark:text-gray-300'}`}>
           <SectionIcon className="h-3.5 w-3.5" />
         </span>
-        <p className="min-w-0 flex-1 truncate text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
+        <p className="min-w-0 flex-1 truncate text-xs font-bold text-gray-700 dark:text-gray-300">
           {section.label}
         </p>
         {sectionBadge && (
@@ -292,7 +292,7 @@ function NavSection({
         />
       </button>
       {isOpen && (
-        <div className="space-y-0.5 pl-2">
+        <div className="space-y-0.5">
           {visibleItems.map((item) => (
             <NavItem
               key={item.segment}
@@ -329,7 +329,7 @@ function Brand({ collapsed, isMobile, user }) {
 
   if (collapsed && !isMobile) {
     return (
-      <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-primary-600 text-white shadow-md shadow-primary-900/20 ring-1 ring-white dark:ring-gray-800">
+      <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-primary-600 text-white shadow-sm">
         {logo ? logoMark : <FiAward className="h-5 w-5" />}
       </div>
     )
@@ -337,11 +337,11 @@ function Brand({ collapsed, isMobile, user }) {
 
   return (
     <div className="flex min-w-0 items-center gap-3">
-      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary-600 text-white shadow-md shadow-primary-900/20 ring-1 ring-white dark:ring-gray-800">
+      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary-600 text-white shadow-sm">
         {logoMark}
       </div>
       <div className="min-w-0">
-        <h1 className="truncate text-sm font-black leading-tight text-gray-950 dark:text-gray-100">
+        <h1 className="truncate text-sm font-bold leading-tight text-gray-950 dark:text-gray-100">
           {title}
         </h1>
         <p className="mt-0.5 truncate text-[11px] font-semibold text-gray-500 dark:text-gray-400">
@@ -379,10 +379,15 @@ function SidebarContent({
     const parsed = parseRestaurantPortalPath(routerLocation.pathname)
     return parsed?.tail || ''
   }, [routerLocation.pathname])
+  const activeSectionId = useMemo(() => {
+    return RESTAURANT_NAV_SECTIONS.find((section) =>
+      sectionContainsSegment(section, activeTail),
+    )?.id || 'overview'
+  }, [activeTail])
   const [openSections, setOpenSections] = useState(() => {
     const initial = {}
     RESTAURANT_NAV_SECTIONS.forEach((section) => {
-      initial[section.id] = section.defaultOpen !== false
+      initial[section.id] = section.id === activeSectionId
     })
     return initial
   })
@@ -397,32 +402,33 @@ function SidebarContent({
   }, [isFeatureHidden])
 
   useEffect(() => {
-    setOpenSections((prev) => {
-      const activeSection = RESTAURANT_NAV_SECTIONS.find((section) =>
-        sectionContainsSegment(section, activeTail),
-      )
-      if (!activeSection || prev[activeSection.id]) return prev
-      return { ...prev, [activeSection.id]: true }
-    })
-  }, [activeTail])
+    setOpenSections(
+      Object.fromEntries(RESTAURANT_NAV_SECTIONS.map((section) => [section.id, section.id === activeSectionId])),
+    )
+  }, [activeSectionId])
 
   const toggleSection = (id) => {
-    setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }))
+    setOpenSections((prev) => {
+      const nextOpen = !prev[id]
+      return Object.fromEntries(RESTAURANT_NAV_SECTIONS.map((section) => [section.id, section.id === id ? nextOpen : false]))
+    })
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col bg-white dark:bg-gray-950">
       <div
-        className={`flex flex-shrink-0 items-center border-b border-gray-100/80 bg-white/95 backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/95 ${
-          hideLabels ? 'justify-center px-3 py-4' : 'justify-between px-4 py-4'
+        className={`flex flex-shrink-0 items-center border-b border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-950 ${
+          hideLabels ? 'justify-center px-3 py-3' : 'justify-between px-4 py-3'
         }`}
       >
         <Brand collapsed={collapsed} isMobile={isMobile} user={user} />
 
         {!isMobile && (
           <button
+            type="button"
+            data-no-spinner="true"
             onClick={() => setCollapsed((current) => !current)}
-            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-white text-gray-500 shadow-sm ring-1 ring-gray-100 transition-colors hover:bg-surface-50 hover:text-gray-900 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700 dark:hover:bg-gray-700"
+            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-primary-50 hover:text-primary-700 dark:text-gray-300 dark:hover:bg-gray-800"
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? (
@@ -435,8 +441,10 @@ function SidebarContent({
 
         {isMobile && (
           <button
+            type="button"
+            data-no-spinner="true"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-gray-100 dark:bg-gray-800 dark:ring-gray-700"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-600 transition hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
           >
             <FiX className="h-4 w-4 text-gray-600 dark:text-gray-300" />
           </button>
@@ -444,27 +452,7 @@ function SidebarContent({
       </div>
 
       <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full">
-        {!hideLabels && (
-          <div className="mb-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="truncate text-xs font-black uppercase tracking-[0.16em] text-primary-700 dark:text-primary-300">
-                  Workspace
-                </p>
-                <p className="mt-0.5 truncate text-[11px] font-semibold text-gray-500 dark:text-gray-400">
-                  Orders, menu, team and reports
-                </p>
-              </div>
-              {formatBadge(pendingCount) && (
-                <span className="flex h-8 min-w-8 items-center justify-center rounded-xl bg-red-500 px-2 text-xs font-black text-white shadow-sm">
-                  {formatBadge(pendingCount)}
-                </span>
-              )}
-            </div>
-          </div>
-        )}
-
-        <div className={hideLabels ? 'space-y-1' : 'space-y-3'}>
+        <div className={hideLabels ? 'space-y-1' : 'space-y-1.5'}>
           {filteredSections.map(({ section, visibleItems }) => (
             <NavSection
               key={section.id}
@@ -490,11 +478,12 @@ function SidebarContent({
         </div>
 
         {hasTenant && restaurantId != null && !hideLabels && (kycLocked || isFeatureEnabled('employees')) && (
-          <div className="mt-5 rounded-2xl border border-gray-100 bg-white/80 p-3 shadow-sm dark:border-gray-800 dark:bg-gray-900/80">
-            <p className="mb-2 px-1 text-[10px] font-black uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">
-              Staff portals
-            </p>
-            <div className="space-y-1">
+          <details className="mt-4 border-t border-gray-100 pt-3 dark:border-gray-800">
+            <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg px-3 py-2 text-sm font-semibold text-gray-600 transition hover:bg-primary-50/70 hover:text-primary-800 dark:text-gray-300 dark:hover:bg-gray-800">
+              <span>Staff portals</span>
+              <FiExternalLink className="h-3.5 w-3.5 text-gray-400" />
+            </summary>
+            <div className="mt-1 space-y-1">
               {STAFF_LINKS.map(({ staff, label, icon: Icon }) => (
                 <Link
                   key={staff}
@@ -509,9 +498,9 @@ function SidebarContent({
                     }
                     if (isMobile) onClose?.()
                   }}
-                  className="group flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-semibold text-gray-600 transition-colors hover:bg-surface-50 hover:text-gray-950 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+                  className="group flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-gray-600 transition-colors hover:bg-primary-50/70 hover:text-primary-800 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100"
                 >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-surface-50 text-gray-600 ring-1 ring-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 dark:text-gray-300">
                     <Icon className="h-4 w-4" />
                   </span>
                   <span className="truncate">{label}</span>
@@ -523,7 +512,7 @@ function SidebarContent({
                 </Link>
               ))}
             </div>
-          </div>
+          </details>
         )}
 
         {hasTenant && restaurantId != null && hideLabels && (kycLocked || isFeatureEnabled('employees')) && (
@@ -558,7 +547,7 @@ function SidebarContent({
                   })
                 }}
                 onBlur={onTooltipLeave}
-                className="group relative flex items-center justify-center rounded-xl px-3 py-2.5 text-gray-500 transition-colors hover:bg-surface-50 hover:text-primary-700 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+                className="group relative flex items-center justify-center rounded-lg px-3 py-2.5 text-gray-500 transition-colors hover:bg-primary-50 hover:text-primary-700 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100"
               >
                 <Icon className="h-5 w-5" />
               </Link>
@@ -568,9 +557,9 @@ function SidebarContent({
       </nav>
 
       {platformBrand && !hideLabels && (
-        <div className="flex-shrink-0 border-t border-gray-100/80 bg-white/90 p-4 backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/95">
-          <div className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary-600 text-sm font-bold text-white shadow-md">
+        <div className="flex-shrink-0 border-t border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-950">
+          <div className="flex items-center gap-3 rounded-lg px-1 py-1">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary-600 text-sm font-bold text-white shadow-sm">
               {platformBrand.logo ? (
                 <img
                   src={platformBrand.logo}
@@ -582,7 +571,7 @@ function SidebarContent({
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-black text-gray-950 dark:text-gray-100">{platformBrand.name}</p>
+              <p className="truncate text-sm font-bold text-gray-950 dark:text-gray-100">{platformBrand.name}</p>
               <p className="truncate text-[11px] font-semibold text-gray-500 dark:text-gray-400">
                 {platformBrand.subtitle}
               </p>
@@ -592,10 +581,10 @@ function SidebarContent({
       )}
 
       {platformBrand && hideLabels && (
-        <div className="flex flex-shrink-0 justify-center border-t border-gray-100 p-4 dark:border-gray-800">
+        <div className="flex flex-shrink-0 justify-center border-t border-gray-100 p-3 dark:border-gray-800">
           <div
             tabIndex={0}
-            className="flex h-10 w-10 cursor-default items-center justify-center overflow-hidden rounded-xl bg-primary-600 text-sm font-bold text-white shadow-md"
+            className="flex h-9 w-9 cursor-default items-center justify-center overflow-hidden rounded-lg bg-primary-600 text-sm font-bold text-white shadow-sm"
             onMouseEnter={(e) => {
               const rect = e.currentTarget.getBoundingClientRect()
               onTooltip?.({
@@ -837,7 +826,7 @@ const RestaurantSidebar = () => {
       )}
 
       <div
-        className={`fixed left-0 top-0 z-[70] h-full w-[280px] transform bg-surface-50 shadow-2xl transition-transform duration-300 ease-in-out dark:bg-gray-950 lg:hidden ${
+        className={`fixed left-0 top-0 z-[70] h-full w-[280px] transform bg-white shadow-2xl transition-transform duration-300 ease-in-out dark:bg-gray-950 lg:hidden ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -853,7 +842,7 @@ const RestaurantSidebar = () => {
       </div>
 
       <aside
-        className={`sticky top-0 hidden h-screen flex-shrink-0 flex-col border-r border-gray-100 bg-surface-50 shadow-[4px_0_24px_-12px_rgba(15,23,42,0.08)] dark:border-gray-800 dark:bg-gray-950 lg:flex relative ${
+        className={`sticky top-0 hidden h-screen flex-shrink-0 flex-col border-r border-gray-100 bg-white shadow-[4px_0_18px_-16px_rgba(15,23,42,0.45)] dark:border-gray-800 dark:bg-gray-950 lg:flex relative ${
           isResizing ? '' : 'transition-all duration-300 ease-in-out'
         }`}
         style={{ width: collapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth }}
@@ -874,11 +863,12 @@ const RestaurantSidebar = () => {
             title="Drag to resize. Double-click to reset."
             onMouseDown={startResizing}
             onDoubleClick={resetSidebarWidth}
+            data-no-spinner="true"
             className={`group absolute -right-1 top-0 h-full w-2 cursor-col-resize transition ${
               isResizing ? 'bg-primary-500/30' : 'bg-transparent hover:bg-primary-500/20'
             }`}
           >
-            <span className="pointer-events-none absolute left-1/2 top-1/2 h-16 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gray-300 opacity-0 transition group-hover:opacity-100 dark:bg-gray-600" />
+            <span className="pointer-events-none absolute left-1/2 top-1/2 h-14 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-400 opacity-0 transition group-hover:opacity-100" />
           </button>
         )}
       </aside>
