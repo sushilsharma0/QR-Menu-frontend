@@ -19,7 +19,7 @@ function telHref(phone) {
 }
 
 const LandingChatPopup = () => {
-  const { chat, softwareName, themeTokens } = useLandingBranding()
+  const { chat, contactPhone, softwareName, themeTokens } = useLandingBranding()
   const [open, setOpen] = useState(false)
 
   if (!chat?.enabled) return null
@@ -27,7 +27,8 @@ const LandingChatPopup = () => {
   const mode = chat.mode || 'whatsapp'
   const showWa = mode === 'whatsapp' || mode === 'both'
   const showPhone = mode === 'phone' || mode === 'both'
-  const phone = chat.displayPhone || chat.whatsappNumber
+  const whatsappPhone = chat.displayPhone || chat.whatsappNumber || contactPhone
+  const phone = whatsappPhone
   const tel = telHref(phone)
 
   return (
@@ -75,9 +76,9 @@ const LandingChatPopup = () => {
                   </p>
 
                 </div>
-                {showWa && chat.whatsappNumber && (
+                {showWa && whatsappPhone && (
                   <a
-                    href={waLink(chat.whatsappNumber, chat.whatsappMessage)}
+                    href={waLink(whatsappPhone, chat.whatsappMessage)}
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/80 px-4 py-3 font-bold text-emerald-900 transition hover:bg-emerald-100"
@@ -101,7 +102,7 @@ const LandingChatPopup = () => {
                     </span>
                     <span>
                       <span className="block text-sm text-slate-500">Call</span>
-                      <span className="text-base">{chat.displayPhone || `+${String(chat.whatsappNumber || '').replace(/\D/g, '')}`}</span>
+                      <span className="text-base">{chat.displayPhone || `+${String(whatsappPhone || '').replace(/\D/g, '')}`}</span>
                     </span>
                   </a>
                 )}

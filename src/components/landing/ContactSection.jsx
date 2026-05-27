@@ -48,9 +48,10 @@ const ContactSection = () => {
     return items
   }, [contactPhone, supportEmail, publicSiteUrl])
 
-  const waDigits = String(chat?.whatsappNumber || '').replace(/\D/g, '')
+  const whatsappPhone = String(chat?.displayPhone || chat?.whatsappNumber || contactPhone || '').trim()
+  const whatsappPhoneDigits = whatsappPhone.replace(/\D/g, '')
   const waMsg = encodeURIComponent(chat?.whatsappMessage || `Hi ${softwareName || ''}, I want to set up my restaurant.`)
-  const waHref = waDigits ? `https://wa.me/${waDigits}?text=${waMsg}` : 'https://wa.me/'
+  const waHref = whatsappPhoneDigits ? `https://wa.me/${whatsappPhoneDigits}?text=${waMsg}` : 'https://wa.me/'
 
   return (
     <section id="contact" className="py-14 sm:py-20 lg:py-24">
@@ -157,15 +158,26 @@ const ContactSection = () => {
                 Fast billing and workflow help
               </p>
             </div>
-            <a
-              href={waHref}
-              target="_blank"
-              rel="noreferrer"
-              className="group mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-black text-primary-700 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl sm:mt-6 sm:px-5"
-            >
-              Start WhatsApp Chat
-              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-            </a>
+            <div className="mt-5 flex flex-col items-start gap-3 sm:mt-6 sm:flex-row sm:items-center">
+              <a
+                href={waHref}
+                target="_blank"
+                rel="noreferrer"
+                className="group inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-black text-primary-700 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl sm:px-5"
+              >
+                Start WhatsApp Chat
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+              </a>
+              {whatsappPhone ? (
+                <a
+                  href={whatsappPhoneDigits ? `tel:+${whatsappPhoneDigits}` : '#'}
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-black text-white backdrop-blur transition hover:bg-white/15"
+                >
+                  <Phone className="h-4 w-4" />
+                  <span>{whatsappPhone}</span>
+                </a>
+              ) : null}
+            </div>
 
             <div className="mt-4 rounded-2xl border border-white/20 bg-white/10 p-3 backdrop-blur sm:mt-5 sm:p-4">
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-attention-100 sm:text-[11px] sm:tracking-[0.2em]">
