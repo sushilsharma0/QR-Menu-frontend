@@ -21,6 +21,8 @@ import toast from '@utils/toast'
 import api from '../../services/api'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
+import AuthContactCard from '../../components/auth/AuthContactCard'
+import { PLATFORM_LOGO_SRC } from '../../constants/platformBrand'
 
 const Register = () => {
   const navigate = useNavigate()
@@ -31,10 +33,28 @@ const Register = () => {
   const [step, setStep] = useState('details')
   const [pendingEmail, setPendingEmail] = useState('')
   const [otpDigits, setOtpDigits] = useState(() => Array(6).fill(''))
+  const [siteConfig, setSiteConfig] = useState(null)
   const otpRefs = useRef([])
   const { register, handleSubmit, watch, formState: { errors } } = useForm()
   const password = watch('password')
   const referralCodeValue = watch('referralCode')
+
+  useEffect(() => {
+    let cancelled = false
+
+    api
+      .get('/customer/landing/site-config', { skipErrorToast: true })
+      .then((res) => {
+        if (!cancelled) setSiteConfig(res.data?.data || null)
+      })
+      .catch(() => {
+        if (!cancelled) setSiteConfig(null)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const onSubmit = async (data) => {
     try {
@@ -180,6 +200,9 @@ const leftFeatures = [
 const OTP_SLOT_KEYS = ['otp-1', 'otp-2', 'otp-3', 'otp-4', 'otp-5', 'otp-6']
 
   const benefitCards = ['Free trial', 'KYC ready', 'Referral month']
+  const brandName = siteConfig?.softwareName?.trim() || 'QR Restro Nepal'
+  const brandSubtitle = siteConfig?.brandSubtitle?.trim() || 'Nepal'
+  const brandLogo = siteConfig?.landingLogo?.trim() || PLATFORM_LOGO_SRC
 
   return (
     <div className="flex min-h-screen overflow-hidden bg-white font-sans">
@@ -240,12 +263,20 @@ const OTP_SLOT_KEYS = ['otp-1', 'otp-2', 'otp-3', 'otp-4', 'otp-5', 'otp-6']
 
         <div className="relative z-10 h-full px-12 py-14 xl:px-36">
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#c65a22] to-[#8d310f] text-white shadow-lg shadow-[#4a1608]/25">
-              <FiCoffee className="h-5 w-5" />
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#ffc49b]/35 bg-white shadow-lg shadow-[#4a1608]/25">
+              <img
+                src={brandLogo}
+                alt=""
+                className="h-full w-full scale-[1.35] object-contain"
+              />
             </span>
-            <div>
-              <p className="text-sm font-bold leading-tight text-white">QR Restro</p>
-              <p className="text-xs tracking-[0.28em] text-[#ffc49b] ">NEPAL</p>
+            <div className="min-w-0">
+              <p className="max-w-[18rem] truncate text-sm font-bold leading-tight text-white">
+                {brandName}
+              </p>
+              <p className="mt-0.5 max-w-[18rem] truncate text-xs uppercase tracking-[0.28em] text-[#ffc49b]">
+                {brandSubtitle}
+              </p>
             </div>
           </div>
 
@@ -513,6 +544,11 @@ const OTP_SLOT_KEYS = ['otp-1', 'otp-2', 'otp-3', 'otp-4', 'otp-5', 'otp-6']
               Sign in
             </Link>
           </p>
+
+          <AuthContactCard
+            title="Need help creating your account?"
+            description="Contact support for onboarding, verification, pricing, or vendor setup guidance."
+          />
         </section>
       </div>
     </div>

@@ -19,6 +19,8 @@ import { useAuth } from '../../hooks/useAuth'
 import api from '../../services/api'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
+import AuthContactCard from '../../components/auth/AuthContactCard'
+import { PLATFORM_LOGO_SRC } from '../../constants/platformBrand'
 
 /* ─── Policy hint (unchanged logic) ──────────────────────────────────────── */
 function VendorLoginPolicyHint() {
@@ -138,6 +140,7 @@ const Login = () => {
 
   const [role, setRole] = useState(initialRole)
   const [loading, setLoading] = useState(false)
+  const [siteConfig, setSiteConfig] = useState(null)
 
   const {
     register,
@@ -149,6 +152,23 @@ const Login = () => {
 
   const watchEmail = watch('email')
   const isBranchLogin = role === 'restaurant' && String(watchEmail || '').toLowerCase().includes('@branch.com')
+
+  useEffect(() => {
+    let cancelled = false
+
+    api
+      .get('/customer/landing/site-config', { skipErrorToast: true })
+      .then((res) => {
+        if (!cancelled) setSiteConfig(res.data?.data || null)
+      })
+      .catch(() => {
+        if (!cancelled) setSiteConfig(null)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     const nextRole =
@@ -222,6 +242,9 @@ const Login = () => {
     platform: { greeting: 'Welcome back,', name: 'Admin!', desc: 'Access platform management, subscriptions, restaurant approvals and settings.' },
   }
   const left = leftHeading[role]
+  const brandName = siteConfig?.softwareName?.trim() || 'QR Restro Nepal'
+  const brandSubtitle = siteConfig?.brandSubtitle?.trim() || 'Nepal'
+  const brandLogo = siteConfig?.landingLogo?.trim() || PLATFORM_LOGO_SRC
 
   return (
     <LazyMotion features={domAnimation}>
@@ -289,12 +312,20 @@ const Login = () => {
         <div className="relative z-10 h-full px-12 py-14 xl:px-36">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#c65a22] to-[#8d310f] text-white shadow-lg shadow-[#4a1608]/25">
-              <FiCoffee className="h-5 w-5" />
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#ffc49b]/35 bg-white shadow-lg shadow-[#4a1608]/25">
+              <img
+                src={brandLogo}
+                alt=""
+                className="h-full w-full scale-[1.35] object-contain"
+              />
             </span>
-            <div>
-              <p className="text-sm font-semibold text-white leading-tight">QR Restro</p>
-              <p className="text-xs tracking-[0.28em] text-[#ffc49b]">NEPAL</p>
+            <div className="min-w-0">
+              <p className="max-w-[18rem] truncate text-sm font-semibold leading-tight text-white">
+                {brandName}
+              </p>
+              <p className="mt-0.5 max-w-[18rem] truncate text-xs uppercase tracking-[0.28em] text-[#ffc49b]">
+                {brandSubtitle}
+              </p>
             </div>
           </div>
 
@@ -346,19 +377,28 @@ const Login = () => {
 
       {/* ── RIGHT: white login panel ── */}
       <div
-        className={`flex min-h-0 flex-1 flex-col justify-center overflow-hidden px-6 lg:pl-20 lg:pr-24 ${
+        className={`flex min-h-0 flex-1 flex-col justify-center overflow-y-auto px-6 lg:pl-20 lg:pr-24 ${
           isBranchLogin ? 'py-6 lg:py-8' : 'py-12 lg:pt-20'
         }`}
       >
         <div className={`mx-auto w-full max-w-[440px] ${isBranchLogin ? 'space-y-5' : 'space-y-7'}`}>
           {/* Mobile logo */}
           <Link to="/" className="flex items-center gap-2 lg:hidden">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#9a3412] text-white">
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
-              </svg>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#f1b089]/40 bg-white shadow-sm">
+              <img
+                src={brandLogo}
+                alt=""
+                className="h-full w-full scale-[1.35] object-contain"
+              />
             </span>
-            <span className="text-sm font-semibold text-gray-900">QR Menu SaaS</span>
+            <span className="min-w-0">
+              <span className="block max-w-[14rem] truncate text-sm font-semibold leading-tight text-gray-900">
+                {brandName}
+              </span>
+              <span className="block max-w-[14rem] truncate text-[10px] font-bold uppercase tracking-[0.22em] text-[#8f2a05]">
+                {brandSubtitle}
+              </span>
+            </span>
           </Link>
 
           {/* Heading */}
@@ -571,20 +611,12 @@ const Login = () => {
           </div>
 
           {/* Demo credentials — hidden in branch mode to keep login panel within viewport */}
-          {!(role === 'restaurant' && isBranchLogin) && (
-            <div className="rounded-lg bg-gray-50 px-4 py-3 text-xs text-gray-500">
-              {role === 'platform' ? (
-                <p><span className="font-semibold text-gray-700">Demo:</span> superadmin@qrmenu.com / Admin@123</p>
-              ) : role === 'restaurant' ? (
-                <p>
-                  <span className="font-semibold text-gray-700">Vendor demo:</span> test@restaurant.com / Test@123456.
-                  <span className="mt-1 block">Branch demo: use credentials from Branch Management after creating an outlet (…@branch.com + Restaurant ID).</span>
-                </p>
-              ) : (
-                <p>Ask your restaurant vendor for your staff username, password, and restaurant ID.</p>
-              )}
-            </div>
-          )}
+          <AuthContactCard
+            title="Having trouble signing in?"
+            description="Call, email, or message support for password, branch, staff, or vendor account help."
+          />
+
+        
         </div>
       </div>
     </div>

@@ -9,7 +9,7 @@ import LandingBackground from '../components/landing/LandingBackground'
 import LandingFooter from '../components/landing/LandingFooter'
 import LandingNavbar from '../components/landing/LandingNavbar'
 import LandingChatPopup from '../components/landing/LandingChatPopup'
-import CookieConsent from '../components/landing/CookieConsent'
+import SiteNotice from '../components/landing/SiteNotice'
 import OfferBanner from '../components/landing/OfferBanner'
 import QrOrderingFlowSection from '../components/landing/QrOrderingFlowSection'
 import RestaurantProofSection from '../components/landing/RestaurantProofSection'
@@ -44,7 +44,7 @@ const LandingPage = () => {
         </main>
         <LandingFooter />
         <LandingChatPopup />
-        <CookieConsent />
+        <SiteNotice />
       </div>
     </LandingBrandingProvider>
   )

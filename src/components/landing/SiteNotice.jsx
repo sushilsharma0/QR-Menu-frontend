@@ -4,7 +4,7 @@ import { Cookie, X } from 'lucide-react'
 
 const COOKIE_CONSENT_KEY = 'cookie-consent-accepted'
 
-const CookieConsent = () => {
+const SiteNotice = () => {
   const [isVisible, setIsVisible] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -72,4 +72,4 @@ const CookieConsent = () => {
   )
 }
 
-export default CookieConsent
+export default SiteNotice
