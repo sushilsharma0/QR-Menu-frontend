@@ -136,6 +136,7 @@ import {
 import LandingPage from "./pages/LandingPage";
 import Blog from "./pages/Blog";
 import BlogDetail from "./pages/BlogDetail";
+import TermsAndConditions from "./pages/TermsAndConditions";
 import NotificationsPage from "./pages/Notifications";
 import SubscriptionPaymentCallback from "./pages/restaurant/SubscriptionPaymentCallback";
 
@@ -255,6 +256,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:key" element={<BlogDetail />} />
+        <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
         {/* Auth Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/vendor/login" element={<Login />} />

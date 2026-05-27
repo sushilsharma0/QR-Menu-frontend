@@ -133,6 +133,12 @@ const LandingFooter = () => {
               >
                 Vendor Login
               </Link>
+              <Link
+                to="/terms-and-conditions"
+                className="inline-flex w-fit items-center gap-1 text-sm font-bold text-slate-700 transition-all duration-200 hover:translate-x-1 hover:text-primary-700"
+              >
+                Terms and Conditions
+              </Link>
             </div>
           </m.div>
 

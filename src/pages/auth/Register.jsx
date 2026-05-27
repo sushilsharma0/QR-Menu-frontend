@@ -424,6 +424,19 @@ const OTP_SLOT_KEYS = ['otp-1', 'otp-2', 'otp-3', 'otp-4', 'otp-5', 'otp-6']
                 Send Verification Code
                 {!loading && <FiArrowRight className="h-4 w-4" />}
               </button>
+
+              <p className="text-center text-xs leading-5 text-gray-500">
+                By creating a vendor account, you agree to our{' '}
+                <Link
+                  to="/terms-and-conditions"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-semibold text-[#8f2a05] hover:text-[#5f1d08]"
+                >
+                  Terms and Conditions
+                </Link>
+                .
+              </p>
             </form>
           ) : (
             <form onSubmit={onVerify} className="space-y-5">
